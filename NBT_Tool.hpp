@@ -740,6 +740,11 @@ private:
 				{
 					printf("%d,", it);
 				}
+				if (arr.size() != 0)
+				{
+					printf("\b");
+				}
+
 				printf("]");
 			}
 			break;
@@ -755,6 +760,12 @@ private:
 				for (auto &it : list)
 				{
 					PrintSwitch(it, ++iLevel);
+					printf(",");
+				}
+
+				if (list.size() != 0)
+				{
+					printf("\b");
 				}
 				printf("]");
 			}
@@ -762,29 +773,20 @@ private:
 		case NBT_Node::TAG_Compound:
 			{
 				auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
-				
-				for (int i = 0; i < iLevel; ++i)
-				{
-					printf("    ");
-				}
-				printf("{\n");
-				for (int i = 0; i < iLevel + 1; ++i)
-				{
-					printf("    ");
-				}
+				printf("{");
 
 				for (auto &it : cpd)
 				{
 					printf("\"%s\":", it.first.c_str());
 					PrintSwitch(it.second, ++iLevel);
-					printf(",\n");
-					for (int i = 0; i < iLevel; ++i)
-					{
-						printf("    ");
-					}
+					printf(",");
 				}
 
-				printf("},\n");
+				if (cpd.size() != 0)
+				{
+					printf("\b");
+				}
+				printf("}");
 			}
 			break;
 		case NBT_Node::TAG_Int_Array:
@@ -794,6 +796,11 @@ private:
 				for (auto &it : arr)
 				{
 					printf("%d,", it);
+				}
+
+				if (arr.size() != 0)
+				{
+					printf("\b");
 				}
 				printf("]");
 			}
@@ -805,6 +812,11 @@ private:
 				for (auto &it : arr)
 				{
 					printf("%lld,", it);
+				}
+
+				if (arr.size() != 0)
+				{
+					printf("\b");
 				}
 				printf("]");
 			}
