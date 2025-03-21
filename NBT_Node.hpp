@@ -134,7 +134,7 @@ public:
 	//获取标签类型
 	NBT_TAG GetTag() const noexcept
 	{
-		return (NBT_TAG)(uint8_t)data.index();//返回当前存储类型的index（0基索引，与NBT_TAG enum一一对应）
+		return (NBT_TAG)data.index();//返回当前存储类型的index（0基索引，与NBT_TAG enum一一对应）
 	}
 
 
