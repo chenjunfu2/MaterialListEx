@@ -85,18 +85,18 @@ int main(void)
 	if (gzip::is_compressed((char *)pFile, qwFileSize))//如果nbt已压缩，解压
 	{
 		nbt = gzip::decompress((char *)pFile, qwFileSize);
-		FILE *f = fopen("opt.nbt", "wb");
-		if (f == NULL)
-		{
-			return -3;
-		}
-
-		if (fwrite(nbt.c_str(), nbt.size(), 1, f) != 1)
-		{
-			return -4;
-		}
-
-		fclose(f);
+		//FILE *f = fopen("opt.nbt", "wb");
+		//if (f == NULL)
+		//{
+		//	return -3;
+		//}
+		//
+		//if (fwrite(nbt.c_str(), nbt.size(), 1, f) != 1)
+		//{
+		//	return -4;
+		//}
+		//
+		//fclose(f);
 	}
 	else//否则
 	{
@@ -112,8 +112,8 @@ int main(void)
 	}
 	
 	//以下使用nbt
-
-	NBT_Tool n;
+	NBT_Tool nt(nbt);
+	
 
 
 	printf("ok!\n");

@@ -116,9 +116,7 @@ private:
 public:
 	// 通用构造函数
 	template<typename T>
-	explicit NBT_Node(T &&value)
-		: tag(deduce_tag<T>()),
-		data(std::forward<T>(value))
+	explicit NBT_Node(T &&value) : tag(deduce_tag<T>()), data(std::forward<T>(value))
 	{
 		static_assert(!std::is_same_v<std::decay_t<T>, NBT_Node>, "Cannot construct NBT_Node from another NBT_Node");
 	}
@@ -129,10 +127,35 @@ public:
 
 	// 自动析构由variant处理
 	~NBT_Node() = default;
-	//移动构造由variant处理
-	NBT_Node(NBT_Node &&) = default;
-	//拷贝构造由variant处理
-	NBT_Node(const NBT_Node &) = default;
+	
+	NBT_Node(const NBT_Node &_NBT_Node) : tag(_NBT_Node.tag), data(_NBT_Node.data)
+	{}
+
+	NBT_Node(NBT_Node &&_NBT_Node) noexcept : tag(_NBT_Node.tag), data(std::move(_NBT_Node.data))
+	{
+		_NBT_Node.tag = TAG_End;
+		_NBT_Node.data = std::monostate{};
+	}
+
+	NBT_Node &operator=(const NBT_Node &_NBT_Node)
+	{
+		tag = _NBT_Node.tag;
+		data = _NBT_Node.data;
+
+		return *this;
+	}
+
+
+	NBT_Node &operator=(NBT_Node &&_NBT_Node) noexcept
+	{
+		tag = _NBT_Node.tag;
+		data = std::move(_NBT_Node.data);
+
+		_NBT_Node.tag = TAG_End;
+		_NBT_Node.data = std::monostate{};
+
+		return *this;
+	}
 
 	//清除所有数据
 	void Clear(void)
@@ -227,6 +250,7 @@ private:
 
 	enum ErrCode
 	{
+		Compound_End = 1,//结束
 		AllOk = 0,//没有问题
 		OutOfRange = -1,
 		TypeError = -2,
@@ -255,15 +279,18 @@ private:
 	}
 
 
-	template<typename T>
+	template<typename T, bool bHasName = true>
 	static int GetbuiltInType(const std::string &data, size_t &szCurrent, NBT_Node &nRoot)
 	{
 		//获取NBT的N（名称）
 		std::string sName{};
-		int iRet = GetName(data, szCurrent, sName);
-		if (iRet < AllOk)
+		if constexpr (bHasName)//如果无名称则string默认为空
 		{
-			return iRet;
+			int iRet = GetName(data, szCurrent, sName);
+			if (iRet < AllOk)
+			{
+				return iRet;
+			}
 		}
 
 		//读取数据
@@ -275,8 +302,17 @@ private:
 				return OutOfRange;
 			}
 
-			//名称-内含数据的节点插入当前调用栈深度的根节点
-			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Float*)&tTmpData)) });//无损数据类型转换
+			if constexpr (bHasName)
+			{
+				//名称-内含数据的节点插入当前调用栈深度的根节点
+				nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Float *)&tTmpData)) });//无损数据类型转换
+			}
+			else
+			{
+				//无名，为列表元素，直接修改nRoot
+				nRoot = NBT_Node{ (*((NBT_Node::NBT_Float *)&tTmpData)) };
+			}
+			
 		}
 		else if constexpr (std::is_same<T, NBT_Node::NBT_Double>::value)//浮点数特判
 		{
@@ -286,8 +322,16 @@ private:
 				return OutOfRange;
 			}
 
-			//名称-内含数据的节点插入当前调用栈深度的根节点
-			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Double *)&tTmpData)) });//无损数据类型转换
+			if constexpr (bHasName)
+			{
+				//名称-内含数据的节点插入当前调用栈深度的根节点
+				nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Double *)&tTmpData)) });//无损数据类型转换
+			}
+			else
+			{
+				//无名，为列表元素，直接修改nRoot
+				nRoot = NBT_Node{ (*((NBT_Node::NBT_Double *)&tTmpData)) };
+			}
 		}
 		else if constexpr (std::is_integral<T>::value)
 		{
@@ -297,8 +341,15 @@ private:
 				return OutOfRange;
 			}
 
-			//名称-内含数据的节点插入当前调用栈深度的根节点
-			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ tTmpData });
+			if constexpr (bHasName)
+			{
+				//名称-内含数据的节点插入当前调用栈深度的根节点
+				nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ tTmpData });
+			}
+			else
+			{
+				nRoot = NBT_Node{ tTmpData };
+			}
 		}
 		else
 		{
@@ -316,15 +367,18 @@ private:
 	struct is_std_vector<std::vector<T, Alloc>> : std::true_type
 	{};
 
-	template<typename T>
+	template<typename T, bool bHasName = true>
 	static int GetArrayType(const std::string &data, size_t &szCurrent, NBT_Node &nRoot)
 	{
 		//获取NBT的N（名称）
 		std::string sName{};
-		int iRet = GetName(data, szCurrent, sName);
-		if (iRet < AllOk)
+		if constexpr (bHasName)//如果无名称则string默认为空
 		{
-			return iRet;
+			int iRet = GetName(data, szCurrent, sName);
+			if (iRet < AllOk)
+			{
+				return iRet;
+			}
 		}
 
 		//获取4字节有符号数，代表数组元素个数
@@ -358,44 +412,66 @@ private:
 			tArray.push_back(tTmpData);//读取一个插入一个
 		}
 		
-		//完成后插入
-		nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ std::move(tArray) });
+		if constexpr (bHasName)
+		{
+			//完成后插入
+			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ std::move(tArray) });
+		}
+		else//无名称，为列表元素
+		{
+			nRoot = NBT_Node{ std::move(tArray) };
+		}
 		return AllOk;
 	}
 
+	template<bool bHasName = true>
 	static int GetCompoundType(const std::string &data, size_t &szCurrent, NBT_Node &nRoot)
 	{
 		//获取NBT的N（名称）
 		std::string sName{};
-		int iRet = GetName(data, szCurrent, sName);
-		if (iRet < AllOk)
+		if constexpr (bHasName)//如果无名称则string默认为空
 		{
-			return iRet;
+			int iRet = GetName(data, szCurrent, sName);
+			if (iRet < AllOk)
+			{
+				return iRet;
+			}
 		}
 
 		//开始递归
 		NBT_Node nodeTemp{ NBT_Node::NBT_Compound{} };
-		iRet = GetNBT(data, szCurrent, nodeTemp);
+		int iRet = GetNBT(data, szCurrent, nodeTemp);
 		if (iRet < AllOk)
 		{
 			return iRet;
 		}
 
-		//递归完成，所有子节点已到位
-		//取出NBT_Compound挂到自己根部（移动）
-		nRoot.GetData<NBT_Node::NBT_Compound>().emplace(sName, std::move(nodeTemp.GetData<NBT_Node::NBT_Compound>()));
+		if constexpr (bHasName)
+		{
+			//递归完成，所有子节点已到位
+			//取出NBT_Compound挂到自己根部（移动）
+			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(sName, NBT_Node{ std::move(nodeTemp.GetData<NBT_Node::NBT_Compound>()) });
+		}
+		else//无名称，为列表元素
+		{
+			nRoot = NBT_Node{ std::move(nodeTemp.GetData<NBT_Node::NBT_Compound>()) };
+		}
 
 		return AllOk;
 	}
 
+	template<bool bHasName = true>
 	static int GetStringType(const std::string &data, size_t &szCurrent, NBT_Node &nRoot)
 	{
 		//获取NBT的N（名称）
 		std::string sName{};
-		int iRet = GetName(data, szCurrent, sName);
-		if (iRet < AllOk)
+		if constexpr (bHasName)//如果无名称则string默认为空
 		{
-			return iRet;
+			int iRet = GetName(data, szCurrent, sName);
+			if (iRet < AllOk)
+			{
+				return iRet;
+			}
 		}
 
 		//读取2字节的无符号名称长度
@@ -411,19 +487,31 @@ private:
 			return OutOfRange;
 		}
 
-		//原位构造
-		nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ std::string{data.begin() + szCurrent,data.begin() + (szCurrent + wStrLength)} });
+		if constexpr (bHasName)
+		{
+			//原位构造
+			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ std::string{data.begin() + szCurrent,data.begin() + (szCurrent + wStrLength)} });
+		}
+		else//列表元素直接赋值
+		{
+			nRoot = NBT_Node{ std::string{data.begin() + szCurrent,data.begin() + (szCurrent + wStrLength)} };
+		}
+		
 		return AllOk;
 	}
 
+	template<bool bHasName = true>
 	static int GetListType(const std::string &data, size_t &szCurrent, NBT_Node &nRoot)
 	{
 		//获取NBT的N（名称）
 		std::string sName{};
-		int iRet = GetName(data, szCurrent, sName);
-		if (iRet < AllOk)
+		if constexpr (bHasName)//如果无名称则string默认为空
 		{
-			return iRet;
+			int iRet = GetName(data, szCurrent, sName);
+			if (iRet < AllOk)
+			{
+				return iRet;
+			}
 		}
 
 		//读取1字节的列表元素类型
@@ -442,20 +530,35 @@ private:
 		}
 
 		//根据元素类型，读取n次列表
+		NBT_Node::NBT_List tmpList;
 		for (int32_t i = 0; i < dwListLength; ++i)
 		{
-			int iRet = SwitchNBT(data, szCurrent, nRoot, bListElementType);
-			if(iRet < AllOk)
+			NBT_Node tmpNode{};//列表元素会直接赋值修改
+			int iRet = SwitchNBT<false>(data, szCurrent, tmpNode, (NBT_Node::NBT_TAG)bListElementType);
+
+			if (iRet != AllOk)
 			{
 				return iRet;
 			}
 
-
-
+			//每读取一个往后插入一个
+			tmpList.push_back(std::move(tmpNode));
 		}
+
+		//列表可嵌套，所以处理本身嵌套无名情况
+		if constexpr (bHasName)
+		{
+			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(sName, NBT_Node{ std::move(tmpList) });
+		}
+		else//列表中的列表，直接赋值，而不进行插入
+		{
+			nRoot = NBT_Node{ std::move(tmpList) };
+		}
+
+		return AllOk;
 	}
 
-
+	template<bool bHasName = true>
 	static inline int SwitchNBT(const std::string &data, size_t &szCurrent, NBT_Node &nRoot, NBT_Node::NBT_TAG tag)
 	{
 		if (szCurrent >= data.size())
@@ -469,67 +572,67 @@ private:
 		{
 		case NBT_Node::TAG_End:
 			{
-				return AllOk;
+				iRet = Compound_End;
 			}
 			break;
 		case NBT_Node::TAG_Byte:
 			{
-				iRet = GetbuiltInType<NBT_Node::NBT_Byte>(data, szCurrent, nRoot);
+				iRet = GetbuiltInType<NBT_Node::NBT_Byte, bHasName>(data, szCurrent, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Short:
 			{
-				iRet = GetbuiltInType<NBT_Node::NBT_Short>(data, szCurrent, nRoot);
+				iRet = GetbuiltInType<NBT_Node::NBT_Short, bHasName>(data, szCurrent, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Int:
 			{
-				iRet = GetbuiltInType<NBT_Node::NBT_Int>(data, szCurrent, nRoot);
+				iRet = GetbuiltInType<NBT_Node::NBT_Int, bHasName>(data, szCurrent, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Long:
 			{
-				iRet = GetbuiltInType<NBT_Node::NBT_Long>(data, szCurrent, nRoot);
+				iRet = GetbuiltInType<NBT_Node::NBT_Long, bHasName>(data, szCurrent, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Float:
 			{
-				iRet = GetbuiltInType<NBT_Node::NBT_Float>(data, szCurrent, nRoot);
+				iRet = GetbuiltInType<NBT_Node::NBT_Float, bHasName>(data, szCurrent, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Double:
 			{
-				iRet = GetbuiltInType<NBT_Node::NBT_Double>(data, szCurrent, nRoot);
+				iRet = GetbuiltInType<NBT_Node::NBT_Double, bHasName>(data, szCurrent, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Byte_Array:
 			{
-				iRet = GetArrayType<NBT_Node::NBT_Byte_Array>(data, szCurrent, nRoot);
+				iRet = GetArrayType<NBT_Node::NBT_Byte_Array, bHasName>(data, szCurrent, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_String:
 			{
-				iRet = GetStringType(data, szCurrent, nRoot);
+				iRet = GetStringType<bHasName>(data, szCurrent, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_List://需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签 ID 或名称）
 			{//最复杂
-
+				iRet = GetListType<bHasName>(data, szCurrent, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Compound://需要递归调用
 			{
-				iRet = GetCompoundType(data, szCurrent, nRoot);
+				iRet = GetCompoundType<bHasName>(data, szCurrent, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Int_Array:
 			{
-				iRet = GetArrayType<NBT_Node::NBT_Int_Array>(data, szCurrent, nRoot);
+				iRet = GetArrayType<NBT_Node::NBT_Int_Array, bHasName>(data, szCurrent, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Long_Array:
 			{
-				iRet = GetArrayType<NBT_Node::NBT_Long_Array>(data, szCurrent, nRoot);
+				iRet = GetArrayType<NBT_Node::NBT_Long_Array, bHasName>(data, szCurrent, nRoot);
 			}
 			break;
 		default:
@@ -553,9 +656,10 @@ private:
 		int iRet;
 		do
 		{
-			iRet = SwitchNBT(data, szCurrent, nRoot, data[szCurrent++]);
+			iRet = SwitchNBT(data, szCurrent, nRoot, (NBT_Node::NBT_TAG)(uint8_t)data[szCurrent++]);
 		} while (iRet == AllOk);
 		
+		return iRet;
 	}
 public:
 	NBT_Tool(void) = default;
@@ -569,7 +673,7 @@ public:
 	{
 		nRoot.Clear();//清掉数据
 		size_t szCurrent{ 0 };
-		GetNBT(data, szCurrent, nRoot);
+		return GetNBT(data, szCurrent, nRoot) == Compound_End;
 	}
 
 	NBT_Node& GetRoot(void)
