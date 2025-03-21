@@ -275,6 +275,7 @@ private:
 
 		//解析出名称
 		 sName = { data.begin() + szCurrent, data.begin() + (szCurrent + wNameLength) };//如果长度为0则构造0长字符串，合法行为
+		 szCurrent += wNameLength;//移动下标
 		 return AllOk;
 	}
 
@@ -490,12 +491,13 @@ private:
 		if constexpr (bHasName)
 		{
 			//原位构造
-			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ std::string{data.begin() + szCurrent,data.begin() + (szCurrent + wStrLength)} });
+			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ std::string{data.begin() + szCurrent, data.begin() + (szCurrent + wStrLength)} });
 		}
 		else//列表元素直接赋值
 		{
-			nRoot = NBT_Node{ std::string{data.begin() + szCurrent,data.begin() + (szCurrent + wStrLength)} };
+			nRoot = NBT_Node{ std::string{data.begin() + szCurrent, data.begin() + (szCurrent + wStrLength)} };
 		}
+		szCurrent += wStrLength;//移动下标
 		
 		return AllOk;
 	}
