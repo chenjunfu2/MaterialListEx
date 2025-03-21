@@ -113,10 +113,10 @@ int main(void)
 	
 	//以下使用nbt
 	NBT_Tool nt(nbt);
-	
+	nt.Print();
+	//NBT_Node n;
 
-
-	printf("ok!\n");
+	printf("\nok!\n");
 
 	return 114514;
 }

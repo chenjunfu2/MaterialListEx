@@ -9,8 +9,6 @@
 
 #include <type_traits>
 
-class NBT_Tool;//前向声明
-
 class NBT_Node
 {
 public:
@@ -25,7 +23,7 @@ public:
 		TAG_Double,		//double 8byte
 		TAG_Byte_Array,	//std::vector<int8_t>
 		TAG_String,		//std::string->有长度数据，且为非0终止字符串!!
-		TAG_List,		//std::list<NBT_Node>
+		TAG_List,		//std::list<NBT_Node>->vector
 		TAG_Compound,	//std::map<std::string, NBT_Node>->字符串为NBT项名称
 		TAG_Int_Array,	//std::vector<int32_t>
 		TAG_Long_Array,	//std::vector<int64_t>
@@ -42,7 +40,7 @@ public:
 	using NBT_Int_Array		= std::vector<int32_t>;
 	using NBT_Long_Array	= std::vector<int64_t>;
 	using NBT_String		= std::string;
-	using NBT_List			= std::list<NBT_Node>;//存储一系列同类型标签的有效负载（无标签 ID 或名称）
+	using NBT_List			= std::vector<NBT_Node>;//存储一系列同类型标签的有效负载（无标签 ID 或名称）//原先为list，因为mc内list也通过下标访问，改为vector模拟
 	using NBT_Compound		= std::map<std::string, NBT_Node>;//挂在序列下的内容都通过map绑定名称
 
 	template<typename... Ts> struct TypeList
@@ -115,7 +113,8 @@ private:
 	}
 public:
 	// 通用构造函数
-	template<typename T>
+	// 使用SFINAE排除NBT_Node类型
+	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, NBT_Node>>>
 	explicit NBT_Node(T &&value) : tag(deduce_tag<T>()), data(std::forward<T>(value))
 	{
 		static_assert(!std::is_same_v<std::decay_t<T>, NBT_Node>, "Cannot construct NBT_Node from another NBT_Node");
@@ -410,7 +409,7 @@ private:
 		{
 			typename T::value_type tTmpData;
 			FastReadBigEndian(data, szCurrent, tTmpData);//调用需要确保范围安全
-			tArray.push_back(tTmpData);//读取一个插入一个
+			tArray.emplace_back(tTmpData);//读取一个插入一个
 		}
 		
 		if constexpr (bHasName)
@@ -544,7 +543,7 @@ private:
 			}
 
 			//每读取一个往后插入一个
-			tmpList.push_back(std::move(tmpNode));
+			tmpList.emplace_back(std::move(tmpNode));
 		}
 
 		//列表可嵌套，所以处理本身嵌套无名情况
@@ -563,7 +562,7 @@ private:
 	template<bool bHasName = true>
 	static inline int SwitchNBT(const std::string &data, size_t &szCurrent, NBT_Node &nRoot, NBT_Node::NBT_TAG tag)
 	{
-		if (szCurrent >= data.size())
+		if (szCurrent >= data.size() && tag != NBT_Node::TAG_End)
 		{
 			return OutOfRange;
 		}
@@ -686,5 +685,135 @@ public:
 	const NBT_Node &GetRoot(void) const
 	{
 		return nRoot;
+	}
+
+	void Print(void) const
+	{
+		PrintSwitch(nRoot, 0);
+	}
+
+private:
+	void PrintSwitch(const NBT_Node &nRoot, int iLevel) const
+	{
+		switch (nRoot.GetTag())
+		{
+		case NBT_Node::TAG_End:
+			{
+				printf("[Compound End]");
+			}
+			break;
+		case NBT_Node::TAG_Byte:
+			{
+				printf("%db", nRoot.GetData<NBT_Node::NBT_Byte>());
+			}
+			break;
+		case NBT_Node::TAG_Short:
+			{
+				printf("%ds", nRoot.GetData<NBT_Node::NBT_Short>());
+			}
+			break;
+		case NBT_Node::TAG_Int:
+			{
+				printf("%d", nRoot.GetData<NBT_Node::NBT_Int>());
+			}
+			break;
+		case NBT_Node::TAG_Long:
+			{
+				printf("%lldl", nRoot.GetData<NBT_Node::NBT_Long>());
+			}
+			break;
+		case NBT_Node::TAG_Float:
+			{
+				printf("%ff", nRoot.GetData<NBT_Node::NBT_Float>());
+			}
+			break;
+		case NBT_Node::TAG_Double:
+			{
+				printf("%lff", nRoot.GetData<NBT_Node::NBT_Double>());
+			}
+			break;
+		case NBT_Node::TAG_Byte_Array:
+			{
+				auto &arr = nRoot.GetData<NBT_Node::NBT_Byte_Array>();
+				printf("[B;");
+				for (auto &it : arr)
+				{
+					printf("%d,", it);
+				}
+				printf("]");
+			}
+			break;
+		case NBT_Node::TAG_String:
+			{
+				printf("\"%s\"", nRoot.GetData<NBT_Node::NBT_String>().c_str());
+			}
+			break;
+		case NBT_Node::TAG_List:
+			{
+				auto &list = nRoot.GetData<NBT_Node::NBT_List>();
+				printf("[");
+				for (auto &it : list)
+				{
+					PrintSwitch(it, ++iLevel);
+				}
+				printf("]");
+			}
+			break;
+		case NBT_Node::TAG_Compound:
+			{
+				auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
+				
+				for (int i = 0; i < iLevel; ++i)
+				{
+					printf("    ");
+				}
+				printf("{\n");
+				for (int i = 0; i < iLevel + 1; ++i)
+				{
+					printf("    ");
+				}
+
+				for (auto &it : cpd)
+				{
+					printf("\"%s\":", it.first.c_str());
+					PrintSwitch(it.second, ++iLevel);
+					printf(",\n");
+					for (int i = 0; i < iLevel; ++i)
+					{
+						printf("    ");
+					}
+				}
+
+				printf("},\n");
+			}
+			break;
+		case NBT_Node::TAG_Int_Array:
+			{
+				auto &arr = nRoot.GetData<NBT_Node::NBT_Int_Array>();
+				printf("[I;");
+				for (auto &it : arr)
+				{
+					printf("%d,", it);
+				}
+				printf("]");
+			}
+			break;
+		case NBT_Node::TAG_Long_Array:
+			{
+				auto &arr = nRoot.GetData<NBT_Node::NBT_Long_Array>();
+				printf("[L;");
+				for (auto &it : arr)
+				{
+					printf("%lld,", it);
+				}
+				printf("]");
+			}
+			break;
+		default:
+			{
+				printf("[Unknow Type]");
+			}
+			break;
+		}
 	}
 };
