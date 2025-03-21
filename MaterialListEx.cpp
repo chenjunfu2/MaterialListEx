@@ -101,9 +101,8 @@ int main(void)
 	else//否则
 	{
 		//直接给数据塞string里
-		nbt.reserve(qwFileSize);//先预留存储
+		nbt.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
 		memcpy(nbt.data(), pFile, qwFileSize);//直接写入data
-		nbt.resize(qwFileSize);//设置长度
 	}
 	
 	if (!UnMappingAndCloseFile(pFile))
