@@ -13,7 +13,6 @@ class NBT_Tool;//前向声明
 
 class NBT_Node
 {
-	friend class NBT_Tool;
 public:
 	enum NBT_TAG :uint8_t
 	{
@@ -43,8 +42,8 @@ public:
 	using NBT_Int_Array		= std::vector<int32_t>;
 	using NBT_Long_Array	= std::vector<int64_t>;
 	using NBT_String		= std::string;
-	using NBT_List			= std::list<NBT_Node>;
-	using NBT_Compound		= std::map<std::string, NBT_Node>;
+	using NBT_List			= std::list<NBT_Node>;//存储一系列同类型标签的有效负载（无标签 ID 或名称）
+	using NBT_Compound		= std::map<std::string, NBT_Node>;//挂在序列下的内容都通过map绑定名称
 
 	template<typename... Ts> struct TypeList
 	{};
@@ -130,6 +129,17 @@ public:
 
 	// 自动析构由variant处理
 	~NBT_Node() = default;
+	//移动构造由variant处理
+	NBT_Node(NBT_Node &&) = default;
+	//拷贝构造由variant处理
+	NBT_Node(const NBT_Node &) = default;
+
+	//清除所有数据
+	void Clear(void)
+	{
+		tag = TAG_Compound;
+		data = NBT_Compound{};
+	}
 
 	// 获取标签类型
 	NBT_TAG GetTag() const noexcept
@@ -179,26 +189,40 @@ private:
 			return false;
 		}
 
-		T tTmp = 0;
-		for (size_t i = 0; i < sizeof(T); ++i)
+		if constexpr (sizeof(T) == 1)
 		{
-			tTmp = (tTmp << 8) | (T)(uint8_t)(data[szCurrent++]);//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
+			tVal = (T)(uint8_t)data[szCurrent++];
 		}
-		tVal = tTmp;
+		else
+		{
+			T tTmp = 0;
+			for (size_t i = 0; i < sizeof(T); ++i)
+			{
+				tTmp = (tTmp << 8) | (T)(uint8_t)(data[szCurrent++]);//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
+			}
+			tVal = tTmp;
+		}
 
 		return true;
 	}
 
 	// 读取大端序数值（快速版）（调用者需要确保data范围安全）
 	template<typename T>
-	static void FastReadBigEndian(const std::string &data, size_t &szCurrent, T &tVal)
+	static inline void FastReadBigEndian(const std::string &data, size_t &szCurrent, T &tVal)
 	{
-		T tTmp = 0;
-		for (size_t i = 0; i < sizeof(T); ++i)
+		if constexpr (sizeof(T) == 1)
 		{
-			tTmp = (tTmp << 8) | (T)(uint8_t)(data[szCurrent++]);//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
+			tVal = (T)(uint8_t)data[szCurrent++];
 		}
-		tVal = tTmp;
+		else
+		{
+			T tTmp = 0;
+			for (size_t i = 0; i < sizeof(T); ++i)
+			{
+				tTmp = (tTmp << 8) | (T)(uint8_t)(data[szCurrent++]);//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
+			}
+			tVal = tTmp;
+		}
 	}
 
 	enum ErrCode
@@ -206,6 +230,7 @@ private:
 		AllOk = 0,//没有问题
 		OutOfRange = -1,
 		TypeError = -2,
+		WhatTheFuck = -1145,//几乎不可能的错误
 	};
 
 
@@ -303,14 +328,14 @@ private:
 		}
 
 		//获取4字节有符号数，代表数组元素个数
-		int32_t dElementCount = 0;//d->double-word=4*byte
-		if (!ReadBigEndian(data, szCurrent, dElementCount))
+		int32_t dwElementCount = 0;//dw->double-word=4*byte
+		if (!ReadBigEndian(data, szCurrent, dwElementCount))
 		{
 			return OutOfRange;
 		}
 
 		//判断长度是否超过
-		if (szCurrent + dElementCount * sizeof(T) >= data.size())//保证下方调用安全
+		if (szCurrent + dwElementCount * sizeof(T) >= data.size())//保证下方调用安全
 		{
 			return OutOfRange;
 		}
@@ -323,12 +348,12 @@ private:
 		
 		//数组保存
 		T tArray;
-		tArray.reserve(dElementCount);//提前扩容
+		tArray.reserve(dwElementCount);//提前扩容
 
 		//读取dElementCount个元素
-		for (int32_t i = 0; i < dElementCount; ++i)
+		for (int32_t i = 0; i < dwElementCount; ++i)
 		{
-			T::value_type tTmpData;
+			typename T::value_type tTmpData;
 			FastReadBigEndian(data, szCurrent, tTmpData);//调用需要确保范围安全
 			tArray.push_back(tTmpData);//读取一个插入一个
 		}
@@ -338,7 +363,31 @@ private:
 		return AllOk;
 	}
 
-	template<typename T>
+	static int GetCompoundType(const std::string &data, size_t &szCurrent, NBT_Node &nRoot)
+	{
+		//获取NBT的N（名称）
+		std::string sName{};
+		int iRet = GetName(data, szCurrent, sName);
+		if (iRet < AllOk)
+		{
+			return iRet;
+		}
+
+		//开始递归
+		NBT_Node nodeTemp{ NBT_Node::NBT_Compound{} };
+		iRet = GetNBT(data, szCurrent, nodeTemp);
+		if (iRet < AllOk)
+		{
+			return iRet;
+		}
+
+		//递归完成，所有子节点已到位
+		//取出NBT_Compound挂到自己根部（移动）
+		nRoot.GetData<NBT_Node::NBT_Compound>().emplace(sName, std::move(nodeTemp.GetData<NBT_Node::NBT_Compound>()));
+
+		return AllOk;
+	}
+
 	static int GetStringType(const std::string &data, size_t &szCurrent, NBT_Node &nRoot)
 	{
 		//获取NBT的N（名称）
@@ -349,10 +398,149 @@ private:
 			return iRet;
 		}
 
+		//读取2字节的无符号名称长度
+		uint16_t wStrLength = 0;//w->word=2*byte
+		if (!ReadBigEndian(data, szCurrent, wStrLength))
+		{
+			return OutOfRange;
+		}
 
+		//判断长度是否超过
+		if (szCurrent + wStrLength >= data.size())
+		{
+			return OutOfRange;
+		}
 
+		//原位构造
+		nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ std::string{data.begin() + szCurrent,data.begin() + (szCurrent + wStrLength)} });
+		return AllOk;
 	}
 
+	static int GetListType(const std::string &data, size_t &szCurrent, NBT_Node &nRoot)
+	{
+		//获取NBT的N（名称）
+		std::string sName{};
+		int iRet = GetName(data, szCurrent, sName);
+		if (iRet < AllOk)
+		{
+			return iRet;
+		}
+
+		//读取1字节的列表元素类型
+		uint8_t bListElementType = 0;//b=byte
+		if (!ReadBigEndian(data, szCurrent, bListElementType))
+		{
+			return OutOfRange;
+		}
+
+
+		//读取4字节的有符号列表长度
+		int32_t dwListLength = 0;//dw=double-world=4*byte
+		if (!ReadBigEndian(data, szCurrent, dwListLength))
+		{
+			return OutOfRange;
+		}
+
+		//根据元素类型，读取n次列表
+		for (int32_t i = 0; i < dwListLength; ++i)
+		{
+			int iRet = SwitchNBT(data, szCurrent, nRoot, bListElementType);
+			if(iRet < AllOk)
+			{
+				return iRet;
+			}
+
+
+
+		}
+	}
+
+
+	static inline int SwitchNBT(const std::string &data, size_t &szCurrent, NBT_Node &nRoot, NBT_Node::NBT_TAG tag)
+	{
+		if (szCurrent >= data.size())
+		{
+			return OutOfRange;
+		}
+
+		int iRet = AllOk;
+
+		switch (tag)
+		{
+		case NBT_Node::TAG_End:
+			{
+				return AllOk;
+			}
+			break;
+		case NBT_Node::TAG_Byte:
+			{
+				iRet = GetbuiltInType<NBT_Node::NBT_Byte>(data, szCurrent, nRoot);
+			}
+			break;
+		case NBT_Node::TAG_Short:
+			{
+				iRet = GetbuiltInType<NBT_Node::NBT_Short>(data, szCurrent, nRoot);
+			}
+			break;
+		case NBT_Node::TAG_Int:
+			{
+				iRet = GetbuiltInType<NBT_Node::NBT_Int>(data, szCurrent, nRoot);
+			}
+			break;
+		case NBT_Node::TAG_Long:
+			{
+				iRet = GetbuiltInType<NBT_Node::NBT_Long>(data, szCurrent, nRoot);
+			}
+			break;
+		case NBT_Node::TAG_Float:
+			{
+				iRet = GetbuiltInType<NBT_Node::NBT_Float>(data, szCurrent, nRoot);
+			}
+			break;
+		case NBT_Node::TAG_Double:
+			{
+				iRet = GetbuiltInType<NBT_Node::NBT_Double>(data, szCurrent, nRoot);
+			}
+			break;
+		case NBT_Node::TAG_Byte_Array:
+			{
+				iRet = GetArrayType<NBT_Node::NBT_Byte_Array>(data, szCurrent, nRoot);
+			}
+			break;
+		case NBT_Node::TAG_String:
+			{
+				iRet = GetStringType(data, szCurrent, nRoot);
+			}
+			break;
+		case NBT_Node::TAG_List://需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签 ID 或名称）
+			{//最复杂
+
+			}
+			break;
+		case NBT_Node::TAG_Compound://需要递归调用
+			{
+				iRet = GetCompoundType(data, szCurrent, nRoot);
+			}
+			break;
+		case NBT_Node::TAG_Int_Array:
+			{
+				iRet = GetArrayType<NBT_Node::NBT_Int_Array>(data, szCurrent, nRoot);
+			}
+			break;
+		case NBT_Node::TAG_Long_Array:
+			{
+				iRet = GetArrayType<NBT_Node::NBT_Long_Array>(data, szCurrent, nRoot);
+			}
+			break;
+		default:
+			{
+				iRet = WhatTheFuck;//这错误怎么出现的？
+			}
+			break;
+		}
+
+		return iRet;
+	}
 
 	static int GetNBT(const std::string &data, size_t &szCurrent, NBT_Node &nRoot)//递归调用读取并添加节点
 	{
@@ -362,121 +550,11 @@ private:
 			return TypeError;
 		}
 
-		while (true)
+		int iRet;
+		do
 		{
-			if (szCurrent >= data.size())
-			{
-				return OutOfRange;
-			}
-			
-			switch (data[szCurrent++])
-			{
-			case NBT_Node::TAG_End:
-				{
-					return AllOk;
-				}
-				break;
-			case NBT_Node::TAG_Byte:
-				{
-					int iRet = GetbuiltInType<NBT_Node::NBT_Byte>(data, szCurrent, nRoot);
-					if (iRet < AllOk)
-					{
-						return iRet;
-					}
-				}
-				break;
-			case NBT_Node::TAG_Short:
-				{
-					int iRet = GetbuiltInType<NBT_Node::NBT_Short>(data, szCurrent, nRoot);
-					if (iRet < AllOk)
-					{
-						return iRet;
-					}
-				}
-				break;
-			case NBT_Node::TAG_Int:
-				{
-					int iRet = GetbuiltInType<NBT_Node::NBT_Int>(data, szCurrent, nRoot);
-					if (iRet < AllOk)
-					{
-						return iRet;
-					}
-				}
-				break;
-			case NBT_Node::TAG_Long:
-				{
-					int iRet = GetbuiltInType<NBT_Node::NBT_Long>(data, szCurrent, nRoot);
-					if (iRet < AllOk)
-					{
-						return iRet;
-					}
-				}
-				break;
-			case NBT_Node::TAG_Float:
-				{
-					int iRet = GetbuiltInType<NBT_Node::NBT_Float>(data, szCurrent, nRoot);
-					if (iRet < AllOk)
-					{
-						return iRet;
-					}
-				}
-				break;
-			case NBT_Node::TAG_Double:
-				{
-					int iRet = GetbuiltInType<NBT_Node::NBT_Double>(data, szCurrent, nRoot);
-					if (iRet < AllOk)
-					{
-						return iRet;
-					}
-				}
-				break;
-			case NBT_Node::TAG_Byte_Array:
-				{
-					int iRet = GetArrayType<NBT_Node::NBT_Byte_Array>(data, szCurrent, nRoot);
-					if (iRet < AllOk)
-					{
-						return iRet;
-					}
-				}
-				break;
-			case NBT_Node::TAG_String:
-				{
-
-				}
-				break;
-			case NBT_Node::TAG_List://需要递归调用
-				{
-
-				}
-				break;
-			case NBT_Node::TAG_Compound://需要递归调用
-				{
-
-				}
-				break;
-			case NBT_Node::TAG_Int_Array:
-				{
-					int iRet = GetArrayType<NBT_Node::NBT_Int_Array>(data, szCurrent, nRoot);
-					if (iRet < AllOk)
-					{
-						return iRet;
-					}
-				}
-				break;
-			case NBT_Node::TAG_Long_Array:
-				{
-					int iRet = GetArrayType<NBT_Node::NBT_Long_Array>(data, szCurrent, nRoot);
-					if (iRet < AllOk)
-					{
-						return iRet;
-					}
-				}
-				break;
-			default:
-				return -1145;//这错误怎么出现的？
-				break;
-			}
-		}
+			iRet = SwitchNBT(data, szCurrent, nRoot, data[szCurrent++]);
+		} while (iRet == AllOk);
 		
 	}
 public:
@@ -489,7 +567,7 @@ public:
 
 	bool GetNBT(const std::string &data)
 	{
-		nRoot = {};
+		nRoot.Clear();//清掉数据
 		size_t szCurrent{ 0 };
 		GetNBT(data, szCurrent, nRoot);
 	}
