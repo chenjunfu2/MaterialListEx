@@ -110,7 +110,7 @@ private:
 			if constexpr (bHasName)
 			{
 				//名称-内含数据的节点插入当前调用栈深度的根节点
-				nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Float *)&tTmpData)) });//无损数据类型转换
+				nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Float *)&tTmpData)) });//无损数据类型转换
 			}
 			else
 			{
@@ -130,7 +130,7 @@ private:
 			if constexpr (bHasName)
 			{
 				//名称-内含数据的节点插入当前调用栈深度的根节点
-				nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Double *)&tTmpData)) });//无损数据类型转换
+				nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Double *)&tTmpData)) });//无损数据类型转换
 			}
 			else
 			{
@@ -149,7 +149,7 @@ private:
 			if constexpr (bHasName)
 			{
 				//名称-内含数据的节点插入当前调用栈深度的根节点
-				nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ tTmpData });
+				nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ tTmpData });
 			}
 			else
 			{
@@ -220,7 +220,7 @@ private:
 		if constexpr (bHasName)
 		{
 			//完成后插入
-			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ std::move(tArray) });
+			nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ std::move(tArray) });
 		}
 		else//无名称，为列表元素
 		{
@@ -255,7 +255,7 @@ private:
 		{
 			//递归完成，所有子节点已到位
 			//取出NBT_Compound挂到自己根部（移动）
-			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(sName, NBT_Node{ std::move(nodeTemp.GetData<NBT_Node::NBT_Compound>()) });
+			nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(sName, NBT_Node{ std::move(nodeTemp.GetData<NBT_Node::NBT_Compound>()) });
 		}
 		else//无名称，为列表元素
 		{
@@ -295,7 +295,7 @@ private:
 		if constexpr (bHasName)
 		{
 			//原位构造
-			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(std::move(sName), NBT_Node{ std::string{data.begin() + szCurrent, data.begin() + (szCurrent + wStrLength)} });
+			nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ std::string{data.begin() + szCurrent, data.begin() + (szCurrent + wStrLength)} });
 		}
 		else//列表元素直接赋值
 		{
@@ -354,7 +354,7 @@ private:
 		//列表可嵌套，所以处理本身嵌套无名情况
 		if constexpr (bHasName)
 		{
-			nRoot.GetData<NBT_Node::NBT_Compound>().emplace(sName, NBT_Node{ std::move(tmpList) });
+			nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(sName, NBT_Node{ std::move(tmpList) });
 		}
 		else//列表中的列表，直接赋值，而不进行插入
 		{
