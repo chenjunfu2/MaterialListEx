@@ -88,7 +88,7 @@ private:
 
 		size_t rangeBeg = (data.size() > VIEW_PRE) ? (szCurrent - VIEW_PRE) : 0;
 		size_t rangeEnd = ((szCurrent + VIEW_SUF) < data.size()) ? (szCurrent + VIEW_SUF) : data.size();
-		printf("Err Data Review:\nCurrent: 0x%02X(%zu)\nData[0x%02X] ~ Data[0x%02X]:\n", szCurrent, szCurrent, rangeBeg, rangeEnd);
+		printf("Err Data Review:\nCurrent: 0x%02X(%zu)\nData Size:0x%02X(%zu)\nData[0x%02X] ~ Data[0x%02X]:\n", szCurrent, szCurrent, data.size(), data.size(), rangeBeg, rangeEnd);
 		
 		for (size_t i = rangeBeg; i < rangeEnd; ++i)
 		{
@@ -98,7 +98,7 @@ private:
 				{
 					printf("\n");
 				}
-				printf("0x%02X:", i);
+				printf("0x%02X: ", i);
 			}
 
 			if (i != szCurrent)
@@ -229,6 +229,12 @@ private:
 	template<typename T, bool bHasName = true>
 	static int GetArrayType(const std::string &data, size_t &szCurrent, NBT_Node &nRoot)
 	{
+		//判断是不是vector<x>
+		if constexpr (!is_std_vector<T>::value)
+		{
+			static_assert(false, "Not a legal type call!");//抛出编译错误
+		}
+
 		//获取NBT的N（名称）
 		std::string sName{};
 		if constexpr (bHasName)//如果无名称则string默认为空
@@ -248,15 +254,9 @@ private:
 		}
 
 		//判断长度是否超过
-		if (szCurrent + dwElementCount * sizeof(T) >= data.size())//保证下方调用安全
+		if (szCurrent + dwElementCount * sizeof(typename T::value_type) >= data.size())//保证下方调用安全
 		{
 			return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": szCurrent + dwElementCount * sizeof(T) >= data.size()");
-		}
-
-		//判断是不是vector<x>
-		if constexpr (!is_std_vector<T>::value)
-		{
-			static_assert(false, "Not a legal type call!");//抛出编译错误
 		}
 		
 		//数组保存
