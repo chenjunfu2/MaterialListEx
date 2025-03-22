@@ -75,7 +75,7 @@ int main(void)
 {
 	uint8_t *pFile;
 	uint64_t qwFileSize;
-	if (!OpenFileAndMapping(".\\test.litematic", &pFile, &qwFileSize))
+	if (!OpenFileAndMapping(".\\散热器水流刷怪塔（有合成器）.litematic", &pFile, &qwFileSize))
 	{
 		return -1;
 	}
@@ -85,18 +85,18 @@ int main(void)
 	if (gzip::is_compressed((char *)pFile, qwFileSize))//如果nbt已压缩，解压
 	{
 		nbt = gzip::decompress((char *)pFile, qwFileSize);
-		//FILE *f = fopen("opt.nbt", "wb");
-		//if (f == NULL)
-		//{
-		//	return -3;
-		//}
-		//
-		//if (fwrite(nbt.c_str(), nbt.size(), 1, f) != 1)
-		//{
-		//	return -4;
-		//}
-		//
-		//fclose(f);
+		FILE *f = fopen("opt.nbt", "wb");
+		if (f == NULL)
+		{
+			return -3;
+		}
+		
+		if (fwrite(nbt.c_str(), nbt.size(), 1, f) != 1)
+		{
+			return -4;
+		}
+		
+		fclose(f);
 	}
 	else//否则
 	{

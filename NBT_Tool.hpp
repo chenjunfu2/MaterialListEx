@@ -52,14 +52,63 @@ private:
 		}
 	}
 
-	enum ErrCode
+	enum ErrCode : int
 	{
 		Compound_End = 1,//结束
 		AllOk = 0,//没有问题
 		OutOfRange = -1,
 		TypeError = -2,
-		WhatTheFuck = -1145,//几乎不可能的错误
+		WhatTheFuck = -3,//几乎不可能的错误 Unknow error
 	};
+
+	static int Error(ErrCode errc, const std::string &data, const size_t &szCurrent)
+	{
+		if (errc >= AllOk)
+		{
+			return (int)errc;
+		}
+
+		static const char *const errReason[] =
+		{
+			"AllOk"
+			"OutOfRange",
+			"TypeError",
+			"WhatTheFuck",
+		};
+		printf("Read Err:\"%s\"\n", errReason[-(int)errc]);
+
+		//如果可以，预览szCurrent前后16字符，否则裁切到边界
+#define VIEW_PRE 16//向前
+#define VIEW_SUF 16//向后
+
+		size_t rangeBeg = (data.size() > VIEW_PRE) ? (szCurrent - VIEW_PRE) : 0;
+		size_t rangeEnd = ((szCurrent + VIEW_SUF) < data.size()) ? (szCurrent + VIEW_SUF) : data.size();
+		printf("Err Data Review:\nCurrent: 0x%02X(%zu)\nData[0x%02X] ~ Data[0x%02X]:\n", szCurrent, szCurrent, rangeBeg, rangeEnd);
+		
+		for (size_t i = rangeBeg; i < rangeEnd; ++i)
+		{
+			if ((i - rangeBeg) % 8 == 0)//输出地址
+			{
+				if (i != rangeBeg)//除去第一个每8个换行
+				{
+					printf("\n");
+				}
+				printf("0x%02X:", i);
+			}
+
+			if (i != szCurrent)
+			{
+				printf(" %02X ", data[i]);
+			}
+			else//如果是当前出错字节，加方括号框起
+			{
+				printf("[%02X]", data[i]);
+			}
+		}
+
+		printf("\nClear and skip all data!\n");
+		return (int)errc;
+	}
 
 
 	static int GetName(const std::string &data, size_t &szCurrent, std::string &sName)
@@ -68,13 +117,13 @@ private:
 		uint16_t wNameLength = 0;//w->word=2*byte
 		if (!ReadBigEndian(data, szCurrent, wNameLength))
 		{
-			return OutOfRange;
+			return Error(OutOfRange, data, szCurrent);
 		}
 
 		//判断长度是否超过
 		if (szCurrent + wNameLength >= data.size())
 		{
-			return OutOfRange;
+			return Error(OutOfRange, data, szCurrent);
 		}
 
 		//解析出名称
@@ -104,7 +153,7 @@ private:
 			uint32_t tTmpData = 0;
 			if (!ReadBigEndian(data, szCurrent, tTmpData))
 			{
-				return OutOfRange;
+				return Error(OutOfRange, data, szCurrent);
 			}
 
 			if constexpr (bHasName)
@@ -124,7 +173,7 @@ private:
 			uint64_t tTmpData = 0;
 			if (!ReadBigEndian(data, szCurrent, tTmpData))
 			{
-				return OutOfRange;
+				return Error(OutOfRange, data, szCurrent);
 			}
 
 			if constexpr (bHasName)
@@ -143,7 +192,7 @@ private:
 			T tTmpData = 0;
 			if (!ReadBigEndian(data, szCurrent, tTmpData))
 			{
-				return OutOfRange;
+				return Error(OutOfRange, data, szCurrent);
 			}
 
 			if constexpr (bHasName)
@@ -190,13 +239,13 @@ private:
 		int32_t dwElementCount = 0;//dw->double-word=4*byte
 		if (!ReadBigEndian(data, szCurrent, dwElementCount))
 		{
-			return OutOfRange;
+			return Error(OutOfRange, data, szCurrent);
 		}
 
 		//判断长度是否超过
 		if (szCurrent + dwElementCount * sizeof(T) >= data.size())//保证下方调用安全
 		{
-			return OutOfRange;
+			return Error(OutOfRange, data, szCurrent);
 		}
 
 		//判断是不是vector<x>
@@ -283,13 +332,13 @@ private:
 		uint16_t wStrLength = 0;//w->word=2*byte
 		if (!ReadBigEndian(data, szCurrent, wStrLength))
 		{
-			return OutOfRange;
+			return Error(OutOfRange, data, szCurrent);
 		}
 
 		//判断长度是否超过
 		if (szCurrent + wStrLength >= data.size())
 		{
-			return OutOfRange;
+			return Error(OutOfRange, data, szCurrent);
 		}
 
 		if constexpr (bHasName)
@@ -324,7 +373,7 @@ private:
 		uint8_t bListElementType = 0;//b=byte
 		if (!ReadBigEndian(data, szCurrent, bListElementType))
 		{
-			return OutOfRange;
+			return Error(OutOfRange, data, szCurrent);
 		}
 
 
@@ -332,7 +381,7 @@ private:
 		int32_t dwListLength = 0;//dw=double-world=4*byte
 		if (!ReadBigEndian(data, szCurrent, dwListLength))
 		{
-			return OutOfRange;
+			return Error(OutOfRange, data, szCurrent);
 		}
 
 		//根据元素类型，读取n次列表
@@ -369,7 +418,7 @@ private:
 	{
 		if (szCurrent >= data.size() && tag != NBT_Node::TAG_End)
 		{
-			return OutOfRange;
+			return Error(OutOfRange, data, szCurrent);
 		}
 
 		int iRet = AllOk;
@@ -456,7 +505,7 @@ private:
 		//节点类型检查：保证当前nRoot是NBT_Node::NBT_Compound类型，否则失败
 		if (!nRoot.TypeHolds<NBT_Node::NBT_Compound>())//类型错误
 		{
-			return TypeError;
+			return Error(TypeError, data, szCurrent);
 		}
 
 		int iRet;
