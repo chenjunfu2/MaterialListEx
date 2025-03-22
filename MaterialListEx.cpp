@@ -1,4 +1,6 @@
-﻿#define ZLIB_CONST
+﻿#include "MemoryLeakCheck.hpp"
+
+#define ZLIB_CONST
 #include <zlib.h>
 
 #include <compress.hpp>

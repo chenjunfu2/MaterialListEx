@@ -58,7 +58,15 @@ private:
 		AllOk = 0,//没有问题
 		OutOfRange = -1,
 		TypeError = -2,
-		WhatTheFuck = -3,//几乎不可能的错误 Unknow error
+		UnknowError = -3,//几乎不可能的错误
+	};
+
+	static inline const char *const errReason[] =
+	{
+		"AllOk",
+		"OutOfRange",
+		"TypeError",
+		"UnknowError",
 	};
 
 	static int Error(ErrCode errc, const std::string &data, const size_t &szCurrent)
@@ -68,13 +76,6 @@ private:
 			return (int)errc;
 		}
 
-		static const char *const errReason[] =
-		{
-			"AllOk"
-			"OutOfRange",
-			"TypeError",
-			"WhatTheFuck",
-		};
 		printf("Read Err:\"%s\"\n", errReason[-(int)errc]);
 
 		//如果可以，预览szCurrent前后16字符，否则裁切到边界
@@ -492,7 +493,7 @@ private:
 			break;
 		default:
 			{
-				iRet = WhatTheFuck;//这错误怎么出现的？
+				iRet = UnknowError;//这错误怎么出现的？
 			}
 			break;
 		}
