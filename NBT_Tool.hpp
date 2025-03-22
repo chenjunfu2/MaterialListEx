@@ -103,11 +103,11 @@ private:
 
 			if (i != szCurrent)
 			{
-				printf(" %02X ", data[i]);
+				printf(" %02X ", (uint8_t)data[i]);
 			}
 			else//如果是当前出错字节，加方括号框起
 			{
-				printf("[%02X]", data[i]);
+				printf("[%02X]", (uint8_t)data[i]);
 			}
 		}
 
@@ -254,7 +254,7 @@ private:
 		}
 
 		//判断长度是否超过
-		if (szCurrent + dwElementCount * sizeof(typename T::value_type) >= data.size())//保证下方调用安全
+		if (szCurrent + dwElementCount * sizeof(T::value_type) >= data.size())//保证下方调用安全
 		{
 			return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": szCurrent + dwElementCount * sizeof(T) >= data.size()");
 		}

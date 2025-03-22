@@ -71,13 +71,14 @@ bool UnMappingAndCloseFile(uint8_t *pFileClose)
 	return true;
 }
 
-
+//#define NBT_FILE_NAME ".\\散热器水流刷怪塔（有合成器）.litematic"
+#define NBT_FILE_NAME ".\\opt.nbt"
 
 int main(void)
 {
 	uint8_t *pFile;
 	uint64_t qwFileSize;
-	if (!OpenFileAndMapping(".\\散热器水流刷怪塔（有合成器）.litematic", &pFile, &qwFileSize))
+	if (!OpenFileAndMapping(NBT_FILE_NAME, &pFile, &qwFileSize))
 	{
 		return -1;
 	}
