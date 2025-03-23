@@ -71,7 +71,7 @@ private:
 	};
 
 	//使用变参形参表+vprintf代理复杂输出，给出更多扩展信息
-	_Check_return_opt_ static int _cdecl Error(ErrCode errc, const std::string &data, const size_t &szCurrent, const char *const cpExtraInfo = NULL, ...)
+	static int _cdecl Error(ErrCode errc, const std::string &data, const size_t &szCurrent, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...)//gcc使用__attribute__((format))
 	{
 		if (errc >= AllOk)
 		{
@@ -83,7 +83,7 @@ private:
 		if (cpExtraInfo != NULL)
 		{
 			printf("Extra Info:\"");
-			va_list args;//边长形参
+			va_list args;//变长形参
 			va_start(args, cpExtraInfo);
 			vprintf(cpExtraInfo, args);
 			va_end(args);
@@ -96,7 +96,8 @@ private:
 
 		size_t rangeBeg = (szCurrent > VIEW_PRE) ? (szCurrent - VIEW_PRE) : 0;//上边界裁切
 		size_t rangeEnd = ((szCurrent + VIEW_SUF) < data.size()) ? (szCurrent + VIEW_SUF) : data.size();//下边界裁切
-		printf("Err Data Review:\nCurrent: 0x%02X(%zu)\nData Size: 0x%02X(%zu)\nData[0x%02X(%zu)] ~ Data[0x%02X(%zu)]:\n", szCurrent, szCurrent, data.size(), data.size(), rangeBeg, rangeBeg, rangeEnd, rangeEnd);
+		printf("Err Data Review:\nCurrent: 0x%02llX(%zu)\nData Size: 0x%02llX(%zu)\nData[0x%02llX(%zu)] ~ Data[0x%02llX(%zu)]:\n",
+			(uint64_t)szCurrent, (uint64_t)szCurrent, (uint64_t)data.size(), (uint64_t)data.size(), (uint64_t)rangeBeg, (uint64_t)rangeBeg, (uint64_t)rangeEnd, (uint64_t)rangeEnd);
 		
 		for (size_t i = rangeBeg; i < rangeEnd; ++i)
 		{
@@ -106,7 +107,7 @@ private:
 				{
 					printf("\n");
 				}
-				printf("0x%02X: ", i);
+				printf("0x%02llX: ", (uint64_t)i);
 			}
 
 			if (i != szCurrent)
@@ -137,7 +138,7 @@ private:
 		if (szCurrent + wNameLength >= data.size())
 		{
 			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": szCurrent[%zu] + wNameLength[%zu] [%zu]>= data.size()[%zu]",
-				szCurrent, wNameLength, szCurrent + wNameLength, data.size());
+				szCurrent, wNameLength, szCurrent + (size_t)wNameLength, data.size());
 		}
 
 		//解析出名称
@@ -266,7 +267,7 @@ private:
 		if (szCurrent + dwElementCount * sizeof(T::value_type) >= data.size())//保证下方调用安全
 		{
 			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": szCurrent[%zu] + dwElementCount[%zu] * sizeof(T::value_type)[%zu] [%zu]>= data.size()[%zu]", 
-				szCurrent, dwElementCount, sizeof(T::value_type), szCurrent + dwElementCount * sizeof(T::value_type), data.size());
+				szCurrent, (size_t)dwElementCount, sizeof(T::value_type), szCurrent + (size_t)dwElementCount * sizeof(T::value_type), data.size());
 		}
 		
 		//数组保存
@@ -354,7 +355,7 @@ private:
 		if (szCurrent + wStrLength >= data.size())
 		{
 			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": szCurrent[%zu] + wStrLength[%zu] [%zu]>= data.size()[%zu]",
-				szCurrent, wStrLength, szCurrent + wStrLength, data.size());
+				szCurrent, (size_t)wStrLength, szCurrent + (size_t)wStrLength, data.size());
 		}
 
 		if constexpr (bHasName)
@@ -432,7 +433,7 @@ private:
 	template<bool bHasName = true>
 	static inline int SwitchNBT(const std::string &data, size_t &szCurrent, NBT_Node &nRoot, NBT_Node::NBT_TAG tag)
 	{
-		if (szCurrent >= data.size() && tag != NBT_Node::TAG_End)
+		if (szCurrent >= data.size() && tag != NBT_Node::TAG_End)//如果tag当前就是结尾，则直接下去处理结尾返回
 		{
 			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": szCurrent[%zu] >= data.size()[%zu]", szCurrent, data.size());
 		}
