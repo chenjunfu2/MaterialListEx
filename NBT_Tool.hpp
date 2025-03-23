@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NBT_Node.hpp"
+#include <typeinfo>
 
 class NBT_Tool
 {
@@ -56,39 +57,46 @@ private:
 	{
 		Compound_End = 1,//结束
 		AllOk = 0,//没有问题
-		OutOfRange = -1,
-		TypeError = -2,
-		UnknowError = -3,//几乎不可能的错误
+		InternalTypeError = -1,//变体NBT节点类型错误（代码问题）
+		OutOfRangeError = -2,//（NBT内部长度错误溢出）（NBT文件问题）
+		NbtTypeTagError = -3,//NBT标签类型错误（NBT文件问题）
 	};
 
 	static inline const char *const errReason[] =
 	{
 		"AllOk",
-		"OutOfRange",
-		"TypeError",
-		"UnknowError",
+		"InternalTypeError",
+		"OutOfRangeError",
+		"NbtTypeTagError",
 	};
 
-	static int Error(ErrCode errc, const std::string &data, const size_t &szCurrent, const char *const cpExtraInfo = NULL)
+	//使用变参形参表+vprintf代理复杂输出，给出更多扩展信息
+	_Check_return_opt_ static int _cdecl Error(ErrCode errc, const std::string &data, const size_t &szCurrent, const char *const cpExtraInfo = NULL, ...)
 	{
 		if (errc >= AllOk)
 		{
 			return (int)errc;
 		}
 
+		//上方if保证errc为负，此处反转访问保证无问题（除非代码传入异常错误码）
 		printf("Read Err:\"%s\"\n", errReason[-(int)errc]);
 		if (cpExtraInfo != NULL)
 		{
-			printf("Extra Info:\"%s\"\n", cpExtraInfo);
+			printf("Extra Info:\"");
+			va_list args;//边长形参
+			va_start(args, cpExtraInfo);
+			vprintf(cpExtraInfo, args);
+			va_end(args);
+			printf("\"\n");
 		}
 
-		//如果可以，预览szCurrent前后16字符，否则裁切到边界
-#define VIEW_PRE 16//向前
-#define VIEW_SUF 16//向后
+		//如果可以，预览szCurrent前后n个字符，否则裁切到边界
+#define VIEW_PRE 32//向前
+#define VIEW_SUF (32 + 8)//向后
 
-		size_t rangeBeg = (data.size() > VIEW_PRE) ? (szCurrent - VIEW_PRE) : 0;
-		size_t rangeEnd = ((szCurrent + VIEW_SUF) < data.size()) ? (szCurrent + VIEW_SUF) : data.size();
-		printf("Err Data Review:\nCurrent: 0x%02X(%zu)\nData Size:0x%02X(%zu)\nData[0x%02X] ~ Data[0x%02X]:\n", szCurrent, szCurrent, data.size(), data.size(), rangeBeg, rangeEnd);
+		size_t rangeBeg = (szCurrent > VIEW_PRE) ? (szCurrent - VIEW_PRE) : 0;//上边界裁切
+		size_t rangeEnd = ((szCurrent + VIEW_SUF) < data.size()) ? (szCurrent + VIEW_SUF) : data.size();//下边界裁切
+		printf("Err Data Review:\nCurrent: 0x%02X(%zu)\nData Size: 0x%02X(%zu)\nData[0x%02X(%zu)] ~ Data[0x%02X(%zu)]:\n", szCurrent, szCurrent, data.size(), data.size(), rangeBeg, rangeBeg, rangeEnd, rangeEnd);
 		
 		for (size_t i = rangeBeg; i < rangeEnd; ++i)
 		{
@@ -122,13 +130,14 @@ private:
 		uint16_t wNameLength = 0;//w->word=2*byte
 		if (!ReadBigEndian(data, szCurrent, wNameLength))
 		{
-			return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": wNameLength Read");
+			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": wNameLength Read");
 		}
 
 		//判断长度是否超过
 		if (szCurrent + wNameLength >= data.size())
 		{
-			return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": wNameLength >= data.size()");
+			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": szCurrent[%zu] + wNameLength[%zu] [%zu]>= data.size()[%zu]",
+				szCurrent, wNameLength, szCurrent + wNameLength, data.size());
 		}
 
 		//解析出名称
@@ -158,7 +167,7 @@ private:
 			uint32_t tTmpData = 0;
 			if (!ReadBigEndian(data, szCurrent, tTmpData))
 			{
-				return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": tTmpData Read");
+				return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": tTmpData Read");
 			}
 
 			if constexpr (bHasName)
@@ -178,7 +187,7 @@ private:
 			uint64_t tTmpData = 0;
 			if (!ReadBigEndian(data, szCurrent, tTmpData))
 			{
-				return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": tTmpData Read");
+				return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": tTmpData Read");
 			}
 
 			if constexpr (bHasName)
@@ -197,7 +206,7 @@ private:
 			T tTmpData = 0;
 			if (!ReadBigEndian(data, szCurrent, tTmpData))
 			{
-				return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": tTmpData Read");
+				return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": tTmpData Read");
 			}
 
 			if constexpr (bHasName)
@@ -250,13 +259,14 @@ private:
 		int32_t dwElementCount = 0;//dw->double-word=4*byte
 		if (!ReadBigEndian(data, szCurrent, dwElementCount))
 		{
-			return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": dwElementCount Read");
+			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": dwElementCount Read");
 		}
 
 		//判断长度是否超过
 		if (szCurrent + dwElementCount * sizeof(T::value_type) >= data.size())//保证下方调用安全
 		{
-			return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": szCurrent + dwElementCount * sizeof(T) >= data.size()");
+			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": szCurrent[%zu] + dwElementCount[%zu] * sizeof(T::value_type)[%zu] [%zu]>= data.size()[%zu]", 
+				szCurrent, dwElementCount, sizeof(T::value_type), szCurrent + dwElementCount * sizeof(T::value_type), data.size());
 		}
 		
 		//数组保存
@@ -337,13 +347,14 @@ private:
 		uint16_t wStrLength = 0;//w->word=2*byte
 		if (!ReadBigEndian(data, szCurrent, wStrLength))
 		{
-			return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": wStrLength Read");
+			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": wStrLength Read");
 		}
 
 		//判断长度是否超过
 		if (szCurrent + wStrLength >= data.size())
 		{
-			return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": szCurrent + wStrLength >= data.size()");
+			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": szCurrent[%zu] + wStrLength[%zu] [%zu]>= data.size()[%zu]",
+				szCurrent, wStrLength, szCurrent + wStrLength, data.size());
 		}
 
 		if constexpr (bHasName)
@@ -378,7 +389,7 @@ private:
 		uint8_t bListElementType = 0;//b=byte
 		if (!ReadBigEndian(data, szCurrent, bListElementType))
 		{
-			return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": bListElementType Read");
+			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": bListElementType Read");
 		}
 
 
@@ -386,7 +397,7 @@ private:
 		int32_t dwListLength = 0;//dw=double-world=4*byte
 		if (!ReadBigEndian(data, szCurrent, dwListLength))
 		{
-			return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": dwListLength Read");
+			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": dwListLength Read");
 		}
 
 		//根据元素类型，读取n次列表
@@ -423,7 +434,7 @@ private:
 	{
 		if (szCurrent >= data.size() && tag != NBT_Node::TAG_End)
 		{
-			return Error(OutOfRange, data, szCurrent, __FUNCSIG__ ": szCurrent >= data.size()");
+			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": szCurrent[%zu] >= data.size()[%zu]", szCurrent, data.size());
 		}
 
 		int iRet = AllOk;
@@ -495,9 +506,9 @@ private:
 				iRet = GetArrayType<NBT_Node::NBT_Long_Array, bHasName>(data, szCurrent, nRoot);
 			}
 			break;
-		default:
+		default://NBT内标数据签错误
 			{
-				iRet = UnknowError;//这错误怎么出现的？
+				iRet = Error(NbtTypeTagError, data, szCurrent, __FUNCSIG__ ": NBT Tag switch default: Unknow Type Tag[%02X(%d)]", tag, tag);//此处不进行提前返回，往后默认返回处理
 			}
 			break;
 		}
@@ -510,7 +521,7 @@ private:
 		//节点类型检查：保证当前nRoot是NBT_Node::NBT_Compound类型，否则失败
 		if (!nRoot.TypeHolds<NBT_Node::NBT_Compound>())//类型错误
 		{
-			return Error(TypeError, data, szCurrent, __FUNCSIG__ ":nRoot is not type: [NBT_Node::NBT_Compound]");
+			return Error(InternalTypeError, data, szCurrent, __FUNCSIG__ ": nRoot is not type: [%s]", typeid(NBT_Node::NBT_Compound).name());
 		}
 
 		int iRet;
@@ -554,7 +565,8 @@ public:
 private:
 	void PrintSwitch(const NBT_Node &nRoot, int iLevel) const
 	{
-		switch (nRoot.GetTag())
+		auto tag = nRoot.GetTag();
+		switch (tag)
 		{
 		case NBT_Node::TAG_End:
 			{
@@ -682,7 +694,7 @@ private:
 			break;
 		default:
 			{
-				printf("[Unknow Type]");
+				printf("[Unknow NBT Tag Type [%02X(%d)]]", tag, tag);
 			}
 			break;
 		}

@@ -11,7 +11,7 @@
 class NBT_Node
 {
 public:
-	enum NBT_TAG : size_t
+	enum NBT_TAG : uint8_t
 	{
 		TAG_End = 0,	//½áÊøÏî
 		TAG_Byte,		//int8_t
