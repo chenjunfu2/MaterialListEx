@@ -37,12 +37,12 @@ public:
 	using NBT_Long			= int64_t;
 	using NBT_Float			= std::conditional_t<(sizeof(float) == sizeof(uint32_t)), float, uint32_t>;//通过编译期确认类型大小来选择正确的类型，优先浮点类型，如果失败则替换为对应的可用类型
 	using NBT_Double		= std::conditional_t<(sizeof(double) == sizeof(uint64_t)), double, uint64_t>;
-	using NBT_Byte_Array	= std::vector<int8_t>;
-	using NBT_Int_Array		= std::vector<int32_t>;
-	using NBT_Long_Array	= std::vector<int64_t>;
-	using NBT_String		= std::string;
+	using NBT_Byte_Array	= std::vector<NBT_Byte>;
+	using NBT_Int_Array		= std::vector<NBT_Int>;
+	using NBT_Long_Array	= std::vector<NBT_Long>;
+	using NBT_String		= std::string;//代办：mutf8解码到utf8
 	using NBT_List			= std::vector<NBT_Node>;//存储一系列同类型标签的有效负载（无标签 ID 或名称）//原先为list，因为mc内list也通过下标访问，改为vector模拟
-	using NBT_Compound		= std::map<std::string, NBT_Node>;//挂在序列下的内容都通过map绑定名称
+	using NBT_Compound		= std::map<NBT_String, NBT_Node>;//挂在序列下的内容都通过map绑定名称
 
 	template<typename... Ts> struct TypeList{};
 	using NBT_TypeList = TypeList
