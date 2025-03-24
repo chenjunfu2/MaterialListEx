@@ -88,7 +88,7 @@ int main(void)
 	if (gzip::is_compressed((char *)pFile, qwFileSize))//如果nbt已压缩，解压
 	{
 		nbt = gzip::decompress((char *)pFile, qwFileSize);
-		FILE *f = fopen("opt.nbt", "wb");
+		FILE *f = fopen("opt.nbt", "wb");//覆盖输出一个解压过的文件，用于在报错发生后供分析
 		if (f == NULL)
 		{
 			return -3;
@@ -115,8 +115,49 @@ int main(void)
 	
 	//以下使用nbt
 	NBT_Tool nt(nbt);
-	nt.Print();
+	//nt.Print();
 	//NBT_Node n;
+
+
+	const auto &tmp = nt.GetRoot().GetData<NBT_Node::NBT_Compound>();//获取根下第一个compound，正常情况下根部下只有这一个compound
+	if (tmp.size() != 1)
+	{
+		printf("错误的根大小");
+		return -1;
+	}
+
+
+	const auto &root = *tmp.begin();
+	//直接获取根下第一键
+
+	printf("root:\"%s\"\n", root.first.c_str());
+	
+	//获取regions，也就是区域，一个投影可能有多个区域（选区）
+	const auto &Regions = root.second.Compound().at("Regions").Compound();
+	for (const auto &[RgName, RgVal] : Regions)//遍历选区
+	{
+		//输出选区名
+		printf("======%s======", RgName.c_str());
+		NBT_Node::NBT_Int posX, posY, posZ;
+		NBT_Node::NBT_Int sizeX, sizeY, sizeZ;
+		const auto &Position = RgVal.Compound().at("Position");
+		posX = Position.Compound().at("x").Int();
+		posY = Position.Compound().at("y").Int();
+		posZ = Position.Compound().at("z").Int();
+		const auto &Size = RgVal.Compound().at("Size");
+		sizeX = Size.Compound().at("x").Int();
+		sizeY = Size.Compound().at("y").Int();
+		sizeZ = Size.Compound().at("z").Int();
+
+
+		
+
+
+
+	}
+
+
+
 
 	printf("\nok!\n");
 

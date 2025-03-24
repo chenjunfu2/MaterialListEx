@@ -1,7 +1,6 @@
 #pragma once
 
 #include "NBT_Node.hpp"
-#include <typeinfo>
 
 class NBT_Tool
 {
@@ -606,15 +605,15 @@ public:
 	NBT_Tool(void) = default;
 	NBT_Tool(const std::string &data)
 	{
-		GetNBT(data);
+		SetNBT(data);
 	}
 	~NBT_Tool(void) = default;
 
-	bool GetNBT(const std::string &data)
-	{
-		nRoot.Clear();//清掉数据
+	bool SetNBT(const std::string &data)//设置nbt到类内
+	{//对于用户来说是设置给类
+		nRoot.Clear();//清掉原来的数据（注意如果nbt较大的情况下，这是一个较深的递归清理过程，不排除栈空间不足导致清理失败）
 		size_t szCurrent{ 0 };
-		return GetNBT(data, szCurrent, nRoot) == Compound_End;
+		return GetNBT(data, szCurrent, nRoot) == Compound_End;//对于类来说是从用户给的data获得（get）nbt数据
 	}
 
 	NBT_Node& GetRoot(void)

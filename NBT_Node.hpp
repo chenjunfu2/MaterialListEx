@@ -7,6 +7,7 @@
 #include <type_traits>
 #include <string>
 #include <stdint.h>
+#include <typeinfo>
 
 class NBT_Node
 {
@@ -151,10 +152,52 @@ public:
 		return std::get<T>(data);
 	}
 
+	//强制要求存在版本（自带检查）
+	template<typename T>
+	const T &HasData() const
+	{
+		if (!TypeHolds<T>(data))
+		{
+			throw std::runtime_error(std::string{} + "NBT_Node Not Has Type[" + typeid(T).name() + "] Data");
+		}
+
+		return std::get<T>(data);
+	}
+
+	template<typename T>
+	T &HasData()
+	{
+		if (!TypeHolds<T>(data))
+		{
+			throw std::runtime_error(std::string{} + "NBT_Node Not Has Type[" + typeid(T).name() + "] Data");
+		}
+
+		return std::get<T>(data);
+	}
+
 	// 类型检查
 	template<typename T>
 	bool TypeHolds() const
 	{
 		return std::holds_alternative<T>(data);
 	}
+
+	//针对每种类型重载一个方便的函数
+#define TYPE_GET_FUNC(type) \
+const NBT_##type &##type() const {return std::get<NBT_##type>(data);}\
+NBT_##type &##type() {return std::get<NBT_##type>(data);}\
+
+	TYPE_GET_FUNC(End);
+	TYPE_GET_FUNC(Byte);
+	TYPE_GET_FUNC(Short);
+	TYPE_GET_FUNC(Int);
+	TYPE_GET_FUNC(Long);
+	TYPE_GET_FUNC(Float);
+	TYPE_GET_FUNC(Double);
+	TYPE_GET_FUNC(Byte_Array);
+	TYPE_GET_FUNC(Int_Array);
+	TYPE_GET_FUNC(Long_Array);
+	TYPE_GET_FUNC(String);
+	TYPE_GET_FUNC(List);
+	TYPE_GET_FUNC(Compound);
 };
