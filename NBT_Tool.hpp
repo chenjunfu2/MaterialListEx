@@ -92,7 +92,7 @@ private:
 				return (int)code;
 			}
 			//上方if保证errc为负，此处反转访问保证无问题（除非代码传入异常错误码）
-			printf("Read Err[%d]: \"%s\"\n", code, errReason[-(int)code]);
+			printf("Read Err[%d]: \"%s\"\n", (int)code, errReason[-(int)code]);
 		}
 		else if constexpr (std::is_same<T, WarnCode>::value)
 		{
@@ -101,7 +101,7 @@ private:
 				return (int)code;
 			}
 			//输出warn错误
-			printf("Read Warn[%d]: \"%s\"\n", code, warnReason[(int)code]);
+			printf("Read Warn[%d]: \"%s\"\n", (int)code, warnReason[(int)code]);
 		}
 		else
 		{
@@ -178,7 +178,7 @@ private:
 		if (szCurrent + wNameLength >= data.size())
 		{
 			return Error(OutOfRangeError, data, szCurrent, __FUNCSIG__ ": szCurrent[%zu] + wNameLength[%zu] [%zu]>= data.size()[%zu]",
-				szCurrent, wNameLength, szCurrent + (size_t)wNameLength, data.size());
+				szCurrent, (size_t)wNameLength, szCurrent + (size_t)wNameLength, data.size());
 		}
 
 		//解析出名称
@@ -217,7 +217,7 @@ private:
 				auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Float *)&tTmpData)) });//无损数据类型转换
 				if (!ret.second)//插入失败，元素已存在
 				{
-					Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName, typeid(NBT_Node::NBT_Float).name());
+					Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName.c_str(), typeid(NBT_Node::NBT_Float).name());
 				}
 			}
 			else
@@ -241,7 +241,7 @@ private:
 				auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Double *)&tTmpData)) });//无损数据类型转换
 				if (!ret.second)//插入失败，元素已存在
 				{
-					Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName, typeid(NBT_Node::NBT_Double).name());
+					Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName.c_str(), typeid(NBT_Node::NBT_Double).name());
 				}
 			}
 			else
@@ -264,7 +264,7 @@ private:
 				auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ tTmpData });
 				if (!ret.second)//插入失败，元素已存在
 				{
-					Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName, typeid(tTmpData).name());
+					Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName.c_str(), typeid(tTmpData).name());
 				}
 			}
 			else
@@ -340,7 +340,7 @@ private:
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ std::move(tArray) });
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName, typeid(tArray).name());
+				Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName.c_str(), typeid(tArray).name());
 			}
 		}
 		else//无名称，为列表元素
@@ -379,7 +379,7 @@ private:
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(sName, NBT_Node{ std::move(nodeTemp.GetData<NBT_Node::NBT_Compound>()) });
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName, typeid(NBT_Node::NBT_Compound).name());
+				Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName.c_str(), typeid(NBT_Node::NBT_Compound).name());
 			}
 		}
 		else//无名称，为列表元素
@@ -424,7 +424,7 @@ private:
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ std::string{data.begin() + szCurrent, data.begin() + (szCurrent + wStrLength)} });
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName, typeid(std::string).name());
+				Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName.c_str(), typeid(std::string).name());
 			}
 		}
 		else//列表元素直接赋值
@@ -487,7 +487,7 @@ private:
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(sName, NBT_Node{ std::move(tmpList) });
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName, typeid(tmpList).name());
+				Error(ElementExistsWarn, data, szCurrent, __FUNCSIG__ ": the \"%s\"[%s] data already exist!", sName.c_str(), typeid(tmpList).name());
 			}
 		}
 		else//列表中的列表，直接赋值，而不进行插入
