@@ -248,9 +248,6 @@ int main(void)
 		}
 	}
 
-
-
-
 	printf("\nok!\n");
 
 	return 114514;

@@ -186,6 +186,7 @@ public:
 #define TYPE_GET_FUNC(type) \
 const NBT_##type &##type() const {return std::get<NBT_##type>(data);}\
 NBT_##type &##type() {return std::get<NBT_##type>(data);}\
+bool Is##type() const {return std::holds_alternative<NBT_##type>(data);}
 
 	TYPE_GET_FUNC(End);
 	TYPE_GET_FUNC(Byte);
