@@ -154,22 +154,22 @@ public:
 
 	//强制要求存在版本（自带检查）
 	template<typename T>
-	const T &HasData() const
+	const T &AtData() const
 	{
-		if (!TypeHolds<T>(data))
+		if (!std::holds_alternative<T>(data))
 		{
-			throw std::runtime_error(std::string{} + "NBT_Node Not Has Type[" + typeid(T).name() + "] Data");
+			throw std::runtime_error(std::string{} + "NBT_Node is not type[" + typeid(T).name() + "]");
 		}
 
 		return std::get<T>(data);
 	}
 
 	template<typename T>
-	T &HasData()
+	T &AtData()
 	{
-		if (!TypeHolds<T>(data))
+		if (!std::holds_alternative<T>(data))
 		{
-			throw std::runtime_error(std::string{} + "NBT_Node Not Has Type[" + typeid(T).name() + "] Data");
+			throw std::runtime_error(std::string{} + "NBT_Node is not type[" + typeid(T).name() + "]");
 		}
 
 		return std::get<T>(data);
@@ -183,9 +183,16 @@ public:
 	}
 
 	//针对每种类型重载一个方便的函数
+	/*
+		纯类型名函数：直接获取此类型，不做任何检查，由标准库std::get具体实现决定
+		At开头的类型名函数：强制获取类型，如果成功，获得类型，否则此操作失败抛出异常
+		Is开头的类型名函数：判断当前NBT_Node是否为此类型
+	*/
 #define TYPE_GET_FUNC(type) \
 const NBT_##type &##type() const {return std::get<NBT_##type>(data);}\
 NBT_##type &##type() {return std::get<NBT_##type>(data);}\
+const NBT_##type &At##type() const {if (!std::holds_alternative<NBT_##type>(data)){throw std::runtime_error(std::string{} + "NBT_Node is not type[" + typeid(NBT_##type).name() + "]");} return std::get<NBT_##type>(data);}\
+NBT_##type &At##type() {if (!std::holds_alternative<NBT_##type>(data)){throw std::runtime_error(std::string{} + "NBT_Node is not type[" + typeid(NBT_##type).name() + "]");} return std::get<NBT_##type>(data);}\
 bool Is##type() const {return std::holds_alternative<NBT_##type>(data);}
 
 	TYPE_GET_FUNC(End);
