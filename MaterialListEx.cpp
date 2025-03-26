@@ -13,7 +13,7 @@
 #include <string>
 #include <Windows.h>
 
-#include "NBT_Tool.hpp"
+#include "NBT_Reader.hpp"
 #include "Calc_Tool.hpp"
 
 struct BlockInfo
@@ -24,49 +24,49 @@ struct BlockInfo
 
 bool OpenFileAndMapping(const char *pcFileName, uint8_t **pFileRet, uint64_t *pFileSizeRet)
 {
-	//打开输入文件并映射
-	HANDLE hReadFile = CreateFileA(pcFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hReadFile == INVALID_HANDLE_VALUE)
-	{
-		return false;
-	}
+//打开输入文件并映射
+HANDLE hReadFile = CreateFileA(pcFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+if (hReadFile == INVALID_HANDLE_VALUE)
+{
+	return false;
+}
 
-	//获得文件大小
-	LARGE_INTEGER liFileSize = { 0 };
-	if (!GetFileSizeEx(hReadFile, &liFileSize))
-	{
-		CloseHandle(hReadFile);//关闭输入文件
-		return false;
-	}
-	*pFileSizeRet = liFileSize.QuadPart;
-
-	//判断文件为空
-	if (liFileSize.QuadPart == 0)
-	{
-		CloseHandle(hReadFile);//关闭输入文件
-		return false;
-	}
-
-	//创建文件映射对象
-	HANDLE hFileMapping = CreateFileMappingW(hReadFile, NULL, PAGE_READONLY, 0, 0, NULL);
-	if (!hFileMapping)
-	{
-		CloseHandle(hReadFile);//关闭输入文件
-		return false;
-	}
+//获得文件大小
+LARGE_INTEGER liFileSize = { 0 };
+if (!GetFileSizeEx(hReadFile, &liFileSize))
+{
 	CloseHandle(hReadFile);//关闭输入文件
+	return false;
+}
+*pFileSizeRet = liFileSize.QuadPart;
 
-	//映射文件到内存
-	LPVOID lpReadMem = MapViewOfFile(hFileMapping, FILE_MAP_READ, 0, 0, 0);
-	if (!lpReadMem)
-	{
-		CloseHandle(hFileMapping);//关闭文件映射对象
-		return false;
-	}
+//判断文件为空
+if (liFileSize.QuadPart == 0)
+{
+	CloseHandle(hReadFile);//关闭输入文件
+	return false;
+}
+
+//创建文件映射对象
+HANDLE hFileMapping = CreateFileMappingW(hReadFile, NULL, PAGE_READONLY, 0, 0, NULL);
+if (!hFileMapping)
+{
+	CloseHandle(hReadFile);//关闭输入文件
+	return false;
+}
+CloseHandle(hReadFile);//关闭输入文件
+
+//映射文件到内存
+LPVOID lpReadMem = MapViewOfFile(hFileMapping, FILE_MAP_READ, 0, 0, 0);
+if (!lpReadMem)
+{
 	CloseHandle(hFileMapping);//关闭文件映射对象
+	return false;
+}
+CloseHandle(hFileMapping);//关闭文件映射对象
 
-	*pFileRet = (uint8_t *)lpReadMem;
-	return true;
+*pFileRet = (uint8_t *)lpReadMem;
+return true;
 }
 
 bool UnMappingAndCloseFile(uint8_t *pFileClose)
@@ -100,12 +100,12 @@ int main(void)
 		{
 			return -3;
 		}
-		
+
 		if (fwrite(nbt.c_str(), nbt.size(), 1, f) != 1)
 		{
 			return -4;
 		}
-		
+
 		fclose(f);
 	}
 	else//否则
@@ -114,19 +114,23 @@ int main(void)
 		nbt.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
 		memcpy(nbt.data(), pFile, qwFileSize);//直接写入data
 	}
-	
+
 	if (!UnMappingAndCloseFile(pFile))
 	{
 		return -2;
 	}
-	
+
 	//以下使用nbt
-	NBT_Tool nt(nbt);
+	NBT_Reader nt;
+	if(!nt.SetNBT(nbt))
+	{
+		return -1;
+	}
 	//nt.Print();
 	//NBT_Node n;
 
 
-	const auto &tmp = nt.GetRoot().GetData<NBT_Node::NBT_Compound>();//获取根下第一个compound，正常情况下根部下只有这一个compound
+	const auto &tmp = nt.GetRoot().AtCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
 	if (tmp.size() != 1)
 	{
 		printf("错误的根大小");
@@ -250,5 +254,5 @@ int main(void)
 
 	printf("\nok!\n");
 
-	return 114514;
+	return 0;
 }
