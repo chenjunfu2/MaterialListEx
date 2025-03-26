@@ -79,8 +79,8 @@ bool UnMappingAndCloseFile(uint8_t *pFileClose)
 	return true;
 }
 
-//#define NBT_FILE_NAME ".\\散热器水流刷怪塔（有合成器）.litematic"
-#define NBT_FILE_NAME ".\\opt.nbt"
+#define NBT_FILE_NAME ".\\HY服全物品备份.litematic"
+//#define NBT_FILE_NAME ".\\opt.nbt"
 
 int main(void)
 {
@@ -123,7 +123,7 @@ int main(void)
 
 	//以下使用nbt
 	NBT_Reader nt;
-	if (!nt.SetNBT(nbt, 0, 5))
+	if (!nt.SetNBT(nbt))
 	{
 		return -1;
 	}
@@ -132,7 +132,7 @@ int main(void)
 		printf("Read Ok!\n");
 	}
 
-	NBT_Helper::Print(nt.GetRoot());
+	//NBT_Helper::Print(nt.GetRoot());
 
 
 	const auto &tmp = nt.GetRoot().AtCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
