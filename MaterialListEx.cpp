@@ -11,119 +11,93 @@
 
 #include <stdio.h>
 #include <string>
-#include <Windows.h>
 
 #include "NBT_Reader.hpp"
 #include "Calc_Tool.hpp"
 #include "NBT_Helper.hpp"
 
-struct BlockInfo
+int main(int argc, char *argv[])
 {
-	std::string sName = {};
-	size_t szBlockCount = 0;
-};
-
-bool OpenFileAndMapping(const char *pcFileName, uint8_t **pFileRet, uint64_t *pFileSizeRet)
-{
-	//打开输入文件并映射
-	HANDLE hReadFile = CreateFileA(pcFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hReadFile == INVALID_HANDLE_VALUE)
+	if (argc != 2)
 	{
-		return false;
-	}
-
-	//获得文件大小
-	LARGE_INTEGER liFileSize = { 0 };
-	if (!GetFileSizeEx(hReadFile, &liFileSize))
-	{
-		CloseHandle(hReadFile);//关闭输入文件
-		return false;
-	}
-	*pFileSizeRet = liFileSize.QuadPart;
-
-	//判断文件为空
-	if (liFileSize.QuadPart == 0)
-	{
-		CloseHandle(hReadFile);//关闭输入文件
-		return false;
-	}
-
-	//创建文件映射对象
-	HANDLE hFileMapping = CreateFileMappingW(hReadFile, NULL, PAGE_READONLY, 0, 0, NULL);
-	if (!hFileMapping)
-	{
-		CloseHandle(hReadFile);//关闭输入文件
-		return false;
-	}
-	CloseHandle(hReadFile);//关闭输入文件
-
-	//映射文件到内存
-	LPVOID lpReadMem = MapViewOfFile(hFileMapping, FILE_MAP_READ, 0, 0, 0);
-	if (!lpReadMem)
-	{
-		CloseHandle(hFileMapping);//关闭文件映射对象
-		return false;
-	}
-	CloseHandle(hFileMapping);//关闭文件映射对象
-
-	*pFileRet = (uint8_t *)lpReadMem;
-	return true;
-}
-
-bool UnMappingAndCloseFile(uint8_t *pFileClose)
-{
-	if (!UnmapViewOfFile(pFileClose))
-	{
-		return false;
-	}
-	return true;
-}
-
-#define NBT_FILE_NAME ".\\HY服全物品备份.litematic"
-//#define NBT_FILE_NAME ".\\opt.nbt"
-
-int main(void)
-{
-	uint8_t *pFile;
-	uint64_t qwFileSize;
-	if (!OpenFileAndMapping(NBT_FILE_NAME, &pFile, &qwFileSize))
-	{
+		printf("Only one input file is needed\n");
 		return -1;
 	}
 
-	std::string nbt;
-
-	if (gzip::is_compressed((char *)pFile, qwFileSize))//如果nbt已压缩，解压
+	FILE *pFile = fopen(argv[1], "rb");
+	if (pFile == NULL)
 	{
-		nbt = gzip::decompress((char *)pFile, qwFileSize);
-		FILE *f = fopen("opt.nbt", "wb");//覆盖输出一个解压过的文件，用于在报错发生后供分析
-		if (f == NULL)
-		{
-			return -3;
-		}
-
-		if (fwrite(nbt.c_str(), nbt.size(), 1, f) != 1)
-		{
-			return -4;
-		}
-
-		fclose(f);
+		return -1;
 	}
-	else//否则
+	//获取文件大小
+	if (_fseeki64(pFile, 0, SEEK_END) != 0)
 	{
-		//直接给数据塞string里
-		nbt.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
-		memcpy(nbt.data(), pFile, qwFileSize);//直接写入data
+		return -1;
 	}
+	 uint64_t qwFileSize = _ftelli64(pFile);
+	 //回到文件开头
+	 rewind(pFile);
 
-	if (!UnMappingAndCloseFile(pFile))
+	 //用于保存文件内容
+	 std::string sNbtData{};
+	 //直接给数据塞string里
+	 sNbtData.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
+	 fread(sNbtData.data(), sizeof(sNbtData[0]), qwFileSize, pFile);//直接读入data
+	 //完成，关闭文件
+	 fclose(pFile);
+	 pFile = NULL;
+
+	 printf("NBT file read size: [%lld]\n", qwFileSize);
+
+	if (gzip::is_compressed(sNbtData.data(), sNbtData.size()))//如果nbt已压缩，解压，否则保持原样
 	{
-		return -2;
+		sNbtData = gzip::decompress(sNbtData.data(), sNbtData.size());
+		printf("NBT file decompressed size: [%lld]\n", (uint64_t)sNbtData.size());
+
+		//路径预处理
+		std::string sPath{ argv[1] };
+		size_t szPos = sPath.find_last_of('.');//找到最后一个.获得后缀名前的位置
+		if (szPos == std::string::npos)
+		{
+			szPos = sPath.size() - 1;//没有后缀就从末尾开始
+		}
+		//后缀名前插入自定义尾缀
+		sPath.insert(szPos, "_Decompress");
+		printf("Output file: \"%s\" ",sPath.c_str());
+
+		//判断文件存在性
+		FILE *pTest = fopen(sPath.c_str(), "rb");
+		if (pTest != NULL)
+		{
+			//文件已存在，不进行覆盖输出，跳过
+			printf("is already exist, skipped\n");
+			fclose(pTest);
+			pTest = NULL;
+		}
+		else
+		{
+			//输出一个解压过的文件，用于在报错发生后供分析
+			FILE *pFile = fopen(sPath.c_str(), "wb");
+			if (pFile == NULL)
+			{
+				return -1;
+			}
+
+			if (fwrite(sNbtData.data(), sizeof(sNbtData[0]), sNbtData.size(), pFile) != sNbtData.size())
+			{
+				return -1;
+			}
+
+			fclose(pFile);
+			pFile = NULL;
+
+			printf("is maked successfuly\n");
+		}
 	}
 
 	//以下使用nbt
 	NBT_Reader nt;
-	if (!nt.SetNBT(nbt))
+	if (!nt.SetNBT(sNbtData))
 	{
 		return -1;
 	}
@@ -133,7 +107,6 @@ int main(void)
 	}
 
 	//NBT_Helper::Print(nt.GetRoot());
-
 
 	const auto &tmp = nt.GetRoot().AtCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
 	if (tmp.size() != 1)
@@ -177,15 +150,20 @@ int main(void)
 		const BlockPos posMax = getMaxCorner(reginoPos, posEndRel);
 		const BlockPos size = posMax.sub(posMin).add({ 1,1,1 });
 
-		printf("RegionSize:[%d %d %d]\n", size.x, size.y, size.z);
+		printf("RegionSize: [%d, %d, %d]\n", size.x, size.y, size.z);
 
 		//获取调色板（方块种类）
 		const auto &BlockStatePalette = RgCompound.at("BlockStatePalette").List();
 		const uint32_t bitsPerBitMapElement = Max(2U, (uint32_t)sizeof(uint32_t) * 8 - numberOfLeadingZeros(BlockStatePalette.size() - 1));//计算位图中一个元素占用的bit大小
 		const uint32_t bitMaskOfElement = (1 << bitsPerBitMapElement) - 1;//获取遮罩位，用于取bitmap内部内容
-		printf("BlockStatePaletteSize:[%zu]\nbitsPerBitMapElement:[%d]\n", BlockStatePalette.size(), bitsPerBitMapElement);
+		printf("BlockStatePaletteSize: [%zu]\nbitsPerBitMapElement: [%d]\n", BlockStatePalette.size(), bitsPerBitMapElement);
 
 		//遍历BlockStatePalette，并从中创建等效下标的方块统计vector
+		struct BlockInfo
+		{
+			std::string sName = {};
+			size_t szBlockCount = 0;
+		};
 		std::vector<BlockInfo> BlockStatistic;
 		BlockStatistic.reserve(BlockStatePalette.size());//提前分配
 		for (const auto &it : BlockStatePalette)
@@ -255,7 +233,7 @@ int main(void)
 		}
 	}
 
-	printf("\nok!\n");
+	printf("\nOk!\n");
 
 	return 0;
 }
