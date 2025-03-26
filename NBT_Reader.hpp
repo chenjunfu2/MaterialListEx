@@ -1,7 +1,6 @@
 #pragma once
 
 #include "NBT_Node.hpp"
-#include <assert.h>
 
 class InputStream
 {
@@ -130,7 +129,8 @@ private:
 		InternalTypeError = -1,//变体NBT节点类型错误（代码问题）
 		OutOfRangeError = -2,//（NBT内部长度错误溢出）（NBT文件问题）
 		NbtTypeTagError = -3,//NBT标签类型错误（NBT文件问题）
-		StackDepthExceeded = -4//调用栈深度过深（NBT文件or代码设置问题）
+		StackDepthExceeded = -4,//调用栈深度过深（NBT文件or代码设置问题）
+		ERRCODE_END = -5,//结束标记，统计负数部分大小
 	};
 
 	static inline const char *const errReason[] =
@@ -139,7 +139,11 @@ private:
 		"InternalTypeError",
 		"OutOfRangeError",
 		"NbtTypeTagError",
+		"StackDepthExceeded",
 	};
+
+	//记得同步数组！
+	static_assert(sizeof(errReason) / sizeof(errReason[0]) == (-ERRCODE_END), "errReason array out sync");
 
 	enum WarnCode : int
 	{
@@ -242,7 +246,7 @@ private:
 {\
 	if((Depth) <= 0)\
 	{\
-		Error(StackDepthExceeded, sData, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
+		return Error(StackDepthExceeded, sData, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
 	}\
 }
 
@@ -448,7 +452,7 @@ private:
 
 		//开始递归
 		NBT_Node nodeTemp{ NBT_Node::NBT_Compound{} };
-		int iRet = GetNBT(sData, nodeTemp, szStackDepth - 1);
+		int iRet = GetNBT(sData, nodeTemp, szStackDepth);//此处直接传递，因为GetNBT内部会进行递减
 		if (iRet < AllOk)
 		{
 			return iRet;
@@ -587,9 +591,8 @@ private:
 	}
 
 	template<bool bHasName = true>
-	static inline int SwitchNBT(InputStream &sData, NBT_Node &nRoot, NBT_Node::NBT_TAG tag, size_t szStackDepth)
+	static int SwitchNBT(InputStream &sData, NBT_Node &nRoot, NBT_Node::NBT_TAG tag, size_t szStackDepth)//选择函数不检查递归层，由函数调用的函数检查
 	{
-		CHECK_STACK_DEPTH(szStackDepth);
 		int iRet = AllOk;
 
 		switch (tag)
@@ -641,12 +644,12 @@ private:
 			break;
 		case NBT_Node::TAG_List://需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签 ID 或名称）
 			{//最复杂
-				iRet = GetListType<bHasName>(sData, nRoot, szStackDepth - 1);
+				iRet = GetListType<bHasName>(sData, nRoot, szStackDepth);//选择函数不减少递归层
 			}
 			break;
 		case NBT_Node::TAG_Compound://需要递归调用
 			{
-				iRet = GetCompoundType<bHasName>(sData, nRoot, szStackDepth - 1);
+				iRet = GetCompoundType<bHasName>(sData, nRoot, szStackDepth);//选择函数不减少递归层
 			}
 			break;
 		case NBT_Node::TAG_Int_Array:
@@ -705,8 +708,8 @@ public:
 	NBT_Reader(void) = default;
 	~NBT_Reader(void) = default;
 
-	//szStackDepth 控制栈深度
-	bool SetNBT(const std::string data, size_t szDataStartIndex = 0, size_t szStackDepth = 256)//设置nbt到类内
+	//szStackDepth 控制栈深度，递归层检查仅由可嵌套的可能进行递归的函数进行，栈深度递减仅由对选择函数的调用进行
+	bool SetNBT(const std::string data, size_t szDataStartIndex = 0, size_t szStackDepth = 512)//设置nbt到类内
 	{//对于用户来说是设置给类
 		nRoot.Clear();//清掉原来的数据（注意如果nbt较大的情况下，这是一个较深的递归清理过程，不排除栈空间不足导致清理失败）
 		size_t szCurrent{ 0 };

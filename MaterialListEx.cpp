@@ -15,6 +15,7 @@
 
 #include "NBT_Reader.hpp"
 #include "Calc_Tool.hpp"
+#include "NBT_Helper.hpp"
 
 struct BlockInfo
 {
@@ -24,49 +25,49 @@ struct BlockInfo
 
 bool OpenFileAndMapping(const char *pcFileName, uint8_t **pFileRet, uint64_t *pFileSizeRet)
 {
-//打开输入文件并映射
-HANDLE hReadFile = CreateFileA(pcFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-if (hReadFile == INVALID_HANDLE_VALUE)
-{
-	return false;
-}
+	//打开输入文件并映射
+	HANDLE hReadFile = CreateFileA(pcFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hReadFile == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
 
-//获得文件大小
-LARGE_INTEGER liFileSize = { 0 };
-if (!GetFileSizeEx(hReadFile, &liFileSize))
-{
+	//获得文件大小
+	LARGE_INTEGER liFileSize = { 0 };
+	if (!GetFileSizeEx(hReadFile, &liFileSize))
+	{
+		CloseHandle(hReadFile);//关闭输入文件
+		return false;
+	}
+	*pFileSizeRet = liFileSize.QuadPart;
+
+	//判断文件为空
+	if (liFileSize.QuadPart == 0)
+	{
+		CloseHandle(hReadFile);//关闭输入文件
+		return false;
+	}
+
+	//创建文件映射对象
+	HANDLE hFileMapping = CreateFileMappingW(hReadFile, NULL, PAGE_READONLY, 0, 0, NULL);
+	if (!hFileMapping)
+	{
+		CloseHandle(hReadFile);//关闭输入文件
+		return false;
+	}
 	CloseHandle(hReadFile);//关闭输入文件
-	return false;
-}
-*pFileSizeRet = liFileSize.QuadPart;
 
-//判断文件为空
-if (liFileSize.QuadPart == 0)
-{
-	CloseHandle(hReadFile);//关闭输入文件
-	return false;
-}
-
-//创建文件映射对象
-HANDLE hFileMapping = CreateFileMappingW(hReadFile, NULL, PAGE_READONLY, 0, 0, NULL);
-if (!hFileMapping)
-{
-	CloseHandle(hReadFile);//关闭输入文件
-	return false;
-}
-CloseHandle(hReadFile);//关闭输入文件
-
-//映射文件到内存
-LPVOID lpReadMem = MapViewOfFile(hFileMapping, FILE_MAP_READ, 0, 0, 0);
-if (!lpReadMem)
-{
+	//映射文件到内存
+	LPVOID lpReadMem = MapViewOfFile(hFileMapping, FILE_MAP_READ, 0, 0, 0);
+	if (!lpReadMem)
+	{
+		CloseHandle(hFileMapping);//关闭文件映射对象
+		return false;
+	}
 	CloseHandle(hFileMapping);//关闭文件映射对象
-	return false;
-}
-CloseHandle(hFileMapping);//关闭文件映射对象
 
-*pFileRet = (uint8_t *)lpReadMem;
-return true;
+	*pFileRet = (uint8_t *)lpReadMem;
+	return true;
 }
 
 bool UnMappingAndCloseFile(uint8_t *pFileClose)
@@ -122,12 +123,16 @@ int main(void)
 
 	//以下使用nbt
 	NBT_Reader nt;
-	if(!nt.SetNBT(nbt))
+	if (!nt.SetNBT(nbt, 0, 5))
 	{
 		return -1;
 	}
-	//nt.Print();
-	//NBT_Node n;
+	else
+	{
+		printf("Read Ok!\n");
+	}
+
+	NBT_Helper::Print(nt.GetRoot());
 
 
 	const auto &tmp = nt.GetRoot().AtCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
@@ -137,10 +142,8 @@ int main(void)
 		return -1;
 	}
 
-
+	//输出名称（一般是空字符串）
 	const auto &root = *tmp.begin();
-	//直接获取根下第一键
-
 	printf("root:\"%s\"\n", root.first.c_str());
 	
 	//获取regions，也就是区域，一个投影可能有多个区域（选区）
