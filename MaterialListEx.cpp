@@ -207,6 +207,8 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 
+		//存储格式：(y * sizeLayer) + z * sizeX + x = Long array index, sizeLayer = sizeX * sizeZ
+
 		for (uint64_t startOffset = 0; startOffset < (RegionFullSize * (uint64_t)bitsPerBitMapElement); startOffset += (uint64_t)bitsPerBitMapElement)//startOffset从第二次开始递增
 		{
 			const uint64_t startArrIndex = (uint64_t)(startOffset >> 6);//div 64
@@ -237,3 +239,5 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+//创建方块状态到物品映射map
