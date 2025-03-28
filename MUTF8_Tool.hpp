@@ -16,18 +16,18 @@ private:
 	{
 		if constexpr (szBytes == 1)
 		{
-			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0111'1111) >>  0) | (uint16_t)0b0000'0000);//0 6-0
+			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0111'1111) >>  0) | (uint16_t)0b0000'0000);//0 6-0   7bit
 		}
 		else if constexpr (szBytes == 2)
 		{
-			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0111'1100'0000) >>  6) | (uint16_t)0b0110'0000);//110 10-6
-			mu8CharArr[1] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0011'1111) >>  0) | (uint16_t)0b0010'0000);//10 5-0
+			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0111'1100'0000) >>  6) | (uint16_t)0b1100'0000);//110 10-6  5bit
+			mu8CharArr[1] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0011'1111) >>  0) | (uint16_t)0b1000'0000);//10 5-0   6bit
 		}
 		else if constexpr (szBytes == 3)
 		{
-			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b1111'0000'0000'0000) >> 12) | (uint16_t)0b1110'0000);//1110 15-12
-			mu8CharArr[1] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'1111'1100'0000) >>  6) | (uint16_t)0b0010'0000);//10 11-6
-			mu8CharArr[2] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0011'1111) >>  0) | (uint16_t)0b0010'0000);//10 5-0
+			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b1111'0000'0000'0000) >> 12) | (uint16_t)0b1110'0000);//1110 15-12   4bit
+			mu8CharArr[1] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'1111'1100'0000) >>  6) | (uint16_t)0b1000'0000);//10 11-6   6bit
+			mu8CharArr[2] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0011'1111) >>  0) | (uint16_t)0b1000'0000);//10 5-0   6bit
 		}
 		else
 		{
@@ -38,12 +38,45 @@ private:
 	static void EncodeMUTF8Supplementary(uint32_t u32RawChar, MU8T(&mu8CharArr)[6])//u32RawChar 是u16t的扩展平面组成的
 	{
 		mu8CharArr[0] = (uint8_t)0b1110'1101;//固定字节
-		mu8CharArr[1] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'1111'0000'0000'0000'0000) >> 16) | (uint32_t)0b1010'0000);//1010 19-16//20固定为1
-		mu8CharArr[2] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'1111'1100'0000'0000) >> 10) | (uint32_t)0b1010'0000);//10 15-10
+		mu8CharArr[1] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'1111'0000'0000'0000'0000) >> 16) | (uint32_t)0b1010'0000);//1010 19-16(20固定为1)   4bit
+		mu8CharArr[2] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'1111'1100'0000'0000) >> 10) | (uint32_t)0b1000'0000);//10 15-10   6bit
 
 		mu8CharArr[3] = (uint8_t)0b1110'1101;//固定字节
-		mu8CharArr[4] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1100'0000) >>  6) | (uint16_t)0b1011'0000);//1011 9-6
-		mu8CharArr[5] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0000'0011'1111) >>  0) | (uint16_t)0b0010'0000);//10 5-0
+		mu8CharArr[4] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1100'0000) >>  6) | (uint16_t)0b1011'0000);//1011 9-6   4bit
+		mu8CharArr[5] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0000'0011'1111) >>  0) | (uint16_t)0b1000'0000);//10 5-0   6bit
+	}
+
+	template<size_t szBytes>
+	static void DecodeMUTF8Bmp(MU8T(&mu8CharArr)[szBytes], U16T u16Char)
+	{
+		if constexpr (szBytes == 1)
+		{
+			u16Char = ((uint16_t)((uint8_t)mu8CharArr[0] & (uint8_t)0b0111'1111)) << 0;//7bit
+		}
+		else if constexpr (szBytes == 2)
+		{
+			u16Char = ((uint16_t)((uint8_t)mu8CharArr[0] & (uint8_t)0b0001'1111)) << 6 |//5bit
+					  ((uint16_t)((uint8_t)mu8CharArr[1] & (uint8_t)0b0011'1111)) << 0;//6bit
+		}
+		else if constexpr (szBytes == 3)
+		{
+			u16Char = ((uint16_t)((uint8_t)mu8CharArr[0] & (uint8_t)0b0000'1111)) << 12 |//4bit
+					  ((uint16_t)((uint8_t)mu8CharArr[1] & (uint8_t)0b0011'1111)) <<  6 |//6bit
+					  ((uint16_t)((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1111)) <<  0;//6bit
+		}
+		else
+		{
+			static_assert(false, "Error szBytes Size");//大小错误
+		}
+	}
+
+	static void DecodeMUTF8Supplementary(MU8T(&mu8CharArr)[6], uint32_t u32RawChar)//u32RawChar 是u16t的扩展平面组成的
+	{
+		//忽略mu8CharArr[0]和mu8CharArr[3]（固定字节）
+		u32RawChar = ((uint16_t)((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1111)) << 16 |//4bit
+					 ((uint16_t)((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1111)) << 10 |//6bit
+					 ((uint16_t)((uint8_t)mu8CharArr[4] & (uint8_t)0b0000'1111)) <<  6 |//4bit
+					 ((uint16_t)((uint8_t)mu8CharArr[5] & (uint8_t)0b0011'1111)) <<  0;//6bit
 	}
 
 
@@ -129,7 +162,7 @@ public:
 		return mu8String;
 	}
 
-	static std::basic_string<U16T> MMU8ToU16(const std::basic_string<MU8T> &mu8String)
+	static std::basic_string<U16T> MU8ToU16(const std::basic_string<MU8T> &mu8String)
 	{
 		std::basic_string<char16_t> u16String;
 
