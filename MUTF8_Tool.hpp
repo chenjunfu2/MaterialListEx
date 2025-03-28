@@ -3,8 +3,9 @@
 #include <string>
 #include <type_traits>
 #include <assert.h>
+#include <stdint.h>
 
-template<typename MU8T = char8_t, typename U16T = char16_t>
+template<typename MU8T = char, typename U16T = char16_t>
 class MUTF8_Tool
 {
 	static_assert(sizeof(MU8T) == 1, "MU8T size must be at 1 byte");
@@ -322,6 +323,8 @@ public:
 
 };
 
+#define MU8STR(charstr) MUTF8_Tool<>::U16ToMU8(u##charstr)
+#define U16STR(mu8str) MUTF8_Tool<>::MU8ToU16(mu8str)
 
 /*
 4.4.7. The CONSTANT_Utf8_info Structure

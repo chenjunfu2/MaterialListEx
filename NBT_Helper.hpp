@@ -1,13 +1,18 @@
 #pragma once
 #include "NBT_Node.hpp"
-
+#include "MUTF8_Tool.hpp"
+#include "Windows_ANSI.hpp"
 
 class NBT_Helper
 {
 public:
-	static void Print(const NBT_Node & nRoot)
+	static void Print(const NBT_Node &nRoot, bool bNewLine = true)
 	{
 		PrintSwitch(nRoot, 0);
+		if (bNewLine)
+		{
+			printf("\n");
+		}
 	}
 
 private:
@@ -69,7 +74,7 @@ private:
 			break;
 		case NBT_Node::TAG_String:
 			{
-				printf("\"%s\"", nRoot.GetData<NBT_Node::NBT_String>().c_str());
+				printf("\"%s\"", ANSISTR(U16STR(nRoot.GetData<NBT_Node::NBT_String>())).c_str());
 			}
 			break;
 		case NBT_Node::TAG_List:
@@ -96,7 +101,7 @@ private:
 
 				for (auto &it : cpd)
 				{
-					printf("\"%s\":", it.first.c_str());
+					printf("\"%s\":", ANSISTR(U16STR(it.first)).c_str());
 					PrintSwitch(it.second, ++iLevel);
 					printf(",");
 				}

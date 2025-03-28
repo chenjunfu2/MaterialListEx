@@ -1,6 +1,8 @@
 #pragma once
 
 #include "NBT_Node.hpp"
+#include "MUTF8_Tool.hpp"
+#include "Windows_ANSI.hpp"
 
 class InputStream
 {
@@ -302,7 +304,7 @@ private:
 				auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Float *)&tTmpData)) });//无损数据类型转换
 				if (!ret.second)//插入失败，元素已存在
 				{
-					Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", sName.c_str(), typeid(NBT_Node::NBT_Float).name());
+					Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_Float).name());
 				}
 			}
 			else
@@ -326,7 +328,7 @@ private:
 				auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Double *)&tTmpData)) });//无损数据类型转换
 				if (!ret.second)//插入失败，元素已存在
 				{
-					Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", sName.c_str(), typeid(NBT_Node::NBT_Double).name());
+					Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_Double).name());
 				}
 			}
 			else
@@ -349,7 +351,7 @@ private:
 				auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ tTmpData });
 				if (!ret.second)//插入失败，元素已存在
 				{
-					Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", sName.c_str(), typeid(tTmpData).name());
+					Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(tTmpData).name());
 				}
 			}
 			else
@@ -425,7 +427,7 @@ private:
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ std::move(tArray) });
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", sName.c_str(), typeid(tArray).name());
+				Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(tArray).name());
 			}
 		}
 		else//无名称，为列表元素
@@ -465,7 +467,7 @@ private:
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(sName, NBT_Node{ std::move(nodeTemp.GetData<NBT_Node::NBT_Compound>()) });
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", sName.c_str(), typeid(NBT_Node::NBT_Compound).name());
+				Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_Compound).name());
 			}
 		}
 		else//无名称，为列表元素
@@ -510,7 +512,7 @@ private:
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ std::string{sData.Current(), sData.Next(wStrLength)} });
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", sName.c_str(), typeid(std::string).name());
+				Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(std::string).name());
 			}
 		}
 		else//列表元素直接赋值
@@ -579,7 +581,7 @@ private:
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(sName, NBT_Node{ std::move(tmpList) });
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", sName.c_str(), typeid(tmpList).name());
+				Error(ElementExistsWarn, sData, __FUNCSIG__ ": the \"%s\"[%s] sData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(tmpList).name());
 			}
 		}
 		else//列表中的列表，直接赋值，而不进行插入

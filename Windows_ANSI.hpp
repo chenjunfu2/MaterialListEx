@@ -8,6 +8,11 @@ std::basic_string<char> ConvertUtf16ToAnsi(std::basic_string<U16T> u16String)
 {
     static_assert(sizeof(U16T) == sizeof(wchar_t), "U16T size must be same as wchar_t size");
 
+    if (u16String.size() == 0)
+    {
+        return std::basic_string<char>{};//返回空字符串
+    }
+
     // 获取转换后所需的缓冲区大小（包括终止符）
     int sizeNeeded = WideCharToMultiByte(//注意此函数u16接受字符数，而u8接受字节数
         CP_ACP,                // 使用当前ANSI代码页
@@ -22,7 +27,7 @@ std::basic_string<char> ConvertUtf16ToAnsi(std::basic_string<U16T> u16String)
 
     if (sizeNeeded == 0)
     {
-        printf("WideCharToMultiByte failed. Error code: %ul\n", GetLastError());
+        printf("\nWideCharToMultiByte failed. Error code: %ul\n", GetLastError());
         return std::basic_string<char>{};
     }
 
@@ -44,9 +49,11 @@ std::basic_string<char> ConvertUtf16ToAnsi(std::basic_string<U16T> u16String)
 
     if (convertedSize == 0)
     {
-        printf("WideCharToMultiByte failed. Error code: %ul\n", GetLastError());
+        printf("\nWideCharToMultiByte failed. Error code: %ul\n", GetLastError());
         return std::basic_string<char>{};
     }
 
     return ansiString;
 }
+
+#define ANSISTR(u16str) ConvertUtf16ToAnsi(u16str)
