@@ -7,9 +7,11 @@
 template<typename MU8T = char8_t, typename U16T = char16_t>
 class MUTF8_Tool
 {
-	static_assert(sizeof(MU8T) >= 1, "MU8T size must be at least 1 byte");
-	static_assert(sizeof(U16T) >= 2, "U16T size must be at least 2 bytes");
+	static_assert(sizeof(MU8T) == 1, "MU8T size must be at 1 byte");
+	static_assert(sizeof(U16T) == 2, "U16T size must be at 2 bytes");
 
+	MUTF8_Tool() = delete;
+	~MUTF8_Tool() = delete;
 private:
 	template<size_t szBytes>
 	static void EncodeMUTF8Bmp(const U16T u16Char, MU8T(&mu8CharArr)[szBytes])
@@ -100,7 +102,14 @@ public:
 #define IN_RANGE(v,b,e) ((uint16_t)(v)>=(uint16_t)(b)&&(uint16_t)(v)<=(uint16_t)(e))
 	static std::basic_string<MU8T> U16ToMU8(const std::basic_string<U16T> &u16String)
 	{
-		std::basic_string<MU8T> mu8String;
+		std::basic_string<MU8T> mu8String{};//字符串结尾为0xC0 0x80而非0x00
+		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的mu8str
+		//if (u16String.size() == 0)
+		//{
+		//	mu8String.push_back((uint8_t)0xC0);
+		//	mu8String.push_back((uint8_t)0x80);
+		//}
+
 		for (auto it = u16String.begin(), end = u16String.end(); it != end; ++it)
 		{
 			U16T u16Char = *it;
@@ -125,18 +134,21 @@ public:
 					if (++it == end)
 					{
 						u16Char = 0xFFFD;//错误，高代理后无数据
-						MU8T mu8Char[3];
+						MU8T mu8Char[3];//转换u16未知字符
 						EncodeMUTF8Bmp(u16Char, mu8Char);
 						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
 						break;
 					}
-					u16Char = *it;
-
+					else
+					{
+						u16Char = *it;
+					}
+					
 					//处理低代理对
 					if (!IN_RANGE(u16Char, 0xDC00, 0xDFFF))
 					{
 						u16Char = 0xFFFD;//错误，高代理后非低代理
-						MU8T mu8Char[3];
+						MU8T mu8Char[3];//转换u16未知字符
 						EncodeMUTF8Bmp(u16Char, mu8Char);
 						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
 					}
@@ -154,6 +166,7 @@ public:
 					if (IN_RANGE(u16Char, 0xDC00, 0xDFFF))//遇到低代理对
 					{
 						u16Char = 0xFFFD;//错误，在高代理之前遇到低代理
+						//下方转换u16未知字符
 					}
 					
 					MU8T mu8Char[3];
@@ -176,7 +189,13 @@ public:
 #define GET_NEXTCHAR(c) if (++it == end) { break; } else { c = *it; }
 	static std::basic_string<U16T> MU8ToU16(const std::basic_string<MU8T> &mu8String)
 	{
-		std::basic_string<U16T> u16String;
+		std::basic_string<U16T> u16String{};//字符串末尾为0x00
+		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的u16str
+		//if (mu8String.size() == 0)
+		//{
+		//	u16String.push_back((uint16_t)0x00);
+		//}
+
 		for (auto it = mu8String.begin(), end = mu8String.end(); it != end; ++it)
 		{
 			MU8T mu8Char = *it;
@@ -223,16 +242,44 @@ public:
 				//把他们合起来就是1101'10xx 也就是0xD8，即u16的高代理对开始字符，而代理对在encode过程走的另一个流程，不存在与3字节码点混淆处理的情况
 				if (mu8First == (uint8_t)0b1110'1101 && ((uint8_t)mu8Char & (uint8_t)0b1111'0000 == (uint8_t)0b1010'0000))//代理对，必须先判断，很重要！
 				{
-					MU8T mu8CharArr[6] = { mu8First,mu8Char };
+					MU8T mu8CharArr[6] = { mu8First,mu8Char };//0 1已初始化，0是固定起始值，1是高代理的高4位
 					//继续读取后4个并验证
+
+					//下一个为高代理的低6位
 					GET_NEXTCHAR(mu8Char);
+					if ((uint8_t)mu8Char & (uint8_t)0b1100'0000 != (uint8_t)0b1000'0000)
+					{
+						--it;//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
+						continue;
+					}
+					mu8CharArr[2] = mu8Char;
+					//下一个为固定字符
+					GET_NEXTCHAR(mu8Char);
+					if (mu8Char != (uint8_t)0b1110'1101)
+					{
+						--it;//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
+						continue;
+					}
+					mu8CharArr[3] = mu8Char;
+					//下一个为低代理高4位
+					GET_NEXTCHAR(mu8Char);
+					if ((uint8_t)mu8Char & (uint8_t)0b1111'0000 != (uint8_t)0b1011'0000)
+					{
+						--it;//撤回两次读取，尽管前面已确认是0b1110'1101，但是存在111开头的合法3码点
+						--it;
+						continue;
+					}
+					mu8CharArr[4] = mu8Char;
+					//读取最后一个低代理的低6位
+					GET_NEXTCHAR(mu8Char);
+					if ((uint8_t)mu8Char & (uint8_t)0b1100'0000 != (uint8_t)0b1000'0000)
+					{
+						--it;//撤回一次读取，因为不存在而前一个已确认的101开头的合法码点，且再前一个开头为111，不存在111后跟101的3码点情况，跳过
+						continue;
+					}
+					mu8CharArr[5] = mu8Char;
 
-
-
-
-
-
-					//转换代理对
+					//验证全部通过，转换代理对
 					U16T u16HighSurrogate, u16LowSurrogate;
 					DecodeMUTF8Supplementary(mu8CharArr, u16HighSurrogate, u16LowSurrogate);
 					u16String.push_back(u16HighSurrogate);

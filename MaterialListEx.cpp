@@ -15,6 +15,8 @@
 #include "NBT_Reader.hpp"
 #include "Calc_Tool.hpp"
 #include "NBT_Helper.hpp"
+#include "MUTF8_Tool.hpp"
+#include "Windows_ANSI.hpp"
 
 int main(int argc, char *argv[])
 {
