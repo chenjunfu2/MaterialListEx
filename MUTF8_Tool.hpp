@@ -1,73 +1,111 @@
 #pragma once
 
 #include <string>
+#include <type_traits>
+#include <assert.h>
 
+template<typename MU8T = char8_t, typename U16T = char16_t>
 class MUTF8_Tool
 {
+	static_assert(sizeof(MU8T) >= 1, "MU8T size must be at least 1 byte");
+	static_assert(sizeof(U16T) >= 2, "U16T size must be at least 2 bytes");
+
+private:
+	template<size_t szBytes>
+	static void EncodeMUTF8Bmp(U16T u16Char, MU8T(&mu8CharArr)[szBytes])
+	{
+		if constexpr (szBytes == 1)
+		{
+			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0111'1111) >>  0) | (uint16_t)0b0000'0000);//0 6-0
+		}
+		else if constexpr (szBytes == 2)
+		{
+			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0111'1100'0000) >>  6) | (uint16_t)0b0110'0000);//110 10-6
+			mu8CharArr[1] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0011'1111) >>  0) | (uint16_t)0b0010'0000);//10 5-0
+		}
+		else if constexpr (szBytes == 3)
+		{
+			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b1111'0000'0000'0000) >> 12) | (uint16_t)0b1110'0000);//1110 15-12
+			mu8CharArr[1] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'1111'1100'0000) >>  6) | (uint16_t)0b0010'0000);//10 11-6
+			mu8CharArr[2] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0011'1111) >>  0) | (uint16_t)0b0010'0000);//10 5-0
+		}
+		else
+		{
+			static_assert(false, "Error szBytes Size");//大小错误
+		}
+	}
+
+	static void EncodeMUTF8Supplementary(uint32_t u32RawChar, MU8T(&mu8CharArr)[6])//u32RawChar 是u16t的扩展平面组成的
+	{
+		mu8CharArr[0] = (uint8_t)0b1110'1101;//固定字节
+		mu8CharArr[1] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'1111'0000'0000'0000'0000) >> 16) | (uint32_t)0b1010'0000);//1010 19-16//20固定为1
+		mu8CharArr[2] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'1111'1100'0000'0000) >> 10) | (uint32_t)0b1010'0000);//10 15-10
+
+		mu8CharArr[3] = (uint8_t)0b1110'1101;//固定字节
+		mu8CharArr[4] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1100'0000) >>  6) | (uint16_t)0b1011'0000);//1011 9-6
+		mu8CharArr[5] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0000'0011'1111) >>  0) | (uint16_t)0b0010'0000);//10 5-0
+	}
+
+
+
+public:
 //v=val b=beg e=end 注意范围是左右边界包含关系，而不是普通的左边界包含
 #define IN_RANGE(v,b,e) ((uint16_t)(v)>=(uint16_t)(b)&&(uint16_t)(v)<=(uint16_t)(e))
-	static std::basic_string<char8_t> U16ToMU8(const std::basic_string<char16_t> &u16String)
+	static std::basic_string<MU8T> U16ToMU8(const std::basic_string<U16T> &u16String)
 	{
-		std::basic_string<char8_t> mu8String;
-		bool bSurrogatePairs = false;
-		char16_t u16HighSurrogate = 0;
-		for (auto u16Char : u16String)
+		std::basic_string<MU8T> mu8String;
+		for (auto it = u16String.begin(), end = u16String.end(); it != end; ++it)
 		{
-			if (bSurrogatePairs == true)//处理低代理对
-			{
-				bSurrogatePairs = false;//关闭bool值
-				if (!IN_RANGE(u16Char, 0xDC00, 0xDFFF))
-				{
-					u16Char = 0xFFFD;//错误，高代理后非低代理
-				}
-				else
-				{
-					char16_t u16LowSurrogate = u16Char;
-					//取出代理对数据并组合10000-10FFFF
-					uint32_t u32RawChar = (uint32_t)0b0000'0000'0000'0001'0000'0000'0000'0000 |//U16代理对实际编码高位 bit 20 == 1
-						((uint32_t)u16HighSurrogate & (uint32_t)0b0000'0000'0011'1111) << 10 |//取出高代理的低6位放到高10位上
-						((uint32_t)u16LowSurrogate & (uint32_t)0b0000'0011'1111'1111) << 0;//然后取出低代理的低10位与高10位拼接
-
-					//代理对特殊处理：uvwxyz共6字节表示一个实际代理码点
-
-					char8_t u8CharU = (uint8_t)0b1110'1101;//固定字节
-					char8_t u8CharV = ((u32RawChar & (uint32_t)0b0000'0000'0000'1111'0000'0000'0000'0000) >> 16) | (uint32_t)0b1010'0000;//1010 19-16//20固定为1
-					char8_t u8CharW = ((u32RawChar & (uint32_t)0b0000'0000'0000'0000'1111'1100'0000'0000) >> 10) | (uint32_t)0b1010'0000;//10 15-10
-
-					char8_t u8CharX = (uint8_t)0b1110'1101;//固定字节
-					char8_t u8CharY = ((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1100'0000) >> 6) | (uint16_t)0b1011'0000;//1011 9-6
-					char8_t u8CharZ = ((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0000'0011'1111) >> 0) | (uint16_t)0b0010'0000;//10 5-0
-
-					//插入string
-					mu8String.push_back(u8CharU);
-					mu8String.push_back(u8CharV);
-					mu8String.push_back(u8CharW);
-					mu8String.push_back(u8CharX);
-					mu8String.push_back(u8CharY);
-					mu8String.push_back(u8CharZ);
-				}
-			}
-
+			auto u16Char = *it;
 			if (IN_RANGE(u16Char, 0x0001, 0x007F))//单字节码点
 			{
-				char8_t u8Char = (((uint16_t)u16Char & (uint16_t)0b0000'0000'0111'1111) >> 0) | (uint16_t)0b0000'0000;//0 6-0
-				mu8String.push_back(u8Char);
+				MU8T mu8Char[1];
+				EncodeMUTF8Bmp(u16Char, mu8Char);
+				mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
 			}
 			else if (IN_RANGE(u16Char, 0x0080, 0x07FF) || u16Char == 0x0000)//双字节码点，0字节特判
 			{
-				char8_t u8CharX = (((uint16_t)u16Char & (uint16_t)0b0000'0111'1100'0000) >> 6) | (uint16_t)0b0110'0000;//110 10-6
-				char8_t u8CharY = (((uint16_t)u16Char & (uint16_t)0b0000'0000'0011'1111) >> 0) | (uint16_t)0b0010'0000;//10 5-0
-
-				mu8String.push_back(u8CharX);
-				mu8String.push_back(u8CharY);
+				MU8T mu8Char[2];
+				EncodeMUTF8Bmp(u16Char, mu8Char);
+				mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
 			}
 			else if (IN_RANGE(u16Char, 0x0800, 0xFFFF))//三字节码点or多字节码点
 			{
 				if (IN_RANGE(u16Char, 0xD800, 0xDBFF))//遇到高代理对
 				{
-					bSurrogatePairs = true;
-					u16HighSurrogate = u16Char;
-					continue;//保存后处理低代理
+					U16T u16HighSurrogate = u16Char;//保存
+					//读取下一个字节
+					if (++it == end)
+					{
+						u16Char = 0xFFFD;//错误，高代理后无数据
+						MU8T mu8Char[3];
+						EncodeMUTF8Bmp(u16Char, mu8Char);
+						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
+						break;
+					}
+					u16Char = *it;
+
+					//处理低代理对
+					if (!IN_RANGE(u16Char, 0xDC00, 0xDFFF))
+					{
+						u16Char = 0xFFFD;//错误，高代理后非低代理
+						MU8T mu8Char[3];
+						EncodeMUTF8Bmp(u16Char, mu8Char);
+						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
+					}
+					else
+					{
+						U16T u16LowSurrogate = u16Char;
+						//取出代理对数据并组合10000-10FFFF
+						uint32_t u32RawChar = (uint32_t)0b0000'0000'0000'0001'0000'0000'0000'0000 |//U16代理对实际编码高位 bit 20 == 1
+							((uint32_t)u16HighSurrogate & (uint32_t)0b0000'0000'0011'1111) << 10 |//取出高代理的低6位放到高10位上
+							((uint32_t)u16LowSurrogate & (uint32_t)0b0000'0011'1111'1111) << 0;//然后取出低代理的低10位与高10位拼接
+
+						//代理对特殊处理：共6字节表示一个实际代理码点
+						MU8T mu8Char[6];
+						EncodeMUTF8Supplementary(u32RawChar, mu8Char);
+						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
+					}
 				}
 				else
 				{
@@ -75,26 +113,23 @@ class MUTF8_Tool
 					{
 						u16Char = 0xFFFD;//错误，在高代理之前遇到低代理
 					}
-					char8_t u8CharX = (((uint16_t)u16Char & (uint16_t)0b1111'0000'0000'0000) >> 12) | (uint16_t)0b1110'0000;//1110 15-12
-					char8_t u8CharY = (((uint16_t)u16Char & (uint16_t)0b0000'1111'1100'0000) >> 6) | (uint16_t)0b0010'0000;//10 11-6
-					char8_t u8CharZ = (((uint16_t)u16Char & (uint16_t)0b0000'0000'0011'1111) >> 0) | (uint16_t)0b0010'0000;//10 5-0
-
-					mu8String.push_back(u8CharX);
-					mu8String.push_back(u8CharY);
-					mu8String.push_back(u8CharZ);
+					
+					MU8T mu8Char[3];
+					EncodeMUTF8Bmp(u16Char, mu8Char);
+					mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
 				}
 			}
 			else
 			{
 				//??????????????怎么命中的
+				assert(false);
 			}
 		}
 
 		return mu8String;
 	}
 
-
-	static std::basic_string<char16_t> MU8ToU16(const std::basic_string<char8_t> &mu8String)
+	static std::basic_string<U16T> MMU8ToU16(const std::basic_string<MU8T> &mu8String)
 	{
 		std::basic_string<char16_t> u16String;
 
