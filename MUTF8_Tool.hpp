@@ -35,19 +35,25 @@ private:
 		}
 	}
 
-	static void EncodeMUTF8Supplementary(uint32_t u32RawChar, MU8T(&mu8CharArr)[6])//u32RawChar 是u16t的扩展平面组成的
+	static void EncodeMUTF8Supplementary(U16T u16HighSurrogate, U16T u16LowSurrogate,  MU8T(&mu8CharArr)[6])
 	{
+		//取出代理对数据并组合 范围：100000-1FFFFF
+		uint32_t u32RawChar = //(uint32_t)0b0000'0000'0001'0000'0000'0000'0000'0000 |//U16代理对实际编码高位 bit20 -> 1 ignore
+							  ((uint32_t)((uint16_t)u16HighSurrogate & (uint16_t)0b0000'0011'1111'1111)) << 10 |//10bit
+							  ((uint32_t)((uint16_t)u16LowSurrogate  & (uint16_t)0b0000'0011'1111'1111)) << 0;//10bit
+
+		//高代理
 		mu8CharArr[0] = (uint8_t)0b1110'1101;//固定字节
 		mu8CharArr[1] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'1111'0000'0000'0000'0000) >> 16) | (uint32_t)0b1010'0000);//1010 19-16(20固定为1)   4bit
 		mu8CharArr[2] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'1111'1100'0000'0000) >> 10) | (uint32_t)0b1000'0000);//10 15-10   6bit
-
+		//低代理
 		mu8CharArr[3] = (uint8_t)0b1110'1101;//固定字节
-		mu8CharArr[4] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1100'0000) >>  6) | (uint16_t)0b1011'0000);//1011 9-6   4bit
-		mu8CharArr[5] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0000'0011'1111) >>  0) | (uint16_t)0b1000'0000);//10 5-0   6bit
+		mu8CharArr[4] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1100'0000) >>  6) | (uint32_t)0b1011'0000);//1011 9-6   4bit
+		mu8CharArr[5] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0000'0011'1111) >>  0) | (uint32_t)0b1000'0000);//10 5-0   6bit
 	}
 
 	template<size_t szBytes>
-	static void DecodeMUTF8Bmp(MU8T(&mu8CharArr)[szBytes], U16T u16Char)
+	static void DecodeMUTF8Bmp(const MU8T(&mu8CharArr)[szBytes], U16T &u16Char)
 	{
 		if constexpr (szBytes == 1)
 		{
@@ -70,13 +76,21 @@ private:
 		}
 	}
 
-	static void DecodeMUTF8Supplementary(MU8T(&mu8CharArr)[6], uint32_t u32RawChar)//u32RawChar 是u16t的扩展平面组成的
+	static void DecodeMUTF8Supplementary(const MU8T(&mu8CharArr)[6], U16T &u16HighSurrogate, U16T &u16LowSurrogate)//u32RawChar 是u16t的扩展平面组成的
 	{
 		//忽略mu8CharArr[0]和mu8CharArr[3]（固定字节）
-		u32RawChar = ((uint16_t)((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1111)) << 16 |//4bit
-					 ((uint16_t)((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1111)) << 10 |//6bit
-					 ((uint16_t)((uint8_t)mu8CharArr[4] & (uint8_t)0b0000'1111)) <<  6 |//4bit
-					 ((uint16_t)((uint8_t)mu8CharArr[5] & (uint8_t)0b0011'1111)) <<  0;//6bit
+		uint32_t u32RawChar = //(uint16_t)0b0000'0000'0001'0000'0000'0000'0000'0000 |//bit20->1 ignore
+												 //mu8CharArr[0] ignore
+							  ((uint16_t)((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1111)) << 16 |//4bit
+							  ((uint16_t)((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1111)) << 10 |//6bit
+												 //mu8CharArr[3] ignore
+							  ((uint16_t)((uint8_t)mu8CharArr[4] & (uint8_t)0b0000'1111)) <<  6 |//4bit
+							  ((uint16_t)((uint8_t)mu8CharArr[5] & (uint8_t)0b0011'1111)) <<  0;//6bit
+
+		//解析到高低代理
+
+		u16HighSurrogate = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'1111'1111'1100'0000'0000) >> 10 | (uint32_t)0b1101'1000'0000'0000);
+		u16LowSurrogate  = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1111'1111) >>  0 | (uint32_t)0b1101'1100'0000'0000);
 	}
 
 
@@ -129,14 +143,9 @@ public:
 					else
 					{
 						U16T u16LowSurrogate = u16Char;
-						//取出代理对数据并组合10000-10FFFF
-						uint32_t u32RawChar = (uint32_t)0b0000'0000'0000'0001'0000'0000'0000'0000 |//U16代理对实际编码高位 bit 20 == 1
-							((uint32_t)u16HighSurrogate & (uint32_t)0b0000'0000'0011'1111) << 10 |//取出高代理的低6位放到高10位上
-							((uint32_t)u16LowSurrogate & (uint32_t)0b0000'0011'1111'1111) << 0;//然后取出低代理的低10位与高10位拼接
-
 						//代理对特殊处理：共6字节表示一个实际代理码点
 						MU8T mu8Char[6];
-						EncodeMUTF8Supplementary(u32RawChar, mu8Char);
+						EncodeMUTF8Supplementary(u16HighSurrogate, u16LowSurrogate, mu8Char);
 						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
 					}
 				}
