@@ -12,7 +12,7 @@ class MUTF8_Tool
 
 private:
 	template<size_t szBytes>
-	static void EncodeMUTF8Bmp(U16T u16Char, MU8T(&mu8CharArr)[szBytes])
+	static void EncodeMUTF8Bmp(const U16T u16Char, MU8T(&mu8CharArr)[szBytes])
 	{
 		if constexpr (szBytes == 1)
 		{
@@ -35,7 +35,7 @@ private:
 		}
 	}
 
-	static void EncodeMUTF8Supplementary(U16T u16HighSurrogate, U16T u16LowSurrogate,  MU8T(&mu8CharArr)[6])
+	static void EncodeMUTF8Supplementary(const U16T u16HighSurrogate, const U16T u16LowSurrogate,  MU8T(&mu8CharArr)[6])
 	{
 		//取出代理对数据并组合 范围：100000-1FFFFF
 		uint32_t u32RawChar = //(uint32_t)0b0000'0000'0001'0000'0000'0000'0000'0000 |//U16代理对实际编码高位 bit20 -> 1 ignore
@@ -76,7 +76,7 @@ private:
 		}
 	}
 
-	static void DecodeMUTF8Supplementary(const MU8T(&mu8CharArr)[6], U16T &u16HighSurrogate, U16T &u16LowSurrogate)//u32RawChar 是u16t的扩展平面组成的
+	static void DecodeMUTF8Supplementary(const MU8T(&mu8CharArr)[6], U16T &u16HighSurrogate, U16T &u16LowSurrogate)
 	{
 		//忽略mu8CharArr[0]和mu8CharArr[3]（固定字节）
 		uint32_t u32RawChar = //(uint16_t)0b0000'0000'0001'0000'0000'0000'0000'0000 |//bit20->1 ignore
@@ -103,7 +103,7 @@ public:
 		std::basic_string<MU8T> mu8String;
 		for (auto it = u16String.begin(), end = u16String.end(); it != end; ++it)
 		{
-			auto u16Char = *it;
+			U16T u16Char = *it;
 			if (IN_RANGE(u16Char, 0x0001, 0x007F))//单字节码点
 			{
 				MU8T mu8Char[1];
@@ -170,19 +170,108 @@ public:
 
 		return mu8String;
 	}
+#undef IN_RANGE
 
+//检查迭代器并获取下一个字节（如果可以，否则跳出）
+#define GET_NEXTCHAR(c) if (++it == end) { break; } else { c = *it; }
 	static std::basic_string<U16T> MU8ToU16(const std::basic_string<MU8T> &mu8String)
 	{
-		std::basic_string<char16_t> u16String;
+		std::basic_string<U16T> u16String;
+		for (auto it = mu8String.begin(), end = mu8String.end(); it != end; ++it)
+		{
+			MU8T mu8Char = *it;
+			//判断是几字节的mu8
+			if ((uint8_t)mu8Char & (uint8_t)0b1000'0000 == (uint8_t)0b0000'0000)//最高位不为1，单字节码点
+			{
+				//放入数组
+				MU8T mu8CharArr[1] = { mu8Char };
+
+				//转换
+				U16T u16Char;
+				DecodeMUTF8Bmp(mu8CharArr, u16Char);
+				u16String.push_back(u16Char);
+			}
+			else if((uint8_t)mu8Char & (uint8_t)0b1110'0000 == (uint8_t)0b1100'0000)//高3位中最高两位为1，双字节码点
+			{
+				//先保存第一个字节
+				MU8T mu8CharArr[2] = { mu8Char };//[0]=mu8Char
+				//尝试获取下一个字节
+				GET_NEXTCHAR(mu8Char);
+				//判断字节合法性
+				if ((uint8_t)mu8Char & (uint8_t)0b1100'0000 != (uint8_t)0b1000'0000)//高2位不是10，错误，跳过
+				{
+					--it;//撤回读取（避免for自动递增跳过刚才的字符）
+					continue;//重试，因为当前字符可能是错误的，而刚才多读取的才是正确的，所以需要撤回continue重新尝试
+				}
+				//放入数组
+				mu8CharArr[1] = mu8Char;
+
+				//转换
+				U16T u16Char;
+				DecodeMUTF8Bmp(mu8CharArr, u16Char);
+				u16String.push_back(u16Char);
+			}
+			else if ((uint8_t)mu8Char & (uint8_t)0b1111'0000 == (uint8_t)0b1110'0000)//高4位为1110，三字节或多字节码点
+			{
+				//保存
+				MU8T mu8First = mu8Char;
+				//尝试获取下一个字节
+				GET_NEXTCHAR(mu8Char);
+				//合法性判断（区分是否为代理）
+				//代理区分：因为D800开头的为高代理，必不可能作为三字节码点0b1010'xxxx出现，所以只要高4位是1010必为代理对
+				//也就是说mu8CharArr3[0]的低4bit如果是1101并且mu8Char的高4bit是1010的情况下，即三字节码点10xx'xxxx中的最高两个xx为01，
+				//把他们合起来就是1101'10xx 也就是0xD8，即u16的高代理对开始字符，而代理对在encode过程走的另一个流程，不存在与3字节码点混淆处理的情况
+				if (mu8First == (uint8_t)0b1110'1101 && ((uint8_t)mu8Char & (uint8_t)0b1111'0000 == (uint8_t)0b1010'0000))//代理对，必须先判断，很重要！
+				{
+					MU8T mu8CharArr[6] = { mu8First,mu8Char };
+					//继续读取后4个并验证
+					GET_NEXTCHAR(mu8Char);
 
 
 
 
 
 
+					//转换代理对
+					U16T u16HighSurrogate, u16LowSurrogate;
+					DecodeMUTF8Supplementary(mu8CharArr, u16HighSurrogate, u16LowSurrogate);
+					u16String.push_back(u16HighSurrogate);
+					u16String.push_back(u16LowSurrogate);
+				}
+				else if((uint8_t)mu8Char & (uint8_t)0b1100'0000 == (uint8_t)0b1000'0000)//三字节码点，排除代理对后只有这个可能
+				{
+					//保存
+					MU8T mu8CharArr[3] = { mu8First,mu8Char };
+					GET_NEXTCHAR(mu8Char);//尝试获取下一字符
+					if ((uint8_t)mu8Char & (uint8_t)0b1100'0000 != (uint8_t)0b1000'0000)//错误，3字节码点最后一个不是正确字符
+					{
+						--it;//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
+						continue;
+					}
+					mu8CharArr[2] = mu8Char;
+
+					//3位已就绪，转换
+					U16T u16Char;
+					DecodeMUTF8Bmp(mu8CharArr, u16Char);
+					u16String.push_back(u16Char);
+				}
+				else
+				{
+					--it;//撤回刚才的读取并重试
+					continue;
+				}
+
+			}
+			else
+			{
+				//未知，跳过并忽略，直到遇到下一个正确起始字符
+				continue;
+			}
+		}
+	
 		return u16String;
 	}
-
+#undef GET_NEXTCHAR
 
 };
 
