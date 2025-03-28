@@ -128,7 +128,8 @@ int main(int argc, char *argv[])
 		const auto &RgCompound = RgVal.Compound();
 
 		//输出选区名
-		printf("======%s======\n", RgName.c_str());
+		auto opt = ConvertUtf16ToAnsi(MUTF8_Tool<char, wchar_t>::MU8ToU16(RgName));
+		printf("======%s======\n", opt.c_str());
 		//获取区域大小
 		
 		

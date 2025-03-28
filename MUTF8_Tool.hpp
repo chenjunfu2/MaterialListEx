@@ -200,7 +200,7 @@ public:
 		{
 			MU8T mu8Char = *it;
 			//判断是几字节的mu8
-			if ((uint8_t)mu8Char & (uint8_t)0b1000'0000 == (uint8_t)0b0000'0000)//最高位不为1，单字节码点
+			if (((uint8_t)mu8Char & (uint8_t)0b1000'0000) == (uint8_t)0b0000'0000)//最高位不为1，单字节码点
 			{
 				//放入数组
 				MU8T mu8CharArr[1] = { mu8Char };
@@ -210,14 +210,14 @@ public:
 				DecodeMUTF8Bmp(mu8CharArr, u16Char);
 				u16String.push_back(u16Char);
 			}
-			else if((uint8_t)mu8Char & (uint8_t)0b1110'0000 == (uint8_t)0b1100'0000)//高3位中最高两位为1，双字节码点
+			else if(((uint8_t)mu8Char & (uint8_t)0b1110'0000) == (uint8_t)0b1100'0000)//高3位中最高两位为1，双字节码点
 			{
 				//先保存第一个字节
 				MU8T mu8CharArr[2] = { mu8Char };//[0]=mu8Char
 				//尝试获取下一个字节
 				GET_NEXTCHAR(mu8Char);
 				//判断字节合法性
-				if ((uint8_t)mu8Char & (uint8_t)0b1100'0000 != (uint8_t)0b1000'0000)//高2位不是10，错误，跳过
+				if (((uint8_t)mu8Char & (uint8_t)0b1100'0000) != (uint8_t)0b1000'0000)//高2位不是10，错误，跳过
 				{
 					--it;//撤回读取（避免for自动递增跳过刚才的字符）
 					continue;//重试，因为当前字符可能是错误的，而刚才多读取的才是正确的，所以需要撤回continue重新尝试
@@ -230,7 +230,7 @@ public:
 				DecodeMUTF8Bmp(mu8CharArr, u16Char);
 				u16String.push_back(u16Char);
 			}
-			else if ((uint8_t)mu8Char & (uint8_t)0b1111'0000 == (uint8_t)0b1110'0000)//高4位为1110，三字节或多字节码点
+			else if (((uint8_t)mu8Char & (uint8_t)0b1111'0000) == (uint8_t)0b1110'0000)//高4位为1110，三字节或多字节码点
 			{
 				//保存
 				MU8T mu8First = mu8Char;
@@ -240,14 +240,14 @@ public:
 				//代理区分：因为D800开头的为高代理，必不可能作为三字节码点0b1010'xxxx出现，所以只要高4位是1010必为代理对
 				//也就是说mu8CharArr3[0]的低4bit如果是1101并且mu8Char的高4bit是1010的情况下，即三字节码点10xx'xxxx中的最高两个xx为01，
 				//把他们合起来就是1101'10xx 也就是0xD8，即u16的高代理对开始字符，而代理对在encode过程走的另一个流程，不存在与3字节码点混淆处理的情况
-				if (mu8First == (uint8_t)0b1110'1101 && ((uint8_t)mu8Char & (uint8_t)0b1111'0000 == (uint8_t)0b1010'0000))//代理对，必须先判断，很重要！
+				if (mu8First == (uint8_t)0b1110'1101 && ((uint8_t)mu8Char & (uint8_t)0b1111'0000) == (uint8_t)0b1010'0000)//代理对，必须先判断，很重要！
 				{
 					MU8T mu8CharArr[6] = { mu8First,mu8Char };//0 1已初始化，0是固定起始值，1是高代理的高4位
 					//继续读取后4个并验证
 
 					//下一个为高代理的低6位
 					GET_NEXTCHAR(mu8Char);
-					if ((uint8_t)mu8Char & (uint8_t)0b1100'0000 != (uint8_t)0b1000'0000)
+					if (((uint8_t)mu8Char & (uint8_t)0b1100'0000) != (uint8_t)0b1000'0000)
 					{
 						--it;//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
 						continue;
@@ -263,7 +263,7 @@ public:
 					mu8CharArr[3] = mu8Char;
 					//下一个为低代理高4位
 					GET_NEXTCHAR(mu8Char);
-					if ((uint8_t)mu8Char & (uint8_t)0b1111'0000 != (uint8_t)0b1011'0000)
+					if (((uint8_t)mu8Char & (uint8_t)0b1111'0000) != (uint8_t)0b1011'0000)
 					{
 						--it;//撤回两次读取，尽管前面已确认是0b1110'1101，但是存在111开头的合法3码点
 						--it;
@@ -272,7 +272,7 @@ public:
 					mu8CharArr[4] = mu8Char;
 					//读取最后一个低代理的低6位
 					GET_NEXTCHAR(mu8Char);
-					if ((uint8_t)mu8Char & (uint8_t)0b1100'0000 != (uint8_t)0b1000'0000)
+					if (((uint8_t)mu8Char & (uint8_t)0b1100'0000) != (uint8_t)0b1000'0000)
 					{
 						--it;//撤回一次读取，因为不存在而前一个已确认的101开头的合法码点，且再前一个开头为111，不存在111后跟101的3码点情况，跳过
 						continue;
@@ -285,12 +285,12 @@ public:
 					u16String.push_back(u16HighSurrogate);
 					u16String.push_back(u16LowSurrogate);
 				}
-				else if((uint8_t)mu8Char & (uint8_t)0b1100'0000 == (uint8_t)0b1000'0000)//三字节码点，排除代理对后只有这个可能
+				else if(((uint8_t)mu8Char & (uint8_t)0b1100'0000) == (uint8_t)0b1000'0000)//三字节码点，排除代理对后只有这个可能
 				{
 					//保存
 					MU8T mu8CharArr[3] = { mu8First,mu8Char };
 					GET_NEXTCHAR(mu8Char);//尝试获取下一字符
-					if ((uint8_t)mu8Char & (uint8_t)0b1100'0000 != (uint8_t)0b1000'0000)//错误，3字节码点最后一个不是正确字符
+					if (((uint8_t)mu8Char & (uint8_t)0b1100'0000) != (uint8_t)0b1000'0000)//错误，3字节码点最后一个不是正确字符
 					{
 						--it;//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
 						continue;
