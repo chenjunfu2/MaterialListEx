@@ -1,4 +1,5 @@
 #pragma once
+
 #include "NBT_Node.hpp"
 #include "MUTF8_Tool.hpp"
 #include "Windows_ANSI.hpp"
