@@ -174,7 +174,7 @@ private:
 		}
 		else if constexpr (std::is_same<T, WarnCode>::value)
 		{
-			if (code >= NoWarn)
+			if (code <= NoWarn)
 			{
 				return (int)code;
 			}

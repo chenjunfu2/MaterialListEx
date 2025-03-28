@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 			szPos = sPath.size() - 1;//没有后缀就从末尾开始
 		}
 		//后缀名前插入自定义尾缀
-		sPath.insert(szPos, "_Decompress");
+		sPath.insert(szPos, "_decompress");
 		printf("Output file: \"%s\" ", sPath.c_str());
 
 		//判断文件存在性
@@ -96,6 +96,10 @@ int main(int argc, char *argv[])
 			printf("is maked successfuly\n");
 		}
 	}
+	else
+	{
+		printf("NBT file is not compressed\n");
+	}
 
 	//以下使用nbt
 	NBT_Reader nt;
@@ -113,7 +117,7 @@ int main(int argc, char *argv[])
 	const auto &tmp = nt.GetRoot().AtCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
 	if (tmp.size() != 1)
 	{
-		printf("错误的根大小");
+		printf("Error root size");
 		return -1;
 	}
 
