@@ -1,0 +1,226 @@
+<h2><span class="mw-headline" id="Binary_format">Binary format</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/NBT_format?section=9&amp;veaction=edit" class="mw-editsection-visualeditor" title="Edit section: Binary format">edit</a><span class="mw-editsection-divider"> | </span><a href="/w/NBT_format?action=edit&amp;section=9" title="Edit section&#039;s source code: Binary format">edit source</a><span class="mw-editsection-bracket">]</span></span></h2>
+<p>An NBT file is a zipped Compound tag. Some of the files utilized by Minecraft may be uncompressed, but in most cases, the files follow Notch's original specification and are compressed with GZip.
+</p>
+<h3><span class="mw-headline" id="TAG_definition">TAG definition</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/NBT_format?section=10&amp;veaction=edit" class="mw-editsection-visualeditor" title="Edit section: TAG definition">edit</a><span class="mw-editsection-divider"> | </span><a href="/w/NBT_format?action=edit&amp;section=10" title="Edit section&#039;s source code: TAG definition">edit source</a><span class="mw-editsection-bracket">]</span></span></h3>
+<div class="msgbox searchaux msgbox-mini msgbox-gray" style="max-width: 50em;">
+<div class="msgbox-icon"> <div class="msgbox-iconimage" style=""> <span class="comment-icon" typeof="mw:File"><span><img alt="" src="/images/Comment_information.svg?6322b" decoding="async" loading="lazy" width="16" height="16" class="mw-file-element" data-file-width="64" data-file-height="64" /></span></span></div>
+</div>
+<div style="width: 100%;">
+<div class="msgbox-text">Note: Since 1.20.1 NBT sent over the network does not contain the 2 bytes for the length of the root tag</div>
+</div>
+</div><p>A tag is an individual part of the data tree. The first byte in a tag is the tag type (ID), followed by a two byte big-endian unsigned integer (ushort) for the length of the name, then the name as a string in UTF-8 format (Note TAG_End is not named and does not contain the extra 2 bytes; the name is assumed to be empty). Finally, depending on the type of the tag, the bytes that follow are part of that tag's <i>payload</i>. This table describes each of the 13 known tags in version 19133 of the NBT format:
+</p><table class="wikitable mw-collapsible" data-description="NBT tags">
+
+<tbody><tr>
+<th>ID
+</th>
+<th>Icon
+</th>
+<th>Tag Type
+</th>
+<th>Payload
+</th>
+<th>Description
+</th>
+<th width="33%" align="center">Storage Capacity
+</th></tr>
+<tr>
+<td style="text-align:center"><b>0</b>
+</td>
+<td>
+</td>
+<td>TAG_<b>End</b>
+</td>
+<td>-
+</td>
+<td>Used to mark the end of compound tags. This tag <b>does not have a name</b>, so it is always a single byte 0. It may also be the type of empty List tags.
+</td>
+<td>N/A
+</td></tr>
+<tr>
+<td style="text-align:center"><b>1</b>
+</td>
+<td style="text-align:center"><span title="Byte"><span class="sprite nbt-sprite" style="background-position:-0px -0px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[Byte]</span></span>
+</td>
+<td>TAG_<b>Byte</b>
+</td>
+<td>1 byte / 8 bits, signed
+</td>
+<td>A signed integral type. Sometimes used for booleans.
+</td>
+<td>Full range of -(2<sup>7</sup>) to (2<sup>7</sup> - 1)<br />(-128 to 127)
+</td></tr>
+<tr>
+<td style="text-align:center"><b>2</b>
+</td>
+<td style="text-align:center"><span title="Short"><span class="sprite nbt-sprite" style="background-position:-16px -16px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[Short]</span></span>
+</td>
+<td>TAG_<b>Short</b>
+</td>
+<td>2 bytes / 16 bits, signed, big endian
+</td>
+<td>A signed integral type.
+</td>
+<td>Full range of -(2<sup>15</sup>) to (2<sup>15</sup> - 1)<br />(-32,768 to 32,767)
+</td></tr>
+<tr>
+<td style="text-align:center"><b>3</b>
+</td>
+<td style="text-align:center"><span title="Int"><span class="sprite nbt-sprite" style="background-position:-48px -0px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[Int]</span></span>
+</td>
+<td>TAG_<b>Int</b>
+</td>
+<td>4 bytes / 32 bits, signed, big endian
+</td>
+<td>A signed integral type.
+</td>
+<td>Full range of -(2<sup>31</sup>) to (2<sup>31</sup> - 1)<br />(-2,147,483,648 to 2,147,483,647)
+</td></tr>
+<tr>
+<td style="text-align:center"><b>4</b>
+</td>
+<td style="text-align:center"><span title="Long"><span class="sprite nbt-sprite" style="background-position:-0px -16px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[Long]</span></span>
+</td>
+<td>TAG_<b>Long</b>
+</td>
+<td>8 bytes / 64 bits, signed, big endian
+</td>
+<td>A signed integral type.
+</td>
+<td>Full range of -(2<sup>63</sup>) to (2<sup>63</sup> - 1)<br />(-9,223,372,036,854,775,808 to 9,223,372,036,854,775,807)
+</td></tr>
+<tr>
+<td style="text-align:center"><b>5</b>
+</td>
+<td style="text-align:center"><span title="Float"><span class="sprite nbt-sprite" style="background-position:-32px -0px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[Float]</span></span>
+</td>
+<td>TAG_<b>Float</b>
+</td>
+<td>4 bytes / 32 bits, signed, big endian, IEEE 754-2008, binary32
+</td>
+<td>A signed floating point type.
+</td>
+<td>Precision varies throughout number line;<br />See <a href="https://en.wikipedia.org/wiki/Single-precision_floating-point_format" class="extiw" title="wikipedia:Single-precision floating-point format">Single-precision floating-point format</a>. Maximum value about 3.4×10<sup>38</sup>
+</td></tr>
+<tr>
+<td style="text-align:center"><b>6</b>
+</td>
+<td style="text-align:center"><span title="Double"><span class="sprite nbt-sprite" style="background-position:-16px -0px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[Double]</span></span>
+</td>
+<td>TAG_<b>Double</b>
+</td>
+<td>8 bytes / 64 bits, signed, big endian, IEEE 754-2008, binary64
+</td>
+<td>A signed floating point type.
+</td>
+<td>Precision varies throughout number line;<br />See <a href="https://en.wikipedia.org/wiki/Double-precision_floating-point_format" class="extiw" title="wikipedia:Double-precision floating-point format">Double-precision floating-point format</a>. Maximum value about 1.8×10<sup>308</sup>
+</td></tr>
+<tr>
+<td style="text-align:center"><b>7</b>
+</td>
+<td style="text-align:center"><span title="Byte Array"><span class="sprite nbt-sprite" style="background-position:-0px -32px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[Byte Array]</span></span>
+</td>
+<td>TAG_<b>Byte</b>_<b>Array</b>
+</td>
+<td>A signed integer (4 bytes) <i>size</i>, then the bytes comprising an array of length <i>size</i>.
+</td>
+<td>An array of bytes.
+</td>
+<td>Maximum number of elements ranges between (2<sup>31</sup> - 9) and (2<sup>31</sup> - 1) (2,147,483,639 and 2,147,483,647), depending on the specific JVM.
+</td></tr>
+<tr>
+<td style="text-align:center"><b>8</b>
+</td>
+<td style="text-align:center">
+<p><span title="String"><span class="sprite nbt-sprite" style="background-position:-32px -16px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[String]</span></span>
+</p>
+</td>
+<td>TAG_<b>String</b>
+</td>
+<td>An <b>unsigned</b> short (2 bytes)<sup id="cite_ref-1" class="reference"><a href="#cite_note-1">&#91;1&#93;</a></sup> payload <i>length</i>, then a UTF-8 string resembled by <i>length</i> bytes.
+</td>
+<td>A UTF-8 string. It has a size, rather than being null terminated.
+</td>
+<td>65,535 bytes interpretable as UTF-8 (see <a href="https://en.wikipedia.org/wiki/UTF-8#Modified_UTF-8" class="extiw" title="wikipedia:UTF-8">modified UTF-8 format</a>; most commonly-used characters are a single byte).
+</td></tr>
+<tr>
+<td style="text-align:center"><b>9</b>
+</td>
+<td style="text-align:center"><span title="NBT List / JSON Array"><span class="sprite nbt-sprite" style="background-position:-32px -32px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[NBT List / JSON Array]</span></span>
+</td>
+<td>TAG_<b>List</b>
+</td>
+<td>A byte denoting the tag ID of the list's contents, followed by the list's <i>length</i> as a signed integer (4 bytes), then <i>length</i> number of payloads that correspond to the given tag ID.
+</td>
+<td>A list of tag payloads, without tag IDs or names, apart from the one before the length.
+</td>
+<td>Due to JVM limitations and the implementation of ArrayList, the maximum number of list elements is (2<sup>31</sup> - 9), or 2,147,483,639. Also note that List and Compound tags may not be nested beyond a depth of 512.
+</td></tr>
+<tr>
+<td style="text-align:center"><b>10</b>
+</td>
+<td style="text-align:center"><span title="NBT Compound / JSON Object"><span class="sprite nbt-sprite" style="background-position:-48px -16px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[NBT Compound / JSON Object]</span></span>
+</td>
+<td>TAG_<b>Compound</b>
+</td>
+<td>Fully formed tags, followed by a TAG_End.
+</td>
+<td>A list of fully formed tags, including their IDs, names, and payloads. No two tags may have the same name.
+</td>
+<td>Unlike lists, there is no hard limit to the number of tags within a Compound (of course, there is always the implicit limit of virtual memory). Note, however, that Compound and List tags may not be nested beyond a depth of 512.
+</td></tr>
+<tr>
+<td style="text-align:center"><b>11</b>
+</td>
+<td style="text-align:center"><span title="Int Array"><span class="sprite nbt-sprite" style="background-position:-16px -32px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[Int Array]</span></span>
+</td>
+<td>TAG_<b>Int</b>_<b>Array</b>
+</td>
+<td>A signed integer <i>size</i>, then <i>size</i> number of TAG_Int's payloads.
+</td>
+<td>An array of TAG_Int's payloads.
+</td>
+<td>Maximum number of elements ranges between (2<sup>31</sup> - 9) and (2<sup>31</sup> - 1) (2,147,483,639 and 2,147,483,647), depending on the specific JVM.
+</td></tr>
+<tr>
+<td style="text-align:center"><b>12</b>
+</td>
+<td style="text-align:center"><span title="Long Array"><span class="sprite nbt-sprite" style="background-position:-0px -48px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[Long Array]</span></span>
+</td>
+<td>TAG_<b>Long</b>_<b>Array</b>
+</td>
+<td>A signed integer <i>size</i>, then <i>size</i> number of TAG_Long's payloads.
+</td>
+<td>An array of TAG_Long's payloads.
+</td>
+<td>Maximum number of elements ranges between (2<sup>31</sup> - 9) and (2<sup>31</sup> - 1) (2,147,483,639 and 2,147,483,647), depending on the specific JVM.
+</td></tr></tbody></table>
+<p>The List and Compound tags can be and often are recursively nested. It should also be noted that, in a list of lists, each of the sub-lists can list a different kind of tag.
+</p>
+<h3><span class="mw-headline" id="Usage">Usage</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/NBT_format?section=11&amp;veaction=edit" class="mw-editsection-visualeditor" title="Edit section: Usage">edit</a><span class="mw-editsection-divider"> | </span><a href="/w/NBT_format?action=edit&amp;section=11" title="Edit section&#039;s source code: Usage">edit source</a><span class="mw-editsection-bracket">]</span></span></h3>
+<p><i>Minecraft</i> sometimes uses the NBT format inconsistently; in some instances, empty lists may be represented as a list of Byte tags rather than a list of the correct type, or as a list of End tags in newer versions of Minecraft, which can break some older NBT tools.
+</p><p>In most cases, the files follow Notch's original specification and are compressed with GZip. But some of the files utilized by Minecraft may be uncompressed, or with <a href="https://en.wikipedia.org/wiki/zlib" class="extiw" title="wikipedia:zlib">zlib</a> (aka DEFLATE with a few bytes extra).
+</p><p>All NBT files created by <i>Minecraft</i> have either a <span title="NBT Compound / JSON Object"><span class="sprite nbt-sprite" style="background-position:-48px -16px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[NBT Compound / JSON Object]</span></span><span class="nowrap" style="font-weight: bold;">&#160;compound</span> or sometimes a <span title="NBT List / JSON Array"><span class="sprite nbt-sprite" style="background-position:-32px -32px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[NBT List / JSON Array]</span></span><span class="nowrap" style="font-weight: bold;">&#160;list</span>&#8204;<sup class="noprint nowrap Inline-Template" title="">[<i><span title="This statement only applies to Bedrock Edition"><a href="/w/Bedrock_Edition" title="Bedrock Edition">Bedrock Edition</a>  only</span></i>]</sup> as the root tag, this tag has a name but is often the <a href="https://en.wikipedia.org/wiki/empty_string" class="extiw" title="wikipedia:empty string">empty string</a>.
+</p><p>In <a href="/w/Bedrock_Edition" title="Bedrock Edition"><i>Bedrock Edition</i></a>, all numbers are encoded in little-endian. This includes the size prefix before tag names, <span title="String"><span class="sprite nbt-sprite" style="background-position:-32px -16px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[String]</span></span><span class="nowrap" style="font-weight: bold;">&#160;string</span> values and <span title="NBT List / JSON Array"><span class="sprite nbt-sprite" style="background-position:-32px -32px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[NBT List / JSON Array]</span></span><span class="nowrap" style="font-weight: bold;">&#160;list</span> or <span title="Byte Array"><span class="sprite nbt-sprite" style="background-position:-0px -32px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[Byte Array]</span></span><span title="Int Array"><span class="sprite nbt-sprite" style="background-position:-16px -32px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[Int Array]</span></span><span title="Long Array"><span class="sprite nbt-sprite" style="background-position:-0px -48px;background-size:64px auto;height:16px;width:16px"></span><span class="hidden-alt-text">[Long Array]</span></span><span class="nowrap" style="font-weight: bold;">&#160;array</span> values, as well as values in all numeric tags.
+</p><p>In <a href="/w/Bedrock_Edition" title="Bedrock Edition"><i>Bedrock Edition</i></a>, the <a href="/w/Bedrock_Edition_level_format#level.dat_format" title="Bedrock Edition level format">level.dat</a> is uncompressed NBT file with an 8-byte header, consisting of a little-endian 4-byte integer indicating the version of the tool used to save the file. It is followed by another integer containing the length of the file, minus the header.
+</p>
+<h4><span class="mw-headline" id="Uses">Uses</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/NBT_format?section=12&amp;veaction=edit" class="mw-editsection-visualeditor" title="Edit section: Uses">edit</a><span class="mw-editsection-divider"> | </span><a href="/w/NBT_format?action=edit&amp;section=12" title="Edit section&#039;s source code: Uses">edit source</a><span class="mw-editsection-bracket">]</span></span></h4>
+<div class="msgbox searchaux msgbox-mini msgbox-orange" style="max-width: 50em;">
+<div class="msgbox-icon"> <div class="msgbox-image nomobile" style=""> <span class="mw-valign-text-top" typeof="mw:File"><a href="/w/File:Knowledge_Book_JE2.png" class="mw-file-description"><img src="/images/thumb/Knowledge_Book_JE2.png/16px-Knowledge_Book_JE2.png?c1af4" decoding="async" loading="lazy" width="16" height="16" class="mw-file-element" srcset="/images/thumb/Knowledge_Book_JE2.png/32px-Knowledge_Book_JE2.png?c1af4 2x" data-file-width="160" data-file-height="160" /></a></span></div>
+</div>
+<div style="width: 100%;"><div style="font-weight: bold; display: inline">This section is missing information about: Bedrock Edition NBTs.</div>&#160;
+<div class="msgbox-text">Please expand the section to include this information. Further details may exist on the <a class="text" href="https://minecraft.wiki/w/Talk:NBT_format">talk page</a>.</div>
+</div>
+</div>
+<ul><li><samp><a href="/w/Level.dat" class="mw-disambig" title="Level.dat">level.dat</a></samp> is stored in compressed NBT format.</li>
+<li><samp><a href="/w/Player.dat_format" title="Player.dat format">&lt;<i>player</i>&gt;.dat</a></samp> files are stored in compressed NBT format.</li>
+<li><samp><a href="/w/Idcounts.dat" class="mw-redirect" title="Idcounts.dat">idcounts.dat</a></samp> is stored in compressed NBT format.</li>
+<li><samp><a href="/w/Villages.dat" class="mw-redirect" title="Villages.dat">villages.dat</a></samp> is stored in compressed NBT format.</li>
+<li><samp><a href="/w/Raids.dat_format" title="Raids.dat format">raids.dat</a></samp> is stored in compressed NBT format.</li>
+<li><samp><a href="/w/Map_item_format" title="Map item format">map_&lt;#&gt;.dat</a></samp> files are stored in compressed NBT format.</li>
+<li><samp><a href="/w/Servers.dat_format" title="Servers.dat format">servers.dat</a></samp>, which is used to store the list of saved multiplayer servers as uncompressed NBT.</li>
+<li><samp><a href="/w/Hotbar.nbt_format" class="mw-redirect" title="Hotbar.nbt format">hotbar.nbt</a></samp>, which is used to save hotbars as uncompressed NBT format.</li>
+<li><a href="/w/Chunk_format" title="Chunk format">Chunks</a> are stored in compressed NBT format within <a href="/w/Region_file_format" title="Region file format">Region</a> files.</li>
+<li><samp><a href="/w/Scoreboard#NBT_format" title="Scoreboard">scoreboard.dat</a></samp> is stored in compressed NBT format.</li>
+<li><a href="/w/Generated_structures_data_file_format" title="Generated structures data file format">Generated structures</a> are stored in compressed NBT format.</li>
+<li><a href="/w/Structure_file" title="Structure file">Saved structures</a> are stored in compressed NBT format.</li></ul>

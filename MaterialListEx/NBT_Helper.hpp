@@ -12,7 +12,7 @@ public:
 public:
 	static void Print(const NBT_Node &nRoot, bool bPadding = true, bool bNewLine = true)
 	{
-		size_t szLevelStart = bPadding ? 0 : (size_t)-1;//è·³è¿‡æ‰“å°
+		size_t szLevelStart = bPadding ? 0 : (size_t)-1;//Ìø¹ı´òÓ¡
 
 		PrintSwitch(nRoot, 0);
 		if (bNewLine)
@@ -24,9 +24,9 @@ public:
 private:
 	constexpr const static inline char *const LevelPadding = "    ";
 
-	static void PrintPadding(size_t szLevel, bool bSubLevel, bool bNewLine)//bSubLevelä¼šè®©ç¼©è¿›å¤šä¸€å±‚
+	static void PrintPadding(size_t szLevel, bool bSubLevel, bool bNewLine)//bSubLevel»áÈÃËõ½ø¶àÒ»²ã
 	{
-		if (szLevel == (size_t)-1)//è·³è¿‡æ‰“å°
+		if (szLevel == (size_t)-1)//Ìø¹ı´òÓ¡
 		{
 			return;
 		}
@@ -108,7 +108,7 @@ private:
 				printf("\"%s\"", ANSISTR(U16STR(nRoot.GetData<NBT_Node::NBT_String>())).c_str());
 			}
 			break;
-		case NBT_Node::TAG_List://éœ€è¦æ‰“å°ç¼©è¿›çš„åœ°æ–¹
+		case NBT_Node::TAG_List://ĞèÒª´òÓ¡Ëõ½øµÄµØ·½
 			{
 				auto &list = nRoot.GetData<NBT_Node::NBT_List>();
 				PrintPadding(szLevel, false, true);
@@ -122,13 +122,13 @@ private:
 
 				if (list.size() != 0)
 				{
-					printf("\b \b");//æ¸…é™¤æœ€åä¸€ä¸ªé€—å·
+					printf("\b \b");//Çå³ı×îºóÒ»¸ö¶ººÅ
 				}
 				PrintPadding(szLevel, false, true);
 				printf("]");
 			}
 			break;
-		case NBT_Node::TAG_Compound://éœ€è¦æ‰“å°ç¼©è¿›çš„åœ°æ–¹
+		case NBT_Node::TAG_Compound://ĞèÒª´òÓ¡Ëõ½øµÄµØ·½
 			{
 				auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
 				PrintPadding(szLevel, false, true);
@@ -144,7 +144,7 @@ private:
 
 				if (cpd.size() != 0)
 				{
-					printf("\b \b");//æ¸…é™¤æœ€åä¸€ä¸ªé€—å·
+					printf("\b \b");//Çå³ı×îºóÒ»¸ö¶ººÅ
 				}
 				PrintPadding(szLevel, false, true);
 				printf("}");

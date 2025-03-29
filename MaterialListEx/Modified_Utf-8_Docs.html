@@ -1,0 +1,567 @@
+            <div class="section">
+               <div class="titlepage">
+                  <div>
+                     <div>
+                        <h3 class="title"><a name="jvms-4.4.7"></a>4.4.7.&nbsp;The <code class="literal">CONSTANT_Utf8_info</code> Structure
+                        </h3>
+                     </div>
+                  </div>
+               </div>
+               <p class="norm"><a name="jvms-4.4.7-100"></a>The <code class="literal">CONSTANT_Utf8_info</code>
+                  structure is used to represent constant string values:
+               </p><a name="jvms-4.4.7-110"></a><pre class="screen">
+CONSTANT_Utf8_info {
+    u1 tag;
+    u2 length;
+    u1 bytes[length];
+}
+</pre><p class="norm"><a name="jvms-4.4.7-200"></a>The items of the
+                  <code class="literal">CONSTANT_Utf8_info</code> structure are as follows:
+               </p>
+               <div class="variablelist">
+                  <dl class="variablelist">
+                     <dt><span class="term">tag</span></dt>
+                     <dd>
+                        <p class="norm"><a name="jvms-4.4.7-200-A"></a>
+                           	The <code class="literal">tag</code> item has the value <code class="literal">CONSTANT_Utf8</code> (1).
+                        </p>
+                     </dd>
+                     <dt><span class="term">length</span></dt>
+                     <dd>
+                        <p class="norm"><a name="jvms-4.4.7-200-B"></a>
+                           	The value of the <code class="literal">length</code> item gives the
+                           	number of bytes in the <code class="literal">bytes</code> array (not the
+                           	length of the resulting string).
+                        </p>
+                     </dd>
+                     <dt><span class="term">bytes[]</span></dt>
+                     <dd>
+                        <p class="norm"><a name="jvms-4.4.7-200-C"></a>
+                           	The <code class="literal">bytes</code> array contains the bytes of the
+                           	string.
+                        </p>
+                        <p class="norm"><a name="jvms-4.4.7-200-C.1"></a>
+                           	No byte may have the value <code class="literal">(byte)0</code>.
+                        </p>
+                        <p class="norm"><a name="jvms-4.4.7-200-C.2"></a>
+                           	No byte may lie in the range <code class="literal">(byte)0xf0</code>
+                           	to <code class="literal">(byte)0xff</code>.
+                        </p>
+                     </dd>
+                  </dl>
+               </div>
+               <p class="norm"><a name="jvms-4.4.7-300"></a>String content is encoded in
+                  modified UTF-8. Modified UTF-8 strings are encoded so that code point
+                  sequences that contain only non-null ASCII characters can be
+                  represented using only 1 byte per code point, but all code points in
+                  the Unicode codespace can be represented. Modified UTF-8 strings are
+                  not null-terminated. The encoding is as follows:
+               </p>
+               <div class="norm">
+                  <ul class="norm" style="list-style-type: disc; ">
+                     <li class="listitem">
+                        <p class="norm"><a name="jvms-4.4.7-300-A"></a>
+                                 Code points in the range '<code class="literal">\u0001</code>' to
+                                 '<code class="literal">\u007F</code>' are represented by a single
+                                 byte:
+                        </p>
+                        <div class="table"><a name="jvms-4.4.7-300-A.1"></a><p class="title"><b>Table&nbsp;4.7.&nbsp;</b></p>
+                           <div class="table-contents">
+                              <table class="table" border="1">
+                                 <colgroup>
+                                    <col align="center" class="c1">
+                                    <col align="center" class="c2">
+                                    <col align="center" class="c3">
+                                    <col align="center" class="c4">
+                                    <col align="center" class="c5">
+                                    <col align="center" class="c6">
+                                    <col align="center" class="c7">
+                                    <col align="center" class="c8">
+                                 </colgroup>
+                                 <tbody>
+                                    <tr>
+                                       <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                       <td colspan="7" align="center"><span class="emphasis"><em>bits 6-0</em></span></td>
+                                    </tr>
+                                 </tbody>
+                              </table>
+                           </div>
+                        </div><br class="table-break"><p class="norm"><a name="jvms-4.4.7-300-A.2"></a>
+                                 The 7 bits of data in the byte give the value of the code point
+                                 represented.
+                        </p>
+                     </li>
+                     <li class="listitem">
+                        <p class="norm"><a name="jvms-4.4.7-300-B"></a>
+                                 The null code point ('<code class="literal">\u0000</code>') and code
+                                 points in the range '<code class="literal">\u0080</code>' to
+                                 '<code class="literal">\u07FF</code>' are represented by a pair of
+                                 bytes <code class="literal">x</code> and <code class="literal">y</code> :
+                        </p>
+                        <div class="table"><a name="jvms-4.4.7-300-B.1"></a><p class="title"><b>Table&nbsp;4.8.&nbsp;</b></p>
+                           <div class="table-contents">
+                              <table class="table" border="0">
+                                 <colgroup>
+                                    <col>
+                                    <col>
+                                 </colgroup>
+                                 <tbody>
+                                    <tr>
+                                       <td><code class="literal">x</code>:
+                                       </td>
+                                       <td>
+                                          
+                                          	      
+                                          <div class="table"><a name="d5e4813"></a><p class="title"><b>Table&nbsp;4.9.&nbsp;</b></p>
+                                             <div class="table-contents">
+                                                <table class="table" border="1">
+                                                   <colgroup>
+                                                      <col align="center" class="c1">
+                                                      <col align="center" class="c2">
+                                                      <col align="center" class="c3">
+                                                      <col align="center" class="c4">
+                                                      <col align="center" class="c5">
+                                                      <col align="center" class="c6">
+                                                      <col align="center" class="c7">
+                                                      <col align="center" class="c8">
+                                                   </colgroup>
+                                                   <tbody>
+                                                      <tr>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td colspan="5" align="center"><span class="emphasis"><em>bits 10-6</em></span></td>
+                                                      </tr>
+                                                   </tbody>
+                                                </table>
+                                             </div>
+                                          </div><br class="table-break">
+                                          
+                                          	    
+                                       </td>
+                                    </tr>
+                                    <tr>
+                                       <td><code class="literal">y</code>:
+                                       </td>
+                                       <td>
+                                          
+                                          	      
+                                          <div class="table"><a name="d5e4837"></a><p class="title"><b>Table&nbsp;4.10.&nbsp;</b></p>
+                                             <div class="table-contents">
+                                                <table class="table" border="1">
+                                                   <colgroup>
+                                                      <col align="center" class="c1">
+                                                      <col align="center" class="c2">
+                                                      <col align="center" class="c3">
+                                                      <col align="center" class="c4">
+                                                      <col align="center" class="c5">
+                                                      <col align="center" class="c6">
+                                                      <col align="center" class="c7">
+                                                      <col align="center" class="c8">
+                                                   </colgroup>
+                                                   <tbody>
+                                                      <tr>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td colspan="6" align="center"><span class="emphasis"><em>bits 5-0</em></span></td>
+                                                      </tr>
+                                                   </tbody>
+                                                </table>
+                                             </div>
+                                          </div><br class="table-break">
+                                          
+                                          	    
+                                       </td>
+                                    </tr>
+                                 </tbody>
+                              </table>
+                           </div>
+                        </div><br class="table-break"><p class="norm"><a name="jvms-4.4.7-300-B.2"></a>
+                                 The two bytes represent the code point with the value:
+                        </p><a name="jvms-4.4.7-300-B.3"></a><pre class="screen">
+((x &amp; 0x1f) &lt;&lt; 6) + (y &amp; 0x3f)
+    </pre></li>
+                     <li class="listitem">
+                        <p class="norm"><a name="jvms-4.4.7-300-C"></a>
+                                 Code points in the range '<code class="literal">\u0800</code>' to
+                                 '<code class="literal">\uFFFF</code>' are represented by 3
+                                 bytes <code class="literal">x</code>, <code class="literal">y</code>,
+                                 and <code class="literal">z</code> :
+                        </p>
+                        <div class="table"><a name="jvms-4.4.7-300-C.1"></a><p class="title"><b>Table&nbsp;4.11.&nbsp;</b></p>
+                           <div class="table-contents">
+                              <table class="table" border="0">
+                                 <colgroup>
+                                    <col>
+                                    <col>
+                                 </colgroup>
+                                 <tbody>
+                                    <tr>
+                                       <td><code class="literal">x</code>:
+                                       </td>
+                                       <td>
+                                          
+                                          	      
+                                          <div class="table"><a name="d5e4873"></a><p class="title"><b>Table&nbsp;4.12.&nbsp;</b></p>
+                                             <div class="table-contents">
+                                                <table class="table" border="1">
+                                                   <colgroup>
+                                                      <col align="center" class="c1">
+                                                      <col align="center" class="c2">
+                                                      <col align="center" class="c3">
+                                                      <col align="center" class="c4">
+                                                      <col align="center" class="c5">
+                                                      <col align="center" class="c6">
+                                                      <col align="center" class="c7">
+                                                      <col align="center" class="c8">
+                                                   </colgroup>
+                                                   <tbody>
+                                                      <tr>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td colspan="4" align="center"><span class="emphasis"><em>bits 15-12</em></span></td>
+                                                      </tr>
+                                                   </tbody>
+                                                </table>
+                                             </div>
+                                          </div><br class="table-break">
+                                          
+                                          	    
+                                       </td>
+                                    </tr>
+                                    <tr>
+                                       <td><code class="literal">y</code>:
+                                       </td>
+                                       <td>
+                                          
+                                          	      
+                                          <div class="table"><a name="d5e4899"></a><p class="title"><b>Table&nbsp;4.13.&nbsp;</b></p>
+                                             <div class="table-contents">
+                                                <table class="table" border="1">
+                                                   <colgroup>
+                                                      <col align="center" class="c1">
+                                                      <col align="center" class="c2">
+                                                      <col align="center" class="c3">
+                                                      <col align="center" class="c4">
+                                                      <col align="center" class="c5">
+                                                      <col align="center" class="c6">
+                                                      <col align="center" class="c7">
+                                                      <col align="center" class="c8">
+                                                   </colgroup>
+                                                   <tbody>
+                                                      <tr>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td colspan="6" align="center"><span class="emphasis"><em>bits 11-6</em></span></td>
+                                                      </tr>
+                                                   </tbody>
+                                                </table>
+                                             </div>
+                                          </div><br class="table-break">
+                                          
+                                          	    
+                                       </td>
+                                    </tr>
+                                    <tr>
+                                       <td><code class="literal">z</code>:
+                                       </td>
+                                       <td>
+                                          
+                                          	      
+                                          <div class="table"><a name="d5e4921"></a><p class="title"><b>Table&nbsp;4.14.&nbsp;</b></p>
+                                             <div class="table-contents">
+                                                <table class="table" border="1">
+                                                   <colgroup>
+                                                      <col align="center" class="c1">
+                                                      <col align="center" class="c2">
+                                                      <col align="center" class="c3">
+                                                      <col align="center" class="c4">
+                                                      <col align="center" class="c5">
+                                                      <col align="center" class="c6">
+                                                      <col align="center" class="c7">
+                                                      <col align="center" class="c8">
+                                                   </colgroup>
+                                                   <tbody>
+                                                      <tr>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td colspan="6" align="center"><span class="emphasis"><em>bits 5-0</em></span></td>
+                                                      </tr>
+                                                   </tbody>
+                                                </table>
+                                             </div>
+                                          </div><br class="table-break">
+                                          
+                                          	    
+                                       </td>
+                                    </tr>
+                                 </tbody>
+                              </table>
+                           </div>
+                        </div><br class="table-break"><p class="norm"><a name="jvms-4.4.7-300-C.2"></a>
+                                 The three bytes represent the code point with the value:
+                        </p><a name="jvms-4.4.7-300-C.3"></a><pre class="screen">
+((x &amp; 0xf) &lt;&lt; 12) + ((y &amp; 0x3f) &lt;&lt; 6) + (z &amp; 0x3f)
+    </pre></li>
+                     <li class="listitem">
+                        <p class="norm"><a name="jvms-4.4.7-300-D"></a>
+                                 Characters with code points above U+FFFF
+                                 (so-called <span class="emphasis"><em>supplementary characters</em></span>) are
+                                 represented by separately encoding the two surrogate code units
+                                 of their UTF-16 representation. Each of the surrogate code units
+                                 is represented by three bytes. This means supplementary
+                                 characters are represented by six
+                                 bytes, <code class="literal">u</code>, <code class="literal">v</code>, <code class="literal">w</code>, <code class="literal">x</code>,
+                               <code class="literal">y</code>, and <code class="literal">z</code> :
+                        </p>
+                        <div class="table"><a name="jvms-4.4.7-300-D.1"></a><p class="title"><b>Table&nbsp;4.15.&nbsp;</b></p>
+                           <div class="table-contents">
+                              <table class="table" border="0">
+                                 <colgroup>
+                                    <col>
+                                    <col>
+                                 </colgroup>
+                                 <tbody>
+                                    <tr>
+                                       <td><code class="literal">u</code>:
+                                       </td>
+                                       <td>
+                                          
+                                          	      
+                                          <div class="table"><a name="d5e4959"></a><p class="title"><b>Table&nbsp;4.16.&nbsp;</b></p>
+                                             <div class="table-contents">
+                                                <table class="table" border="1">
+                                                   <colgroup>
+                                                      <col align="center" class="c1">
+                                                      <col align="center" class="c2">
+                                                      <col align="center" class="c3">
+                                                      <col align="center" class="c4">
+                                                      <col align="center" class="c5">
+                                                      <col align="center" class="c6">
+                                                      <col align="center" class="c7">
+                                                      <col align="center" class="c8">
+                                                   </colgroup>
+                                                   <tbody>
+                                                      <tr>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                      </tr>
+                                                   </tbody>
+                                                </table>
+                                             </div>
+                                          </div><br class="table-break">
+                                          
+                                          	    
+                                       </td>
+                                    </tr>
+                                    <tr>
+                                       <td><code class="literal">v</code>:
+                                       </td>
+                                       <td>
+                                          
+                                          	      
+                                          <div class="table"><a name="d5e4991"></a><p class="title"><b>Table&nbsp;4.17.&nbsp;</b></p>
+                                             <div class="table-contents">
+                                                <table class="table" border="1">
+                                                   <colgroup>
+                                                      <col align="center" class="c1">
+                                                      <col align="center" class="c2">
+                                                      <col align="center" class="c3">
+                                                      <col align="center" class="c4">
+                                                      <col align="center" class="c5">
+                                                      <col align="center" class="c6">
+                                                      <col align="center" class="c7">
+                                                      <col align="center" class="c8">
+                                                   </colgroup>
+                                                   <tbody>
+                                                      <tr>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td colspan="4" align="center"><span class="emphasis"><em>(bits 20-16)-1</em></span></td>
+                                                      </tr>
+                                                   </tbody>
+                                                </table>
+                                             </div>
+                                          </div><br class="table-break">
+                                          
+                                          	    
+                                       </td>
+                                    </tr>
+                                    <tr>
+                                       <td><code class="literal">w</code>:
+                                       </td>
+                                       <td>
+                                          
+                                          	      
+                                          <div class="table"><a name="d5e5017"></a><p class="title"><b>Table&nbsp;4.18.&nbsp;</b></p>
+                                             <div class="table-contents">
+                                                <table class="table" border="1">
+                                                   <colgroup>
+                                                      <col align="center" class="c1">
+                                                      <col align="center" class="c2">
+                                                      <col align="center" class="c3">
+                                                      <col align="center" class="c4">
+                                                      <col align="center" class="c5">
+                                                      <col align="center" class="c6">
+                                                      <col align="center" class="c7">
+                                                      <col align="center" class="c8">
+                                                   </colgroup>
+                                                   <tbody>
+                                                      <tr>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td colspan="6" align="center"><span class="emphasis"><em>bits 15-10</em></span></td>
+                                                      </tr>
+                                                   </tbody>
+                                                </table>
+                                             </div>
+                                          </div><br class="table-break">
+                                          
+                                          	    
+                                       </td>
+                                    </tr>
+                                    <tr>
+                                       <td><code class="literal">x</code>:
+                                       </td>
+                                       <td>
+                                          
+                                          	      
+                                          <div class="table"><a name="d5e5039"></a><p class="title"><b>Table&nbsp;4.19.&nbsp;</b></p>
+                                             <div class="table-contents">
+                                                <table class="table" border="1">
+                                                   <colgroup>
+                                                      <col align="center" class="c1">
+                                                      <col align="center" class="c2">
+                                                      <col align="center" class="c3">
+                                                      <col align="center" class="c4">
+                                                      <col align="center" class="c5">
+                                                      <col align="center" class="c6">
+                                                      <col align="center" class="c7">
+                                                      <col align="center" class="c8">
+                                                   </colgroup>
+                                                   <tbody>
+                                                      <tr>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                      </tr>
+                                                   </tbody>
+                                                </table>
+                                             </div>
+                                          </div><br class="table-break">
+                                          
+                                          	    
+                                       </td>
+                                    </tr>
+                                    <tr>
+                                       <td><code class="literal">y</code>:
+                                       </td>
+                                       <td>
+                                          
+                                          	      
+                                          <div class="table"><a name="d5e5071"></a><p class="title"><b>Table&nbsp;4.20.&nbsp;</b></p>
+                                             <div class="table-contents">
+                                                <table class="table" border="1">
+                                                   <colgroup>
+                                                      <col align="center" class="c1">
+                                                      <col align="center" class="c2">
+                                                      <col align="center" class="c3">
+                                                      <col align="center" class="c4">
+                                                      <col align="center" class="c5">
+                                                      <col align="center" class="c6">
+                                                      <col align="center" class="c7">
+                                                      <col align="center" class="c8">
+                                                   </colgroup>
+                                                   <tbody>
+                                                      <tr>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td colspan="4" align="center"><span class="emphasis"><em>bits 9-6</em></span></td>
+                                                      </tr>
+                                                   </tbody>
+                                                </table>
+                                             </div>
+                                          </div><br class="table-break">
+                                          
+                                          	    
+                                       </td>
+                                    </tr>
+                                    <tr>
+                                       <td><code class="literal">z</code>:
+                                       </td>
+                                       <td>
+                                          
+                                          	      
+                                          <div class="table"><a name="d5e5097"></a><p class="title"><b>Table&nbsp;4.21.&nbsp;</b></p>
+                                             <div class="table-contents">
+                                                <table class="table" border="1">
+                                                   <colgroup>
+                                                      <col align="center" class="c1">
+                                                      <col align="center" class="c2">
+                                                      <col align="center" class="c3">
+                                                      <col align="center" class="c4">
+                                                      <col align="center" class="c5">
+                                                      <col align="center" class="c6">
+                                                      <col align="center" class="c7">
+                                                      <col align="center" class="c8">
+                                                   </colgroup>
+                                                   <tbody>
+                                                      <tr>
+                                                         <td align="center"><span class="emphasis"><em>1</em></span></td>
+                                                         <td align="center"><span class="emphasis"><em>0</em></span></td>
+                                                         <td colspan="6" align="center"><span class="emphasis"><em>bits 5-0</em></span></td>
+                                                      </tr>
+                                                   </tbody>
+                                                </table>
+                                             </div>
+                                          </div><br class="table-break">
+                                          
+                                          	    
+                                       </td>
+                                    </tr>
+                                 </tbody>
+                              </table>
+                           </div>
+                        </div><br class="table-break"><p class="norm"><a name="jvms-4.4.7-300-D.2"></a>
+                                 The six bytes represent the code point with the value:
+                        </p><a name="jvms-4.4.7-300-D.3"></a><pre class="screen">
+0x10000 + ((v &amp; 0x0f) &lt;&lt; 16) + ((w &amp; 0x3f) &lt;&lt; 10) +
+((y &amp; 0x0f) &lt;&lt; 6) + (z &amp; 0x3f)
+    </pre></li>
+                  </ul>
+               </div>
+               <p class="norm"><a name="jvms-4.4.7-400"></a>The bytes of multibyte
+                  characters are stored in the <code class="literal">class</code> file in big-endian (high byte
+                  first) order.
+               </p>
+               <p class="norm"><a name="jvms-4.4.7-500"></a>There are two differences
+                  between this format and the "standard" UTF-8 format. First, the null
+                  character <code class="literal">(char)0</code> is encoded using the 2-byte
+                  format rather than the 1-byte format, so that modified UTF-8 strings
+                  never have embedded nulls. Second, only the 1-byte, 2-byte, and 3-byte
+                  formats of standard UTF-8 are used. The Java Virtual Machine does not recognize the
+                  four-byte format of standard UTF-8; it uses its own
+                  two-times-three-byte format instead.
+               </p>
+               <p class="note">For more information regarding the standard UTF-8
+                  format, see Section 3.9 <em class="citetitle">Unicode Encoding Forms</em>
+                  of <em class="citetitle">The Unicode Standard, Version 13.0</em>.
+               </p>
+            </div>

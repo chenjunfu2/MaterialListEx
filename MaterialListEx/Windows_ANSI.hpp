@@ -11,15 +11,15 @@ std::basic_string<char> ConvertUtf16ToAnsi(std::basic_string<U16T> u16String)
 
 	if (u16String.size() == 0)
 	{
-		return std::basic_string<char>{};//è¿”å›ç©ºå­—ç¬¦ä¸²
+		return std::basic_string<char>{};//·µ»Ø¿Õ×Ö·û´®
 	}
 
-	// è·å–è½¬æ¢åæ‰€éœ€çš„ç¼“å†²åŒºå¤§å°ï¼ˆåŒ…æ‹¬ç»ˆæ­¢ç¬¦ï¼‰
-	int sizeNeeded = WideCharToMultiByte(//æ³¨æ„æ­¤å‡½æ•°u16æ¥å—å­—ç¬¦æ•°ï¼Œè€Œu8æ¥å—å­—èŠ‚æ•°
-		CP_ACP,                // ä½¿ç”¨å½“å‰ANSIä»£ç é¡µ
-		WC_NO_BEST_FIT_CHARS,  // æ›¿æ¢æ— æ³•ç›´æ¥æ˜ å°„çš„å­—ç¬¦
-		(wchar_t*)u16String.data(),//static_assertä¿è¯åº•å±‚å¤§å°ç›¸åŒ
-		u16String.size(),//ä¸»åŠ¨ä¼ å…¥å¤§å°ï¼Œåˆ™è½¬æ¢ç»“æœä¸åŒ…å«\0
+	// »ñÈ¡×ª»»ºóËùĞèµÄ»º³åÇø´óĞ¡£¨°üÀ¨ÖÕÖ¹·û£©
+	int sizeNeeded = WideCharToMultiByte(//×¢Òâ´Ëº¯Êıu16½ÓÊÜ×Ö·ûÊı£¬¶øu8½ÓÊÜ×Ö½ÚÊı
+		CP_ACP,                // Ê¹ÓÃµ±Ç°ANSI´úÂëÒ³
+		WC_NO_BEST_FIT_CHARS,  // Ìæ»»ÎŞ·¨Ö±½ÓÓ³ÉäµÄ×Ö·û
+		(wchar_t*)u16String.data(),//static_assert±£Ö¤µ×²ã´óĞ¡ÏàÍ¬
+		u16String.size(),//Ö÷¶¯´«Èë´óĞ¡£¬Ôò×ª»»½á¹û²»°üº¬\0
 		NULL,
 		0,
 		NULL,
@@ -28,20 +28,20 @@ std::basic_string<char> ConvertUtf16ToAnsi(std::basic_string<U16T> u16String)
 
 	if (sizeNeeded == 0)
 	{
-		//ERROR_INSUFFICIENT_BUFFER//ã€‚ æä¾›çš„ç¼“å†²åŒºå¤§å°ä¸å¤Ÿå¤§ï¼Œæˆ–è€…é”™è¯¯åœ°è®¾ç½®ä¸º NULLã€‚
-		//ERROR_INVALID_FLAGS//ã€‚ ä¸ºæ ‡å¿—æä¾›çš„å€¼æ— æ•ˆã€‚
-		//ERROR_INVALID_PARAMETER//ã€‚ ä»»ä½•å‚æ•°å€¼éƒ½æ— æ•ˆã€‚
-		//ERROR_NO_UNICODE_TRANSLATION//ã€‚ åœ¨å­—ç¬¦ä¸²ä¸­å‘ç°æ— æ•ˆçš„ Unicodeã€‚
+		//ERROR_INSUFFICIENT_BUFFER//¡£ Ìá¹©µÄ»º³åÇø´óĞ¡²»¹»´ó£¬»òÕß´íÎóµØÉèÖÃÎª NULL¡£
+		//ERROR_INVALID_FLAGS//¡£ Îª±êÖ¾Ìá¹©µÄÖµÎŞĞ§¡£
+		//ERROR_INVALID_PARAMETER//¡£ ÈÎºÎ²ÎÊıÖµ¶¼ÎŞĞ§¡£
+		//ERROR_NO_UNICODE_TRANSLATION//¡£ ÔÚ×Ö·û´®ÖĞ·¢ÏÖÎŞĞ§µÄ Unicode¡£
 		
 		printf("\nWideCharToMultiByte failed. Error code: %lu\n", GetLastError());
 		return std::basic_string<char>{};
 	}
 
-	//åˆ›å»ºstringå¹¶é¢„åˆ†é…å¤§å°
+	//´´½¨string²¢Ô¤·ÖÅä´óĞ¡
 	std::basic_string<char> ansiString;
 	ansiString.resize(sizeNeeded);
 
-	// æ‰§è¡Œå®é™…è½¬æ¢
+	// Ö´ĞĞÊµ¼Ê×ª»»
 	int convertedSize = WideCharToMultiByte(
 		CP_ACP,
 		WC_NO_BEST_FIT_CHARS,
