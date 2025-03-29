@@ -15,7 +15,7 @@ class NBT_Node
 public:
 	enum NBT_TAG : uint8_t
 	{
-		TAG_End = 0,	//½áÊøÏî
+		TAG_End = 0,	//ç»“æŸé¡¹
 		TAG_Byte,		//int8_t
 		TAG_Short,		//int16_t
 		TAG_Int,		//int32_t
@@ -23,27 +23,27 @@ public:
 		TAG_Float,		//float 4byte
 		TAG_Double,		//double 8byte
 		TAG_Byte_Array,	//std::vector<int8_t>
-		TAG_String,		//std::string->ÓĞ³¤¶ÈÊı¾İ£¬ÇÒÎª·Ç0ÖÕÖ¹×Ö·û´®!!
+		TAG_String,		//std::string->æœ‰é•¿åº¦æ•°æ®ï¼Œä¸”ä¸ºé0ç»ˆæ­¢å­—ç¬¦ä¸²!!
 		TAG_List,		//std::list<NBT_Node>->vector
-		TAG_Compound,	//std::map<std::string, NBT_Node>->×Ö·û´®ÎªNBTÏîÃû³Æ
+		TAG_Compound,	//std::map<std::string, NBT_Node>->å­—ç¬¦ä¸²ä¸ºNBTé¡¹åç§°
 		TAG_Int_Array,	//std::vector<int32_t>
 		TAG_Long_Array,	//std::vector<int64_t>
-		ENUM_END,		//½áÊø±ê¼Ç£¬ÓÃÓÚ¼ÆËãenumÔªËØ¸öÊı
+		ENUM_END,		//ç»“æŸæ ‡è®°ï¼Œç”¨äºè®¡ç®—enumå…ƒç´ ä¸ªæ•°
 	};
 
-	using NBT_End			= std::monostate;//ÎŞ×´Ì¬
+	using NBT_End			= std::monostate;//æ— çŠ¶æ€
 	using NBT_Byte			= int8_t;
 	using NBT_Short			= int16_t;
 	using NBT_Int			= int32_t;
 	using NBT_Long			= int64_t;
-	using NBT_Float			= std::conditional_t<(sizeof(float) == sizeof(uint32_t)), float, uint32_t>;//Í¨¹ı±àÒëÆÚÈ·ÈÏÀàĞÍ´óĞ¡À´Ñ¡ÔñÕıÈ·µÄÀàĞÍ£¬ÓÅÏÈ¸¡µãÀàĞÍ£¬Èç¹ûÊ§°ÜÔòÌæ»»Îª¶ÔÓ¦µÄ¿ÉÓÃÀàĞÍ
+	using NBT_Float			= std::conditional_t<(sizeof(float) == sizeof(uint32_t)), float, uint32_t>;//é€šè¿‡ç¼–è¯‘æœŸç¡®è®¤ç±»å‹å¤§å°æ¥é€‰æ‹©æ­£ç¡®çš„ç±»å‹ï¼Œä¼˜å…ˆæµ®ç‚¹ç±»å‹ï¼Œå¦‚æœå¤±è´¥åˆ™æ›¿æ¢ä¸ºå¯¹åº”çš„å¯ç”¨ç±»å‹
 	using NBT_Double		= std::conditional_t<(sizeof(double) == sizeof(uint64_t)), double, uint64_t>;
 	using NBT_Byte_Array	= std::vector<NBT_Byte>;
 	using NBT_Int_Array		= std::vector<NBT_Int>;
 	using NBT_Long_Array	= std::vector<NBT_Long>;
-	using NBT_String		= std::string;//´ú°ì£ºmutf8½âÂëµ½utf8
-	using NBT_List			= std::vector<NBT_Node>;//´æ´¢Ò»ÏµÁĞÍ¬ÀàĞÍ±êÇ©µÄÓĞĞ§¸ºÔØ£¨ÎŞ±êÇ© ID »òÃû³Æ£©//Ô­ÏÈÎªlist£¬ÒòÎªmcÄÚlistÒ²Í¨¹ıÏÂ±ê·ÃÎÊ£¬¸ÄÎªvectorÄ£Äâ
-	using NBT_Compound		= std::map<NBT_String, NBT_Node>;//¹ÒÔÚĞòÁĞÏÂµÄÄÚÈİ¶¼Í¨¹ımap°ó¶¨Ãû³Æ
+	using NBT_String		= std::string;//ä»£åŠï¼šmutf8è§£ç åˆ°utf8
+	using NBT_List			= std::vector<NBT_Node>;//å­˜å‚¨ä¸€ç³»åˆ—åŒç±»å‹æ ‡ç­¾çš„æœ‰æ•ˆè´Ÿè½½ï¼ˆæ— æ ‡ç­¾ ID æˆ–åç§°ï¼‰//åŸå…ˆä¸ºlistï¼Œå› ä¸ºmcå†…listä¹Ÿé€šè¿‡ä¸‹æ ‡è®¿é—®ï¼Œæ”¹ä¸ºvectoræ¨¡æ‹Ÿ
+	using NBT_Compound		= std::map<NBT_String, NBT_Node>;//æŒ‚åœ¨åºåˆ—ä¸‹çš„å†…å®¹éƒ½é€šè¿‡mapç»‘å®šåç§°
 
 	template<typename... Ts> struct TypeList{};
 	using NBT_TypeList = TypeList
@@ -76,10 +76,10 @@ public:
 private:
 	VariantData data;
 
-	//enumÓëË÷Òı´óĞ¡¼ì²é
+	//enumä¸ç´¢å¼•å¤§å°æ£€æŸ¥
 	static_assert((std::variant_size_v<VariantData>) == ENUM_END, "Enumeration does not match the number of types in the mutator");
 
-	// ÀàĞÍ´æÔÚ¼ì²é
+	// ç±»å‹å­˜åœ¨æ£€æŸ¥
 	template <typename T, typename List>
 	struct IsValidType;
 
@@ -90,19 +90,19 @@ private:
 	};
 
 public:
-	// Í¨ÓÃ¹¹Ôìº¯Êı
-	// Ê¹ÓÃSFINAEÅÅ³ıNBT_NodeÀàĞÍ
+	// é€šç”¨æ„é€ å‡½æ•°
+	// ä½¿ç”¨SFINAEæ’é™¤NBT_Nodeç±»å‹
 	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, NBT_Node>>>
 	explicit NBT_Node(T &&value) : data(std::forward<T>(value))
 	{
 		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
 	}
 
-	// Ä¬ÈÏ¹¹Ôì£¨TAG_End£©
+	// é»˜è®¤æ„é€ ï¼ˆTAG_Endï¼‰
 	NBT_Node() : data(std::monostate{})
 	{}
 
-	// ×Ô¶¯Îö¹¹ÓÉvariant´¦Àí
+	// è‡ªåŠ¨ææ„ç”±variantå¤„ç†
 	~NBT_Node() = default;
 
 	NBT_Node(const NBT_Node &_NBT_Node) : data(_NBT_Node.data)
@@ -127,20 +127,20 @@ public:
 		return *this;
 	}
 
-	//Çå³ıËùÓĞÊı¾İ
+	//æ¸…é™¤æ‰€æœ‰æ•°æ®
 	void Clear(void)
 	{
 		data = NBT_Compound{};
 	}
 
-	//»ñÈ¡±êÇ©ÀàĞÍ
+	//è·å–æ ‡ç­¾ç±»å‹
 	NBT_TAG GetTag() const noexcept
 	{
-		return (NBT_TAG)data.index();//·µ»Øµ±Ç°´æ´¢ÀàĞÍµÄindex£¨0»ùË÷Òı£¬ÓëNBT_TAG enumÒ»Ò»¶ÔÓ¦£©
+		return (NBT_TAG)data.index();//è¿”å›å½“å‰å­˜å‚¨ç±»å‹çš„indexï¼ˆ0åŸºç´¢å¼•ï¼Œä¸NBT_TAG enumä¸€ä¸€å¯¹åº”ï¼‰
 	}
 
 
-	//ÀàĞÍ°²È«·ÃÎÊ
+	//ç±»å‹å®‰å…¨è®¿é—®
 	template<typename T>
 	const T &GetData() const
 	{
@@ -153,7 +153,7 @@ public:
 		return std::get<T>(data);
 	}
 
-	//Ç¿ÖÆÒªÇó´æÔÚ°æ±¾£¨×Ô´ø¼ì²é£©
+	//å¼ºåˆ¶è¦æ±‚å­˜åœ¨ç‰ˆæœ¬ï¼ˆè‡ªå¸¦æ£€æŸ¥ï¼‰
 	template<typename T>
 	const T &AtData() const
 	{
@@ -176,18 +176,18 @@ public:
 		return std::get<T>(data);
 	}
 
-	// ÀàĞÍ¼ì²é
+	// ç±»å‹æ£€æŸ¥
 	template<typename T>
 	bool TypeHolds() const
 	{
 		return std::holds_alternative<T>(data);
 	}
 
-	//Õë¶ÔÃ¿ÖÖÀàĞÍÖØÔØÒ»¸ö·½±ãµÄº¯Êı
+	//é’ˆå¯¹æ¯ç§ç±»å‹é‡è½½ä¸€ä¸ªæ–¹ä¾¿çš„å‡½æ•°
 	/*
-		´¿ÀàĞÍÃûº¯Êı£ºÖ±½Ó»ñÈ¡´ËÀàĞÍ£¬²»×öÈÎºÎ¼ì²é£¬ÓÉ±ê×¼¿âstd::get¾ßÌåÊµÏÖ¾ö¶¨
-		At¿ªÍ·µÄÀàĞÍÃûº¯Êı£ºÇ¿ÖÆ»ñÈ¡ÀàĞÍ£¬Èç¹û³É¹¦£¬»ñµÃÀàĞÍ£¬·ñÔò´Ë²Ù×÷Ê§°ÜÅ×³öÒì³£
-		Is¿ªÍ·µÄÀàĞÍÃûº¯Êı£ºÅĞ¶Ïµ±Ç°NBT_NodeÊÇ·ñÎª´ËÀàĞÍ
+		çº¯ç±»å‹åå‡½æ•°ï¼šç›´æ¥è·å–æ­¤ç±»å‹ï¼Œä¸åšä»»ä½•æ£€æŸ¥ï¼Œç”±æ ‡å‡†åº“std::getå…·ä½“å®ç°å†³å®š
+		Atå¼€å¤´çš„ç±»å‹åå‡½æ•°ï¼šå¼ºåˆ¶è·å–ç±»å‹ï¼Œå¦‚æœæˆåŠŸï¼Œè·å¾—ç±»å‹ï¼Œå¦åˆ™æ­¤æ“ä½œå¤±è´¥æŠ›å‡ºå¼‚å¸¸
+		Iså¼€å¤´çš„ç±»å‹åå‡½æ•°ï¼šåˆ¤æ–­å½“å‰NBT_Nodeæ˜¯å¦ä¸ºæ­¤ç±»å‹
 	*/
 #define TYPE_GET_FUNC(type) \
 const NBT_##type &##type() const {return std::get<NBT_##type>(data);}\
