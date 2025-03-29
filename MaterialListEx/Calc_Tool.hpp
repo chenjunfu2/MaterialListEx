@@ -19,7 +19,7 @@ const T &Min(const T &l, const T &r)
 struct BlockPos
 {
 	NBT_Node::NBT_Int x{ 0 }, y{ 0 }, z{ 0 };
-	//ÀàÏà¹Øº¯ÊıÓÉ±àÒëÆ÷´úÀíÉú³É
+	//ç±»ç›¸å…³å‡½æ•°ç”±ç¼–è¯‘å™¨ä»£ç†ç”Ÿæˆ
 
 	BlockPos add(const BlockPos &r) const
 	{
