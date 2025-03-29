@@ -7,8 +7,13 @@
 class NBT_Helper
 {
 public:
-	static void Print(const NBT_Node &nRoot, bool bNewLine = true)
+	NBT_Helper() = delete;
+	~NBT_Helper() = delete;
+public:
+	static void Print(const NBT_Node &nRoot, bool bPadding = true, bool bNewLine = true)
 	{
+		size_t szLevelStart = bPadding ? 0 : (size_t)-1;//跳过打印
+
 		PrintSwitch(nRoot, 0);
 		if (bNewLine)
 		{
@@ -17,7 +22,32 @@ public:
 	}
 
 private:
-	static void PrintSwitch(const NBT_Node &nRoot, int iLevel)
+	constexpr const static inline char *const LevelPadding = "    ";
+
+	static void PrintPadding(size_t szLevel, bool bSubLevel, bool bNewLine)//bSubLevel会让缩进多一层
+	{
+		if (szLevel == (size_t)-1)//跳过打印
+		{
+			return;
+		}
+
+		if (bNewLine)
+		{
+			putchar('\n');
+		}
+		
+		for (size_t i = 0; i < szLevel; ++i)
+		{
+			printf(LevelPadding);
+		}
+
+		if (bSubLevel)
+		{
+			printf(LevelPadding);
+		}
+	}
+
+	static void PrintSwitch(const NBT_Node &nRoot, size_t szLevel)
 	{
 		auto tag = nRoot.GetTag();
 		switch (tag)
@@ -78,39 +108,45 @@ private:
 				printf("\"%s\"", ANSISTR(U16STR(nRoot.GetData<NBT_Node::NBT_String>())).c_str());
 			}
 			break;
-		case NBT_Node::TAG_List:
+		case NBT_Node::TAG_List://需要打印缩进的地方
 			{
 				auto &list = nRoot.GetData<NBT_Node::NBT_List>();
+				PrintPadding(szLevel, false, true);
 				printf("[");
 				for (auto &it : list)
 				{
-					PrintSwitch(it, ++iLevel);
+					PrintPadding(szLevel, true, it.GetTag() != NBT_Node::TAG_Compound);
+					PrintSwitch(it, szLevel + 1);
 					printf(",");
 				}
 
 				if (list.size() != 0)
 				{
-					printf("\b");
+					printf("\b \b");//清除最后一个逗号
 				}
+				PrintPadding(szLevel, false, true);
 				printf("]");
 			}
 			break;
-		case NBT_Node::TAG_Compound:
+		case NBT_Node::TAG_Compound://需要打印缩进的地方
 			{
 				auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
+				PrintPadding(szLevel, false, true);
 				printf("{");
 
 				for (auto &it : cpd)
 				{
+					PrintPadding(szLevel, true, true);
 					printf("\"%s\":", ANSISTR(U16STR(it.first)).c_str());
-					PrintSwitch(it.second, ++iLevel);
+					PrintSwitch(it.second, szLevel + 1);
 					printf(",");
 				}
 
 				if (cpd.size() != 0)
 				{
-					printf("\b");
+					printf("\b \b");//清除最后一个逗号
 				}
+				PrintPadding(szLevel, false, true);
 				printf("}");
 			}
 			break;
@@ -153,9 +189,5 @@ private:
 			break;
 		}
 	}
-
-
-
-
 
 };

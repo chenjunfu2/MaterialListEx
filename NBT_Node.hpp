@@ -8,6 +8,7 @@
 #include <string>
 #include <stdint.h>
 #include <typeinfo>
+#include <stdexcept>
 
 class NBT_Node
 {

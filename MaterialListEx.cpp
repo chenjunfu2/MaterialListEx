@@ -1,5 +1,11 @@
 ﻿#include "MemoryLeakCheck.hpp"
 
+#include "Calc_Tool.hpp"
+#include "MUTF8_Tool.hpp"
+#include "Windows_ANSI.hpp"
+#include "NBT_Helper.hpp"
+#include "NBT_Reader.hpp"
+
 #define ZLIB_CONST
 #include <zlib.h>
 
@@ -11,12 +17,6 @@
 
 #include <stdio.h>
 #include <string>
-
-#include "NBT_Reader.hpp"
-#include "Calc_Tool.hpp"
-#include "NBT_Helper.hpp"
-#include "MUTF8_Tool.hpp"
-#include "Windows_ANSI.hpp"
 
 int main(int argc, char *argv[])
 {
