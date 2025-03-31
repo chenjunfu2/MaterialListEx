@@ -65,9 +65,10 @@ public:
 };
 
 
-template <typename DataType = std::string, typename OutputStream = MyOutputStream<DataType>>//流类型
+template <typename DataType = std::string>
 class NBT_Writer
 {
+	using OutputStream = MyOutputStream<DataType>;//流类型
 private:
 
 
@@ -76,7 +77,7 @@ public:
 	NBT_Writer(void) = delete;
 	~NBT_Writer(void) = delete;
 
-	static bool WriteNBT(std::string &tData, const NBT_Node &nRoot)
+	static bool WriteNBT(DataType &tData, const NBT_Node &nRoot)
 	{
 
 	}

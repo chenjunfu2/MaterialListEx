@@ -89,9 +89,10 @@ public:
 	}
 };
 
-template <typename DataType = std::string, typename InputStream = MyInputStream<DataType>>//流类型
+template <typename DataType = std::string>
 class NBT_Reader
 {
+	using InputStream = MyInputStream<DataType>;//流类型
 private:
 	// 读取大端序数值，bNoCheck为true则不进行任何检查
 	template<bool bNoCheck = false, typename T>
@@ -253,7 +254,7 @@ private:
 	}\
 }
 
-	static int GetName(InputStream &tData, std::string &sName)
+	static int GetName(InputStream &tData, NBT_Node::NBT_String &sName)
 	{
 		//读取2字节的无符号名称长度
 		uint16_t wNameLength = 0;//w->word=2*byte
@@ -280,7 +281,7 @@ private:
 	static int GetbuiltInType(InputStream &tData, NBT_Node &nRoot)
 	{
 		//获取NBT的N（名称）
-		std::string sName{};
+		NBT_Node::NBT_String sName{};
 		if constexpr (bHasName)//如果无名称则string默认为空
 		{
 			int iRet = GetName(tData, sName);
@@ -386,7 +387,7 @@ private:
 		}
 
 		//获取NBT的N（名称）
-		std::string sName{};
+		NBT_Node::NBT_String sName{};
 		if constexpr (bHasName)//如果无名称则string默认为空
 		{
 			int iRet = GetName(tData, sName);
@@ -443,7 +444,7 @@ private:
 	{
 		CHECK_STACK_DEPTH(szStackDepth);
 		//获取NBT的N（名称）
-		std::string sName{};
+		NBT_Node::NBT_String sName{};
 		if constexpr (bHasName)//如果无名称则string默认为空
 		{
 			int iRet = GetName(tData, sName);
@@ -483,7 +484,7 @@ private:
 	static int GetStringType(InputStream &tData, NBT_Node &nRoot)
 	{
 		//获取NBT的N（名称）
-		std::string sName{};
+		NBT_Node::NBT_String sName{};
 		if constexpr (bHasName)//如果无名称则string默认为空
 		{
 			int iRet = GetName(tData, sName);
@@ -510,15 +511,15 @@ private:
 		if constexpr (bHasName)
 		{
 			//原位构造
-			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ std::string{tData.Current(), tData.Next(wStrLength)} });
+			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ NBT_Node::NBT_String{tData.Current(), tData.Next(wStrLength)} });
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(std::string).name());
+				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_String).name());
 			}
 		}
 		else//列表元素直接赋值
 		{
-			nRoot = NBT_Node{ std::string{tData.Current(), tData.Next(wStrLength)} };
+			nRoot = NBT_Node{ NBT_Node::NBT_String{tData.Current(), tData.Next(wStrLength)} };
 		}
 		tData.AddIndex(wStrLength);//移动下标
 		
@@ -530,7 +531,7 @@ private:
 	{
 		CHECK_STACK_DEPTH(szStackDepth);
 		//获取NBT的N（名称）
-		std::string sName{};
+		NBT_Node::NBT_String sName{};
 		if constexpr (bHasName)//如果无名称则string默认为空
 		{
 			int iRet = GetName(tData, sName);
@@ -712,7 +713,7 @@ public:
 	~NBT_Reader(void) = delete;
 
 	//szStackDepth 控制栈深度，递归层检查仅由可嵌套的可能进行递归的函数进行，栈深度递减仅由对选择函数的调用进行
-	static bool ReadNBT(NBT_Node &nRoot, const std::string &tData, size_t szDataStartIndex = 0, size_t szStackDepth = 512)//从data中读取nbt
+	static bool ReadNBT(NBT_Node &nRoot, const DataType &tData, size_t szDataStartIndex = 0, size_t szStackDepth = 512)//从data中读取nbt
 	{
 		nRoot.Clear();//清掉原来的数据（注意如果nbt较大的情况下，这是一个较深的递归清理过程，不排除栈空间不足导致清理失败）
 		printf("Max Stack Depth [%zu]\n", szStackDepth);
