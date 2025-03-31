@@ -5,6 +5,7 @@
 #include "Windows_ANSI.hpp"
 #include "NBT_Helper.hpp"
 #include "NBT_Reader.hpp"
+#include "NBT_Writer.hpp"
 
 #define ZLIB_CONST
 #include <zlib.h>
@@ -102,8 +103,8 @@ int main(int argc, char *argv[])
 	}
 
 	//以下使用nbt
-	NBT_Reader nt;
-	if (!nt.SetNBT(sNbtData))
+	NBT_Node nRoot;
+	if (!NBT_Reader<std::string>::ReadNBT(nRoot, sNbtData))
 	{
 		return -1;
 	}
@@ -112,9 +113,9 @@ int main(int argc, char *argv[])
 		printf("Read Ok!\n");
 	}
 
-	NBT_Helper::Print(nt.GetRoot());
+	NBT_Helper::Print(nRoot);
 
-	const auto &tmp = nt.GetRoot().AtCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
+	const auto &tmp = nRoot.AtCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
 	if (tmp.size() != 1)
 	{
 		printf("Error root size");

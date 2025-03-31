@@ -2,55 +2,82 @@
 
 #include "NBT_Node.hpp"
 
-class OutputStream
+template <typename T>
+class MyOutputStream
 {
-private:
-	std::string &sString;
-public:
-	OutputStream(std::string &_sString, size_t szStartIdx = 0) :sString(_sString)
+	template<typename T>
+	struct has_emplace_back
 	{
-		sString.resize(szStartIdx);
-	}
-	~OutputStream() = default;
+	private:
+		template<typename U>
+		static auto test(int) -> decltype(std::declval<U>().emplace_back(std::declval<typename U::value_type>()), std::true_type{});
 
-	void PutChar(char c)
+		template<typename>
+		static std::false_type test(...);
+
+	public:
+		static constexpr bool value = std::true_type::value;
+	};
+private:
+	T &tData;
+public:
+	MyOutputStream(T &_tData, size_t szStartIdx = 0) :tData(_tData)
 	{
-		return sString.push_back(c);
+		tData.resize(szStartIdx);
+	}
+	~MyOutputStream() = default;
+
+	void PutOnce(const typename T::value_type &c)
+	{
+		return tData.push_back(c);
+	}
+
+	template<typename... Args, typename = std::enable_if_t<has_emplace_back<T>::value>>
+	void EmplaceOnce(Args&&... args)
+	{
+		tData.emplace_back(std::forward<Args>(args)...);
 	}
 
 	void UnPut()
 	{
-		sString.pop_back();
+		tData.pop_back();
 	}
 
 	size_t GetSize() const
 	{
-		return sString.size();
+		return tData.size();
 	}
 
 	void Reset()
 	{
-		sString.resize(0);
+		tData.resize(0);
 	}
 
-	const std::string &Data() const
+	const T &Data() const
 	{
-		return sString;
+		return tData;
 	}
 
-	std::string &Data()
+	T &Data()
 	{
-		return sString;
+		return tData;
 	}
 };
 
 
+template <typename DataType = std::string, typename OutputStream = MyOutputStream<DataType>>//Á÷ÀàÐÍ
 class NBT_Writer
 {
+private:
 
 
 
+public:
+	NBT_Writer(void) = delete;
+	~NBT_Writer(void) = delete;
 
+	static bool WriteNBT(std::string &tData, const NBT_Node &nRoot)
+	{
 
-
+	}
 };
