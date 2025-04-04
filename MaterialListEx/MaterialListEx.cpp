@@ -115,16 +115,16 @@ int main(int argc, char *argv[])
 
 	NBT_Helper::Print(nRoot);
 
-	const auto &tmp = nRoot.AtCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
-	if (tmp.size() != 1)
-	{
-		printf("Error root size");
-		return -1;
-	}
+	//const auto &tmp = nRoot.AtCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
+	//if (tmp.size() != 1)
+	//{
+	//	printf("Error root size");
+	//	return -1;
+	//}
 
 	//输出名称（一般是空字符串）
-	const auto &root = *tmp.begin();
-	printf("root:\"%s\"\n", ANSISTR(U16STR(root.first)).c_str());
+	//const auto &root = *tmp.begin();
+	//printf("root:\"%s\"\n", ANSISTR(U16STR(root.first)).c_str());
 	
 	//auto vtBlockStatistics = BlockProcess::GetBlockStatistics(root.second);
 	

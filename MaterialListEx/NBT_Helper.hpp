@@ -115,7 +115,7 @@ private:
 				printf("[");
 				for (auto &it : list)
 				{
-					PrintPadding(szLevel, true, it.GetTag() != NBT_Node::TAG_Compound);
+					PrintPadding(szLevel, true, it.GetTag() != NBT_Node::TAG_Compound && it.GetTag() != NBT_Node::TAG_List);
 					PrintSwitch(it, szLevel + 1);
 					printf(",");
 				}

@@ -128,14 +128,14 @@ private:
 
 	enum ErrCode : int
 	{
-		Compound_End = 1,//结束
-		AllOk = 0,//没有问题
-		InternalTypeError = -1,//变体NBT节点类型错误（代码问题）
-		OutOfRangeError = -2,//（NBT内部长度错误溢出）（NBT文件问题）
-		NbtTypeTagError = -3,//NBT标签类型错误（NBT文件问题）
-		StackDepthExceeded = -4,//调用栈深度过深（NBT文件or代码设置问题）
-		ListElementTypeError = -5,//列表元素类型错误（NBT文件问题）
 		ERRCODE_END = -6,//结束标记，统计负数部分大小
+		ListElementTypeError = -5,//列表元素类型错误（NBT文件问题）
+		StackDepthExceeded = -4,//调用栈深度过深（NBT文件or代码设置问题）
+		NbtTypeTagError = -3,//NBT标签类型错误（NBT文件问题）
+		OutOfRangeError = -2,//（NBT内部长度错误溢出）（NBT文件问题）
+		InternalTypeError = -1,//变体NBT节点类型错误（代码问题）
+		AllOk = 0,//没有问题
+		Compound_End = 1,//集合结束
 	};
 
 	static inline const char *const errReason[] =
@@ -479,7 +479,7 @@ private:
 			nRoot = NBT_Node{ std::move(nodeTemp.GetData<NBT_Node::NBT_Compound>()) };
 		}
 
-		return AllOk;
+		return AllOk;//挂完子节点返回ok
 	}
 
 	template<bool bHasName = true>
@@ -572,11 +572,12 @@ private:
 			NBT_Node tmpNode{};//列表元素会直接赋值修改
 			int iRet = SwitchNBT<false>(tData, tmpNode, (NBT_Node::NBT_TAG)bListElementType, szStackDepth - 1);
 
-			if (iRet < AllOk)//如果iRet是Compound_End则列表包含n个NBT_Node空值，NBT_Node默认初始化即为TAG_End，符合逻辑
+			if (iRet < AllOk)//错误处理
 			{
 				return iRet;//此处只在失败时传递返回值
 			}
-			else if (iRet == Compound_End)//空元素Compound_End特判
+
+			if (bListElementType == NBT_Node::NBT_TAG::TAG_End)//空元素特判
 			{
 				//读取1字节的bCompoundEndTag
 				uint8_t bCompoundEndTag = 0;//b=byte
@@ -588,7 +589,7 @@ private:
 				//判断tag是否符合
 				if (bCompoundEndTag != NBT_Node::TAG_End)
 				{
-					return Error(ListElementTypeError, tData, __FUNCSIG__ ": require Compound_End Tag [0x00], but read Unknow Tag [0x%02X]!", bCompoundEndTag);
+					return Error(ListElementTypeError, tData, __FUNCSIG__ ": require Compound End Tag [0x00], but read Unknow Tag [0x%02X]!", bCompoundEndTag);
 				}
 			}
 
@@ -623,7 +624,7 @@ private:
 		{
 		case NBT_Node::TAG_End:
 			{
-				iRet = Compound_End;
+				iRet = Compound_End;//返回结尾
 			}
 			break;
 		case NBT_Node::TAG_Byte:
@@ -696,6 +697,7 @@ private:
 		return iRet;//传递返回值
 	}
 
+	template<bool bRoot = false>//根部特化版本，用于处理末尾
 	static int GetNBT(InputStream &tData, NBT_Node &nRoot, size_t szStackDepth)//递归调用读取并添加节点
 	{
 		CHECK_STACK_DEPTH(szStackDepth);
@@ -705,26 +707,26 @@ private:
 			return Error(InternalTypeError, tData, __FUNCSIG__ ": nRoot is not type: [%s]", typeid(NBT_Node::NBT_Compound).name());
 		}
 
-		int iRet;
+		int iRet = AllOk;//默认值
 		do
 		{
-			if (!tData.HasAvailData(sizeof(char)))//处理末尾情况
+			if (!tData.HasAvailData(sizeof(uint8_t)))//处理末尾情况
 			{
-				tData.UnGet();//尝试回退一个查看上一字节
-				if (tData.HasAvailData(sizeof(char)) && tData.GetNext() == NBT_Node::NBT_TAG::TAG_End)//如果上一字节是TAG_End表明NBT已结束，则退出循环
+				if constexpr (!bRoot)//非根部情况遇到末尾，则报错
 				{
-					iRet = Compound_End;
+					iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": Index[%zu] >= DataSize()[%zu]", tData.Index(), tData.Size());
+					break;
 				}
 				else
 				{
-					iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": Index[%zu] >= DataSize()[%zu]", tData.Index(), tData.Size());
+					iRet == AllOk;
+					break;//否则根部直接跳出
 				}
-				break;
 			}
 
 			//处理正常情况
 			iRet = SwitchNBT(tData, nRoot, (NBT_Node::NBT_TAG)(uint8_t)tData.GetNext(), szStackDepth - 1);
-		} while (iRet == AllOk);
+		} while (iRet == AllOk);//iRet<AllOk即为错误，跳出循环，>AllOk则为其它动作，跳出循环
 		
 		return iRet;//传递返回值
 	}
@@ -738,6 +740,6 @@ public:
 		nRoot.Clear();//清掉原来的数据（注意如果nbt较大的情况下，这是一个较深的递归清理过程，不排除栈空间不足导致清理失败）
 		printf("Max Stack Depth [%zu]\n", szStackDepth);
 		InputStream IptStream{ tData,szDataStartIndex };
-		return GetNBT(IptStream, nRoot, szStackDepth) == Compound_End;//从data中获取nbt数据到nroot中
+		return GetNBT<true>(IptStream, nRoot, szStackDepth) == AllOk;//从data中获取nbt数据到nRoot中
 	}
 };
