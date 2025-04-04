@@ -123,8 +123,8 @@ private:
 				if (list.size() != 0)
 				{
 					printf("\b \b");//清除最后一个逗号
+					PrintPadding(szLevel, false, true);//空列表无需换行以及对齐
 				}
-				PrintPadding(szLevel, false, true);
 				printf("]");
 			}
 			break;
@@ -145,8 +145,8 @@ private:
 				if (cpd.size() != 0)
 				{
 					printf("\b \b");//清除最后一个逗号
+					PrintPadding(szLevel, false, true);//空集合无需换行以及对齐
 				}
-				PrintPadding(szLevel, false, true);
 				printf("}");
 			}
 			break;

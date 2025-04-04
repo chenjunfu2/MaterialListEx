@@ -134,7 +134,8 @@ private:
 		OutOfRangeError = -2,//（NBT内部长度错误溢出）（NBT文件问题）
 		NbtTypeTagError = -3,//NBT标签类型错误（NBT文件问题）
 		StackDepthExceeded = -4,//调用栈深度过深（NBT文件or代码设置问题）
-		ERRCODE_END = -5,//结束标记，统计负数部分大小
+		ListElementTypeError = -5,//列表元素类型错误（NBT文件问题）
+		ERRCODE_END = -6,//结束标记，统计负数部分大小
 	};
 
 	static inline const char *const errReason[] =
@@ -144,6 +145,7 @@ private:
 		"OutOfRangeError",
 		"NbtTypeTagError",
 		"StackDepthExceeded",
+		"ListElementTypeError"
 	};
 
 	//记得同步数组！
@@ -570,9 +572,24 @@ private:
 			NBT_Node tmpNode{};//列表元素会直接赋值修改
 			int iRet = SwitchNBT<false>(tData, tmpNode, (NBT_Node::NBT_TAG)bListElementType, szStackDepth - 1);
 
-			if (iRet != AllOk)//如果iRet是Compound_End则列表包含n个NBT_Node空值，NBT_Node默认初始化即为TAG_End，符合逻辑
+			if (iRet < AllOk)//如果iRet是Compound_End则列表包含n个NBT_Node空值，NBT_Node默认初始化即为TAG_End，符合逻辑
 			{
 				return iRet;//此处只在失败时传递返回值
+			}
+			else if (iRet == Compound_End)//空元素Compound_End特判
+			{
+				//读取1字节的bCompoundEndTag
+				uint8_t bCompoundEndTag = 0;//b=byte
+				if (!ReadBigEndian(tData, bCompoundEndTag))
+				{
+					return Error(OutOfRangeError, tData, __FUNCSIG__ ": bCompoundEndTag Read");
+				}
+
+				//判断tag是否符合
+				if (bCompoundEndTag != NBT_Node::TAG_End)
+				{
+					return Error(ListElementTypeError, tData, __FUNCSIG__ ": require Compound_End Tag [0x00], but read Unknow Tag [0x%02X]!", bCompoundEndTag);
+				}
 			}
 
 			//每读取一个往后插入一个
@@ -585,6 +602,7 @@ private:
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(sName, NBT_Node{ std::move(tmpList) });
 			if (!ret.second)//插入失败，元素已存在
 			{
+				//此处实为警告而非错误，无需return
 				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(tmpList).name());
 			}
 		}
