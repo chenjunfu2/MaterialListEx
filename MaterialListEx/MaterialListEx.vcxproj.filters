@@ -146,6 +146,9 @@
     <ClInclude Include="MUTF8_Tool.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="BlockProcess.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="text.json">

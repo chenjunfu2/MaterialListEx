@@ -323,7 +323,8 @@ public:
 
 };
 
-#define MU8STR(charstr) MUTF8_Tool<>::U16ToMU8(u##charstr)
+//#define MU8STR(charstr) MUTF8_Tool<>::U16ToMU8(u##charstr)
+#define MU8STR(charstr) (charstr)//纯英文情况下，转换后效果不变
 #define U16STR(mu8str) MUTF8_Tool<>::MU8ToU16(mu8str)
 
 /*

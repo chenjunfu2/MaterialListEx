@@ -189,6 +189,7 @@
     <ClCompile Include="zlib\zutil.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BlockProcess.hpp" />
     <ClInclude Include="Calc_Tool.hpp" />
     <ClInclude Include="gzip\compress.hpp" />
     <ClInclude Include="gzip\config.hpp" />

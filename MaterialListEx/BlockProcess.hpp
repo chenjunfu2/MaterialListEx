@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include <map>
 
 class BlockProcess
 {
@@ -153,8 +154,63 @@ public:
 		return vtRegionsStatistics;
 	}
 
+	//过滤可获取的方块，不可获取的方块直接删除，半砖等特殊多物品方块转换数量
+	struct ItemStack
+	{
+		NBT_Node::NBT_String sItemName{};//物品名
+		uint64_t u64Counter = 0;//物品计数器
+	};
+
+	static ItemStack BlockStatisticsToItemStack(const BlockStatistics &stBlocks)
+	{
+		//先处理方块到物品转换
+
+		//普通方块转换
+		static const std::map<NBT_Node::NBT_String, uint64_t> mapFilter =//uint64_t->ID
+		{
+			/*0 -> minecraft:empty*/
+			{MU8STR("minecraft:air"),0 },//方块air对应物品empty
+			{MU8STR("minecraft:void_air"),0 },
+			{MU8STR("minecraft:cave_air"),0 },
+
+			{MU8STR("minecraft:piston_head"),0},
+			{MU8STR("minecraft:moving_piston"),0},
+			{MU8STR("minecraft:nether_portal"),0},
+			{MU8STR("minecraft:end_portal"),0},
+			{MU8STR("minecraft:end_gateway"),0},
+
+			{MU8STR("minecraft:farmland"),1},//dirt
+
+			{MU8STR("minecraft:lava"),2},//lava.level == 0 ? minecraft:lava_bucket : minecraft:empty
+			{MU8STR("minecraft:water"),2},//water.level == 0 ? minecraft:water_bucket : minecraft:empty
+		};
 
 
+		//特殊方块转换
+		/*
+		门\床\高植物\不同种类花盆
+		*/
+
+
+
+
+
+
+		//方块数量转换
+		/*
+		半砖\雪\海龟蛋\海泡菜\蜡烛\樱花
+		*/
+
+		//特殊方块数量转换
+		/*
+		多面生长方块，如藤蔓，发光地衣
+		*/
+
+
+
+
+		return {};
+	}
 
 
 };

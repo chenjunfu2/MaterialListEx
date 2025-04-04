@@ -563,6 +563,8 @@ private:
 
 		//根据元素类型，读取n次列表
 		NBT_Node::NBT_List tmpList;
+		tmpList.reserve(dwListLength);//已知大小提前分配减少开销
+
 		for (int32_t i = 0; i < dwListLength; ++i)
 		{
 			NBT_Node tmpNode{};//列表元素会直接赋值修改

@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 		printf("Read Ok!\n");
 	}
 
-	//NBT_Helper::Print(nRoot);
+	NBT_Helper::Print(nRoot);
 
 	const auto &tmp = nRoot.AtCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
 	if (tmp.size() != 1)
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 	const auto &root = *tmp.begin();
 	printf("root:\"%s\"\n", ANSISTR(U16STR(root.first)).c_str());
 	
-	auto ret = BlockProcess::GetBlockStatistics(root.second);
+	//auto vtBlockStatistics = BlockProcess::GetBlockStatistics(root.second);
 	
 	//方块状态过滤（过滤掉部分不需要统计的方块，比如床的半边，门的半边，不是水源的水，不是岩浆源的岩浆，洞穴空气 虚空空气 空气，等等等等）
 
