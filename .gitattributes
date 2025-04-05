@@ -1,2 +1,3 @@
 *.c linguist-language=CPP
+*.h linguist-language=CPP
 *.html linguist-language=CPP
