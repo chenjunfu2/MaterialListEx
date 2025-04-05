@@ -727,6 +727,14 @@ private:
 			//处理正常情况
 			iRet = SwitchNBT(tData, nRoot, (NBT_Node::NBT_TAG)(uint8_t)tData.GetNext(), szStackDepth - 1);
 		} while (iRet == AllOk);//iRet<AllOk即为错误，跳出循环，>AllOk则为其它动作，跳出循环
+
+		if constexpr (bRoot)//根部情况遇到Compound_End则转为AllOk返回
+		{
+			if (iRet == Compound_End)
+			{
+				iRet = AllOk;
+			}
+		}
 		
 		return iRet;//传递返回值
 	}
@@ -740,6 +748,6 @@ public:
 		nRoot.Clear();//清掉原来的数据（注意如果nbt较大的情况下，这是一个较深的递归清理过程，不排除栈空间不足导致清理失败）
 		printf("Max Stack Depth [%zu]\n", szStackDepth);
 		InputStream IptStream{ tData,szDataStartIndex };
-		return GetNBT<true>(IptStream, nRoot, szStackDepth) == AllOk;//从data中获取nbt数据到nRoot中
+		return GetNBT<true>(IptStream, nRoot, szStackDepth) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
 	}
 };
