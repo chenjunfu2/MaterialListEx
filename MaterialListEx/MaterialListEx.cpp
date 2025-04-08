@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 
 	//NBT_Helper::Print(nRoot);
 
-	const auto &tmp = nRoot.AtCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
+	const auto &tmp = nRoot.Compound();//获取根下第一个compound，正常情况下根部下只有这一个compound
 	if (tmp.size() != 1)
 	{
 		printf("Error root size");

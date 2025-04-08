@@ -37,30 +37,29 @@ public:
 	static std::vector<RegionsStatistics> GetBlockStatistics(const NBT_Node &nRoot)//block list
 	{
 		//获取regions，也就是区域，一个投影可能有多个区域（选区）
-		const auto &Regions = nRoot.Compound().at(MU8STR("Regions")).Compound();
+		const auto &Regions = nRoot.Compound(MU8STR("Regions"));
 		//创建区域统计vector
 		std::vector<RegionsStatistics> vtRegionsStatistics;
 		vtRegionsStatistics.reserve(Regions.size());//提前分配
 		for (const auto &[RgName, RgVal] : Regions)//遍历选区
 		{
-			const auto &RgCompound = RgVal.Compound();
 
 			/*----------------区域大小计算、调色板获取----------------*/
 			//获取区域偏移
-			const auto &Position = RgCompound.at(MU8STR("Position")).Compound();
+			const auto &Position = RgVal.Get(MU8STR("Position"));
 			const BlockPos reginoPos =
 			{
-				.x = Position.at(MU8STR("x")).Int(),
-				.y = Position.at(MU8STR("y")).Int(),
-				.z = Position.at(MU8STR("z")).Int(),
+				.x = Position.Int(MU8STR("x")),
+				.y = Position.Int(MU8STR("y")),
+				.z = Position.Int(MU8STR("z")),
 			};
 			//获取区域大小（可能为负，结合区域偏移计算实际大小）
-			const auto &Size = RgCompound.at(MU8STR("Size")).Compound();
+			const auto &Size = RgVal.Get(MU8STR("Size"));
 			const BlockPos regionSize =
 			{
-				.x = Size.at(MU8STR("x")).Int(),
-				.y = Size.at(MU8STR("y")).Int(),
-				.z = Size.at(MU8STR("z")).Int(),
+				.x = Size.Int(MU8STR("x")),
+				.y = Size.Int(MU8STR("y")),
+				.z = Size.Int(MU8STR("z")),
 			};
 			//计算区域实际大小
 			const BlockPos posEndRel = getRelativeEndPositionFromAreaSize(regionSize).add(reginoPos);
@@ -71,7 +70,7 @@ public:
 			//printf("RegionSize: [%d, %d, %d]\n", size.x, size.y, size.z);
 
 			//获取调色板（方块种类）
-			const auto &BlockStatePalette = RgCompound.at(MU8STR("BlockStatePalette")).List();
+			const auto &BlockStatePalette = RgVal.List(MU8STR("BlockStatePalette"));
 			const uint32_t bitsPerBitMapElement = Max(2U, (uint32_t)sizeof(uint32_t) * 8 - numberOfLeadingZeros(BlockStatePalette.size() - 1));//计算位图中一个元素占用的bit大小
 			const uint32_t bitMaskOfElement = (1 << bitsPerBitMapElement) - 1;//获取遮罩位，用于取bitmap内部内容
 			//printf("BlockStatePaletteSize: [%zu]\nbitsPerBitMapElement: [%d]\n", BlockStatePalette.size(), bitsPerBitMapElement);
@@ -85,14 +84,12 @@ public:
 			//遍历BlockStatePalette方块调色板，并从中创建等效下标的方块统计vector
 			for (const auto &it : BlockStatePalette)
 			{
-				const auto &itCompound = it.Compound();
-
 				BlockStatistics bsTemp{};
-				bsTemp.sBlockName = itCompound.at(MU8STR("Name")).String();
-				const auto find = itCompound.find(MU8STR("Properties"));//检查方块是否有额外属性
-				if (find != itCompound.end())
+				bsTemp.sBlockName =it.String(MU8STR("Name"));
+				const auto find = it.HasCompound(MU8STR("Properties"));//检查方块是否有额外属性
+				if (find != NULL)
 				{
-					bsTemp.cpdProperties = (*find).second.Compound();
+					bsTemp.cpdProperties = *find;
 
 					/*
 					blockName += '[';
@@ -121,7 +118,7 @@ public:
 			}
 
 			//获取Long方块状态位图数组（用于作为下标访问调色板）
-			const auto &BlockStates = RgCompound.at(MU8STR("BlockStates")).Long_Array();
+			const auto &BlockStates = RgVal.Long_Array(MU8STR("BlockStates"));
 			const uint64_t RegionFullSize = (uint64_t)size.x * (uint64_t)size.y * (uint64_t)size.z;
 			if (BlockStates.size() * 64 / bitsPerBitMapElement < RegionFullSize)
 			{

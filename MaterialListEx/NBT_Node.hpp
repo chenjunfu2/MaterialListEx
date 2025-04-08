@@ -205,18 +205,77 @@ public:
 		return std::holds_alternative<T>(data);
 	}
 
+	//简化map查询
+	NBT_Node &Get(const NBT_String &sTagName)
+	{
+		return Compound().at(sTagName);
+	}
+
+	const NBT_Node &Get(const NBT_String &sTagName) const
+	{
+		return Compound().at(sTagName);
+	}
+
+	NBT_Node *Search(const NBT_String &sTagName)
+	{
+		auto &cpd = Compound();
+		auto find = cpd.find(sTagName);
+		return find == cpd.end() ? NULL : &((*find).second);
+	}
+
+	const NBT_Node *Search(const NBT_String &sTagName) const
+	{
+		auto &cpd = Compound();
+		auto find = cpd.find(sTagName);
+		return find == cpd.end() ? NULL : &((*find).second);
+	}
+
 	//针对每种类型重载一个方便的函数
 	/*
 		纯类型名函数：直接获取此类型，不做任何检查，由标准库std::get具体实现决定
 		At开头的类型名函数：强制获取类型，如果成功，获得类型，否则此操作失败抛出异常
 		Is开头的类型名函数：判断当前NBT_Node是否为此类型
 	*/
-#define TYPE_GET_FUNC(type) \
-const NBT_##type &##type() const {return std::get<NBT_##type>(data);}\
-NBT_##type &##type() {return std::get<NBT_##type>(data);}\
-const NBT_##type &At##type() const {if (!std::holds_alternative<NBT_##type>(data)){throw std::runtime_error(std::string{} + "NBT_Node is not type[" + typeid(NBT_##type).name() + "]");} return std::get<NBT_##type>(data);}\
-NBT_##type &At##type() {if (!std::holds_alternative<NBT_##type>(data)){throw std::runtime_error(std::string{} + "NBT_Node is not type[" + typeid(NBT_##type).name() + "]");} return std::get<NBT_##type>(data);}\
-bool Is##type() const {return std::holds_alternative<NBT_##type>(data);}
+#define TYPE_GET_FUNC(type)\
+inline const NBT_##type &##type() const\
+{\
+	return std::get<NBT_##type>(data);\
+}\
+\
+inline NBT_##type &##type()\
+{\
+	return std::get<NBT_##type>(data);\
+}\
+\
+inline bool Is##type() const\
+{\
+	return std::holds_alternative<NBT_##type>(data);\
+}\
+\
+inline const NBT_##type &##type(const NBT_String & sTagName) const\
+{\
+	return Compound().at(sTagName).##type();\
+}\
+\
+inline NBT_##type &##type(const NBT_String & sTagName)\
+{\
+	return Compound().at(sTagName).##type();\
+}\
+\
+inline const NBT_##type *Has##type(const NBT_String & sTagName) const\
+{\
+	auto &cpd = Compound();\
+	auto find = cpd.find(sTagName);\
+	return find == cpd.end() ? NULL : &((*find).second.##type());\
+}\
+\
+inline NBT_##type *Has##type(const NBT_String & sTagName)\
+{\
+	auto &cpd = Compound();\
+	auto find = cpd.find(sTagName);\
+	return find == cpd.end() ? NULL : &((*find).second.##type());\
+}
+
 
 	TYPE_GET_FUNC(End);
 	TYPE_GET_FUNC(Byte);
