@@ -90,12 +90,34 @@ private:
 	};
 
 public:
+	// 显式构造（通过标签）
+	template <typename T, typename... Args>
+	explicit NBT_Node(std::in_place_type_t<T>, Args&&... args) : data(std::in_place_type<T>, std::forward<Args>(args)...)
+	{
+		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
+	}
+
+	// 显式构造（通过标签）
+	template <typename T, typename... Args>
+	explicit NBT_Node(Args&&... args) : data(std::forward<Args>(args)...)
+	{
+		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
+	}
+
 	// 通用构造函数
 	// 使用SFINAE排除NBT_Node类型
 	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, NBT_Node>>>
 	explicit NBT_Node(T &&value) : data(std::forward<T>(value))
 	{
 		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
+	}
+
+	// 通用原位构造接口
+	template <typename T, typename... Args>
+	T &emplace(Args&&... args)
+	{
+		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
+		return data.emplace<T>(std::forward<Args>(args)...);
 	}
 
 	// 默认构造（TAG_End）

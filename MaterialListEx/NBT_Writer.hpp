@@ -32,6 +32,11 @@ public:
 		return tData.push_back(c);
 	}
 
+	void PutOnce(const typename T::value_type &&c)
+	{
+		return tData.push_back(std::move(c));
+	}
+
 	template<typename... Args, typename = std::enable_if_t<has_emplace_back<T>::value>>
 	void EmplaceOnce(Args&&... args)
 	{

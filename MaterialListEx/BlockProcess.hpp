@@ -43,6 +43,7 @@ public:
 		{
 			const auto &RgCompound = RgVal.Compound();
 
+			/*----------------区域大小计算、调色板获取----------------*/
 			//获取区域偏移
 			const auto &Position = RgCompound.at(MU8STR("Position")).Compound();
 			const BlockPos reginoPos =
@@ -72,6 +73,22 @@ public:
 			const uint32_t bitsPerBitMapElement = Max(2U, (uint32_t)sizeof(uint32_t) * 8 - numberOfLeadingZeros(BlockStatePalette.size() - 1));//计算位图中一个元素占用的bit大小
 			const uint32_t bitMaskOfElement = (1 << bitsPerBitMapElement) - 1;//获取遮罩位，用于取bitmap内部内容
 			//printf("BlockStatePaletteSize: [%zu]\nbitsPerBitMapElement: [%d]\n", BlockStatePalette.size(), bitsPerBitMapElement);
+			/*------------------------------------------------*/
+
+
+			/*----------------方块实体获取----------------*/
+			//获取方块实体列表
+			const auto &TileEntities = RgCompound.at(MU8STR("TileEntities")).List();
+
+
+
+
+
+
+
+
+
+			/*------------------------------------------------*/
 
 			//创建方块统计vector
 			std::vector<BlockStatistics> vtBlockStatistics;
@@ -112,7 +129,7 @@ public:
 					*/
 				}
 
-				vtBlockStatistics.emplace_back( std::move(bsTemp));
+				vtBlockStatistics.emplace_back(std::move(bsTemp));
 			}
 
 			//获取Long方块状态位图数组（用于作为下标访问调色板）
@@ -121,7 +138,7 @@ public:
 			if (BlockStates.size() * 64 / bitsPerBitMapElement < RegionFullSize)
 			{
 				//printf("BlockStates Too Small!\n");
-				vtRegionsStatistics.emplace_back(RegionsStatistics{ RgName,std::move(vtBlockStatistics) });//全0计数
+				vtRegionsStatistics.emplace_back(RgName,std::move(vtBlockStatistics));//全0计数
 				continue;//尝试获取下一个选区
 			}
 
@@ -148,7 +165,7 @@ public:
 			}
 
 			//计数完成，插入RegionsStatistics
-			vtRegionsStatistics.emplace_back(RegionsStatistics{ RgName,std::move(vtBlockStatistics) });
+			vtRegionsStatistics.emplace_back(RgName,std::move(vtBlockStatistics));
 		}
 
 		return vtRegionsStatistics;

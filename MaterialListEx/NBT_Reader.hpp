@@ -305,7 +305,7 @@ private:
 			if constexpr (bHasName)
 			{
 				//名称-内含数据的节点插入当前调用栈深度的根节点
-				auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Float *)&tTmpData)) });//无损数据类型转换
+				auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move((*((NBT_Node::NBT_Float *)&tTmpData))));//无损数据类型转换
 				if (!ret.second)//插入失败，元素已存在
 				{
 					Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_Float).name());
@@ -314,7 +314,7 @@ private:
 			else
 			{
 				//无名，为列表元素，直接修改nRoot
-				nRoot = NBT_Node{ (*((NBT_Node::NBT_Float *)&tTmpData)) };
+				nRoot.emplace<NBT_Node::NBT_Float>(std::move((*((NBT_Node::NBT_Float *)&tTmpData))));
 			}
 			
 		}
@@ -329,7 +329,7 @@ private:
 			if constexpr (bHasName)
 			{
 				//名称-内含数据的节点插入当前调用栈深度的根节点
-				auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ (*((NBT_Node::NBT_Double *)&tTmpData)) });//无损数据类型转换
+				auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move((*((NBT_Node::NBT_Double *)&tTmpData))));//无损数据类型转换
 				if (!ret.second)//插入失败，元素已存在
 				{
 					Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_Double).name());
@@ -338,7 +338,7 @@ private:
 			else
 			{
 				//无名，为列表元素，直接修改nRoot
-				nRoot = NBT_Node{ (*((NBT_Node::NBT_Double *)&tTmpData)) };
+				nRoot.emplace<NBT_Node::NBT_Double>(std::move((*((NBT_Node::NBT_Double *)&tTmpData))));
 			}
 		}
 		else if constexpr (std::is_integral<T>::value)
@@ -352,7 +352,7 @@ private:
 			if constexpr (bHasName)
 			{
 				//名称-内含数据的节点插入当前调用栈深度的根节点
-				auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ tTmpData });
+				auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move(tTmpData));
 				if (!ret.second)//插入失败，元素已存在
 				{
 					Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(tTmpData).name());
@@ -360,7 +360,7 @@ private:
 			}
 			else
 			{
-				nRoot = NBT_Node{ tTmpData };
+				nRoot.emplace<T>(std::move(tTmpData));
 			}
 		}
 		else
@@ -422,13 +422,13 @@ private:
 		{
 			typename T::value_type tTmpData;
 			ReadBigEndian<true>(tData, tTmpData);//调用需要确保范围安全
-			tArray.emplace_back(tTmpData);//读取一个插入一个
+			tArray.emplace_back(std::move(tTmpData));//读取一个插入一个
 		}
 		
 		if constexpr (bHasName)
 		{
 			//完成后插入
-			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ std::move(tArray) });
+			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move(tArray));
 			if (!ret.second)//插入失败，元素已存在
 			{
 				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(tArray).name());
@@ -436,7 +436,7 @@ private:
 		}
 		else//无名称，为列表元素
 		{
-			nRoot = NBT_Node{ std::move(tArray) };
+			nRoot.emplace<T>(std::move(tArray));
 		}
 		return AllOk;
 	}
@@ -468,7 +468,7 @@ private:
 		{
 			//递归完成，所有子节点已到位
 			//取出NBT_Compound挂到自己根部（移动）
-			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(sName, NBT_Node{ std::move(nodeTemp.GetData<NBT_Node::NBT_Compound>()) });
+			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move(nodeTemp));
 			if (!ret.second)//插入失败，元素已存在
 			{
 				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_Compound).name());
@@ -476,7 +476,7 @@ private:
 		}
 		else//无名称，为列表元素
 		{
-			nRoot = NBT_Node{ std::move(nodeTemp.GetData<NBT_Node::NBT_Compound>()) };
+			nRoot = std::move(nodeTemp);
 		}
 
 		return AllOk;//挂完子节点返回ok
@@ -513,7 +513,7 @@ private:
 		if constexpr (bHasName)
 		{
 			//原位构造
-			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), NBT_Node{ NBT_Node::NBT_String{tData.Current(), tData.Next(wStrLength)} });
+			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::in_place_type<NBT_Node::NBT_String>, tData.Current(), tData.Next(wStrLength));//从迭代器进行范围构造（无需move迭代器）
 			if (!ret.second)//插入失败，元素已存在
 			{
 				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_String).name());
@@ -521,7 +521,7 @@ private:
 		}
 		else//列表元素直接赋值
 		{
-			nRoot = NBT_Node{ NBT_Node::NBT_String{tData.Current(), tData.Next(wStrLength)} };
+			nRoot.emplace<NBT_Node::NBT_String>(tData.Current(), tData.Next(wStrLength));//从迭代器进行范围构造（无需move迭代器）
 		}
 		tData.AddIndex(wStrLength);//移动下标
 		
@@ -600,7 +600,7 @@ private:
 		//列表可嵌套，所以处理本身嵌套无名情况
 		if constexpr (bHasName)
 		{
-			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(sName, NBT_Node{ std::move(tmpList) });
+			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move(tmpList));
 			if (!ret.second)//插入失败，元素已存在
 			{
 				//此处实为警告而非错误，无需return
@@ -609,7 +609,7 @@ private:
 		}
 		else//列表中的列表，直接赋值，而不进行插入
 		{
-			nRoot = NBT_Node{ std::move(tmpList) };
+			nRoot.emplace<NBT_Node::NBT_List>(std::move(tmpList));
 		}
 
 		return AllOk;//列表同时作为元素，成功应该返回Ok，而不是传递返回值
@@ -719,7 +719,7 @@ private:
 				}
 				else
 				{
-					iRet == AllOk;
+					iRet = AllOk;
 					break;//否则根部直接跳出
 				}
 			}
