@@ -8,6 +8,8 @@
 #include <stdint.h>
 #include <vector>
 #include <map>
+#include <regex>
+#include <unordered_set>
 
 class BlockProcess
 {
@@ -32,7 +34,7 @@ public:
 		std::vector<BlockStatistics> bsList{};
 	};
 
-	static std::vector<RegionsStatistics> GetBlockStatistics(NBT_Node nRoot)//block list
+	static std::vector<RegionsStatistics> GetBlockStatistics(const NBT_Node &nRoot)//block list
 	{
 		//获取regions，也就是区域，一个投影可能有多个区域（选区）
 		const auto &Regions = nRoot.Compound().at(MU8STR("Regions")).Compound();
@@ -75,21 +77,7 @@ public:
 			//printf("BlockStatePaletteSize: [%zu]\nbitsPerBitMapElement: [%d]\n", BlockStatePalette.size(), bitsPerBitMapElement);
 			/*------------------------------------------------*/
 
-
-			/*----------------方块实体获取----------------*/
-			//获取方块实体列表
-			const auto &TileEntities = RgCompound.at(MU8STR("TileEntities")).List();
-
-
-
-
-
-
-
-
-
-			/*------------------------------------------------*/
-
+			/*----------------根据方块位图访问调色板，获取不同状态方块的计数----------------*/
 			//创建方块统计vector
 			std::vector<BlockStatistics> vtBlockStatistics;
 			vtBlockStatistics.reserve(BlockStatePalette.size());//提前分配
@@ -163,6 +151,7 @@ public:
 
 				++vtBlockStatistics[paletteIndex].u64Counter;
 			}
+			/*------------------------------------------------*/
 
 			//计数完成，插入RegionsStatistics
 			vtRegionsStatistics.emplace_back(RgName,std::move(vtBlockStatistics));
@@ -175,39 +164,52 @@ public:
 	struct ItemStack
 	{
 		NBT_Node::NBT_String sItemName{};//物品名
+		NBT_Node::NBT_String sItemNameEx{};//物品名扩展(应对花盆、含水方块、炼药锅、蜡烛蛋糕等组合物品)
 		uint64_t u64Counter = 0;//物品计数器
+		uint64_t u64CounterEx = 0;//物品计数器扩展(应对花盆、含水方块、炼药锅、蜡烛蛋糕等组合物品)
 	};
 
 	static ItemStack BlockStatisticsToItemStack(const BlockStatistics &stBlocks)
 	{
-		//先处理方块到物品转换
+		//处理方块到物品转换
+		ItemStack stItems;
 
-		//普通方块转换
-		static const std::map<NBT_Node::NBT_String, uint64_t> mapFilter =//uint64_t->ID
-		{
-			/*0 -> minecraft:empty*/
-			{MU8STR("minecraft:air"),0 },//方块air对应物品empty
-			{MU8STR("minecraft:void_air"),0 },
-			{MU8STR("minecraft:cave_air"),0 },
+		//static const std::map<NBT_Node::NBT_String, uint64_t> mapFilter =//uint64_t->ID
+		//{
+		//	/*0 -> minecraft:empty*/
+		//	{MU8STR("minecraft:air"),0 },//方块air对应物品empty
+		//	{MU8STR("minecraft:void_air"),0 },
+		//	{MU8STR("minecraft:cave_air"),0 },
+		//
+		//	{MU8STR("minecraft:piston_head"),0},
+		//	//{MU8STR("minecraft:moving_piston"),0},//移动中的活塞需要保留
+		//	{MU8STR("minecraft:nether_portal"),0},
+		//	{MU8STR("minecraft:end_portal"),0},
+		//	{MU8STR("minecraft:end_gateway"),0},
+		//
+		//	{MU8STR("minecraft:farmland"),1},//dirt
+		//
+		//	{MU8STR("minecraft:lava"),2},//lava.level == 0 ? minecraft:lava_bucket : minecraft:empty
+		//	{MU8STR("minecraft:water"),2},//water.level == 0 ? minecraft:water_bucket : minecraft:empty
+		//};
 
-			{MU8STR("minecraft:piston_head"),0},
-			{MU8STR("minecraft:moving_piston"),0},
-			{MU8STR("minecraft:nether_portal"),0},
-			{MU8STR("minecraft:end_portal"),0},
-			{MU8STR("minecraft:end_gateway"),0},
-
-			{MU8STR("minecraft:farmland"),1},//dirt
-
-			{MU8STR("minecraft:lava"),2},//lava.level == 0 ? minecraft:lava_bucket : minecraft:empty
-			{MU8STR("minecraft:water"),2},//water.level == 0 ? minecraft:water_bucket : minecraft:empty
-		};
 
 
-		//特殊方块转换
+
+
+
+		//特殊方块、复合方块，多格方块，含水方块转换，所有的转换只会转换特殊状态，如果本身就和物品名形式一致则跳过，所以函数最后如果所有转换都没生效则为正常物品
+
+		//注意，使用了短路求值原理，只要其中一个函数成功返回，则剩下全部跳过，并且bRetCvrt为true
+		bool bRetCvrt =
 		/*
-		门\床\高植物\不同种类花盆
+		门\床\高植物（小型垂滴叶跟高草相同处理，海带有植株跟上部，大型垂滴有颈部和叶部，发光浆果植株（洞穴藤蔓）有上部和下部的区别）
+		\不同种类花盆\墙上的方块\炼药锅\绊线\气泡柱转换为水\带蜡烛的蛋糕转换为蛋糕+蜡烛\
 		*/
-
+			CurtUnItemedBlocks(stBlocks, stItems) ||
+			CvrtWallVariantBlocks(stBlocks, stItems) ||
+			CvrtFlowerPot(stBlocks, stItems)
+			;//TODO
 
 
 
@@ -215,18 +217,96 @@ public:
 
 		//方块数量转换
 		/*
-		半砖\雪\海龟蛋\海泡菜\蜡烛\樱花
+		半砖\雪\海龟蛋\海泡菜\蜡烛\樱花簇
 		*/
 
 		//特殊方块数量转换
 		/*
-		多面生长方块，如藤蔓，发光地衣
+		多面生长方块，如藤蔓，发光地衣，幽匿脉络
 		*/
 
 
+		//如果前面全部没进入处理，则为普通方块，直接返回原始值
+		if (!bRetCvrt)
+		{
+			stItems.sItemName = stBlocks.sBlockName;
+			stItems.u64Counter = 1;
+		}
+
+		//含水方块需要特殊处理，任何方块都有可能是含水读一下blockstate查看，如有则转换为水桶放入Ex扩展
+
+		return stItems;
+	}
 
 
-		return {};
+	static inline bool CurtUnItemedBlocks(const BlockStatistics &stBlocks, ItemStack &stItems)
+	{
+		//直接匹配所有不可获取的方块并返回空，注意是mc中所有无物品形式的，而非生存不可获取的
+		//注意不匹配门、床等多格方块的另一半，而由他们对应的函数自行处理
+		std::unordered_set<NBT_Node::NBT_String> UnItemedBlocks =
+		{
+			MU8STR("minecraft:air"),
+			MU8STR("minecraft:void_air"),
+			MU8STR("minecraft:cave_air"),
+			MU8STR("minecraft:piston_head"),
+			MU8STR("minecraft:nether_portal"),
+			MU8STR("minecraft:end_portal"),
+			MU8STR("minecraft:end_gateway"),
+			MU8STR("minecraft:fire"),
+			MU8STR("minecraft:minecraft:soul_fire"),
+			MU8STR("minecraft:"),
+			MU8STR("minecraft:"),
+			MU8STR("minecraft:"),
+			MU8STR("minecraft:"),
+		};
+
+		//如果count返回不是0则代表存在，直接返回true即可，stItems初始化即为全空全0
+		return UnItemedBlocks.count(stBlocks.sBlockName) !=0;
+	}
+
+
+	//注意只处理墙上的形式，如果是普通形式根本不需要处理
+	static inline bool CvrtWallVariantBlocks(const BlockStatistics &stBlocks, ItemStack &stItems)
+	{
+		//理论上所有带墙上额外方块id的方块都会有wall限定词，且不以wall结尾
+		//去掉wall转换为item形式，经过查看，不存在诸如wall_结尾的方块名，也不存在wall_wall_之类的连续情况
+		//直接匹配wall_并删除，即可正确处理诸如wall_torch或者cyan_wall_banner为物品形式
+
+		const std::string target = MU8STR("wall_");
+
+		size_t szPos = stBlocks.sBlockName.find(target);
+		if (szPos != std::string::npos)
+		{
+			stItems.sItemName = stBlocks.sBlockName;
+			stItems.sItemName.replace(szPos, target.length(), "");//删去wall_
+			stItems.u64Counter = 1;//1个物品
+			return true;
+		}
+
+		return false;
+	}
+
+	//注意，只处理放过花的花盆，否则跳过（如果本身叫flower_pot那就根本不需要转换）
+	static inline bool CvrtFlowerPot(const BlockStatistics &stBlocks, ItemStack &stItems)
+	{
+		//放了花的花盆以potted_开头，后跟花名
+		//否则叫flower_pot
+
+		const std::string target = MU8STR("potted_");
+		size_t szPos = stBlocks.sBlockName.find(target);
+		if (szPos != std::string::npos)
+		{
+			//有的情况下转化为flower_pot+扩展花物品名的形式
+			stItems.sItemName = "minecraft:flower_pot";
+			stItems.u64Counter = 1;
+
+			stItems.sItemNameEx = stBlocks.sBlockName.substr(szPos + target.length());
+			stItems.u64CounterEx = 1;
+
+			return true;
+		}
+
+		return false;
 	}
 
 

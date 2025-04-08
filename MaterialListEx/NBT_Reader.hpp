@@ -165,7 +165,7 @@ private:
 
 	//使用变参形参表+vprintf代理复杂输出，给出更多扩展信息
 	template <typename T, typename std::enable_if<std::is_same<T, ErrCode>::value || std::is_same<T, WarnCode>::value, int>::type = 0>
-	static int _cdecl Error(T code, const InputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...)//gcc使用__attribute__((format))
+	static int _cdecl Error(const T &code, const InputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...)//gcc使用__attribute__((format))
 	{
 		if constexpr (std::is_same<T, ErrCode>::value)
 		{
