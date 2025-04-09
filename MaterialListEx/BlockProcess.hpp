@@ -181,8 +181,8 @@ public:
 		墙上的方块\
 		不同种类花盆\炼药锅（不同内容物不同id）\带蜡烛的蛋糕转换为蛋糕+蜡烛\
 		绊线到线\气泡柱转换为水\耕地、土径转为泥土\
-		水、岩浆等流体处理\
-		同一格内多个物品数量的方块转换（半砖\雪\海龟蛋\海泡菜\蜡烛\樱花簇）\
+		水、岩浆等流体处理\半砖处理\
+		同一格内多个物品数量的方块转换（雪\海龟蛋\海泡菜\蜡烛\樱花簇）\
 		同一格内多面生长方块转换（藤蔓，发光地衣，幽匿脉络）\
 		特殊植物（海带有植株跟上部，大型垂滴有颈部和叶部，紫菘花有植株和头部（特殊处理，植株物品形式也有plant后缀），
 			发光浆果植株（洞穴藤蔓转换）有植株和根部，垂泪藤有植株和根部部的区别，缠怨藤也有植株和根部）\
@@ -193,14 +193,15 @@ public:
 		//注意，使用了短路求值原理，只要其中一个函数成功返回，则剩下全部跳过，并且bRetCvrt为true
 		bool bRetCvrt =
 			CvrtUnItemedBlocks(stBlocks, stItemsList) ||		//无物品形式方块处理
-			CvrtMultiBlock(stBlocks, stItemsList) ||			//多格方块处理
+			CvrtMultiPartBlocks(stBlocks, stItemsList) ||		//多格方块处理
 			CvrtWallVariantBlocks(stBlocks, stItemsList) ||		//墙上方块处理
 			CvrtFlowerPot(stBlocks, stItemsList) ||				//花盆处理
 			CvrtCauldron(stBlocks, stItemsList) ||				//炼药锅处理
 			CvrtCandleCake(stBlocks, stItemsList) ||			//蜡烛蛋糕处理
-			CvrtAliasBlock(stBlocks, stItemsList) ||			//别名方块处理
+			CvrtAliasBlocks(stBlocks, stItemsList) ||			//别名方块处理
 			CvrtFluid(stBlocks, stItemsList) ||					//流体处理
-
+			CvrtSlabBlocks(stBlocks, stItemsList) ||			//半砖处理
+			CvrtClusterBlocks(stBlocks, stItemsList) ||			//复合方块处理
 
 
 			false;//此处false只是为了统一格式：让函数调用后统一加||不报错，不改变最终执行结果
@@ -209,8 +210,11 @@ public:
 		//如果前面全部没进入处理，则为普通方块，直接返回原始值
 		if (!bRetCvrt)
 		{
-			CvrtNormalOrWaterLoggedBlock(stBlocks, stItemsList);
+			CvrtNormalBlock(stBlocks, stItemsList);
 		}
+
+		//含水方块处理（任何方块都有可能是，全部过一遍）
+		CvrtWaterLoggedBlock(stBlocks, stItemsList);
 
 		return stItemsList;
 	}
@@ -222,11 +226,19 @@ const std::string target = MU8STR(name);\
 size_t szPos = stBlocks.sBlockName.find(target);\
 if (szPos != std::string::npos)
 
+#define STARTSWITH(name)\
+const std::string target = MU8STR(name);\
+if (stBlocks.sBlockName.starts_with(target))
+
+#define ENDSWITH(name)\
+const std::string target = MU8STR(name);\
+if (stBlocks.sBlockName.ends_with(target))
+
 	static inline bool CvrtUnItemedBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
 	{
 		//直接匹配所有不可获取的方块并返回空，注意是mc中所有无物品形式的，而非生存不可获取的
 		//注意不匹配门、床、活塞等多格方块的另一半，而由他们对应的函数自行处理
-		std::unordered_set<NBT_Node::NBT_String> UnItemedBlocks =
+		const static inline std::unordered_set<NBT_Node::NBT_String> setUnItemedBlocks =
 		{
 			//空气类
 			MU8STR("minecraft:air"),
@@ -244,14 +256,14 @@ if (szPos != std::string::npos)
 		};
 
 		//如果count返回不是0则代表存在，直接返回true即可，stItems初始化即为全空全0
-		return UnItemedBlocks.count(stBlocks.sBlockName) != 0;
+		return setUnItemedBlocks.count(stBlocks.sBlockName) != 0;
 	}
 
-	static inline bool CvrtMultiBlock(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtMultiPartBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
 	{
 		//门只有下半掉落，上半直接转为空
 		{
-			FIND("_door")
+			ENDSWITH("_door")
 			{
 				//读取方块state判断是门的哪一部分
 				const auto &half = stBlocks.cpdProperties.at(MU8STR("half")).String();
@@ -269,7 +281,7 @@ if (szPos != std::string::npos)
 
 		//床只有头掉落，脚直接转为空
 		{
-			FIND("_bed")
+			ENDSWITH("_bed")
 			{
 				//读取方块state判断是床的哪一部分
 				const auto &part = stBlocks.cpdProperties.at(MU8STR("part")).String();
@@ -313,7 +325,7 @@ if (szPos != std::string::npos)
 		FIND("wall_")
 		{
 			auto TmpName = stBlocks.sBlockName;
-			TmpName.replace(szPos, target.length(), "");//删去wall_
+			TmpName.erase(szPos, target.length());//删去wall_
 			stItemsList.emplace_back(std::move(TmpName), 1);
 
 			return true;
@@ -332,7 +344,7 @@ if (szPos != std::string::npos)
 			//有的情况下转化为flower_pot+扩展花物品名的形式
 			stItemsList.emplace_back(MU8STR("minecraft:flower_pot"), 1);
 			auto TmpName = stBlocks.sBlockName;
-			TmpName.replace(szPos, target.length(), "");//删去potted_
+			TmpName.erase(szPos, target.length());//删去potted_
 			stItemsList.emplace_back(std::move(TmpName), 1);
 
 			return true;
@@ -345,7 +357,7 @@ if (szPos != std::string::npos)
 	{
 		//炼药锅：含水、岩浆、粉雪
 		//其中含水如果不满则转换到空瓶
-		FIND("cauldron")
+		ENDSWITH("cauldron")
 		{
 			if (stBlocks.sBlockName == MU8STR("minecraft:cauldron"))
 			{
@@ -392,12 +404,12 @@ if (szPos != std::string::npos)
 
 	static inline bool CvrtCandleCake(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
 	{
-		FIND("_cake")
+		ENDSWITH("_cake")
 		{
 			//转换为蜡烛+蛋糕
 			stItemsList.emplace_back(MU8STR("minecraft:cake"), 1);
 			auto TmpName = stBlocks.sBlockName;
-			TmpName.replace(szPos, target.length(), "");//删去_cake
+			TmpName.erase(TmpName.length() - target.length());//删去_cake
 			stItemsList.emplace_back(std::move(TmpName), 1);
 
 			return true;
@@ -406,10 +418,10 @@ if (szPos != std::string::npos)
 		return false;
 	}
 
-	static inline bool CvrtAliasBlock(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//别名方块
+	static inline bool CvrtAliasBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//别名方块
 	{
 		//映射
-		std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapAliasBlocks =
+		const static inline std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapAliasBlocks =
 		{
 			{MU8STR("minecraft:tripwire"),MU8STR("minecraft:string")},
 			{MU8STR("minecraft:bubble_column"),MU8STR("minecraft:water_bucket")},
@@ -453,13 +465,102 @@ if (szPos != std::string::npos)
 		return false;
 	}
 
+	static inline bool CvrtSlabBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	{
+		ENDSWITH("_slab")
+		{
+			if (stBlocks.cpdProperties.at(MU8STR("type")).String() == MU8STR("double"))//转换为2，否则为1
+			{
+				stItemsList.emplace_back(stBlocks.sBlockName, 2);
+			}
+			else
+			{
+				stItemsList.emplace_back(stBlocks.sBlockName, 1);
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	static inline bool CvrtClusterBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	{
+#define EMPLACE_CLUSTER_ITEMS(name)\
+const auto &##name = stBlocks.cpdProperties.at(MU8STR(#name)).String();\
+stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
+
+		//蜡烛优先处理（多颜色方块）
+		ENDSWITH("candle")//蜡烛极其特殊，存在无颜色标签的版本（与床之类不同）
+		{
+			//因为前面已经处理过带蜡烛的蛋糕，排除是带蜡烛蛋糕的情况，且candle是结尾，不存在蛋糕的情况
+			EMPLACE_CLUSTER_ITEMS(candles);//转换到方块个数并插入
+			return true;
+		}
+
+
+		enum ClusterBlock :uint64_t
+		{
+			Snow = 0, 
+			Turtle_egg,
+			Sea_pickle,
+			Pink_petals,
+		};
+
+		const static inline std::unordered_map<NBT_Node::NBT_String, ClusterBlock> mapClusterBlocks =
+		{
+			{MU8STR("minecraft:snow"),Snow},
+			{MU8STR("minecraft:turtle_egg"),Turtle_egg},
+			{MU8STR("minecraft:sea_pickle"),Sea_pickle},
+			{MU8STR("minecraft:pink_petals"),Pink_petals},
+		};
+
+		auto it = mapClusterBlocks.find(stBlocks.sBlockName);
+		if (it != mapClusterBlocks.end())
+		{
+
+			switch ((*it).second)
+			{
+			case Snow://layers str
+				{
+					EMPLACE_CLUSTER_ITEMS(layers);
+				}
+				break;
+			case Turtle_egg://eggs str
+				{
+					EMPLACE_CLUSTER_ITEMS(eggs);
+				}
+				break;
+			case Sea_pickle://pickles str
+				{
+					EMPLACE_CLUSTER_ITEMS(pickles);
+				}
+				break;
+			case Pink_petals://flower_amount str
+				{
+					EMPLACE_CLUSTER_ITEMS(flower_amount);
+				}
+				break;
+			default:
+				break;
+			}
+
+			return true;
+		}
+
+		return false;
+#undef EMPLACE_CLUSTER_ITEMS
+	}
 
 
 
-
-	static inline void CvrtNormalOrWaterLoggedBlock(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline void CvrtNormalBlock(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
 	{
 		stItemsList.emplace_back(stBlocks.sBlockName, 1);
+	}
+
+	static inline void CvrtWaterLoggedBlock(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	{
 		//判断是不是含水方块，如果是，加一个水桶
 		auto it = stBlocks.cpdProperties.find("waterlogged");
 		if (it != stBlocks.cpdProperties.end())
@@ -472,6 +573,8 @@ if (szPos != std::string::npos)
 		}
 	}
 
+#undef ENDSWITH
+#undef STARTSWITH
 #undef FIND
 	//class
 };

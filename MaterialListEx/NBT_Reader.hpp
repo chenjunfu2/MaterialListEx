@@ -203,9 +203,10 @@ private:
 		//如果可以，预览szCurrent前后n个字符，否则裁切到边界
 #define VIEW_PRE 32//向前
 #define VIEW_SUF (32 + 8)//向后
-
 		size_t rangeBeg = (tData.Index() > VIEW_PRE) ? (tData.Index() - VIEW_PRE) : 0;//上边界裁切
 		size_t rangeEnd = ((tData.Index() + VIEW_SUF) < tData.Size()) ? (tData.Index() + VIEW_SUF) : tData.Size();//下边界裁切
+#undef VIEW_SUF
+#undef VIEW_PRE
 		printf("Data Review:\nCurrent: 0x%02llX(%zu)\nData Size: 0x%02llX(%zu)\nData[0x%02llX(%zu)] ~ Data[0x%02llX(%zu)]:\n",
 			(uint64_t)tData.Index(), tData.Index(), (uint64_t)tData.Size(), tData.Size(), (uint64_t)rangeBeg, rangeBeg, (uint64_t)rangeEnd - 1, rangeEnd - 1);
 		
@@ -750,4 +751,7 @@ public:
 		InputStream IptStream{ tData,szDataStartIndex };
 		return GetNBT<true>(IptStream, nRoot, szStackDepth) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
 	}
+
+#undef CHECK_STACK_DEPTH
+#undef _RP___FUNCSIG__
 };

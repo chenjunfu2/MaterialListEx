@@ -8,7 +8,6 @@
 #include <string>
 #include <stdint.h>
 #include <typeinfo>
-#include <stdexcept>
 
 class NBT_Node
 {
@@ -291,4 +290,6 @@ inline NBT_##type *Has##type(const NBT_String & sTagName)\
 	TYPE_GET_FUNC(String);
 	TYPE_GET_FUNC(List);
 	TYPE_GET_FUNC(Compound);
+
+#undef TYPE_GET_FUNC
 };
