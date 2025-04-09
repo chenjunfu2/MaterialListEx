@@ -131,10 +131,29 @@ int main(int argc, char *argv[])
 	//方块状态过滤（过滤掉部分不需要统计的方块，比如床的半边，门的半边，不是水源的水，不是岩浆源的岩浆，洞穴空气 虚空空气 空气，等等等等）
 
 	//方块状态转换（把所有需要转换到目标的方块状态进行转换，比如不同类型花的花盆）
+	std::map<NBT_Node::NBT_String, uint64_t> mapItemCounter;//创建方块状态到物品映射map
 
+	for (const auto &[sRegionName, bsList] : vtBlockStatistics)
+	{
+		//处理sRegionName
 
-	//创建方块状态到物品映射map
+		//处理方块
+		for (const auto &itBlock : bsList)
+		{
+			auto istItemList = BlockProcess::BlockStatisticsToItemStack(itBlock);
+			for (const auto &itItem : istItemList)
+			{
+				mapItemCounter[itItem.sItemName] += itItem.u64Counter;//如果key不存在，则自动创建，且保证value为0
+			}
+		}
+	}
 
+	for (const auto &[sItemName, u64ItemCount] : mapItemCounter)
+	{
+		printf("\"%s\":%llu\n", sItemName.c_str(), u64ItemCount);
+	}
+
+	
 	return 0;
 }
 

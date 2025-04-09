@@ -41,7 +41,7 @@ public:
 	using NBT_Byte_Array	= std::vector<NBT_Byte>;
 	using NBT_Int_Array		= std::vector<NBT_Int>;
 	using NBT_Long_Array	= std::vector<NBT_Long>;
-	using NBT_String		= std::string;//代办：mutf8解码到utf8
+	using NBT_String		= std::string;//mu8-string
 	using NBT_List			= std::vector<NBT_Node>;//存储一系列同类型标签的有效负载（无标签 ID 或名称）//原先为list，因为mc内list也通过下标访问，改为vector模拟
 	using NBT_Compound		= std::map<NBT_String, NBT_Node>;//挂在序列下的内容都通过map绑定名称
 

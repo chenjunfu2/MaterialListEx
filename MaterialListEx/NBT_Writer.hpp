@@ -29,12 +29,17 @@ public:
 
 	void PutOnce(const typename T::value_type &c)
 	{
-		return tData.push_back(c);
+		tData.push_back(c);
 	}
 
 	void PutOnce(const typename T::value_type &&c)
 	{
-		return tData.push_back(std::move(c));
+		tData.push_back(std::move(c));
+	}
+
+	void PutRange(typename T::iterator itBeg, typename T::iterator itEnd)
+	{
+		tData.append(itBeg, itEnd);
 	}
 
 	template<typename... Args, typename = std::enable_if_t<has_emplace_back<T>::value>>
@@ -75,8 +80,27 @@ class NBT_Writer
 {
 	using OutputStream = MyOutputStream<DataType>;//流类型
 private:
+	//大小端转换
 
+	//NoError
 
+	//WriteBigEndian
+
+	//PutName
+
+	//PutbuiltInType
+
+	//PutArrayType
+
+	//PutCompoundType
+
+	//PutStringType
+
+	//PutListType
+
+	//SwitchNBT
+
+	//PutNBT
 
 public:
 	NBT_Writer(void) = delete;
