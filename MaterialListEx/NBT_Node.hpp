@@ -206,24 +206,24 @@ public:
 	}
 
 	//简化map查询
-	NBT_Node &Get(const NBT_String &sTagName)
+	inline NBT_Node &Get(const NBT_String &sTagName)
 	{
 		return Compound().at(sTagName);
 	}
 
-	const NBT_Node &Get(const NBT_String &sTagName) const
+	inline const NBT_Node &Get(const NBT_String &sTagName) const
 	{
 		return Compound().at(sTagName);
 	}
 
-	NBT_Node *Search(const NBT_String &sTagName)
+	inline NBT_Node *Search(const NBT_String &sTagName)
 	{
 		auto &cpd = Compound();
 		auto find = cpd.find(sTagName);
 		return find == cpd.end() ? NULL : &((*find).second);
 	}
 
-	const NBT_Node *Search(const NBT_String &sTagName) const
+	inline const NBT_Node *Search(const NBT_String &sTagName) const
 	{
 		auto &cpd = Compound();
 		auto find = cpd.find(sTagName);
@@ -233,8 +233,9 @@ public:
 	//针对每种类型重载一个方便的函数
 	/*
 		纯类型名函数：直接获取此类型，不做任何检查，由标准库std::get具体实现决定
-		At开头的类型名函数：强制获取类型，如果成功，获得类型，否则此操作失败抛出异常
 		Is开头的类型名函数：判断当前NBT_Node是否为此类型
+		纯类型名函数带参数版本：查找当前Compound指定的Name并转换到类型引用返回，不做检查，具体由标准库实现定义
+		Has开头的类型名函数带参数版本：查找当前Compound是否有特定Name的Tag，并返回此Name的Tag（转换到指定类型）的指针
 	*/
 #define TYPE_GET_FUNC(type)\
 inline const NBT_##type &##type() const\
