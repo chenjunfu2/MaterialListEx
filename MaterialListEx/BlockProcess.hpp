@@ -325,7 +325,9 @@ if (szPos != std::string::npos)
 		{
 			//有的情况下转化为flower_pot+扩展花物品名的形式
 			stItemsList.emplace_back(MU8STR("minecraft:flower_pot"), 1);
-			stItemsList.emplace_back(std::move(stBlocks.sBlockName.substr(szPos + target.length())), 1);
+			auto TmpName = stBlocks.sBlockName;
+			TmpName.replace(szPos, target.length(), "");//删去potted_
+			stItemsList.emplace_back(std::move(TmpName), 1);
 
 			return true;
 		}
