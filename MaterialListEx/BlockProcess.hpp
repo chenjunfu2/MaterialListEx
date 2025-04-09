@@ -238,7 +238,7 @@ if (stBlocks.sBlockName.ends_with(target))
 	{
 		//直接匹配所有不可获取的方块并返回空，注意是mc中所有无物品形式的，而非生存不可获取的
 		//注意不匹配门、床、活塞等多格方块的另一半，而由他们对应的函数自行处理
-		const static inline std::unordered_set<NBT_Node::NBT_String> setUnItemedBlocks =
+		const static std::unordered_set<NBT_Node::NBT_String> setUnItemedBlocks =
 		{
 			//空气类
 			MU8STR("minecraft:air"),
@@ -421,7 +421,7 @@ if (stBlocks.sBlockName.ends_with(target))
 	static inline bool CvrtAliasBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//别名方块
 	{
 		//映射
-		const static inline std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapAliasBlocks =
+		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapAliasBlocks =
 		{
 			{MU8STR("minecraft:tripwire"),MU8STR("minecraft:string")},
 			{MU8STR("minecraft:bubble_column"),MU8STR("minecraft:water_bucket")},
@@ -507,7 +507,7 @@ stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 			Pink_petals,
 		};
 
-		const static inline std::unordered_map<NBT_Node::NBT_String, ClusterBlock> mapClusterBlocks =
+		const static std::unordered_map<NBT_Node::NBT_String, ClusterBlock> mapClusterBlocks =
 		{
 			{MU8STR("minecraft:snow"),Snow},
 			{MU8STR("minecraft:turtle_egg"),Turtle_egg},

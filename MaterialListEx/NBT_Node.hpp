@@ -174,29 +174,6 @@ public:
 		return std::get<T>(data);
 	}
 
-	//强制要求存在版本（自带检查）
-	template<typename T>
-	const T &AtData() const
-	{
-		if (!std::holds_alternative<T>(data))
-		{
-			throw std::runtime_error(std::string{} + "NBT_Node is not type[" + typeid(T).name() + "]");
-		}
-
-		return std::get<T>(data);
-	}
-
-	template<typename T>
-	T &AtData()
-	{
-		if (!std::holds_alternative<T>(data))
-		{
-			throw std::runtime_error(std::string{} + "NBT_Node is not type[" + typeid(T).name() + "]");
-		}
-
-		return std::get<T>(data);
-	}
-
 	// 类型检查
 	template<typename T>
 	bool TypeHolds() const
