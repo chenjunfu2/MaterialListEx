@@ -23,7 +23,7 @@ public:
 	struct BlockStatistics
 	{
 		NBT_Node::NBT_String sBlockName{};
-		NBT_Node::NBT_Compound cpdProperties{};
+		NBT_Node cpdProperties{ NBT_Node::NBT_Compound{} };//需要至少默认初始化为NBT_Compound
 		uint64_t u64Counter = 0;//方块计数器
 	};
 
@@ -84,33 +84,11 @@ public:
 			for (const auto &it : BlockStatePalette)
 			{
 				BlockStatistics bsTemp{};
-				bsTemp.sBlockName =it.String(MU8STR("Name"));
-				const auto find = it.HasCompound(MU8STR("Properties"));//检查方块是否有额外属性
+				bsTemp.sBlockName = it.String(MU8STR("Name"));
+				const auto find = it.Search(MU8STR("Properties"));//检查方块是否有额外属性
 				if (find != NULL)
 				{
 					bsTemp.cpdProperties = *find;
-
-					/*
-					blockName += '[';
-					const auto &Properties = (*find).second.Compound();//取出compound
-					for (const auto &[ppState, ppVal] : Properties)//遍历所有额外属性并拼接到blockName后方
-					{
-						blockName += ppState;
-						blockName += '=';
-						blockName += ppVal.String();
-						blockName += ',';
-					}
-
-					//如果不是空列表，替换最后一个,为]
-					if (blockName.ends_with(','))
-					{
-						blockName.back() = ']';
-					}
-					else
-					{
-						blockName += ']';
-					}
-					*/
 				}
 
 				vtBlockStatistics.emplace_back(std::move(bsTemp));
@@ -266,7 +244,7 @@ if (stBlocks.sBlockName.ends_with(target))
 			ENDSWITH("_door")
 			{
 				//读取方块state判断是门的哪一部分
-				const auto &half = stBlocks.cpdProperties.at(MU8STR("half")).String();
+				const auto &half = stBlocks.cpdProperties.String(MU8STR("half"));
 
 				if (half == MU8STR("lower"))
 				{
@@ -284,7 +262,7 @@ if (stBlocks.sBlockName.ends_with(target))
 			ENDSWITH("_bed")
 			{
 				//读取方块state判断是床的哪一部分
-				const auto &part = stBlocks.cpdProperties.at(MU8STR("part")).String();
+				const auto &part = stBlocks.cpdProperties.String(MU8STR("part"));
 
 				if (part == MU8STR("head"))
 				{
@@ -369,7 +347,7 @@ if (stBlocks.sBlockName.ends_with(target))
 				//扩展部分为水桶
 				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), 1);
 				//判断方块标签
-				const auto &level = stBlocks.cpdProperties.at(MU8STR("level")).String();
+				const auto &level = stBlocks.cpdProperties.String(MU8STR("level"));
 
 				if (level == MU8STR("1"))
 				{
@@ -430,7 +408,7 @@ if (stBlocks.sBlockName.ends_with(target))
 		};
 
 		//查找
-		auto it = mapAliasBlocks.find(stBlocks.sBlockName);
+		const auto it = mapAliasBlocks.find(stBlocks.sBlockName);
 		if (it != mapAliasBlocks.end())//存在
 		{
 			stItemsList.emplace_back((*it).second, 1);//插入映射
@@ -444,7 +422,7 @@ if (stBlocks.sBlockName.ends_with(target))
 	{
 		if (stBlocks.sBlockName == MU8STR("minecraft:water"))
 		{
-			if (stBlocks.cpdProperties.at(MU8STR("level")).String() == MU8STR("0"))//是0就是水源
+			if (stBlocks.cpdProperties.String(MU8STR("level")) == MU8STR("0"))//是0就是水源
 			{
 				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), 1);
 			}
@@ -453,7 +431,7 @@ if (stBlocks.sBlockName.ends_with(target))
 		}
 		else if (stBlocks.sBlockName == MU8STR("minecraft:lava"))
 		{
-			if (stBlocks.cpdProperties.at(MU8STR("level")).String() == MU8STR("0"))//是0就是岩浆源
+			if (stBlocks.cpdProperties.String(MU8STR("level")) == MU8STR("0"))//是0就是岩浆源
 			{
 				stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"), 1);
 			}
@@ -469,7 +447,7 @@ if (stBlocks.sBlockName.ends_with(target))
 	{
 		ENDSWITH("_slab")
 		{
-			if (stBlocks.cpdProperties.at(MU8STR("type")).String() == MU8STR("double"))//转换为2，否则为1
+			if (stBlocks.cpdProperties.String(MU8STR("type")) == MU8STR("double"))//转换为2，否则为1
 			{
 				stItemsList.emplace_back(stBlocks.sBlockName, 2);
 			}
@@ -487,7 +465,7 @@ if (stBlocks.sBlockName.ends_with(target))
 	static inline bool CvrtClusterBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
 	{
 #define EMPLACE_CLUSTER_ITEMS(name)\
-const auto &##name = stBlocks.cpdProperties.at(MU8STR(#name)).String();\
+const auto &##name = stBlocks.cpdProperties.String(MU8STR(#name));\
 stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 
 		//蜡烛优先处理（多颜色方块）
@@ -515,7 +493,7 @@ stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 			{MU8STR("minecraft:pink_petals"),Pink_petals},
 		};
 
-		auto it = mapClusterBlocks.find(stBlocks.sBlockName);
+		const auto it = mapClusterBlocks.find(stBlocks.sBlockName);
 		if (it != mapClusterBlocks.end())
 		{
 
@@ -562,10 +540,10 @@ stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 	static inline void CvrtWaterLoggedBlock(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
 	{
 		//判断是不是含水方块，如果是，加一个水桶
-		auto it = stBlocks.cpdProperties.find("waterlogged");
-		if (it != stBlocks.cpdProperties.end())
+		const auto it = stBlocks.cpdProperties.HasString("waterlogged");
+		if (it != NULL)
 		{
-			if ((*it).second.String() == MU8STR("true"))//含水
+			if (*it == MU8STR("true"))//含水
 			{
 				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), 1);
 			}
