@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
 	for (const auto &[sRegionName, bsList] : vtBlockStatistics)
 	{
 		//处理sRegionName
+		//auto OptStr = ANSISTR(U16STR(sRegionName));
 
 		//处理方块
 		for (const auto &itBlock : bsList)
@@ -150,7 +151,7 @@ int main(int argc, char *argv[])
 
 	for (const auto &[sItemName, u64ItemCount] : mapItemCounter)
 	{
-		printf("\"%s\":%llu\n", sItemName.c_str(), u64ItemCount);
+		printf("\"%s\":%llu\n", ANSISTR(U16STR(sItemName)).c_str(), u64ItemCount);
 	}
 
 	
