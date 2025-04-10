@@ -7,6 +7,9 @@
 #include "NBT_Writer.hpp"
 #include "BlockProcess.hpp"
 
+#include <nlohmann\json.hpp>
+using Json = nlohmann::json;
+
 #define ZLIB_CONST
 #include <zlib.h>
 
@@ -19,6 +22,34 @@
 #include <stdio.h>
 #include <string>
 
+
+bool ReadFile(const char *const _FileName, std::string &_Data)
+{
+	FILE *pFile = fopen(_FileName, "rb");
+	if (pFile == NULL)
+	{
+		return false;
+	}
+	//获取文件大小
+	if (_fseeki64(pFile, 0, SEEK_END) != 0)
+	{
+		return false;
+	}
+	uint64_t qwFileSize = _ftelli64(pFile);
+	//回到文件开头
+	rewind(pFile);
+
+	//直接给数据塞string里
+	_Data.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
+	fread(_Data.data(), sizeof(_Data[0]), qwFileSize, pFile);//直接读入data
+	//完成，关闭文件
+	fclose(pFile);
+	pFile = NULL;
+
+	return true;
+}
+
+
 int main(int argc, char *argv[])
 {
 	if (argc != 2)
@@ -27,30 +58,14 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	FILE *pFile = fopen(argv[1], "rb");
-	if (pFile == NULL)
+	std::string sNbtData;
+	if (!ReadFile(argv[1], sNbtData))
 	{
+		printf("Nbt File Read Fail\n");
 		return -1;
 	}
-	//获取文件大小
-	if (_fseeki64(pFile, 0, SEEK_END) != 0)
-	{
-		return -1;
-	}
-	 uint64_t qwFileSize = _ftelli64(pFile);
-	 //回到文件开头
-	 rewind(pFile);
 
-	 //用于保存文件内容
-	 std::string sNbtData{};
-	 //直接给数据塞string里
-	 sNbtData.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
-	 fread(sNbtData.data(), sizeof(sNbtData[0]), qwFileSize, pFile);//直接读入data
-	 //完成，关闭文件
-	 fclose(pFile);
-	 pFile = NULL;
-
-	 printf("NBT file read size: [%lld]\n", qwFileSize);
+	 printf("NBT file read size: [%zu]\n", sNbtData.size());
 
 	if (gzip::is_compressed(sNbtData.data(), sNbtData.size()))//如果nbt已压缩，解压，否则保持原样
 	{
@@ -149,9 +164,42 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	//读取json语言文件
+	std::string sJsonData;
+	if (!ReadFile("zh_cn__.json", sJsonData))
+	{
+		printf("Json File Read Fail\n");
+		return -1;
+	}
+
+
+	Json zh_cn;
+
+	try
+	{
+		Json __parse = Json::parse(sJsonData);
+		zh_cn = std::move(__parse);
+	}
+	catch (const Json::parse_error &e)
+	{
+		// 输出异常详细信息
+		printf("JSON 解析错误: %s\n错误位置: [%zu]\n", e.what(), e.byte);
+		return -1;
+	}
+	
+
+	//遍历mapItemCounter，转化为中文输出
 	for (const auto &[sItemName, u64ItemCount] : mapItemCounter)
 	{
-		printf("\"%s\":%llu\n", ANSISTR(U16STR(sItemName)).c_str(), u64ItemCount);
+		const auto it = zh_cn.find(sItemName);
+		if (it != zh_cn.end() && it->is_string())
+		{
+			printf("%s [%s]:%llu\n", ConvertUtf8ToAnsi(it->get<std::string>()).c_str(), sItemName.c_str(), u64ItemCount);
+		}
+		else
+		{
+			printf("[%s]:%llu\n", sItemName.c_str(), u64ItemCount);
+		}
 	}
 
 	

@@ -166,13 +166,9 @@ public:
 			发光浆果植株（洞穴藤蔓转换）有植株和根部，垂泪藤有植株和根部部的区别，缠怨藤也有植株和根部），竹笋和竹子转换，
 			注意海带极其特殊，不带含水标签且必含水，不过根据实际情况，可以直接忽略海带本身自带的水，想了想算了还是多加一个水桶吧，方便统计\
 		两格植物处理，小型垂滴叶、高草、海草、大型撅、多格花、瓶子草植株\
-		
-		特殊植物转换处理（瓶子草荚果和瓶子草作物和瓶子草植株，火把花种子和火把花作物和火把花植株）瓶子草极其特殊，分为作物与瓶子草植株两种形式，方块id不同，
-			并且作物（耕地种植的）在标签age未成熟之前破坏掉落为荚果，成熟后破坏掉落瓶子草植株本身，且再次种植不会恢复为作物\
-		瓶子草作物、火把花作物特判，注意瓶子草作物虽然是DoublePart植物，但是过于特殊导致不归类进去，单独处理，
-		但是瓶子草植株本身属于DoublePart植物，与其它一同处理，所有此类转换函数都不处理普通单格植物\
 
-		作物处理：马铃薯、胡萝卜、甜菜根种子、小麦种子、西瓜南瓜种子，和他们的作物形式转换\
+		作物处理：马铃薯、胡萝卜、甜菜根、小麦、西瓜南瓜的种子，和他们的作物形式转换，西瓜、南瓜茎有结果的形态和普通形态
+			额外：火把花作物转换到火把花种子，瓶子草作物（下半部分）转换到瓶子草荚果\
 
 		普通方块与含水方块处理（含水则转换为水桶）\
 		*/
@@ -662,11 +658,41 @@ stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 	//所有此类转换函数都不处理普通单格植物
 	static inline bool CvrtCropPlant(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//作物植株处理
 	{
+		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapCropPlant =
+		{
+			{MU8STR("minecraft:pumpkin_stem"),MU8STR("minecraft:pumpkin_seeds")},
+			{MU8STR("minecraft:attached_pumpkin_stem"),MU8STR("minecraft:pumpkin_seeds")},
+			{MU8STR("minecraft:melon_stem"),MU8STR("minecraft:melon_seeds")},
+			{MU8STR("minecraft:attached_melon_stem"),MU8STR("minecraft:melon_seeds")},
+			{MU8STR("minecraft:beetroots"),MU8STR("minecraft:beetroot_seeds")},
+			{MU8STR("minecraft:wheat"),MU8STR("minecraft:wheat_seeds")},
+			{MU8STR("minecraft:carrots"),MU8STR("minecraft:carrot")},
+			{MU8STR("minecraft:potatoes"),MU8STR("minecraft:potato")},
+			{MU8STR("minecraft:torchflower_crop"),MU8STR("minecraft:torchflower_seeds")},
+			{MU8STR("minecraft:pitcher_crop"),MU8STR("minecraft:pitcher_pod")},//需要特判处理
+		};
 
+		const auto it = mapCropPlant.find(stBlocks.sBlockName);
+		if (it != mapCropPlant.end())
+		{
+			if ((*it).second == MU8STR("minecraft:pitcher_pod"))//需要判断原方块的half
+			{
+				const auto &half = stBlocks.cpdProperties.String("half");
+				if (half == MU8STR("lower"))
+				{
+					stItemsList.emplace_back((*it).second, 1);
+				}
+				//else if (half == MU8STR("upper")) {}
+				//else {}
+			}
+			else
+			{
+				//直接插入转换结果
+				stItemsList.emplace_back((*it).second, 1);
+			}
 
-
-
-
+			return true;
+		}
 
 		return false;
 	}
