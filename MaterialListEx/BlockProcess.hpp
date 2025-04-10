@@ -155,23 +155,31 @@ public:
 
 		
 		/*
-		无物品形式方块\多格方块处理（门、床、活塞）（注：多格植物额外处理）\
+		无物品形式方块\两格方块处理（门、床、活塞）（注：多格植物额外处理）\
 		墙上的方块\
 		不同种类花盆\炼药锅（不同内容物不同id）\带蜡烛的蛋糕转换为蛋糕+蜡烛\
 		绊线到线\气泡柱转换为水\耕地、土径转为泥土\
 		水、岩浆等流体处理\半砖处理\
 		同一格内多个物品数量的方块转换（雪\海龟蛋\海泡菜\蜡烛\樱花簇）\
 		同一格内多面生长方块转换（藤蔓，发光地衣，幽匿脉络）\
-		特殊植物（海带有植株跟上部，大型垂滴有颈部和叶部，紫菘花有植株和头部（特殊处理，植株物品形式也有plant后缀），
-			发光浆果植株（洞穴藤蔓转换）有植株和根部，垂泪藤有植株和根部部的区别，缠怨藤也有植株和根部）\
-		特殊植物（瓶子草荚果和植株，火把花种子和植株）小型垂滴叶、高草、大型撅、多格花、瓶子草植株（特殊处理，物品形式也有plant后缀）\
+		多格植株植物处理（海带有植株跟上部，大型垂滴有颈部和叶部，(紫菘花无需特殊处理，直接跳过走默认例程（紫菘植株也直接转化为物品（反正生存不可获取，但是创造能拿）)
+			发光浆果植株（洞穴藤蔓转换）有植株和根部，垂泪藤有植株和根部部的区别，缠怨藤也有植株和根部），竹笋和竹子转换，
+			注意海带极其特殊，不带含水标签且必含水，不过根据实际情况，可以直接忽略海带本身自带的水，想了想算了还是多加一个水桶吧，方便统计\
+		两格植物处理，小型垂滴叶、高草、海草、大型撅、多格花、瓶子草植株\
+		
+		特殊植物转换处理（瓶子草荚果和瓶子草作物和瓶子草植株，火把花种子和火把花作物和火把花植株）瓶子草极其特殊，分为作物与瓶子草植株两种形式，方块id不同，
+			并且作物（耕地种植的）在标签age未成熟之前破坏掉落为荚果，成熟后破坏掉落瓶子草植株本身，且再次种植不会恢复为作物\
+		瓶子草作物、火把花作物特判，注意瓶子草作物虽然是DoublePart植物，但是过于特殊导致不归类进去，单独处理，
+		但是瓶子草植株本身属于DoublePart植物，与其它一同处理，所有此类转换函数都不处理普通单格植物\
+
+		作物处理：马铃薯、胡萝卜、甜菜根种子、小麦种子、西瓜南瓜种子，和他们的作物形式转换\
 
 		普通方块与含水方块处理（含水则转换为水桶）\
 		*/
 		//注意，使用了短路求值原理，只要其中一个函数成功返回，则剩下全部跳过，并且bRetCvrt为true
 		bool bRetCvrt =
 			CvrtUnItemedBlocks(stBlocks, stItemsList) ||		//无物品形式方块处理
-			CvrtMultiPartBlocks(stBlocks, stItemsList) ||		//多格方块处理
+			CvrtDoublePartBlocks(stBlocks, stItemsList) ||		//两格方块处理
 			CvrtWallVariantBlocks(stBlocks, stItemsList) ||		//墙上方块处理
 			CvrtFlowerPot(stBlocks, stItemsList) ||				//花盆处理
 			CvrtCauldron(stBlocks, stItemsList) ||				//炼药锅处理
@@ -180,7 +188,10 @@ public:
 			CvrtFluid(stBlocks, stItemsList) ||					//流体处理
 			CvrtSlabBlocks(stBlocks, stItemsList) ||			//半砖处理
 			CvrtClusterBlocks(stBlocks, stItemsList) ||			//复合方块处理
-
+			CvrtPolyAttachBlocks(stBlocks, stItemsList) ||		//多面附着方块处理
+			CvrtMultiPartPlant(stBlocks, stItemsList) ||		//多格植株处理
+			CvrtDoublePartPlant(stBlocks, stItemsList) ||		//两格植株处理
+			CvrtCropPlant(stBlocks, stItemsList) ||				//作物植株处理
 
 			false;//此处false只是为了统一格式：让函数调用后统一加||不报错，不改变最终执行结果
 
@@ -237,7 +248,7 @@ if (stBlocks.sBlockName.ends_with(target))
 		return setUnItemedBlocks.count(stBlocks.sBlockName) != 0;
 	}
 
-	static inline bool CvrtMultiPartBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtDoublePartBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
 	{
 		//门只有下半掉落，上半直接转为空
 		{
@@ -403,8 +414,8 @@ if (stBlocks.sBlockName.ends_with(target))
 		{
 			{MU8STR("minecraft:tripwire"),MU8STR("minecraft:string")},
 			{MU8STR("minecraft:bubble_column"),MU8STR("minecraft:water_bucket")},
-			{MU8STR("minecraft:farmland"),MU8STR("minecraft:dirt")},
-			{MU8STR("minecraft:dirt_path"),MU8STR("minecraft:dirt")},
+			//{MU8STR("minecraft:farmland"),MU8STR("minecraft:dirt")},
+			//{MU8STR("minecraft:dirt_path"),MU8STR("minecraft:dirt")},
 		};
 
 		//查找
@@ -530,6 +541,135 @@ stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 #undef EMPLACE_CLUSTER_ITEMS
 	}
 
+	static inline bool CvrtPolyAttachBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//多面附着方块
+	{
+		const static std::unordered_set<NBT_Node::NBT_String> setPolyAttachBlocks =
+		{
+			MU8STR("minecraft:vine"),
+			MU8STR("minecraft:glow_lichen"),
+			MU8STR("minecraft:sculk_vein"),
+		};
+
+		const constexpr static char *pSurfaceNameList[] =
+		{
+			"down",
+			"east",
+			"north",
+			"south",
+			"up",
+			"west",
+		};
+
+
+		if (setPolyAttachBlocks.count(stBlocks.sBlockName) != 0)
+		{
+			//遍历面列表，查询每个面信息，如果存在，判断是不是true，如果是，计数+1
+			uint64_t u64Counter = 0;
+			for (const auto &it : pSurfaceNameList)
+			{
+				const auto pSurface = stBlocks.cpdProperties.HasString(MU8STR(it));
+				if (pSurface != NULL)
+				{
+					if (*pSurface == MU8STR("true"))
+					{
+						++u64Counter;
+					}
+				}
+			}
+
+			//根据计数插入对应数量的多面附着块物品数
+			stItemsList.emplace_back(stBlocks.sBlockName, u64Counter);
+
+			return true;
+		}
+
+		return false;
+	}
+
+
+	//所有此类转换函数都不处理普通单格植物
+	static inline bool CvrtMultiPartPlant(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//多格植株处理
+	{
+		//只转换植株其余非植株走普通方块normal处理
+		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapMultiPartPlant =
+		{
+			//洞穴藤蔓特殊处理，转换到发光浆果
+			{MU8STR("minecraft:cave_vines_plant"),MU8STR("minecraft:glow_berries")},
+			{MU8STR("minecraft:cave_vines"),MU8STR("minecraft:glow_berries")},
+			//竹子特殊转换
+			{MU8STR("minecraft:bamboo_sapling"),MU8STR("minecraft:bamboo")},
+			//垂滴叶特殊转换
+			{MU8STR(" minecraft:big_dripleaf_stem"),MU8STR("minecraft:big_dripleaf")},
+			//海带
+			{MU8STR("minecraft:kelp"),MU8STR("minecraft:kelp")},//添加海带到自身的映射的目的是为了处理含水情况
+			{MU8STR("minecraft:kelp_plant"),MU8STR("minecraft:kelp")},
+			//海草
+			{MU8STR("minecraft:tall_seagrass"),MU8STR("minecraft:seagrass")},//高海草的每个部分都映射到一个海草
+			//下界藤蔓
+			{MU8STR("minecraft:weeping_vines_plant"),MU8STR("minecraft:weeping_vines")},
+			{MU8STR("minecraft:twisting_vines_plant"),MU8STR("minecraft:twisting_vines")},
+		};
+
+		const auto it = mapMultiPartPlant.find(stBlocks.sBlockName);
+		if (it != mapMultiPartPlant.end())
+		{
+			stItemsList.emplace_back((*it).second, 1);//插入映射
+			//海带海草必含水，强制处理
+			if ((*it).second == MU8STR("minecraft:kelp")||
+				(*it).second == MU8STR("minecraft:seagrass"))
+			{
+				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), 1);
+			}
+			return true;
+		}
+		
+		return false;
+	}
+
+	//所有此类转换函数都不处理普通单格植物
+	static inline bool CvrtDoublePartPlant(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//双格植株处理
+	{
+		//只有根部破坏掉落，头部直接忽略
+		const static std::unordered_set<NBT_Node::NBT_String> setDoublePartPlant =
+		{
+			MU8STR("minecraft:small_dripleaf"),
+			MU8STR("minecraft:tall_grass"),
+			MU8STR("minecraft:large_fern"),
+			MU8STR("minecraft:sunflower"),
+			MU8STR("minecraft:lilac"),
+			MU8STR("minecraft:rose_bush"),
+			MU8STR("minecraft:peony"),
+			MU8STR("minecraft:pitcher_plant"),
+		};
+
+		//判断是否存在于set中，是则处理上下部分
+		if (setDoublePartPlant.count(stBlocks.sBlockName) != 0)
+		{
+			const auto &half = stBlocks.cpdProperties.String("half");
+			if (half == MU8STR("lower"))
+			{
+				stItemsList.emplace_back(stBlocks.sBlockName, 1);
+			}
+			//else if (half == MU8STR("upper")) {}
+			//else {}
+
+			return true;
+		}
+
+		return false;
+	}
+	
+	//所有此类转换函数都不处理普通单格植物
+	static inline bool CvrtCropPlant(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//作物植株处理
+	{
+
+
+
+
+
+
+		return false;
+	}
 
 
 	static inline void CvrtNormalBlock(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
