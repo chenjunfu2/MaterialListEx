@@ -255,7 +255,7 @@ if (stBlocks.sBlockName.ends_with(target))
 
 				if (half == MU8STR("lower"))
 				{
-					stItemsList.emplace_back(stBlocks.sBlockName, 1);
+					stItemsList.emplace_back(stBlocks.sBlockName, stBlocks.u64Counter * 1);
 				}
 				//else if (half == MU8STR("upper")){}
 				//else{}
@@ -273,7 +273,7 @@ if (stBlocks.sBlockName.ends_with(target))
 
 				if (part == MU8STR("head"))
 				{
-					stItemsList.emplace_back(stBlocks.sBlockName, 1);
+					stItemsList.emplace_back(stBlocks.sBlockName, stBlocks.u64Counter * 1);
 				}
 				//else if (part == MU8STR("foot")){}
 				//else{}
@@ -289,7 +289,7 @@ if (stBlocks.sBlockName.ends_with(target))
 				//判断是不是piston_head
 				if (stBlocks.sBlockName != MU8STR("minecraft:piston_head"))
 				{
-					stItemsList.emplace_back(stBlocks.sBlockName, 1);
+					stItemsList.emplace_back(stBlocks.sBlockName, stBlocks.u64Counter * 1);
 				}
 				//else{}
 
@@ -311,7 +311,7 @@ if (stBlocks.sBlockName.ends_with(target))
 		{
 			auto TmpName = stBlocks.sBlockName;
 			TmpName.erase(szPos, target.length());//删去wall_
-			stItemsList.emplace_back(std::move(TmpName), 1);
+			stItemsList.emplace_back(std::move(TmpName), stBlocks.u64Counter * 1);
 
 			return true;
 		}
@@ -327,7 +327,7 @@ if (stBlocks.sBlockName.ends_with(target))
 		FIND("potted_")
 		{
 			//有的情况下转化为flower_pot+扩展花物品名的形式
-			stItemsList.emplace_back(MU8STR("minecraft:flower_pot"), 1);
+			stItemsList.emplace_back(MU8STR("minecraft:flower_pot"), stBlocks.u64Counter * 1);
 			auto TmpName = stBlocks.sBlockName;
 			TmpName.erase(szPos, target.length());//删去potted_
 			//检测末尾是否以_bush结尾
@@ -338,7 +338,7 @@ if (stBlocks.sBlockName.ends_with(target))
 				TmpName.erase(TmpName.length() - target.length());//删去末尾_bush
 			}
 
-			stItemsList.emplace_back(std::move(TmpName), 1);
+			stItemsList.emplace_back(std::move(TmpName), stBlocks.u64Counter * 1);
 
 			return true;
 		}
@@ -354,38 +354,38 @@ if (stBlocks.sBlockName.ends_with(target))
 		{
 			if (stBlocks.sBlockName == MU8STR("minecraft:cauldron"))
 			{
-				stItemsList.emplace_back(MU8STR("minecraft:cauldron"), 1);
+				stItemsList.emplace_back(MU8STR("minecraft:cauldron"), stBlocks.u64Counter * 1);
 			}
 			else if (stBlocks.sBlockName == MU8STR("minecraft:water_cauldron"))
 			{
-				stItemsList.emplace_back(MU8STR("minecraft:cauldron"), 1);
+				stItemsList.emplace_back(MU8STR("minecraft:cauldron"), stBlocks.u64Counter * 1);
 				//扩展部分为水桶
-				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), 1);
+				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
 				//判断方块标签
 				const auto &level = stBlocks.cpdProperties.String(MU8STR("level"));
 
 				if (level == MU8STR("1"))
 				{
-					stItemsList.emplace_back(MU8STR("minecraft:glass_bottle"), 2);//2个空瓶移除水，剩余1
+					stItemsList.emplace_back(MU8STR("minecraft:glass_bottle"), stBlocks.u64Counter * 2);//2个空瓶移除水，剩余1
 				}
 				else if (level == MU8STR("2"))
 				{
-					stItemsList.emplace_back(MU8STR("minecraft:glass_bottle"), 1);//1个空瓶移除水，剩余2
+					stItemsList.emplace_back(MU8STR("minecraft:glass_bottle"), stBlocks.u64Counter * 1);//1个空瓶移除水，剩余2
 				}
 				//else if (level == MU8STR("3")){}//0个空瓶移除水，剩余3
 				//else{}
 			}
 			else if (stBlocks.sBlockName == MU8STR("minecraft:lava_cauldron"))
 			{
-				stItemsList.emplace_back(MU8STR("minecraft:cauldron"), 1);
+				stItemsList.emplace_back(MU8STR("minecraft:cauldron"), stBlocks.u64Counter * 1);
 				//扩展部分为岩浆桶
-				stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"), 1);
+				stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"), stBlocks.u64Counter * 1);
 			}
 			else if (stBlocks.sBlockName == MU8STR("minecraft:powder_snow_cauldron"))
 			{
-				stItemsList.emplace_back(MU8STR("minecraft:cauldron"), 1);
+				stItemsList.emplace_back(MU8STR("minecraft:cauldron"), stBlocks.u64Counter * 1);
 				//扩展部分为粉雪桶
-				stItemsList.emplace_back(MU8STR("minecraft:powder_snow_bucket"), 1);
+				stItemsList.emplace_back(MU8STR("minecraft:powder_snow_bucket"), stBlocks.u64Counter * 1);
 			}
 			//else{}
 
@@ -400,10 +400,10 @@ if (stBlocks.sBlockName.ends_with(target))
 		ENDSWITH("_cake")
 		{
 			//转换为蜡烛+蛋糕
-			stItemsList.emplace_back(MU8STR("minecraft:cake"), 1);
+			stItemsList.emplace_back(MU8STR("minecraft:cake"), stBlocks.u64Counter * 1);
 			auto TmpName = stBlocks.sBlockName;
 			TmpName.erase(TmpName.length() - target.length());//删去_cake
-			stItemsList.emplace_back(std::move(TmpName), 1);
+			stItemsList.emplace_back(std::move(TmpName), stBlocks.u64Counter * 1);
 
 			return true;
 		}
@@ -426,7 +426,7 @@ if (stBlocks.sBlockName.ends_with(target))
 		const auto it = mapAliasBlocks.find(stBlocks.sBlockName);
 		if (it != mapAliasBlocks.end())//存在
 		{
-			stItemsList.emplace_back((*it).second, 1);//插入映射
+			stItemsList.emplace_back((*it).second, stBlocks.u64Counter * 1);//插入映射
 			return true;
 		}
 
@@ -439,7 +439,7 @@ if (stBlocks.sBlockName.ends_with(target))
 		{
 			if (stBlocks.cpdProperties.String(MU8STR("level")) == MU8STR("0"))//是0就是水源
 			{
-				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), 1);
+				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
 			}
 
 			return true;
@@ -448,7 +448,7 @@ if (stBlocks.sBlockName.ends_with(target))
 		{
 			if (stBlocks.cpdProperties.String(MU8STR("level")) == MU8STR("0"))//是0就是岩浆源
 			{
-				stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"), 1);
+				stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"), stBlocks.u64Counter * 1);
 			}
 
 			return true;
@@ -464,11 +464,11 @@ if (stBlocks.sBlockName.ends_with(target))
 		{
 			if (stBlocks.cpdProperties.String(MU8STR("type")) == MU8STR("double"))//转换为2，否则为1
 			{
-				stItemsList.emplace_back(stBlocks.sBlockName, 2);
+				stItemsList.emplace_back(stBlocks.sBlockName, stBlocks.u64Counter * 2);
 			}
 			else
 			{
-				stItemsList.emplace_back(stBlocks.sBlockName, 1);
+				stItemsList.emplace_back(stBlocks.sBlockName, stBlocks.u64Counter * 1);
 			}
 
 			return true;
@@ -481,7 +481,7 @@ if (stBlocks.sBlockName.ends_with(target))
 	{
 #define EMPLACE_CLUSTER_ITEMS(name)\
 const auto &##name = stBlocks.cpdProperties.String(MU8STR(#name));\
-stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
+stItemsList.emplace_back(stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(##name));
 
 		//蜡烛优先处理（多颜色方块）
 		ENDSWITH("candle")//蜡烛极其特殊，存在无颜色标签的版本（与床之类不同）
@@ -582,7 +582,7 @@ stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 			}
 
 			//根据计数插入对应数量的多面附着块物品数
-			stItemsList.emplace_back(stBlocks.sBlockName, u64Counter);
+			stItemsList.emplace_back(stBlocks.sBlockName, stBlocks.u64Counter * u64Counter);
 
 			return true;
 		}
@@ -617,12 +617,12 @@ stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 		const auto it = mapMultiPartPlant.find(stBlocks.sBlockName);
 		if (it != mapMultiPartPlant.end())
 		{
-			stItemsList.emplace_back((*it).second, 1);//插入映射
+			stItemsList.emplace_back((*it).second, stBlocks.u64Counter * 1);//插入映射
 			//海带海草必含水，强制处理
 			if ((*it).second == MU8STR("minecraft:kelp")||
 				(*it).second == MU8STR("minecraft:seagrass"))
 			{
-				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), 1);
+				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
 			}
 			return true;
 		}
@@ -652,7 +652,7 @@ stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 			const auto &half = stBlocks.cpdProperties.String("half");
 			if (half == MU8STR("lower"))
 			{
-				stItemsList.emplace_back(stBlocks.sBlockName, 1);
+				stItemsList.emplace_back(stBlocks.sBlockName, stBlocks.u64Counter * 1);
 			}
 			//else if (half == MU8STR("upper")) {}
 			//else {}
@@ -688,7 +688,7 @@ stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 				const auto &half = stBlocks.cpdProperties.String("half");
 				if (half == MU8STR("lower"))
 				{
-					stItemsList.emplace_back((*it).second, 1);
+					stItemsList.emplace_back((*it).second, stBlocks.u64Counter * 1);
 				}
 				//else if (half == MU8STR("upper")) {}
 				//else {}
@@ -696,7 +696,7 @@ stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 			else
 			{
 				//直接插入转换结果
-				stItemsList.emplace_back((*it).second, 1);
+				stItemsList.emplace_back((*it).second, stBlocks.u64Counter * 1);
 			}
 
 			return true;
@@ -708,7 +708,7 @@ stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 
 	static inline void CvrtNormalBlock(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
 	{
-		stItemsList.emplace_back(stBlocks.sBlockName, 1);
+		stItemsList.emplace_back(stBlocks.sBlockName, stBlocks.u64Counter * 1);
 	}
 
 	static inline void CvrtWaterLoggedBlock(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
@@ -719,7 +719,7 @@ stItemsList.emplace_back(stBlocks.sBlockName, std::stoll(##name));
 		{
 			if (*it == MU8STR("true"))//含水
 			{
-				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), 1);
+				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
 			}
 			//else {}
 		}
