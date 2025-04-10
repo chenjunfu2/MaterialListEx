@@ -157,7 +157,7 @@ public:
 		/*
 		无物品形式方块\两格方块处理（门、床、活塞）（注：多格植物额外处理）\
 		墙上的方块\
-		不同种类花盆\炼药锅（不同内容物不同id）\带蜡烛的蛋糕转换为蛋糕+蜡烛\
+		不同种类花盆（杜鹃id有例外要注意）\炼药锅（不同内容物不同id）\带蜡烛的蛋糕转换为蛋糕+蜡烛\
 		绊线到线\气泡柱转换为水\耕地、土径转为泥土\
 		水、岩浆等流体处理\半砖处理\
 		同一格内多个物品数量的方块转换（雪\海龟蛋\海泡菜\蜡烛\樱花簇）\
@@ -330,6 +330,14 @@ if (stBlocks.sBlockName.ends_with(target))
 			stItemsList.emplace_back(MU8STR("minecraft:flower_pot"), 1);
 			auto TmpName = stBlocks.sBlockName;
 			TmpName.erase(szPos, target.length());//删去potted_
+			//检测末尾是否以_bush结尾
+			ENDSWITH("_bush")
+			{
+				//杜鹃花额外处理
+				//删去bush
+				TmpName.erase(TmpName.length() - target.length());//删去末尾_bush
+			}
+
 			stItemsList.emplace_back(std::move(TmpName), 1);
 
 			return true;
