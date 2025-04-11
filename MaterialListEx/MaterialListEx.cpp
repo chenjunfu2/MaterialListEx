@@ -147,7 +147,6 @@ int main(int argc, char *argv[])
 
 	//方块状态转换（把所有需要转换到目标的方块状态进行转换，比如不同类型花的花盆）
 	std::map<NBT_Node::NBT_String, uint64_t> mapItemCounter;//创建方块状态到物品映射map
-
 	for (const auto &[sRegionName, bsList] : vtBlockStatistics)
 	{
 		//处理sRegionName

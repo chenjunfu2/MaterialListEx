@@ -62,9 +62,6 @@ std::basic_string<char> ConvertUtf16ToAnsi(const std::basic_string<U16T> &u16Str
 	return ansiString;
 }
 
-#include <windows.h>
-#include <string>
-
 template<typename U8T = char8_t>
 std::basic_string<char> ConvertUtf8ToAnsi(const std::basic_string<U8T> &u8String)
 {
