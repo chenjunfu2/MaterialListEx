@@ -73,22 +73,23 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir);$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir);$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir);$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ExternalIncludePath)</ExternalIncludePath>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir);$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnabled>false</VcpkgEnabled>
@@ -259,9 +260,6 @@
     <ClInclude Include="zlib\zconf.h" />
     <ClInclude Include="zlib\zlib.h" />
     <ClInclude Include="zlib\zutil.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="text.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

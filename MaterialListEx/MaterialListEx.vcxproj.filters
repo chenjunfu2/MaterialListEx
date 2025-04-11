@@ -291,9 +291,4 @@
       <Filter>头文件\nlohmann</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="text.json">
-      <Filter>资源文件</Filter>
-    </None>
-  </ItemGroup>
 </Project>
