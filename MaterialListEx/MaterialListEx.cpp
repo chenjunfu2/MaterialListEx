@@ -182,27 +182,31 @@ int main(int argc, char *argv[])
 		}
 	});
 
+
+	//准备读取
+	Json zh_cn;
+	bool bLanguage = true;
+
 	//读取json语言文件
 	std::string sJsonData;
 	if (!ReadFile("zh_cn__.json", sJsonData))
 	{
 		printf("Json File Read Fail\n");
-		return -1;
-	}
-
-	//准备读取
-	Json zh_cn;
-	bool bLanguage;
-	try
-	{
-		zh_cn = Json::parse(sJsonData);
-		bLanguage = true;
-	}
-	catch (const Json::parse_error &e)
-	{
-		// 输出异常详细信息
-		printf("JSON parse error: %s\nError Pos: [%zu]\n", e.what(), e.byte);
 		bLanguage = false;
+	}
+	else
+	{
+		//从语言文件创建json对象
+		try
+		{
+			zh_cn = Json::parse(sJsonData);
+		}
+		catch (const Json::parse_error &e)
+		{
+			// 输出异常详细信息
+			printf("JSON parse error: %s\nError Pos: [%zu]\n", e.what(), e.byte);
+			bLanguage = false;
+		}
 	}
 	
 	//遍历mapItemCounter，转化为中文输出
