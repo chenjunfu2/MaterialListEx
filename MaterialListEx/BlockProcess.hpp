@@ -36,13 +36,13 @@ public:
 	static std::vector<RegionsStatistics> GetBlockStatistics(const NBT_Node &nRoot)//block list
 	{
 		//获取regions，也就是区域，一个投影可能有多个区域（选区）
-		const auto &Regions = ToCompound(nRoot).GetCompound(MU8STR("Regions"));
+		const auto &Regions = GetCompound(nRoot).GetCompound(MU8STR("Regions"));
 		//创建区域统计vector
 		std::vector<RegionsStatistics> vtRegionsStatistics;
 		vtRegionsStatistics.reserve(Regions.size());//提前分配
 		for (const auto &[RgName, RgVal] : Regions)//遍历选区
 		{
-			const auto &RgCompound = ToCompound(RgVal);
+			const auto &RgCompound = GetCompound(RgVal);
 
 			/*----------------区域大小计算、调色板获取----------------*/
 			//获取区域偏移
@@ -84,7 +84,7 @@ public:
 			//遍历BlockStatePalette方块调色板，并从中创建等效下标的方块统计vector
 			for (const auto &it : BlockStatePalette)
 			{
-				const auto &itBlockCompound = ToCompound(it);
+				const auto &itBlockCompound = GetCompound(it);
 
 				BlockStatistics bsTemp{};
 				bsTemp.sBlockName = itBlockCompound.GetString(MU8STR("Name"));
