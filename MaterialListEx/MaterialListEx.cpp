@@ -22,6 +22,8 @@ using Json = nlohmann::json;
 #include <stdio.h>
 #include <string>
 
+#include <functional>
+
 
 bool ReadFile(const char *const _FileName, std::string &_Data)
 {
@@ -163,6 +165,16 @@ int main(int argc, char *argv[])
 		}
 	}
 
+
+	//转换完成，通过vector创建map的元素排序（存储pair引用）std::reference_wrapper<>
+	using MapPair = decltype(mapItemCounter)::value_type;
+	std::vector<std::reference_wrapper<MapPair>> vecSortItem{ mapItemCounter.begin(),mapItemCounter.end() };
+	//进行排序
+	std::sort(vecSortItem.begin(), vecSortItem.end(), [](MapPair &l, MapPair &r)->bool
+	{
+		return l.second > r.second;
+	});
+
 	//读取json语言文件
 	std::string sJsonData;
 	if (!ReadFile("zh_cn__.json", sJsonData))
@@ -172,34 +184,43 @@ int main(int argc, char *argv[])
 	}
 
 
+	//准备读取
 	Json zh_cn;
-
+	bool bLanguage;
 	try
 	{
 		zh_cn = Json::parse(sJsonData);
+		bLanguage = true;
 	}
 	catch (const Json::parse_error &e)
 	{
 		// 输出异常详细信息
 		printf("JSON parse error: %s\nError Pos: [%zu]\n", e.what(), e.byte);
-		return -1;
+		bLanguage = false;
 	}
 	
-
 	//遍历mapItemCounter，转化为中文输出
-	for (const auto &[sItemName, u64ItemCount] : mapItemCounter)
+	for (const auto &it : vecSortItem)
 	{
-		const auto it = zh_cn.find(sItemName);
-		if (it != zh_cn.end() && it->is_string())
+		const auto &[sItemName, u64ItemCount] = it.get();
+
+		if (bLanguage)
 		{
-			printf("%s [%s]:%llu\n", ConvertUtf8ToAnsi(it->get<std::string>()).c_str(), sItemName.c_str(), u64ItemCount);
+			const auto it = zh_cn.find(sItemName);
+			if (it != zh_cn.end() && it->is_string())
+			{
+				printf("%s [%s]: %llu\n", ConvertUtf8ToAnsi(it->get<std::string>()).c_str(), sItemName.c_str(), u64ItemCount);
+			}
+			else
+			{
+				printf("[Unknow] [%s]: %llu\n", sItemName.c_str(), u64ItemCount);
+			}
 		}
 		else
 		{
-			printf("[%s]:%llu\n", sItemName.c_str(), u64ItemCount);
+			printf("%s: %llu\n", sItemName.c_str(), u64ItemCount);
 		}
 	}
-
 	
 	return 0;
 }
