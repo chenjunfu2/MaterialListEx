@@ -89,7 +89,7 @@ private:
 			break;
 		case NBT_Node::TAG_Byte_Array:
 			{
-				auto &arr = nRoot.GetData<NBT_Node::NBT_Byte_Array>();
+				auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
 				printf("[B;");
 				for (auto &it : arr)
 				{
@@ -152,7 +152,7 @@ private:
 			break;
 		case NBT_Node::TAG_Int_Array:
 			{
-				auto &arr = nRoot.GetData<NBT_Node::NBT_Int_Array>();
+				auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
 				printf("[I;");
 				for (auto &it : arr)
 				{
@@ -168,7 +168,7 @@ private:
 			break;
 		case NBT_Node::TAG_Long_Array:
 			{
-				auto &arr = nRoot.GetData<NBT_Node::NBT_Long_Array>();
+				auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
 				printf("[L;");
 				for (auto &it : arr)
 				{

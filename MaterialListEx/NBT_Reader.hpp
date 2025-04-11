@@ -660,7 +660,7 @@ private:
 			break;
 		case NBT_Node::TAG_Byte_Array:
 			{
-				iRet = GetArrayType<NBT_Node::NBT_Byte_Array, bHasName>(tData, nRoot);
+				iRet = GetArrayType<NBT_Node::NBT_ByteArray, bHasName>(tData, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_String:
@@ -680,12 +680,12 @@ private:
 			break;
 		case NBT_Node::TAG_Int_Array:
 			{
-				iRet = GetArrayType<NBT_Node::NBT_Int_Array, bHasName>(tData, nRoot);
+				iRet = GetArrayType<NBT_Node::NBT_IntArray, bHasName>(tData, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Long_Array:
 			{
-				iRet = GetArrayType<NBT_Node::NBT_Long_Array, bHasName>(tData, nRoot);
+				iRet = GetArrayType<NBT_Node::NBT_LongArray, bHasName>(tData, nRoot);
 			}
 			break;
 		default://NBT内标数据签错误

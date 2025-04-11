@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 
 	//NBT_Helper::Print(nRoot);
 
-	const auto &tmp = nRoot.Compound();//获取根下第一个compound，正常情况下根部下只有这一个compound
+	const auto &tmp = nRoot.GetCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
 	if (tmp.size() != 1)
 	{
 		printf("Error root size");
@@ -177,13 +177,12 @@ int main(int argc, char *argv[])
 
 	try
 	{
-		Json __parse = Json::parse(sJsonData);
-		zh_cn = std::move(__parse);
+		zh_cn = Json::parse(sJsonData);
 	}
 	catch (const Json::parse_error &e)
 	{
 		// 输出异常详细信息
-		printf("JSON 解析错误: %s\n错误位置: [%zu]\n", e.what(), e.byte);
+		printf("JSON parse error: %s\nError Pos: [%zu]\n", e.what(), e.byte);
 		return -1;
 	}
 	

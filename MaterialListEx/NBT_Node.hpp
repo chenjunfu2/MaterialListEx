@@ -9,6 +9,82 @@
 #include <stdint.h>
 #include <typeinfo>
 
+class NBT_Node;
+
+template<typename Map>
+class MyCompound :public Map
+{
+public:
+	//继承基类构造
+	using Map::Map;
+
+	//简化map查询
+	inline NBT_Node &Get(const typename Map::key_type &sTagName)
+	{
+		return Map::at(sTagName);
+	}
+
+	inline const NBT_Node &Get(const  typename Map::key_type &sTagName) const
+	{
+		return Map::at(sTagName);
+	}
+
+	inline NBT_Node *Search(const  typename Map::key_type &sTagName)
+	{
+		auto find = Map::find(sTagName);
+		return find == Map::end() ? NULL : &((*find).second);
+	}
+
+	inline const NBT_Node *Search(const typename Map::key_type &sTagName) const
+	{
+		auto find = Map::find(sTagName);
+		return find == Map::end() ? NULL : &((*find).second);
+	}
+
+
+#define TYPE_GET_FUNC(type)\
+inline const typename Map::mapped_type::NBT_##type &Get##type(const typename Map::key_type & sTagName) const\
+{\
+	return Map::at(sTagName).Get##type();\
+}\
+\
+inline typename Map::mapped_type::NBT_##type &Get##type(const typename Map::key_type & sTagName)\
+{\
+	return Map::at(sTagName).Get##type();\
+}\
+\
+inline const typename Map::mapped_type::NBT_##type *Has##type(const typename Map::key_type & sTagName) const\
+{\
+	auto find = Map::find(sTagName);\
+	return find != Map::end() && find->second.Is##type() ? &(find->second.Get##type()) : NULL;\
+}\
+\
+inline typename Map::mapped_type::NBT_##type *Has##type(const typename Map::key_type & sTagName)\
+{\
+	auto find = Map::find(sTagName);\
+	return find != Map::end() && find->second.Is##type() ? &(find->second.Get##type()) : NULL;\
+}
+
+	TYPE_GET_FUNC(End);
+	TYPE_GET_FUNC(Byte);
+	TYPE_GET_FUNC(Short);
+	TYPE_GET_FUNC(Int);
+	TYPE_GET_FUNC(Long);
+	TYPE_GET_FUNC(Float);
+	TYPE_GET_FUNC(Double);
+	TYPE_GET_FUNC(ByteArray);
+	TYPE_GET_FUNC(IntArray);
+	TYPE_GET_FUNC(LongArray);
+	TYPE_GET_FUNC(String);
+	TYPE_GET_FUNC(List);
+	TYPE_GET_FUNC(Compound);
+
+
+#undef TYPE_GET_FUNC
+
+};
+
+
 class NBT_Node
 {
 public:
@@ -37,12 +113,12 @@ public:
 	using NBT_Long			= int64_t;
 	using NBT_Float			= std::conditional_t<(sizeof(float) == sizeof(uint32_t)), float, uint32_t>;//通过编译期确认类型大小来选择正确的类型，优先浮点类型，如果失败则替换为对应的可用类型
 	using NBT_Double		= std::conditional_t<(sizeof(double) == sizeof(uint64_t)), double, uint64_t>;
-	using NBT_Byte_Array	= std::vector<NBT_Byte>;
-	using NBT_Int_Array		= std::vector<NBT_Int>;
-	using NBT_Long_Array	= std::vector<NBT_Long>;
+	using NBT_ByteArray		= std::vector<NBT_Byte>;
+	using NBT_IntArray		= std::vector<NBT_Int>;
+	using NBT_LongArray		= std::vector<NBT_Long>;
 	using NBT_String		= std::string;//mu8-string
 	using NBT_List			= std::vector<NBT_Node>;//存储一系列同类型标签的有效负载（无标签 ID 或名称）//原先为list，因为mc内list也通过下标访问，改为vector模拟
-	using NBT_Compound		= std::map<NBT_String, NBT_Node>;//挂在序列下的内容都通过map绑定名称
+	using NBT_Compound		= MyCompound<std::map<NBT_Node::NBT_String, NBT_Node>>;//挂在序列下的内容都通过map绑定名称
 
 	template<typename... Ts> struct TypeList{};
 	using NBT_TypeList = TypeList
@@ -54,12 +130,12 @@ public:
 		NBT_Long,
 		NBT_Float,
 		NBT_Double,
-		NBT_Byte_Array,
+		NBT_ByteArray,
 		NBT_String,
 		NBT_List,
 		NBT_Compound,
-		NBT_Int_Array,
-		NBT_Long_Array
+		NBT_IntArray,
+		NBT_LongArray
 	>;
 
 	template <typename T>
@@ -181,31 +257,6 @@ public:
 		return std::holds_alternative<T>(data);
 	}
 
-	//简化map查询
-	inline NBT_Node &Get(const NBT_String &sTagName)
-	{
-		return Compound().at(sTagName);
-	}
-
-	inline const NBT_Node &Get(const NBT_String &sTagName) const
-	{
-		return Compound().at(sTagName);
-	}
-
-	inline NBT_Node *Search(const NBT_String &sTagName)
-	{
-		auto &cpd = Compound();
-		auto find = cpd.find(sTagName);
-		return find == cpd.end() ? NULL : &((*find).second);
-	}
-
-	inline const NBT_Node *Search(const NBT_String &sTagName) const
-	{
-		auto &cpd = Compound();
-		auto find = cpd.find(sTagName);
-		return find == cpd.end() ? NULL : &((*find).second);
-	}
-
 	//针对每种类型重载一个方便的函数
 	/*
 		纯类型名函数：直接获取此类型，不做任何检查，由标准库std::get具体实现决定
@@ -214,12 +265,12 @@ public:
 		Has开头的类型名函数带参数版本：查找当前Compound是否有特定Name的Tag，并返回此Name的Tag（转换到指定类型）的指针
 	*/
 #define TYPE_GET_FUNC(type)\
-inline const NBT_##type &##type() const\
+inline const NBT_##type &Get##type() const\
 {\
 	return std::get<NBT_##type>(data);\
 }\
 \
-inline NBT_##type &##type()\
+inline NBT_##type &Get##type()\
 {\
 	return std::get<NBT_##type>(data);\
 }\
@@ -229,30 +280,15 @@ inline bool Is##type() const\
 	return std::holds_alternative<NBT_##type>(data);\
 }\
 \
-inline const NBT_##type &##type(const NBT_String & sTagName) const\
+friend inline NBT_##type&Get##type(NBT_Node & node)\
 {\
-	return Compound().at(sTagName).##type();\
+	return node.Get##type();\
 }\
 \
-inline NBT_##type &##type(const NBT_String & sTagName)\
+friend inline const NBT_##type&Get##type(const NBT_Node & node)\
 {\
-	return Compound().at(sTagName).##type();\
-}\
-\
-inline const NBT_##type *Has##type(const NBT_String & sTagName) const\
-{\
-	auto &cpd = Compound();\
-	auto find = cpd.find(sTagName);\
-	return find == cpd.end() ? NULL : &((*find).second.##type());\
-}\
-\
-inline NBT_##type *Has##type(const NBT_String & sTagName)\
-{\
-	auto &cpd = Compound();\
-	auto find = cpd.find(sTagName);\
-	return find == cpd.end() ? NULL : &((*find).second.##type());\
+	return node.Get##type();\
 }
-
 
 	TYPE_GET_FUNC(End);
 	TYPE_GET_FUNC(Byte);
@@ -261,9 +297,9 @@ inline NBT_##type *Has##type(const NBT_String & sTagName)\
 	TYPE_GET_FUNC(Long);
 	TYPE_GET_FUNC(Float);
 	TYPE_GET_FUNC(Double);
-	TYPE_GET_FUNC(Byte_Array);
-	TYPE_GET_FUNC(Int_Array);
-	TYPE_GET_FUNC(Long_Array);
+	TYPE_GET_FUNC(ByteArray);
+	TYPE_GET_FUNC(IntArray);
+	TYPE_GET_FUNC(LongArray);
 	TYPE_GET_FUNC(String);
 	TYPE_GET_FUNC(List);
 	TYPE_GET_FUNC(Compound);
