@@ -172,7 +172,14 @@ int main(int argc, char *argv[])
 	//进行排序
 	std::sort(vecSortItem.begin(), vecSortItem.end(), [](MapPair &l, MapPair &r)->bool
 	{
-		return l.second > r.second;
+		if (l.second == r.second)//相等情况下按key的字典序
+		{
+			return l.first < r.first;//升序
+		}
+		else//否则按数值大小
+		{
+			return l.second > r.second;//降序
+		}
 	});
 
 	//读取json语言文件
@@ -182,7 +189,6 @@ int main(int argc, char *argv[])
 		printf("Json File Read Fail\n");
 		return -1;
 	}
-
 
 	//准备读取
 	Json zh_cn;
