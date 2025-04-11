@@ -9,8 +9,6 @@
 #include <stdint.h>
 #include <typeinfo>
 
-class NBT_Node;
-
 template<typename Map>
 class MyCompound :public Map
 {
@@ -19,23 +17,23 @@ public:
 	using Map::Map;
 
 	//ºÚªØmap≤È—Ø
-	inline NBT_Node &Get(const typename Map::key_type &sTagName)
+	inline Map::mapped_type &Get(const typename Map::key_type &sTagName)
 	{
 		return Map::at(sTagName);
 	}
 
-	inline const NBT_Node &Get(const  typename Map::key_type &sTagName) const
+	inline const Map::mapped_type &Get(const  typename Map::key_type &sTagName) const
 	{
 		return Map::at(sTagName);
 	}
 
-	inline NBT_Node *Search(const  typename Map::key_type &sTagName)
+	inline Map::mapped_type *Search(const  typename Map::key_type &sTagName)
 	{
 		auto find = Map::find(sTagName);
 		return find == Map::end() ? NULL : &((*find).second);
 	}
 
-	inline const NBT_Node *Search(const typename Map::key_type &sTagName) const
+	inline const Map::mapped_type *Search(const typename Map::key_type &sTagName) const
 	{
 		auto find = Map::find(sTagName);
 		return find == Map::end() ? NULL : &((*find).second);
