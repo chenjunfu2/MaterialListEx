@@ -192,6 +192,8 @@
   <ItemGroup>
     <ClInclude Include="BlockProcess.hpp" />
     <ClInclude Include="Calc_Tool.hpp" />
+    <ClInclude Include="Compression_Utils.hpp" />
+    <ClInclude Include="File_Tool.hpp" />
     <ClInclude Include="gzip\compress.hpp" />
     <ClInclude Include="gzip\config.hpp" />
     <ClInclude Include="gzip\decompress.hpp" />
@@ -249,6 +251,7 @@
     <ClInclude Include="nlohmann\ordered_map.hpp" />
     <ClInclude Include="nlohmann\thirdparty\hedley\hedley.hpp" />
     <ClInclude Include="nlohmann\thirdparty\hedley\hedley_undef.hpp" />
+    <ClInclude Include="TileEntityProcess.hpp" />
     <ClInclude Include="zlib\crc32.h" />
     <ClInclude Include="zlib\deflate.h" />
     <ClInclude Include="zlib\gzguts.h" />

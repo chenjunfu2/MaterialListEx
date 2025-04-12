@@ -290,5 +290,14 @@
     <ClInclude Include="nlohmann\thirdparty\hedley\hedley_undef.hpp">
       <Filter>头文件\nlohmann</Filter>
     </ClInclude>
+    <ClInclude Include="TileEntityProcess.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="File_Tool.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Compression_Utils.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
