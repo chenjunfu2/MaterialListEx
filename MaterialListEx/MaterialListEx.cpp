@@ -6,51 +6,19 @@
 #include "NBT_Reader.hpp"
 #include "NBT_Writer.hpp"
 #include "BlockProcess.hpp"
+#include "File_Tool.hpp"
+#include "Compression_Utils.hpp"
 
+/*Json*/
 #include <nlohmann\json.hpp>
 using Json = nlohmann::json;
-
-#define ZLIB_CONST
-#include <zlib.h>
-
-#include <compress.hpp>
-#include <config.hpp>
-#include <decompress.hpp>
-#include <utils.hpp>
-#include <version.hpp>
+/*Json*/
 
 #include <stdio.h>
 #include <string>
-
 #include <functional>
 
-
-bool ReadFile(const char *const _FileName, std::string &_Data)
-{
-	FILE *pFile = fopen(_FileName, "rb");
-	if (pFile == NULL)
-	{
-		return false;
-	}
-	//获取文件大小
-	if (_fseeki64(pFile, 0, SEEK_END) != 0)
-	{
-		return false;
-	}
-	uint64_t qwFileSize = _ftelli64(pFile);
-	//回到文件开头
-	rewind(pFile);
-
-	//直接给数据塞string里
-	_Data.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
-	fread(_Data.data(), sizeof(_Data[0]), qwFileSize, pFile);//直接读入data
-	//完成，关闭文件
-	fclose(pFile);
-	pFile = NULL;
-
-	return true;
-}
-
+//NBT一般使用GZIP压缩，也有部分使用ZLIB压缩
 
 int main(int argc, char *argv[])
 {

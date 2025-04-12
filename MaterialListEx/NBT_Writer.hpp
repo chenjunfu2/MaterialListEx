@@ -32,7 +32,7 @@ public:
 		tData.push_back(c);
 	}
 
-	void PutOnce(const typename T::value_type &&c)
+	void PutOnce(typename T::value_type &&c)
 	{
 		tData.push_back(std::move(c));
 	}
@@ -81,10 +81,46 @@ class NBT_Writer
 	using OutputStream = MyOutputStream<DataType>;//流类型
 private:
 	//大小端转换
+	template<typename T>
+	static inline void __WriteBigEndian(OutputStream &tData, const T &tVal)
+	{
+		if constexpr (sizeof(T) == 1)
+		{
+			tData.PutOnce((uint8_t)tVal);
+		}
+		else
+		{
+			//统一到无符号类型，防止有符号右移错误
+			using UT = typename std::make_unsigned<T>::type;
+			UT tTmp = (UT)tVal;
+			for (size_t i = 0; i < sizeof(T); ++i)
+			{
+				tData.PutOnce((uint8_t)tTmp);
+				tTmp >>= 8;
+			}
+		}
+	}
 
-	//NoError
-
-	//WriteBigEndian
+	template<bool bNoExcept = false, typename T>
+	static inline std::conditional_t<bNoExcept, bool, void> WriteBigEndian(OutputStream &tData, const T &tVal) noexcept(bNoExcept)
+	{
+		if constexpr (bNoExcept)
+		{
+			try
+			{
+				__WriteBigEndian<T>(tData, tVal);
+				return true;
+			}
+			catch (...)
+			{
+				return false;
+			}
+		}
+		else
+		{
+			__WriteBigEndian(tData, tVal);
+		}
+	}
 
 	//PutName
 

@@ -115,7 +115,8 @@ private:
 			T tTmp = 0;
 			for (size_t i = 0; i < sizeof(T); ++i)
 			{
-				tTmp = (tTmp << 8) | (T)(uint8_t)tData.GetNext();//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
+				tTmp <<= 8;
+				tTmp |= (T)(uint8_t)tData.GetNext();//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
 			}
 			tVal = tTmp;
 		}
