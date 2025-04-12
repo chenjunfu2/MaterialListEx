@@ -17,23 +17,23 @@ public:
 	using Map::Map;
 
 	//简化map查询
-	inline Map::mapped_type &Get(const typename Map::key_type &sTagName)
+	inline typename Map::mapped_type &Get(const typename Map::key_type &sTagName)
 	{
 		return Map::at(sTagName);
 	}
 
-	inline const Map::mapped_type &Get(const  typename Map::key_type &sTagName) const
+	inline const typename Map::mapped_type &Get(const  typename Map::key_type &sTagName) const
 	{
 		return Map::at(sTagName);
 	}
 
-	inline Map::mapped_type *Search(const  typename Map::key_type &sTagName)
+	inline typename Map::mapped_type *Search(const  typename Map::key_type &sTagName)
 	{
 		auto find = Map::find(sTagName);
 		return find == Map::end() ? NULL : &((*find).second);
 	}
 
-	inline const Map::mapped_type *Search(const typename Map::key_type &sTagName) const
+	inline const typename Map::mapped_type *Search(const typename Map::key_type &sTagName) const
 	{
 		auto find = Map::find(sTagName);
 		return find == Map::end() ? NULL : &((*find).second);
@@ -62,6 +62,57 @@ inline typename Map::mapped_type::NBT_##type *Has##type(const typename Map::key_
 	auto find = Map::find(sTagName);\
 	return find != Map::end() && find->second.Is##type() ? &(find->second.Get##type()) : NULL;\
 }
+
+	TYPE_GET_FUNC(End);
+	TYPE_GET_FUNC(Byte);
+	TYPE_GET_FUNC(Short);
+	TYPE_GET_FUNC(Int);
+	TYPE_GET_FUNC(Long);
+	TYPE_GET_FUNC(Float);
+	TYPE_GET_FUNC(Double);
+	TYPE_GET_FUNC(ByteArray);
+	TYPE_GET_FUNC(IntArray);
+	TYPE_GET_FUNC(LongArray);
+	TYPE_GET_FUNC(String);
+	TYPE_GET_FUNC(List);
+	TYPE_GET_FUNC(Compound);
+
+
+#undef TYPE_GET_FUNC
+
+};
+
+
+template<typename List>
+class MyList :public List
+{
+public:
+	//继承基类构造
+	using List::List;
+
+	//简化list查询
+	inline typename List::value_type &Get(const typename List::size_type &szPos)
+	{
+		return List::at(szPos);
+	}
+
+	inline const typename List::value_type &Get(const typename List::size_type &szPos) const
+	{
+		return List::at(szPos);
+	}
+
+
+#define TYPE_GET_FUNC(type)\
+inline const typename List::value_type::NBT_##type &Get##type(const typename List::size_type &szPos) const\
+{\
+	return List::at(szPos).Get##type();\
+}\
+\
+inline typename List::value_type::NBT_##type &Get##type(const typename List::size_type &szPos)\
+{\
+	return List::at(szPos).Get##type();\
+}
+
 
 	TYPE_GET_FUNC(End);
 	TYPE_GET_FUNC(Byte);
@@ -115,7 +166,7 @@ public:
 	using NBT_IntArray		= std::vector<NBT_Int>;
 	using NBT_LongArray		= std::vector<NBT_Long>;
 	using NBT_String		= std::string;//mu8-string
-	using NBT_List			= std::vector<NBT_Node>;//存储一系列同类型标签的有效负载（无标签 ID 或名称）//原先为list，因为mc内list也通过下标访问，改为vector模拟
+	using NBT_List			= MyList<std::vector<NBT_Node>>;//存储一系列同类型标签的有效负载（无标签 ID 或名称）//原先为list，因为mc内list也通过下标访问，改为vector模拟
 	using NBT_Compound		= MyCompound<std::map<NBT_Node::NBT_String, NBT_Node>>;//挂在序列下的内容都通过map绑定名称
 
 	template<typename... Ts> struct TypeList{};
