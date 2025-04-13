@@ -15,12 +15,12 @@ public:
 	{}
 	~MyInputStream() = default;//默认析构，走tData的析构即可
 
-	typename T::value_type GetNext()
+	typename T::value_type GetNext() noexcept
 	{
 		return tData[szIndex++];
 	}
 
-	void UnGet()
+	void UnGet() noexcept
 	{
 		if (szIndex != 0)
 		{
@@ -28,62 +28,62 @@ public:
 		}
 	}
 
-	const typename T::value_type &operator[](size_t szIndex) const
+	const typename T::value_type &operator[](size_t szIndex) const noexcept
 	{
 		return tData[szIndex];
 	}
 
-	T::const_iterator Current() const
+	T::const_iterator Current() const noexcept
 	{
 		return tData.begin() + szIndex;
 	}
 
-	T::const_iterator Next(size_t szSize) const
+	T::const_iterator Next(size_t szSize) const noexcept
 	{
 		return tData.begin() + (szIndex + szSize);
 	}
 
-	size_t AddIndex(size_t szSize)
+	size_t AddIndex(size_t szSize) noexcept
 	{
 		return szIndex += szSize;
 	}
 
-	size_t SubIndex(size_t szSize)
+	size_t SubIndex(size_t szSize) noexcept
 	{
 		return szIndex -= szSize;
 	}
 
-	bool IsEnd() const
+	bool IsEnd() const noexcept
 	{
 		return szIndex >= tData.size();
 	}
 
-	size_t Size() const
+	size_t Size() const noexcept
 	{
 		return tData.size();
 	}
 
-	bool HasAvailData(size_t szSize) const
+	bool HasAvailData(size_t szSize) const noexcept
 	{
 		return (tData.size() - szIndex) >= szSize;
 	}
 
-	void Reset()
+	void Reset() noexcept
 	{
 		szIndex = 0;
 	}
 
-	const T &Data() const
+	const T &Data() const noexcept
 	{
 		return tData;
 	}
 
-	size_t Index() const
+	size_t Index() const noexcept
 	{
 		return szIndex;
 	}
 
-	size_t &Index()
+	size_t &Index() noexcept
 	{
 		return szIndex;
 	}
@@ -156,6 +156,7 @@ private:
 	{
 		NoWarn = 0,
 		ElementExistsWarn = 1,
+		WARNCODE_END = 2,
 	};
 
 	static inline const char *const warnReason[] =
@@ -163,6 +164,9 @@ private:
 		"NoWarn",
 		"ElementExistsWarn",
 	};
+
+	//记得同步数组！
+	static_assert(sizeof(warnReason) / sizeof(warnReason[0]) == WARNCODE_END, "warnReason array out sync");
 
 	//使用变参形参表+vprintf代理复杂输出，给出更多扩展信息
 	template <typename T, typename std::enable_if<std::is_same<T, ErrCode>::value || std::is_same<T, WarnCode>::value, int>::type = 0>

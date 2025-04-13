@@ -27,48 +27,80 @@ public:
 	}
 	~MyOutputStream() = default;
 
-	void PutOnce(const typename T::value_type &c)
+	bool PutOnce(const typename T::value_type &c) noexcept
 	{
-		tData.push_back(c);
+		try
+		{
+			tData.push_back(c);
+			return true;
+		}
+		catch (...)
+		{
+			return false;
+		}
 	}
 
-	void PutOnce(typename T::value_type &&c)
+	bool PutOnce(typename T::value_type &&c) noexcept
 	{
-		tData.push_back(std::move(c));
+		try
+		{
+			tData.push_back(std::move(c));
+			return true;
+		}
+		catch (...)
+		{
+			return false;
+		}
 	}
 
-	void PutRange(typename T::iterator itBeg, typename T::iterator itEnd)
+	bool PutRange(typename T::const_iterator itBeg, typename T::const_iterator itEnd) noexcept
 	{
-		tData.append(itBeg, itEnd);
+		try
+		{
+			tData.append(itBeg, itEnd);
+			return true;
+		}
+		catch (...)
+		{
+			return false;
+		}
 	}
 
 	template<typename... Args, typename = std::enable_if_t<has_emplace_back<T>::value>>
-	void EmplaceOnce(Args&&... args)
+	bool EmplaceOnce(Args&&... args) noexcept
 	{
-		tData.emplace_back(std::forward<Args>(args)...);
+		try
+		{
+			tData.emplace_back(std::forward<Args>(args)...);
+			return true;
+		}
+		catch (...)
+		{
+			return false;
+		}
 	}
 
-	void UnPut()
+	void UnPut() noexcept
 	{
 		tData.pop_back();
 	}
 
-	size_t GetSize() const
+	size_t GetSize() const noexcept
 	{
 		return tData.size();
 	}
 
-	void Reset()
+	void Reset() noexcept
 	{
-		tData.resize(0);
+		tData.clear();
 	}
 
-	const T &Data() const
+	const T &Data() const noexcept
 	{
 		return tData;
 	}
 
-	T &Data()
+	T &Data() noexcept
 	{
 		return tData;
 	}
@@ -82,11 +114,11 @@ class NBT_Writer
 private:
 	//大小端转换
 	template<typename T>
-	static inline void __WriteBigEndian(OutputStream &tData, const T &tVal)
+	static inline bool WriteBigEndian(OutputStream &tData, const T &tVal)
 	{
 		if constexpr (sizeof(T) == 1)
 		{
-			tData.PutOnce((uint8_t)tVal);
+			return tData.PutOnce((uint8_t)tVal);
 		}
 		else
 		{
@@ -95,34 +127,88 @@ private:
 			UT tTmp = (UT)tVal;
 			for (size_t i = 0; i < sizeof(T); ++i)
 			{
-				tData.PutOnce((uint8_t)tTmp);
+				if (!tData.PutOnce((uint8_t)tTmp))
+				{
+					return false;
+				}
 				tTmp >>= 8;
 			}
 		}
+
+		return true;
 	}
 
-	template<bool bNoExcept = false, typename T>
-	static inline std::conditional_t<bNoExcept, bool, void> WriteBigEndian(OutputStream &tData, const T &tVal) noexcept(bNoExcept)
+
+	enum ErrCode : int
 	{
-		if constexpr (bNoExcept)
-		{
-			try
-			{
-				__WriteBigEndian<T>(tData, tVal);
-				return true;
-			}
-			catch (...)
-			{
-				return false;
-			}
-		}
-		else
-		{
-			__WriteBigEndian(tData, tVal);
-		}
+		ERRCODE_END = -2,
+		StringTooLong = -1,
+		AllOk = 0,
+	};
+
+	static inline const char *const errReason[] =
+	{
+		"AllOk",
+		"StringTooLong",
+	};
+
+	//记得同步数组！
+	static_assert(sizeof(errReason) / sizeof(errReason[0]) == (-ERRCODE_END), "errReason array out sync");
+
+
+	enum WarnCode : int
+	{
+		NoWarn = 0,
+		WARNCODE_END = 1,
+	};
+
+	static inline const char *const warnReason[] =
+	{
+		"NoWarn",
+	};
+
+	//记得同步数组！
+	static_assert(sizeof(warnReason) / sizeof(warnReason[0]) == WARNCODE_END, "warnReason array out sync");
+
+
+	//error处理
+	//使用变参形参表+vprintf代理复杂输出，给出更多扩展信息
+	template <typename T, typename std::enable_if<std::is_same<T, ErrCode>::value || std::is_same<T, WarnCode>::value, int>::type = 0>
+	static int _cdecl Error(const T &code, const OutputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...)
+	{
+		/*考虑添加栈回溯，输出详细错误发生的nbt嵌套路径*/
+
+
+
+		return code;
 	}
 
 	//PutName
+	static int PutName(OutputStream &tData, const NBT_Node::NBT_String &sName)
+	{
+		//检查大小是否符合上限
+		if (sName.length() > UINT16_MAX)
+		{
+			return Error(StringTooLong, tData, __FUNCSIG__ ": sName.length()[%zu] > UINT16_MAX[%zu]", sName.length(), UINT16_MAX);
+		}
+
+		//输出名称长度
+		uint16_t wNameLength = (uint16_t)sName.length();
+		if (!WriteBigEndian(tData, wNameLength))
+		{
+
+
+
+		}
+		//输出名称
+		if (!tData.PutRange(sName.begin(), sName.end()))
+		{
+
+
+		}
+
+		return AllOk;
+	}
 
 	//PutbuiltInType
 
