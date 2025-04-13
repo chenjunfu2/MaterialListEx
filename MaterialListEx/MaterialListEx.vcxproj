@@ -84,7 +84,7 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir);$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ExternalIncludePath)</ExternalIncludePath>
-    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
