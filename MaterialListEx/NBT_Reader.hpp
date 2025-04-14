@@ -201,7 +201,7 @@ private:
 		}
 		else
 		{
-			static_assert(false, "Unknow [T code] Type!");
+			static_assert(false, "Unknown [T code] Type!");
 		}
 
 		if (cpExtraInfo != NULL)
@@ -255,7 +255,7 @@ private:
 		}
 		else
 		{
-			static_assert(false, "Unknow [T code] Type!");
+			static_assert(false, "Unknown [T code] Type!");
 		}
 
 		return (int)code;
@@ -568,7 +568,7 @@ private:
 		//错误的列表元素类型
 		if (bListElementType >= NBT_Node::NBT_TAG::ENUM_END)
 		{
-			return Error(NbtTypeTagError, tData, __FUNCSIG__ ": List NBT Type:Unknow Type Tag[%02X(%d)]", bListElementType, bListElementType);
+			return Error(NbtTypeTagError, tData, __FUNCSIG__ ": List NBT Type:Unknown Type Tag[%02X(%d)]", bListElementType, bListElementType);
 		}
 
 		//读取4字节的有符号列表长度
@@ -604,7 +604,7 @@ private:
 				//判断tag是否符合
 				if (bCompoundEndTag != NBT_Node::TAG_End)
 				{
-					return Error(ListElementTypeError, tData, __FUNCSIG__ ": require Compound End Tag [0x00], but read Unknow Tag [0x%02X]!", bCompoundEndTag);
+					return Error(ListElementTypeError, tData, __FUNCSIG__ ": require Compound End Tag [0x00], but read Unknown Tag [0x%02X]!", bCompoundEndTag);
 				}
 			}
 
@@ -704,7 +704,7 @@ private:
 			break;
 		default://NBT内标数据签错误
 			{
-				iRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch default: Unknow Type Tag[%02X(%d)]", tag, tag);//此处不进行提前返回，往后默认返回处理
+				iRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch default: Unknown Type Tag[%02X(%d)]", tag, tag);//此处不进行提前返回，往后默认返回处理
 			}
 			break;
 		}

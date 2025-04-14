@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				printf("[Unknow] [%s]: %llu\n", sItemName.c_str(), u64ItemCount);
+				printf("[Unknown] [%s]: %llu\n", sItemName.c_str(), u64ItemCount);
 			}
 		}
 		else

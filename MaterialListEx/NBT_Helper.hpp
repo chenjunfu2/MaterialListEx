@@ -184,7 +184,7 @@ private:
 			break;
 		default:
 			{
-				printf("[Unknow NBT Tag Type [%02X(%d)]]", tag, tag);
+				printf("[Unknown NBT Tag Type [%02X(%d)]]", tag, tag);
 			}
 			break;
 		}
