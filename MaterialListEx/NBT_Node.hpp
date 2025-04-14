@@ -245,7 +245,7 @@ public:
 	}
 
 	// 默认构造（TAG_End）
-	NBT_Node() : data(std::monostate{})
+	NBT_Node() : data(NBT_End{})
 	{}
 
 	// 自动析构由variant处理
@@ -256,7 +256,7 @@ public:
 
 	NBT_Node(NBT_Node &&_NBT_Node) noexcept : data(std::move(_NBT_Node.data))
 	{
-		_NBT_Node.data = std::monostate{};
+		_NBT_Node.data = NBT_End{};
 	}
 
 	NBT_Node &operator=(const NBT_Node &_NBT_Node)
@@ -269,14 +269,14 @@ public:
 	NBT_Node &operator=(NBT_Node &&_NBT_Node) noexcept
 	{
 		data = std::move(_NBT_Node.data);
-		_NBT_Node.data = std::monostate{};
+		_NBT_Node.data = NBT_End{};
 		return *this;
 	}
 
 	//清除所有数据
 	void Clear(void)
 	{
-		data = NBT_Compound{};
+		data.emplace<NBT_End>();
 	}
 
 	//获取标签类型

@@ -752,6 +752,8 @@ public:
 	static bool ReadNBT(NBT_Node &nRoot, const DataType &tData, size_t szDataStartIndex = 0, size_t szStackDepth = 512)//从data中读取nbt
 	{
 		nRoot.Clear();//清掉原来的数据（注意如果nbt较大的情况下，这是一个较深的递归清理过程，不排除栈空间不足导致清理失败）
+		//设置为compound
+		nRoot.emplace<NBT_Node::NBT_Compound>();
 		printf("Max Stack Depth [%zu]\n", szStackDepth);
 		InputStream IptStream{ tData,szDataStartIndex };
 		return GetNBT<true>(IptStream, nRoot, szStackDepth) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
