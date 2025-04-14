@@ -4,6 +4,8 @@
 #include "MUTF8_Tool.hpp"
 #include "Windows_ANSI.hpp"
 
+#include <new>//std::bad_alloc
+
 template <typename T>
 class MyInputStream
 {
@@ -94,43 +96,13 @@ class NBT_Reader
 {
 	using InputStream = MyInputStream<DataType>;//流类型
 private:
-	// 读取大端序数值，bNoCheck为true则不进行任何检查
-	template<bool bNoCheck = false, typename T>
-	static std::conditional_t<bNoCheck, void, bool> ReadBigEndian(InputStream &tData, T& tVal)
-	{
-		if constexpr (!bNoCheck)
-		{
-			if (!tData.HasAvailData(sizeof(T)))
-			{
-				return false;
-			}
-		}
-
-		if constexpr (sizeof(T) == 1)
-		{
-			tVal = (T)(uint8_t)tData.GetNext();
-		}
-		else
-		{
-			T tTmp = 0;
-			for (size_t i = 0; i < sizeof(T); ++i)
-			{
-				tTmp <<= 8;
-				tTmp |= (T)(uint8_t)tData.GetNext();//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
-			}
-			tVal = tTmp;
-		}
-
-		if constexpr (!bNoCheck)
-		{
-			return true;
-		}
-	}
-
 	enum ErrCode : int
 	{
-		ERRCODE_END = -6,//结束标记，统计负数部分大小
+		ERRCODE_END = -9,//结束标记，统计负数部分大小
 
+		UnknownError,//其他错误
+		StdException,//标准异常
+		OutOfMemoryError,//内存不足错误（NBT文件问题）
 		ListElementTypeError,//列表元素类型错误（NBT文件问题）
 		StackDepthExceeded,//调用栈深度过深（NBT文件or代码设置问题）
 		NbtTypeTagError,//NBT标签类型错误（NBT文件问题）
@@ -145,7 +117,10 @@ private:
 
 	static inline const char *const errReason[] =//反向数组运算方式：(-ERRCODE_END - 1) + ErrCode
 	{
-		"ListElementTypeError"
+		"UnknownError",
+		"StdException",
+		"OutOfMemoryError",
+		"ListElementTypeError",
 		"StackDepthExceeded",
 		"NbtTypeTagError",
 		"OutOfRangeError",
@@ -247,11 +222,11 @@ private:
 
 		if constexpr (std::is_same<T, ErrCode>::value)
 		{
-			printf("\nSkip err data and clear!\n");
+			printf("\nSkip err data and return...\n\n");
 		}
 		else if constexpr (std::is_same<T, WarnCode>::value)
 		{
-			printf("\nSkip warn data and continue...\n");
+			printf("\nSkip warn data and continue...\n\n");
 		}
 		else
 		{
@@ -263,47 +238,126 @@ private:
 
 #define _RP___FUNCSIG__ __FUNCSIG__//用于编译过程二次替换达到函数内部
 
+#define _RP___LINE__ _RP_STRLING(__LINE__)
+#define _RP_STRLING(l) STRLING(l)
+#define STRLING(l) #l
+
+#define STACK_TRACEBACK(fmt, ...) printf("In [" _RP___FUNCSIG__ "] Line:[" _RP___LINE__ "]: \n"##fmt "\n\n", ##__VA_ARGS__);
 #define CHECK_STACK_DEPTH(Depth) \
 {\
 	if((Depth) <= 0)\
 	{\
-		return Error(StackDepthExceeded, tData, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
+		iRet = Error(StackDepthExceeded, tData, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
+		STACK_TRACEBACK("(Depth) <= 0");\
+		return iRet;\
 	}\
 }
 
+#define MYTRY \
+try\
+{
+
+#define MYCATCH \
+}\
+catch(const std::bad_alloc &e)\
+{\
+	int iRet = Error(OutOfMemoryError, tData, _RP___FUNCSIG__ ": Info:[%s]", e.what());\
+	STACK_TRACEBACK("catch");\
+	return iRet;\
+}\
+catch(const std::exception &e)\
+{\
+	int iRet = Error(StdException, tData, _RP___FUNCSIG__ ": Info:[%s]", e.what());\
+	STACK_TRACEBACK("catch");\
+	return iRet;\
+}\
+catch(...)\
+{\
+	int iRet =  Error(UnknownError, tData, _RP___FUNCSIG__ ": Unknown Exception");\
+	STACK_TRACEBACK("catch");\
+	return iRet;\
+}
+
+
+	// 读取大端序数值，bNoCheck为true则不进行任何检查
+	template<bool bNoCheck = false, typename T>
+	static std::conditional_t<bNoCheck, void, int> ReadBigEndian(InputStream &tData, T &tVal) noexcept
+	{
+		if constexpr (!bNoCheck)
+		{
+			if (!tData.HasAvailData(sizeof(T)))
+			{
+				int iRet = Error(OutOfRangeError, tData, "tData size [%zu], current index [%zu], remaining data size [%zu], but try to read [%zu]",
+					tData.Size(), tData.Index(), tData.Size() - tData.Index(), sizeof(T));
+				STACK_TRACEBACK("HasAvailData");
+				return iRet;
+			}
+		}
+
+		if constexpr (sizeof(T) == 1)
+		{
+			tVal = (T)(uint8_t)tData.GetNext();
+		}
+		else
+		{
+			T tTmp = 0;
+			for (size_t i = 0; i < sizeof(T); ++i)
+			{
+				tTmp <<= 8;
+				tTmp |= (T)(uint8_t)tData.GetNext();//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
+			}
+			tVal = tTmp;
+		}
+
+		if constexpr (!bNoCheck)
+		{
+			return AllOk;
+		}
+	}
+
 	static int GetName(InputStream &tData, NBT_Node::NBT_String &sName)
 	{
+		MYTRY
+		int iRet = AllOk;
 		//读取2字节的无符号名称长度
 		uint16_t wNameLength = 0;//w->word=2*byte
-		if (!ReadBigEndian(tData, wNameLength))
+		iRet = ReadBigEndian(tData, wNameLength);
+		if (iRet < AllOk)
 		{
-			return Error(OutOfRangeError, tData, __FUNCSIG__ ": wNameLength Read");
+			STACK_TRACEBACK("wNameLength Read");
+			return iRet;
 		}
 
 		//判断长度是否超过
 		if (!tData.HasAvailData(wNameLength))
 		{
-			return Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + wNameLength[%zu])[%zu] > DataSize[%zu]",
+			int iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + wNameLength[%zu])[%zu] > DataSize[%zu]",
 				tData.Index(), (size_t)wNameLength, tData.Index() + (size_t)wNameLength, tData.Size());
+			STACK_TRACEBACK("HasAvailData");
+			return iRet;
 		}
 
 		//解析出名称
+		sName.reserve(wNameLength);//提前分配
 		sName = { tData.Current(), tData.Next(wNameLength) };//如果长度为0则构造0长字符串，合法行为
 		tData.AddIndex(wNameLength);//移动下标
 		return AllOk;
+		MYCATCH
 	}
-
 
 	template<typename T, bool bHasName = true>
 	static int GetbuiltInType(InputStream &tData, NBT_Node &nRoot)
 	{
+		MYTRY
+		int iRet = AllOk;
 		//获取NBT的N（名称）
 		NBT_Node::NBT_String sName{};
 		if constexpr (bHasName)//如果无名称则string默认为空
 		{
-			int iRet = GetName(tData, sName);
+			iRet = GetName(tData, sName);
 			if (iRet < AllOk)
 			{
+				STACK_TRACEBACK("GetName");
 				return iRet;
 			}
 		}
@@ -312,9 +366,11 @@ private:
 		if constexpr (std::is_same<T, NBT_Node::NBT_Float>::value)//浮点数特判
 		{
 			uint32_t tTmpData = 0;
-			if (!ReadBigEndian(tData, tTmpData))
+			iRet = ReadBigEndian(tData, tTmpData);
+			if (iRet < AllOk)
 			{
-				return Error(OutOfRangeError, tData, __FUNCSIG__ ": tTmpData Read");
+				STACK_TRACEBACK("Name: \"%s\" tTmpData Read", sName.c_str());
+				return iRet;
 			}
 
 			if constexpr (bHasName)
@@ -336,9 +392,11 @@ private:
 		else if constexpr (std::is_same<T, NBT_Node::NBT_Double>::value)//浮点数特判
 		{
 			uint64_t tTmpData = 0;
-			if (!ReadBigEndian(tData, tTmpData))
+			iRet = ReadBigEndian(tData, tTmpData);
+			if (iRet < AllOk)
 			{
-				return Error(OutOfRangeError, tData, __FUNCSIG__ ": tTmpData Read");
+				STACK_TRACEBACK("Name: \"%s\" tTmpData Read", sName.c_str());
+				return iRet;
 			}
 
 			if constexpr (bHasName)
@@ -359,9 +417,11 @@ private:
 		else if constexpr (std::is_integral<T>::value)
 		{
 			T tTmpData = 0;
-			if (!ReadBigEndian(tData, tTmpData))
+			iRet = ReadBigEndian(tData, tTmpData);
+			if (iRet < AllOk)
 			{
-				return Error(OutOfRangeError, tData, __FUNCSIG__ ": tTmpData Read");
+				STACK_TRACEBACK("Name: \"%s\" tTmpData Read", sName.c_str());
+				return iRet;
 			}
 
 			if constexpr (bHasName)
@@ -383,49 +443,43 @@ private:
 			static_assert(false, "Not a legal type call!");//抛出编译错误
 		}
 
-		return AllOk;
+		return iRet;
+		MYCATCH
 	}
-
-	template<typename T>
-	struct is_std_vector : std::false_type
-	{};
-
-	template<typename T, typename Alloc>
-	struct is_std_vector<std::vector<T, Alloc>> : std::true_type
-	{};
 
 	template<typename T, bool bHasName = true>
 	static int GetArrayType(InputStream &tData, NBT_Node &nRoot)
 	{
-		//判断是不是vector<x>
-		if constexpr (!is_std_vector<T>::value)
-		{
-			static_assert(false, "Not a legal type call!");//抛出编译错误
-		}
-
+		MYTRY
+		int iRet = AllOk;
 		//获取NBT的N（名称）
 		NBT_Node::NBT_String sName{};
 		if constexpr (bHasName)//如果无名称则string默认为空
 		{
-			int iRet = GetName(tData, sName);
+			iRet = GetName(tData, sName);
 			if (iRet < AllOk)
 			{
+				STACK_TRACEBACK("GetName");
 				return iRet;
 			}
 		}
 
 		//获取4字节有符号数，代表数组元素个数
 		int32_t dwElementCount = 0;//dw->double-word=4*byte
-		if (!ReadBigEndian(tData, dwElementCount))
+		iRet = ReadBigEndian(tData, dwElementCount);
+		if (iRet < AllOk)
 		{
-			return Error(OutOfRangeError, tData, __FUNCSIG__ ": dwElementCount Read");
+			STACK_TRACEBACK("Name: \"%s\" dwElementCount Read", sName.c_str());
+			return iRet;
 		}
 
 		//判断长度是否超过
 		if (!tData.HasAvailData(dwElementCount * sizeof(T::value_type)))//保证下方调用安全
 		{
-			return Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + dwElementCount[%zu] * sizeof(T::value_type)[%zu])[%zu] > DataSize[%zu]", 
+			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + dwElementCount[%zu] * sizeof(T::value_type)[%zu])[%zu] > DataSize[%zu]", 
 				tData.Index(), (size_t)dwElementCount, sizeof(T::value_type), tData.Index() + (size_t)dwElementCount * sizeof(T::value_type), tData.Size());
+			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+			return iRet;
 		}
 		
 		//数组保存
@@ -453,30 +507,36 @@ private:
 		{
 			nRoot.emplace<T>(std::move(tArray));
 		}
-		return AllOk;
+
+		return iRet;
+		MYCATCH
 	}
 
 	template<bool bHasName = true>
 	static int GetCompoundType(InputStream &tData, NBT_Node &nRoot, size_t szStackDepth)//此递归函数需要保证传递返回值
 	{
+		MYTRY
+		int iRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
 		//获取NBT的N（名称）
 		NBT_Node::NBT_String sName{};
 		if constexpr (bHasName)//如果无名称则string默认为空
 		{
-			int iRet = GetName(tData, sName);
+			iRet = GetName(tData, sName);
 			if (iRet < AllOk)
 			{
+				STACK_TRACEBACK("GetName");
 				return iRet;
 			}
 		}
 
 		//开始递归
 		NBT_Node nodeTemp{ NBT_Node::NBT_Compound{} };
-		int iRet = GetNBT(tData, nodeTemp, szStackDepth);//此处直接传递，因为GetNBT内部会进行递减
+		iRet = GetNBT(tData, nodeTemp, szStackDepth);//此处直接传递，因为GetNBT内部会进行递减
 		if (iRet < AllOk)
 		{
-			return iRet;
+			STACK_TRACEBACK("Name: \"%s\" GetNBT", sName.c_str());
+			//return iRet;//不跳过，进行插入，以便分析错误之前的正确数据
 		}
 
 		if constexpr (bHasName)
@@ -494,35 +554,43 @@ private:
 			nRoot = std::move(nodeTemp);
 		}
 
-		return AllOk;//挂完子节点返回ok
+		return iRet >= AllOk ? AllOk : iRet;//>=AllOk强制返回AllOk以防止Compound_End
+		MYCATCH
 	}
 
 	template<bool bHasName = true>
 	static int GetStringType(InputStream &tData, NBT_Node &nRoot)
 	{
+		MYTRY
+		int iRet = AllOk;
 		//获取NBT的N（名称）
 		NBT_Node::NBT_String sName{};
 		if constexpr (bHasName)//如果无名称则string默认为空
 		{
-			int iRet = GetName(tData, sName);
+			iRet = GetName(tData, sName);
 			if (iRet < AllOk)
 			{
+				STACK_TRACEBACK("GetName");
 				return iRet;
 			}
 		}
 
 		//读取2字节的无符号名称长度
 		uint16_t wStrLength = 0;//w->word=2*byte
-		if (!ReadBigEndian(tData, wStrLength))
+		iRet = ReadBigEndian(tData, wStrLength);
+		if (iRet < AllOk)
 		{
-			return Error(OutOfRangeError, tData, __FUNCSIG__ ": wStrLength Read");
+			STACK_TRACEBACK("Name: \"%s\" wStrLength Read", sName.c_str());
+			return iRet;
 		}
 
 		//判断长度是否超过
 		if (!tData.HasAvailData(wStrLength))
 		{
-			return Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + wStrLength[%zu])[%zu] > DataSize[%zu]",
+			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + wStrLength[%zu])[%zu] > DataSize[%zu]",
 				tData.Index(), (size_t)wStrLength, tData.Index() + (size_t)wStrLength, tData.Size());
+			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+			return iRet;
 		}
 
 		if constexpr (bHasName)
@@ -540,42 +608,60 @@ private:
 		}
 		tData.AddIndex(wStrLength);//移动下标
 		
-		return AllOk;
+		return iRet;
+		MYCATCH
 	}
 
 	template<bool bHasName = true>
 	static int GetListType(InputStream &tData, NBT_Node &nRoot, size_t szStackDepth)
 	{
+		MYTRY
+		int iRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
 		//获取NBT的N（名称）
 		NBT_Node::NBT_String sName{};
 		if constexpr (bHasName)//如果无名称则string默认为空
 		{
-			int iRet = GetName(tData, sName);
+			iRet = GetName(tData, sName);
 			if (iRet < AllOk)
 			{
+				STACK_TRACEBACK("GetName");
 				return iRet;
 			}
 		}
 
 		//读取1字节的列表元素类型
 		uint8_t bListElementType = 0;//b=byte
-		if (!ReadBigEndian(tData, bListElementType))
+		iRet = ReadBigEndian(tData, bListElementType);
+		if (iRet < AllOk)
 		{
-			return Error(OutOfRangeError, tData, __FUNCSIG__ ": bListElementType Read");
+			STACK_TRACEBACK("Name: \"%s\" bListElementType Read", sName.c_str());
+			return iRet;
 		}
 
 		//错误的列表元素类型
 		if (bListElementType >= NBT_Node::NBT_TAG::ENUM_END)
 		{
-			return Error(NbtTypeTagError, tData, __FUNCSIG__ ": List NBT Type:Unknown Type Tag[%02X(%d)]", bListElementType, bListElementType);
+			iRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": List NBT Type:Unknown Type Tag[%02X(%d)]", bListElementType, bListElementType);
+			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+			return iRet;
 		}
 
 		//读取4字节的有符号列表长度
 		int32_t dwListLength = 0;//dw=double-world=4*byte
-		if (!ReadBigEndian(tData, dwListLength))
+		iRet = ReadBigEndian(tData, dwListLength);
+		if (iRet < AllOk)
 		{
-			return Error(OutOfRangeError, tData, __FUNCSIG__ ": dwListLength Read");
+			STACK_TRACEBACK("Name: \"%s\" dwListLength Read", sName.c_str());
+			return iRet;
+		}
+
+		//检查有符号数大小范围
+		if (dwListLength < 0)
+		{
+			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": dwListLength[%d] < 0", dwListLength);
+			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+			return iRet;
 		}
 
 		//根据元素类型，读取n次列表
@@ -585,26 +671,30 @@ private:
 		for (int32_t i = 0; i < dwListLength; ++i)
 		{
 			NBT_Node tmpNode{};//列表元素会直接赋值修改
-			int iRet = SwitchNBT<false>(tData, tmpNode, (NBT_Node::NBT_TAG)bListElementType, szStackDepth - 1);
-
+			iRet = SwitchNBT<false>(tData, tmpNode, (NBT_Node::NBT_TAG)bListElementType, szStackDepth - 1);
 			if (iRet < AllOk)//错误处理
 			{
-				return iRet;//此处只在失败时传递返回值
+				STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), dwListLength, i);
+				break;//跳出循环以保留错误数据之前的正确数据
 			}
 
 			if (bListElementType == NBT_Node::NBT_TAG::TAG_End)//空元素特判
 			{
 				//读取1字节的bCompoundEndTag
 				uint8_t bCompoundEndTag = 0;//b=byte
-				if (!ReadBigEndian(tData, bCompoundEndTag))
+				iRet = ReadBigEndian(tData, bCompoundEndTag);
+				if (iRet < AllOk)
 				{
-					return Error(OutOfRangeError, tData, __FUNCSIG__ ": bCompoundEndTag Read");
+					STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d] bCompoundEndTag Read", sName.c_str(), dwListLength, i);
+					break;//跳出循环以保留错误数据之前的正确数据
 				}
 
 				//判断tag是否符合
 				if (bCompoundEndTag != NBT_Node::TAG_End)
 				{
-					return Error(ListElementTypeError, tData, __FUNCSIG__ ": require Compound End Tag [0x00], but read Unknown Tag [0x%02X]!", bCompoundEndTag);
+					iRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": require Compound End Tag [0x00], but read Unknown Tag [0x%02X]!", bCompoundEndTag);
+					STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), dwListLength, i);
+					break;//跳出循环以保留错误数据之前的正确数据
 				}
 			}
 
@@ -627,12 +717,15 @@ private:
 			nRoot.emplace<NBT_Node::NBT_List>(std::move(tmpList));
 		}
 
-		return AllOk;//列表同时作为元素，成功应该返回Ok，而不是传递返回值
+		//如果错误，则传递，否则返回Ok
+		return iRet >= AllOk ? AllOk : iRet;//列表同时作为元素，成功应该返回Ok，而不是传递返回值
+		MYCATCH
 	}
 
 	template<bool bHasName = true>
 	static int SwitchNBT(InputStream &tData, NBT_Node &nRoot, NBT_Node::NBT_TAG tag, size_t szStackDepth)//选择函数不检查递归层，由函数调用的函数检查
 	{
+		MYTRY
 		int iRet = AllOk;
 
 		switch (tag)
@@ -709,20 +802,29 @@ private:
 			break;
 		}
 
+		if (iRet < AllOk)
+		{
+			STACK_TRACEBACK("iRet < AllOk");
+		}
+
 		return iRet;//传递返回值
+		MYCATCH
 	}
 
 	template<bool bRoot = false>//根部特化版本，用于处理末尾
 	static int GetNBT(InputStream &tData, NBT_Node &nRoot, size_t szStackDepth)//递归调用读取并添加节点
 	{
+		MYTRY
+		int iRet = AllOk;//默认值
 		CHECK_STACK_DEPTH(szStackDepth);
 		//节点类型检查：保证当前nRoot是NBT_Node::NBT_Compound类型，否则失败
 		if (!nRoot.TypeHolds<NBT_Node::NBT_Compound>())//类型错误
 		{
-			return Error(InternalTypeError, tData, __FUNCSIG__ ": nRoot is not type: [%s]", typeid(NBT_Node::NBT_Compound).name());
+			iRet = Error(InternalTypeError, tData, __FUNCSIG__ ": nRoot is not type: [%s]", typeid(NBT_Node::NBT_Compound).name());
+			STACK_TRACEBACK("TypeHolds");
+			return iRet;
 		}
-
-		int iRet = AllOk;//默认值
+		
 		do
 		{
 			if (!tData.HasAvailData(sizeof(uint8_t)))//处理末尾情况
@@ -745,13 +847,19 @@ private:
 
 		if constexpr (bRoot)//根部情况遇到Compound_End则转为AllOk返回
 		{
-			if (iRet == Compound_End)
+			if (iRet >= AllOk)
 			{
 				iRet = AllOk;
 			}
 		}
+
+		if (iRet < AllOk)
+		{
+			STACK_TRACEBACK("Compound Size: [%zu]", nRoot.GetData<NBT_Node::NBT_Compound>().size());
+		}
 		
 		return iRet;//传递返回值
+		MYCATCH
 	}
 public:
 	NBT_Reader(void) = delete;
@@ -768,6 +876,13 @@ public:
 		return GetNBT<true>(IptStream, nRoot, szStackDepth) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
 	}
 
+
+#undef MYTRY
+#undef MYCATCH
 #undef CHECK_STACK_DEPTH
+#undef STACK_TRACEBACK
+#undef STRLING
+#undef _RP_STRLING
+#undef _RP___LINE__
 #undef _RP___FUNCSIG__
 };

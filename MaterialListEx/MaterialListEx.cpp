@@ -91,6 +91,8 @@ int main(int argc, char *argv[])
 	NBT_Node nRoot;
 	if (!NBT_Reader<std::string>::ReadNBT(nRoot, sNbtData))
 	{
+		printf("\nData before the error was encountered:");
+		NBT_Helper::Print(nRoot);
 		return -1;
 	}
 	else
@@ -98,7 +100,8 @@ int main(int argc, char *argv[])
 		printf("Read Ok!\n");
 	}
 
-	//NBT_Helper::Print(nRoot);
+	NBT_Helper::Print(nRoot);
+	return -114514;
 
 	const auto &tmp = nRoot.GetCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
 	if (tmp.size() != 1)
