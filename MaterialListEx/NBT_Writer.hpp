@@ -142,14 +142,18 @@ private:
 	enum ErrCode : int
 	{
 		ERRCODE_END = -2,
-		StringTooLong = -1,
-		AllOk = 0,
+
+		StringTooLong,
+		AllOk,
 	};
 
-	static inline const char *const errReason[] =
+	//确保[非错误码]为零，防止出现非法的[非错误码]导致判断失效数组溢出
+	static_assert(AllOk == 0, "AllOk != 0");
+
+	static inline const char *const errReason[] =//反向数组运算方式：(-(ERRCODE_END + 1)) + ErrCode
 	{
-		"AllOk",
 		"StringTooLong",
+		"AllOk",
 	};
 
 	//记得同步数组！
@@ -159,17 +163,20 @@ private:
 	enum WarnCode : int
 	{
 		NoWarn = 0,
-		WARNCODE_END = 1,
+
+		WARNCODE_END,
 	};
 
-	static inline const char *const warnReason[] =
+	//确保[非警告码]为零，防止出现非法的[非警告码]导致判断失效数组溢出
+	static_assert(NoWarn == 0, "NoWarn != 0");
+
+	static inline const char *const warnReason[] =//正常数组，直接用WarnCode访问
 	{
 		"NoWarn",
 	};
 
 	//记得同步数组！
 	static_assert(sizeof(warnReason) / sizeof(warnReason[0]) == WARNCODE_END, "warnReason array out sync");
-
 
 	//error处理
 	//使用变参形参表+vprintf代理复杂输出，给出更多扩展信息

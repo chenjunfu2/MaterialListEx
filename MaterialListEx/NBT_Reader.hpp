@@ -130,23 +130,28 @@ private:
 	enum ErrCode : int
 	{
 		ERRCODE_END = -6,//结束标记，统计负数部分大小
-		ListElementTypeError = -5,//列表元素类型错误（NBT文件问题）
-		StackDepthExceeded = -4,//调用栈深度过深（NBT文件or代码设置问题）
-		NbtTypeTagError = -3,//NBT标签类型错误（NBT文件问题）
-		OutOfRangeError = -2,//（NBT内部长度错误溢出）（NBT文件问题）
-		InternalTypeError = -1,//变体NBT节点类型错误（代码问题）
-		AllOk = 0,//没有问题
-		Compound_End = 1,//集合结束
+
+		ListElementTypeError,//列表元素类型错误（NBT文件问题）
+		StackDepthExceeded,//调用栈深度过深（NBT文件or代码设置问题）
+		NbtTypeTagError,//NBT标签类型错误（NBT文件问题）
+		OutOfRangeError,//（NBT内部长度错误溢出）（NBT文件问题）
+		InternalTypeError,//变体NBT节点类型错误（代码问题）
+		AllOk,//没有问题
+		Compound_End,//集合结束
 	};
 
-	static inline const char *const errReason[] =
+	//确保[非错误码]为零，防止出现非法的[非错误码]导致判断失效数组溢出
+	static_assert(AllOk == 0, "AllOk != 0");
+
+	static inline const char *const errReason[] =//反向数组运算方式：(-(ERRCODE_END + 1)) + ErrCode
 	{
-		"AllOk",
-		"InternalTypeError",
-		"OutOfRangeError",
-		"NbtTypeTagError",
-		"StackDepthExceeded",
 		"ListElementTypeError"
+		"StackDepthExceeded",
+		"NbtTypeTagError",
+		"OutOfRangeError",
+		"InternalTypeError",
+
+		"AllOk",
 	};
 
 	//记得同步数组！
@@ -155,11 +160,15 @@ private:
 	enum WarnCode : int
 	{
 		NoWarn = 0,
-		ElementExistsWarn = 1,
-		WARNCODE_END = 2,
+		ElementExistsWarn,
+
+		WARNCODE_END,
 	};
 
-	static inline const char *const warnReason[] =
+	//确保[非警告码]为零，防止出现非法的[非警告码]导致判断失效数组溢出
+	static_assert(NoWarn == 0, "NoWarn != 0");
+
+	static inline const char *const warnReason[] =//正常数组，直接用WarnCode访问
 	{
 		"NoWarn",
 		"ElementExistsWarn",
@@ -178,8 +187,8 @@ private:
 			{
 				return (int)code;
 			}
-			//上方if保证errc为负，此处反转访问保证无问题（除非代码传入异常错误码）
-			printf("Read Err[%d]: \"%s\"\n", (int)code, errReason[-(int)code]);
+			//上方if保证errc为负，此处访问保证无问题（除非代码传入异常错误码），通过(-ERRCODE_END + 1) + code得到反向数组下标
+			printf("Read Err[%d]: \"%s\"\n", (int)code, errReason[(-(ERRCODE_END + 1)) + code]);
 		}
 		else if constexpr (std::is_same<T, WarnCode>::value)
 		{
