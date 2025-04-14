@@ -143,7 +143,7 @@ private:
 	//确保[非错误码]为零，防止出现非法的[非错误码]导致判断失效数组溢出
 	static_assert(AllOk == 0, "AllOk != 0");
 
-	static inline const char *const errReason[] =//反向数组运算方式：(-(ERRCODE_END + 1)) + ErrCode
+	static inline const char *const errReason[] =//反向数组运算方式：(-ERRCODE_END - 1) + ErrCode
 	{
 		"ListElementTypeError"
 		"StackDepthExceeded",
@@ -187,8 +187,8 @@ private:
 			{
 				return (int)code;
 			}
-			//上方if保证errc为负，此处访问保证无问题（除非代码传入异常错误码），通过(-ERRCODE_END + 1) + code得到反向数组下标
-			printf("Read Err[%d]: \"%s\"\n", (int)code, errReason[(-(ERRCODE_END + 1)) + code]);
+			//上方if保证errc为负，此处访问保证无问题（除非代码传入异常错误码），通过(-ERRCODE_END - 1) + code得到反向数组下标
+			printf("Read Err[%d]: \"%s\"\n", (int)code, errReason[(-ERRCODE_END - 1) + code]);
 		}
 		else if constexpr (std::is_same<T, WarnCode>::value)
 		{

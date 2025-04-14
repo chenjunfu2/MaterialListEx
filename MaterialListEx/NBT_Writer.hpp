@@ -150,7 +150,7 @@ private:
 	//确保[非错误码]为零，防止出现非法的[非错误码]导致判断失效数组溢出
 	static_assert(AllOk == 0, "AllOk != 0");
 
-	static inline const char *const errReason[] =//反向数组运算方式：(-(ERRCODE_END + 1)) + ErrCode
+	static inline const char *const errReason[] =//反向数组运算方式：(-ERRCODE_END - 1) + ErrCode
 	{
 		"StringTooLong",
 		"AllOk",
