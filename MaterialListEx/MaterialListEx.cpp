@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 	}
 
 	NBT_Helper::Print(nRoot);
-	return -114514;
+	return 0;
 
 	const auto &tmp = nRoot.GetCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
 	if (tmp.size() != 1)
