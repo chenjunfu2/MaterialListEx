@@ -866,7 +866,8 @@ public:
 
 
 #undef MYTRY
-#undef MYCATCH
+#undef MYCATCH_BADALLOC
+#undef MYCATCH_OTHER
 #undef CHECK_STACK_DEPTH
 #undef STACK_TRACEBACK
 #undef STRLING
