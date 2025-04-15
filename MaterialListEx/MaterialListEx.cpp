@@ -139,7 +139,10 @@ int main(int argc, char *argv[])
 
 	//转换完成，通过vector创建map的元素排序（存储pair引用）std::reference_wrapper<>
 	using MapPair = decltype(mapItemCounter)::value_type;
-	std::vector<std::reference_wrapper<MapPair>> vecSortItem{ mapItemCounter.begin(),mapItemCounter.end() };
+	std::vector<std::reference_wrapper<MapPair>> vecSortItem{};
+	//提前扩容减少插入开销
+	vecSortItem.reserve(mapItemCounter.size());
+	vecSortItem.assign(mapItemCounter.begin(), mapItemCounter.end());//迭代器范围插入
 	//进行排序
 	std::sort(vecSortItem.begin(), vecSortItem.end(), [](MapPair &l, MapPair &r)->bool
 	{

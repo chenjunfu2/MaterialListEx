@@ -79,12 +79,12 @@ private:
 			break;
 		case NBT_Node::TAG_Float:
 			{
-				printf("%fF", nRoot.GetData<NBT_Node::NBT_Float>());
+				printf("%gF", nRoot.GetData<NBT_Node::NBT_Float>());
 			}
 			break;
 		case NBT_Node::TAG_Double:
 			{
-				printf("%lfD", nRoot.GetData<NBT_Node::NBT_Double>());
+				printf("%gD", nRoot.GetData<NBT_Node::NBT_Double>());
 			}
 			break;
 		case NBT_Node::TAG_Byte_Array:

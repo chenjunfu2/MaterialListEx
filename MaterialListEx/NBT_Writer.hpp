@@ -143,7 +143,8 @@ private:
 	{
 		ERRCODE_END = -2,
 
-		StringTooLong,
+		OutOfMemoryError,//内存不足错误
+		StringTooLongError,
 		AllOk,
 	};
 
@@ -152,7 +153,7 @@ private:
 
 	static inline const char *const errReason[] =//反向数组运算方式：(-ERRCODE_END - 1) + ErrCode
 	{
-		"StringTooLong",
+		"StringTooLongError",
 		"AllOk",
 	};
 
@@ -196,7 +197,7 @@ private:
 		//检查大小是否符合上限
 		if (sName.length() > UINT16_MAX)
 		{
-			return Error(StringTooLong, tData, __FUNCSIG__ ": sName.length()[%zu] > UINT16_MAX[%zu]", sName.length(), UINT16_MAX);
+			return Error(StringTooLongError, tData, __FUNCSIG__ ": sName.length()[%zu] > UINT16_MAX[%zu]", sName.length(), UINT16_MAX);
 		}
 
 		//输出名称长度
