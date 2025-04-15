@@ -59,32 +59,32 @@ private:
 			break;
 		case NBT_Node::TAG_Byte:
 			{
-				printf("%db", nRoot.GetData<NBT_Node::NBT_Byte>());
+				printf("%dB", nRoot.GetData<NBT_Node::NBT_Byte>());
 			}
 			break;
 		case NBT_Node::TAG_Short:
 			{
-				printf("%ds", nRoot.GetData<NBT_Node::NBT_Short>());
+				printf("%dS", nRoot.GetData<NBT_Node::NBT_Short>());
 			}
 			break;
 		case NBT_Node::TAG_Int:
 			{
-				printf("%d", nRoot.GetData<NBT_Node::NBT_Int>());
+				printf("%dI", nRoot.GetData<NBT_Node::NBT_Int>());
 			}
 			break;
 		case NBT_Node::TAG_Long:
 			{
-				printf("%lldl", nRoot.GetData<NBT_Node::NBT_Long>());
+				printf("%lldL", nRoot.GetData<NBT_Node::NBT_Long>());
 			}
 			break;
 		case NBT_Node::TAG_Float:
 			{
-				printf("%ff", nRoot.GetData<NBT_Node::NBT_Float>());
+				printf("%fF", nRoot.GetData<NBT_Node::NBT_Float>());
 			}
 			break;
 		case NBT_Node::TAG_Double:
 			{
-				printf("%lff", nRoot.GetData<NBT_Node::NBT_Double>());
+				printf("%lfD", nRoot.GetData<NBT_Node::NBT_Double>());
 			}
 			break;
 		case NBT_Node::TAG_Byte_Array:
