@@ -13,10 +13,58 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="源文件\zlib">
+      <UniqueIdentifier>{26180dcc-b589-4a8e-b72e-9738c81b0cfa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="NBT_Test.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\adler32.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\compress.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\crc32.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\deflate.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\gzclose.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\gzlib.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\gzread.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\gzwrite.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\infback.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\inffast.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\inflate.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\inftrees.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\trees.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\uncompr.c">
+      <Filter>源文件\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MaterialListEx\zlib\zutil.c">
+      <Filter>源文件\zlib</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
