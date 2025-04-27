@@ -12,34 +12,45 @@ public:
 	~TileEntityProcess() = delete;
 
 
-	struct TileEntityStats
+	struct TileEntityItemStats
 	{
 		const NBT_Node::NBT_String *psTileEntityName{};
-		union
+		struct
 		{
-			const NBT_Node::NBT_List *plistItems{};
-			const NBT_Node::NBT_Compound *pcpdItem;
+			const NBT_Node *pItems{};
+			NBT_Node::NBT_TAG enType{ NBT_Node::TAG_End };
 		};
-		NBT_Node::NBT_TAG enType{ NBT_Node::TAG_End };
 	};
 
-	static std::vector<TileEntityStats> GetTileEntityStats(const NBT_Node::NBT_Compound &RgCompound)
+	static std::vector<TileEntityItemStats> GetTileEntityItemStats(const NBT_Node::NBT_Compound &RgCompound)
 	{
 		//获取方块实体列表
 		const auto &listTileEntity = RgCompound.GetList(MU8STR("TileEntities"));
-		std::vector<TileEntityStats> vtTileEntityStats{};
+		std::vector<TileEntityItemStats> vtTileEntityStats{};
 		vtTileEntityStats.reserve(listTileEntity.size());//提前扩容
 
 		for (const auto &it : listTileEntity)
 		{
 			/*
-			有好几种情况：Item-Compound、Items-List、特殊定制的名称-Compound
+				有好几种情况：item-Compound、Items-List、特殊名称-Compound
 			*/
 
 			const auto &teCurrent = GetCompound(it);
-			TileEntityStats teStats{ &teCurrent.GetString(MU8STR("id")) };
+			TileEntityItemStats teStats{ &teCurrent.GetString(MU8STR("id")) };
 
-			//先尝试处理特殊方块
+
+			//尝试寻找Items（普通多格容器）
+			if (const auto pItems = teCurrent.Search(MU8STR("Items"));
+				pItems != NULL && pItems->IsList())
+			{
+				teStats.pItems = pItems;
+				teStats.enType = NBT_Node::TAG_List;
+				//插入并跳过
+				vtTileEntityStats.emplace_back(std::move(teStats));
+				continue;
+			}
+
+			//尝试处理特殊方块
 			struct DataInfo
 			{
 				NBT_Node::NBT_String sTagName{};
@@ -50,58 +61,25 @@ public:
 			{
 				{MU8STR("minecraft:jukebox"),{MU8STR("RecordItem"),NBT_Node::TAG_Compound}},
 				{MU8STR("minecraft:lectern"),{MU8STR("Book"),NBT_Node::TAG_Compound}},
+				{MU8STR("minecraft:brushable_block"),{MU8STR("item"),NBT_Node::TAG_Compound}},
 			};
 
-			//从映射名中寻找
+			//查找方块实体id是否在map中
 			const auto findIt = mapTileTntityDataName.find(*teStats.psTileEntityName);
-			if (findIt != mapTileTntityDataName.end())
+			if (findIt == mapTileTntityDataName.end())//不在，不是可以存放物品的容器，跳过
 			{
-				//通过映射名查找对应物品存储位置
-				const auto pSearch = teCurrent.Search(findIt->second.sTagName);
-				if (pSearch == NULL)//查找失败
-				{
-					continue;//跳过此方块实体
-				}
-				
-				//先设置类型
-				teStats.enType = findIt->second.enType;
-				switch (teStats.enType)//通过类型从变体内获取
-				{
-				case NBT_Node::TAG_Compound:
-					{
-						teStats.pcpdItem = &pSearch->GetCompound();
-					}
-					break;
-				case NBT_Node::TAG_List:
-					{
-						teStats.plistItems = &pSearch->GetList();
-					}
-					break;
-				default://未知类型
-					{
-						continue;//跳过此方块实体
-					}
-					break;
-				}
-			}
-			else if (//尝试寻找Items（普通多格容器）
-				const auto pItems = teCurrent.Search(MU8STR("Items"));
-				pItems != NULL && pItems->IsList())
-			{
-				teStats.plistItems = &pItems->GetList();
-				teStats.enType = NBT_Node::TAG_List;
-			}
-			else if (//尝试寻找Item（特殊单格容器）
-				const auto pItem = teCurrent.Search(MU8STR("Item"));
-				pItem != NULL && pItem->IsCompound())
-			{
-				teStats.pcpdItem = &pItem->GetCompound();
-				teStats.enType = NBT_Node::TAG_Compound;
-			}
-			else
-			{//完全无法找到
 				continue;//跳过此方块实体
 			}
+			
+			//通过映射名查找对应物品存储位置
+			const auto pSearch = teCurrent.Search(findIt->second.sTagName);
+			if (pSearch == NULL)//查找失败
+			{
+				continue;//跳过此方块实体
+			}
+
+			teStats.enType = findIt->second.enType;
+			teStats.pItems = pSearch;
 
 			//执行到这里这说明操作完成
 			vtTileEntityStats.emplace_back(std::move(teStats));
@@ -110,6 +88,45 @@ public:
 		return vtTileEntityStats;
 	}//func
 
+	struct ItemStack
+	{
+		NBT_Node::NBT_String sItemName{};//物品名
+		NBT_Node::NBT_Compound pcpdItemTag{};//物品标签
+		uint64_t u64Counter = 0;//物品计数器
+	};
+
+	using ItemStackList = std::vector<ItemStack>;
+
+	static ItemStackList TileEntityItemStatsToItemStack(const TileEntityItemStats &stItemStats)
+	{
+		if (stItemStats.enType == NBT_Node::TAG_End)
+		{
+			return {};
+		}
+		if (stItemStats.pItems == NULL)
+		{
+			return {};
+		}
+
+		ItemStackList vtItemStackList{};
+		if (stItemStats.enType == NBT_Node::TAG_Compound)//只有1个物品
+		{
+
+
+
+
+
+		}
+		else if(stItemStats.enType == NBT_Node::TAG_List)//物品列表
+		{
+
+
+
+		}
+		//else {}
+
+		return vtItemStackList;
+	}
 
 
 };

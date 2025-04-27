@@ -6,6 +6,7 @@
 #include "NBT_Reader.hpp"
 #include "NBT_Writer.hpp"
 #include "BlockProcess.hpp"
+#include "TileEntityProcess.hpp"
 #include "File_Tool.hpp"
 #include "Compression_Utils.hpp"
 
@@ -142,12 +143,14 @@ int main(int argc, char *argv[])
 	const auto &cpRegions = GetCompound(root.second).GetCompound(MU8STR("Regions"));
 	std::vector<RegionStats> vtRegionStats;
 	vtRegionStats.reserve(cpRegions.size());//提前扩容
-	for (const auto &[RgName, RgCompound] : cpRegions)//遍历选区
+	for (const auto &[RgName, RgVal] : cpRegions)//遍历选区
 	{
 		RegionStats rgsData{ &RgName };
+		auto &RgCompound = GetCompound(RgVal);
+
 		//方块处理
 		{
-			auto vtBlockStats = BlockProcess::GetBlockStats(GetCompound(RgCompound));//获取方块统计列表
+			auto vtBlockStats = BlockProcess::GetBlockStats(RgCompound);//获取方块统计列表
 			for (const auto &itBlock : vtBlockStats)
 			{
 				auto istItemList = BlockProcess::BlockStatsToItemStack(itBlock);
@@ -162,6 +165,12 @@ int main(int argc, char *argv[])
 			rgsData.vecSortItem.assign(rgsData.mapItemCounter.begin(), rgsData.mapItemCounter.end());//迭代器范围插入
 			//进行排序
 			std::sort(rgsData.vecSortItem.begin(), rgsData.vecSortItem.end(), RegionStats::SortCmp);
+		}
+
+		//方块实体处理
+		{
+			auto vtTEItemStats = TileEntityProcess::GetTileEntityItemStats(RgCompound);
+
 		}
 
 
