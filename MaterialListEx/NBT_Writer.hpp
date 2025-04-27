@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NBT_Node.hpp"
+#include <new>//bad alloc
 
 template <typename T>
 class MyOutputStream
@@ -34,7 +35,7 @@ public:
 			tData.push_back(c);
 			return true;
 		}
-		catch (...)
+		catch (const std::bad_alloc&)
 		{
 			return false;
 		}
@@ -47,7 +48,7 @@ public:
 			tData.push_back(std::move(c));
 			return true;
 		}
-		catch (...)
+		catch (const std::bad_alloc &)
 		{
 			return false;
 		}
@@ -60,7 +61,7 @@ public:
 			tData.append(itBeg, itEnd);
 			return true;
 		}
-		catch (...)
+		catch (const std::bad_alloc &)
 		{
 			return false;
 		}
@@ -74,7 +75,7 @@ public:
 			tData.emplace_back(std::forward<Args>(args)...);
 			return true;
 		}
-		catch (...)
+		catch (const std::bad_alloc &)
 		{
 			return false;
 		}
@@ -112,33 +113,6 @@ class NBT_Writer
 {
 	using OutputStream = MyOutputStream<DataType>;//流类型
 private:
-	//大小端转换
-	template<typename T>
-	static inline bool WriteBigEndian(OutputStream &tData, const T &tVal)
-	{
-		if constexpr (sizeof(T) == 1)
-		{
-			return tData.PutOnce((uint8_t)tVal);
-		}
-		else
-		{
-			//统一到无符号类型，防止有符号右移错误
-			using UT = typename std::make_unsigned<T>::type;
-			UT tTmp = (UT)tVal;
-			for (size_t i = 0; i < sizeof(T); ++i)
-			{
-				if (!tData.PutOnce((uint8_t)tTmp))
-				{
-					return false;
-				}
-				tTmp >>= 8;
-			}
-		}
-
-		return true;
-	}
-
-
 	enum ErrCode : int
 	{
 		ERRCODE_END = -2,
@@ -191,21 +165,63 @@ private:
 		return code;
 	}
 
+	//大小端转换
+	template<typename T>
+	static inline int WriteBigEndian(OutputStream &tData, const T &tVal)
+	{
+		int iRet = AllOk;
+		if constexpr (sizeof(T) == 1)
+		{
+			if (!tData.PutOnce((uint8_t)tVal))
+			{
+				iRet = OutOfMemoryError;
+				//iRet = Error(xxx);
+				//STACK_TRACEBACK
+				//return iRet;
+				return iRet;
+			}
+		}
+		else
+		{
+			//统一到无符号类型，防止有符号右移错误
+			using UT = typename std::make_unsigned<T>::type;
+			UT tTmp = (UT)tVal;
+			for (size_t i = 0; i < sizeof(T); ++i)
+			{
+				if (!tData.PutOnce((uint8_t)tTmp))
+				{	
+					iRet = OutOfMemoryError;
+					//iRet = Error(xxx);
+					//STACK_TRACEBACK
+					//return iRet;
+					return iRet;
+				}
+				tTmp >>= 8;
+			}
+		}
+
+		return iRet;
+	}
+
 	//PutName
 	static int PutName(OutputStream &tData, const NBT_Node::NBT_String &sName)
 	{
+		int iRet = AllOk;
 		//检查大小是否符合上限
 		if (sName.length() > UINT16_MAX)
 		{
-			return Error(StringTooLongError, tData, __FUNCSIG__ ": sName.length()[%zu] > UINT16_MAX[%zu]", sName.length(), UINT16_MAX);
+			iRet = Error(StringTooLongError, tData, __FUNCSIG__ ": sName.length()[%zu] > UINT16_MAX[%zu]", sName.length(), UINT16_MAX);
+			//STACK_TRACEBACK
+			return iRet;
 		}
 
 		//输出名称长度
 		uint16_t wNameLength = (uint16_t)sName.length();
-		if (!WriteBigEndian(tData, wNameLength))
+		iRet = WriteBigEndian(tData, wNameLength);
+		if (iRet < AllOk)
 		{
 
-
+			
 
 		}
 		//输出名称

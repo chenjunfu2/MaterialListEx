@@ -100,8 +100,8 @@ int main(int argc, char *argv[])
 		printf("Read Ok!\n");
 	}
 
-	NBT_Helper::Print(nRoot);
-	return 0;
+	//NBT_Helper::Print(nRoot);
+	//return 0;
 
 	const auto &tmp = nRoot.GetCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
 	if (tmp.size() != 1)
@@ -115,48 +115,77 @@ int main(int argc, char *argv[])
 	printf("root:\"%s\"\n", ANSISTR(U16STR(root.first)).c_str());
 	
 
-	auto vtBlockStatistics = BlockProcess::GetBlockStatistics(root.second);
-	//方块状态过滤（过滤掉部分不需要统计的方块，比如床的半边，门的半边，不是水源的水，不是岩浆源的岩浆，洞穴空气 虚空空气 空气，等等等等）
-
-	//方块状态转换（把所有需要转换到目标的方块状态进行转换，比如不同类型花的花盆）
-	std::map<NBT_Node::NBT_String, uint64_t> mapItemCounter;//创建方块状态到物品映射map
-	for (const auto &[sRegionName, bsList] : vtBlockStatistics)
+	struct RegionStats
 	{
-		//处理sRegionName
-		//auto OptStr = ANSISTR(U16STR(sRegionName));
-
-		//处理方块
-		for (const auto &itBlock : bsList)
+		const NBT_Node::NBT_String *psRegionName{};
+		struct
 		{
-			auto istItemList = BlockProcess::BlockStatisticsToItemStack(itBlock);
-			for (const auto &itItem : istItemList)
+			std::map<NBT_Node::NBT_String, uint64_t> mapItemCounter;//创建方块状态到物品映射map
+			using MapPair = decltype(mapItemCounter)::value_type;
+			std::vector<std::reference_wrapper<MapPair>> vecSortItem{};//通过vector创建map的元素排序（存储pair引用）std::reference_wrapper<>
+		};
+
+		static bool SortCmp(MapPair &l, MapPair &r)
+		{
+			if (l.second == r.second)//相等情况下按key的字典序
 			{
-				mapItemCounter[itItem.sItemName] += itItem.u64Counter;//如果key不存在，则自动创建，且保证value为0
+				return l.first < r.first;//升序
+			}
+			else//否则按数值大小
+			{
+				return l.second > r.second;//降序
 			}
 		}
+	};
+
+	//获取regions，也就是区域，一个投影可能有多个区域（选区）
+	const auto &cpRegions = GetCompound(root.second).GetCompound(MU8STR("Regions"));
+	std::vector<RegionStats> vtRegionStats;
+	vtRegionStats.reserve(cpRegions.size());//提前扩容
+	for (const auto &[RgName, RgCompound] : cpRegions)//遍历选区
+	{
+		RegionStats rgsData{ &RgName };
+		//方块处理
+		{
+			auto vtBlockStats = BlockProcess::GetBlockStats(GetCompound(RgCompound));//获取方块统计列表
+			for (const auto &itBlock : vtBlockStats)
+			{
+				auto istItemList = BlockProcess::BlockStatsToItemStack(itBlock);
+				for (const auto &itItem : istItemList)
+				{
+					rgsData.mapItemCounter[itItem.sItemName] += itItem.u64Counter;//如果key不存在，则自动创建，且保证value为0
+				}
+			}
+
+			//提前扩容减少插入开销
+			rgsData.vecSortItem.reserve(rgsData.mapItemCounter.size());
+			rgsData.vecSortItem.assign(rgsData.mapItemCounter.begin(), rgsData.mapItemCounter.end());//迭代器范围插入
+			//进行排序
+			std::sort(rgsData.vecSortItem.begin(), rgsData.vecSortItem.end(), RegionStats::SortCmp);
+		}
+
+
+		vtRegionStats.emplace_back(std::move(rgsData));
+	}
+
+	
+	for (const auto &itRgSt : vtRegionStats)
+	{
+		printf("Region:[%s]\n", ANSISTR(U16STR(*itRgSt.psRegionName)).c_str());
+		for (const auto &itItem : itRgSt.vecSortItem)
+		{
+			const auto &[sItemName, u64ItemCount] = itItem.get();
+			printf("%s: %llu\n", sItemName.c_str(), u64ItemCount);
+		}
+
 	}
 
 
-	//转换完成，通过vector创建map的元素排序（存储pair引用）std::reference_wrapper<>
-	using MapPair = decltype(mapItemCounter)::value_type;
-	std::vector<std::reference_wrapper<MapPair>> vecSortItem{};
-	//提前扩容减少插入开销
-	vecSortItem.reserve(mapItemCounter.size());
-	vecSortItem.assign(mapItemCounter.begin(), mapItemCounter.end());//迭代器范围插入
-	//进行排序
-	std::sort(vecSortItem.begin(), vecSortItem.end(), [](MapPair &l, MapPair &r)->bool
-	{
-		if (l.second == r.second)//相等情况下按key的字典序
-		{
-			return l.first < r.first;//升序
-		}
-		else//否则按数值大小
-		{
-			return l.second > r.second;//降序
-		}
-	});
+	return 0;
 
 
+
+	/*
 	//准备读取
 	Json zh_cn;
 	bool bLanguage = true;
@@ -205,6 +234,7 @@ int main(int argc, char *argv[])
 			printf("%s: %llu\n", sItemName.c_str(), u64ItemCount);
 		}
 	}
+	*/
 	
 	return 0;
 }

@@ -16,126 +16,107 @@ public:
 	BlockProcess() = delete;
 	~BlockProcess() = delete;
 
-	struct BlockStatistics
+	struct BlockStats
 	{
-		const NBT_Node::NBT_String *sBlockName{};
-		const NBT_Node::NBT_Compound *cpdProperties{};
+		const NBT_Node::NBT_String *psBlockName{};
+		const NBT_Node::NBT_Compound *pcpdProperties{};
 		uint64_t u64Counter = 0;//方块计数器
 	};
 
-	struct RegionsStatistics
-	{
-		const NBT_Node::NBT_String *sRegionName{};
-		std::vector<BlockStatistics> bsList{};
-	};
-
 	//使用指针指向nRoot内节点，请不要在使用nRoot作为参数调用此函数获取返回值的情况下，销毁nRoot
-	static std::vector<RegionsStatistics> GetBlockStatistics(const NBT_Node &nRoot)//block list
+	static std::vector<BlockStats> GetBlockStats(const NBT_Node::NBT_Compound &RgCompound)//block list
 	{
-		//获取regions，也就是区域，一个投影可能有多个区域（选区）
-		const auto &Regions = GetCompound(nRoot).GetCompound(MU8STR("Regions"));
-		//创建区域统计vector
-		std::vector<RegionsStatistics> vtRegionsStatistics;
-		vtRegionsStatistics.reserve(Regions.size());//提前分配
-		for (const auto &[RgName, RgVal] : Regions)//遍历选区
+		/*----------------区域大小计算、调色板获取----------------*/
+		//获取区域偏移
+		const auto &Position = RgCompound.GetCompound(MU8STR("Position"));
+		const BlockPos reginoPos =
 		{
-			const auto &RgCompound = GetCompound(RgVal);
+			.x = Position.GetInt(MU8STR("x")),
+			.y = Position.GetInt(MU8STR("y")),
+			.z = Position.GetInt(MU8STR("z")),
+		};
+		//获取区域大小（可能为负，结合区域偏移计算实际大小）
+		const auto &Size = RgCompound.GetCompound(MU8STR("Size"));
+		const BlockPos regionSize =
+		{
+			.x = Size.GetInt(MU8STR("x")),
+			.y = Size.GetInt(MU8STR("y")),
+			.z = Size.GetInt(MU8STR("z")),
+		};
+		//计算区域实际大小
+		const BlockPos posEndRel = getRelativeEndPositionFromAreaSize(regionSize).add(reginoPos);
+		const BlockPos posMin = getMinCorner(reginoPos, posEndRel);
+		const BlockPos posMax = getMaxCorner(reginoPos, posEndRel);
+		const BlockPos size = posMax.sub(posMin).add({ 1,1,1 });
 
-			/*----------------区域大小计算、调色板获取----------------*/
-			//获取区域偏移
-			const auto &Position = RgCompound.GetCompound(MU8STR("Position"));
-			const BlockPos reginoPos =
+		//printf("RegionSize: [%d, %d, %d]\n", size.x, size.y, size.z);
+
+		//获取调色板（方块种类）
+		const auto &BlockStatePalette = RgCompound.GetList(MU8STR("BlockStatePalette"));
+		const uint32_t bitsPerBitMapElement = Max(2U, (uint32_t)sizeof(uint32_t) * 8 - numberOfLeadingZeros(BlockStatePalette.size() - 1));//计算位图中一个元素占用的bit大小
+		const uint32_t bitMaskOfElement = (1 << bitsPerBitMapElement) - 1;//获取遮罩位，用于取bitmap内部内容
+		//printf("BlockStatePaletteSize: [%zu]\nbitsPerBitMapElement: [%d]\n", BlockStatePalette.size(), bitsPerBitMapElement);
+		/*------------------------------------------------*/
+
+		/*----------------根据方块位图访问调色板，获取不同状态方块的计数----------------*/
+		//创建方块统计vector
+		std::vector<BlockStats> vtBlockStats;
+		vtBlockStats.reserve(BlockStatePalette.size());//提前分配
+
+		//遍历BlockStatePalette方块调色板，并从中创建等效下标的方块统计vector
+		for (const auto &it : BlockStatePalette)
+		{
+			const auto &itBlockCompound = GetCompound(it);
+
+			BlockStats bsTemp{};
+			bsTemp.psBlockName = &itBlockCompound.GetString(MU8STR("Name"));
+			const auto find = itBlockCompound.Search(MU8STR("Properties"));//检查方块是否有额外属性
+			if (find != NULL)
 			{
-				.x = Position.GetInt(MU8STR("x")),
-				.y = Position.GetInt(MU8STR("y")),
-				.z = Position.GetInt(MU8STR("z")),
-			};
-			//获取区域大小（可能为负，结合区域偏移计算实际大小）
-			const auto &Size = RgCompound.GetCompound(MU8STR("Size"));
-			const BlockPos regionSize =
+				bsTemp.pcpdProperties = &find->GetCompound();
+			}
+			else
 			{
-				.x = Size.GetInt(MU8STR("x")),
-				.y = Size.GetInt(MU8STR("y")),
-				.z = Size.GetInt(MU8STR("z")),
-			};
-			//计算区域实际大小
-			const BlockPos posEndRel = getRelativeEndPositionFromAreaSize(regionSize).add(reginoPos);
-			const BlockPos posMin = getMinCorner(reginoPos, posEndRel);
-			const BlockPos posMax = getMaxCorner(reginoPos, posEndRel);
-			const BlockPos size = posMax.sub(posMin).add({ 1,1,1 });
-
-			//printf("RegionSize: [%d, %d, %d]\n", size.x, size.y, size.z);
-
-			//获取调色板（方块种类）
-			const auto &BlockStatePalette = RgCompound.GetList(MU8STR("BlockStatePalette"));
-			const uint32_t bitsPerBitMapElement = Max(2U, (uint32_t)sizeof(uint32_t) * 8 - numberOfLeadingZeros(BlockStatePalette.size() - 1));//计算位图中一个元素占用的bit大小
-			const uint32_t bitMaskOfElement = (1 << bitsPerBitMapElement) - 1;//获取遮罩位，用于取bitmap内部内容
-			//printf("BlockStatePaletteSize: [%zu]\nbitsPerBitMapElement: [%d]\n", BlockStatePalette.size(), bitsPerBitMapElement);
-			/*------------------------------------------------*/
-
-			/*----------------根据方块位图访问调色板，获取不同状态方块的计数----------------*/
-			//创建方块统计vector
-			std::vector<BlockStatistics> vtBlockStatistics;
-			vtBlockStatistics.reserve(BlockStatePalette.size());//提前分配
-
-			//遍历BlockStatePalette方块调色板，并从中创建等效下标的方块统计vector
-			for (const auto &it : BlockStatePalette)
-			{
-				const auto &itBlockCompound = GetCompound(it);
-
-				BlockStatistics bsTemp{};
-				bsTemp.sBlockName = &itBlockCompound.GetString(MU8STR("Name"));
-				const auto find = itBlockCompound.Search(MU8STR("Properties"));//检查方块是否有额外属性
-				if (find != NULL)
-				{
-					bsTemp.cpdProperties = &find->GetCompound();
-				}
-				else
-				{
-					bsTemp.cpdProperties = NULL;
-				}
-
-				vtBlockStatistics.emplace_back(std::move(bsTemp));
+				bsTemp.pcpdProperties = NULL;
 			}
 
-			//获取Long方块状态位图数组（用于作为下标访问调色板）
-			const auto &BlockStates = RgCompound.GetLongArray(MU8STR("BlockStates"));
-			const uint64_t RegionFullSize = (uint64_t)size.x * (uint64_t)size.y * (uint64_t)size.z;
-			if (BlockStates.size() * 64 / bitsPerBitMapElement < RegionFullSize)
-			{
-				//printf("BlockStates Too Small!\n");
-				vtRegionsStatistics.emplace_back(&RgName,std::move(vtBlockStatistics));//全0计数
-				continue;//尝试获取下一个选区
-			}
-
-			//存储格式：(y * sizeLayer) + z * sizeX + x = Long array index, sizeLayer = sizeX * sizeZ
-			//遍历方块位图，设置调色板列表对应方块的计数器
-			for (uint64_t startOffset = 0; startOffset < (RegionFullSize * (uint64_t)bitsPerBitMapElement); startOffset += (uint64_t)bitsPerBitMapElement)//startOffset从第二次开始递增
-			{
-				const uint64_t startArrIndex = (uint64_t)(startOffset >> 6);//div 64
-				const uint64_t startBitOffset = (uint64_t)(startOffset & 0x3F);//mod 64
-				const uint64_t endArrIndex = (uint64_t)((startOffset + (uint64_t)bitsPerBitMapElement - 1ULL) >> 6);//div 64
-				uint64_t paletteIndex = 0;
-
-				if (startArrIndex == endArrIndex)
-				{
-					paletteIndex = ((uint64_t)BlockStates[startArrIndex] >> startBitOffset) & bitMaskOfElement;
-				}
-				else
-				{
-					const uint64_t endBitOffset = sizeof(uint64_t) * 8 - startBitOffset;
-					paletteIndex = ((uint64_t)BlockStates[startArrIndex] >> startBitOffset | (uint64_t)BlockStates[endArrIndex] << endBitOffset) & bitMaskOfElement;
-				}
-
-				++vtBlockStatistics[paletteIndex].u64Counter;
-			}
-			/*------------------------------------------------*/
-
-			//计数完成，插入RegionsStatistics
-			vtRegionsStatistics.emplace_back(&RgName,std::move(vtBlockStatistics));
+			vtBlockStats.emplace_back(std::move(bsTemp));
 		}
 
-		return vtRegionsStatistics;
+		//获取Long方块状态位图数组（用于作为下标访问调色板）
+		const auto &BlockStates = RgCompound.GetLongArray(MU8STR("BlockStates"));
+		const uint64_t RegionFullSize = (uint64_t)size.x * (uint64_t)size.y * (uint64_t)size.z;
+		if (BlockStates.size() * 64 / bitsPerBitMapElement < RegionFullSize)
+		{
+			//printf("BlockStates Too Small!\n");
+			return vtBlockStats;
+		}
+
+		//存储格式：(y * sizeLayer) + z * sizeX + x = Long array index, sizeLayer = sizeX * sizeZ
+		//遍历方块位图，设置调色板列表对应方块的计数器
+		for (uint64_t startOffset = 0; startOffset < (RegionFullSize * (uint64_t)bitsPerBitMapElement); startOffset += (uint64_t)bitsPerBitMapElement)//startOffset从第二次开始递增
+		{
+			const uint64_t startArrIndex = (uint64_t)(startOffset >> 6);//div 64
+			const uint64_t startBitOffset = (uint64_t)(startOffset & 0x3F);//mod 64
+			const uint64_t endArrIndex = (uint64_t)((startOffset + (uint64_t)bitsPerBitMapElement - 1ULL) >> 6);//div 64
+			uint64_t paletteIndex = 0;
+
+			if (startArrIndex == endArrIndex)
+			{
+				paletteIndex = ((uint64_t)BlockStates[startArrIndex] >> startBitOffset) & bitMaskOfElement;
+			}
+			else
+			{
+				const uint64_t endBitOffset = sizeof(uint64_t) * 8 - startBitOffset;
+				paletteIndex = ((uint64_t)BlockStates[startArrIndex] >> startBitOffset | (uint64_t)BlockStates[endArrIndex] << endBitOffset) & bitMaskOfElement;
+			}
+
+			++vtBlockStats[paletteIndex].u64Counter;
+		}
+		/*------------------------------------------------*/
+
+		//计数完成返回
+		return vtBlockStats;
 	}
 
 	//过滤可获取的方块，不可获取的方块直接删除，半砖等特殊多物品方块转换数量
@@ -147,19 +128,19 @@ public:
 
 	using ItemStackList = std::vector<ItemStack>;//(应对花盆、含水方块、炼药锅、蜡烛蛋糕等组合物品)
 
-	static ItemStackList BlockStatisticsToItemStack(const BlockStatistics &stBlocks)
+	static ItemStackList BlockStatsToItemStack(const BlockStats &stBlocks)
 	{
 		//处理方块到物品转换
 		ItemStackList stItemsList{};
 
 		//先处理无compound的方块，同时检查方块名
-		if (stBlocks.sBlockName == NULL)
+		if (stBlocks.psBlockName == NULL)
 		{
 			return stItemsList;
 		}
 
 		//如果没有附加方块标签，则直接处理物品过滤，如果过滤成功直接返回，否则非过滤且无标签形式物品直接存储并返回
-		if (stBlocks.cpdProperties == NULL)
+		if (stBlocks.pcpdProperties == NULL)
 		{
 			if(!CvrtUnItemedBlocks(stBlocks, stItemsList))//无物品形式物品过滤成功判断
 			{
@@ -223,19 +204,19 @@ private:
 
 #define FIND(name)\
 const std::string target = MU8STR(name);\
-size_t szPos = stBlocks.sBlockName->find(target);\
+size_t szPos = stBlocks.psBlockName->find(target);\
 if (szPos != std::string::npos)
 
 #define STARTSWITH(name)\
 const std::string target = MU8STR(name);\
-if (stBlocks.sBlockName->starts_with(target))
+if (stBlocks.psBlockName->starts_with(target))
 
 #define ENDSWITH(name)\
 const std::string target = MU8STR(name);\
-if (stBlocks.sBlockName->ends_with(target))
+if (stBlocks.psBlockName->ends_with(target))
 
 	//注意该函数需要保证不进行任何block的compound判断
-	static inline bool CvrtUnItemedBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtUnItemedBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)
 	{
 		//直接匹配所有不可获取的方块并返回空，注意是mc中所有无物品形式的，而非生存不可获取的
 		//注意不匹配门、床、活塞等多格方块的另一半，而由他们对应的函数自行处理
@@ -257,21 +238,21 @@ if (stBlocks.sBlockName->ends_with(target))
 		};
 
 		//如果count返回不是0则代表存在，直接返回true即可，stItems初始化即为全空全0
-		return setUnItemedBlocks.count(*stBlocks.sBlockName) != 0;
+		return setUnItemedBlocks.count(*stBlocks.psBlockName) != 0;
 	}
 
-	static inline bool CvrtDoublePartBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtDoublePartBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)
 	{
 		//门只有下半掉落，上半直接转为空
 		{
 			ENDSWITH("_door")
 			{
 				//读取方块state判断是门的哪一部分
-				const auto &half = stBlocks.cpdProperties->GetString(MU8STR("half"));
+				const auto &half = stBlocks.pcpdProperties->GetString(MU8STR("half"));
 
 				if (half == MU8STR("lower"))
 				{
-					stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * 1);
+					stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
 				}
 				//else if (half == MU8STR("upper")){}
 				//else{}
@@ -285,11 +266,11 @@ if (stBlocks.sBlockName->ends_with(target))
 			ENDSWITH("_bed")
 			{
 				//读取方块state判断是床的哪一部分
-				const auto &part = stBlocks.cpdProperties->GetString(MU8STR("part"));
+				const auto &part = stBlocks.pcpdProperties->GetString(MU8STR("part"));
 
 				if (part == MU8STR("head"))
 				{
-					stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * 1);
+					stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
 				}
 				//else if (part == MU8STR("foot")){}
 				//else{}
@@ -303,9 +284,9 @@ if (stBlocks.sBlockName->ends_with(target))
 			FIND("piston")
 			{
 				//判断是不是piston_head
-				if (*stBlocks.sBlockName != MU8STR("minecraft:piston_head"))
+				if (*stBlocks.psBlockName != MU8STR("minecraft:piston_head"))
 				{
-					stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * 1);
+					stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
 				}
 				//else{}
 
@@ -317,7 +298,7 @@ if (stBlocks.sBlockName->ends_with(target))
 	}
 
 	//注意只处理墙上的形式，如果是普通形式根本不需要处理
-	static inline bool CvrtWallVariantBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtWallVariantBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)
 	{
 		//理论上所有带墙上额外方块id的方块都会有wall限定词，且不以wall结尾
 		//去掉wall转换为item形式，经过查看，不存在诸如wall_结尾的方块名，也不存在wall_wall_之类的连续情况
@@ -325,7 +306,7 @@ if (stBlocks.sBlockName->ends_with(target))
 
 		FIND("wall_")
 		{
-			auto TmpName = *stBlocks.sBlockName;
+			auto TmpName = *stBlocks.psBlockName;
 			TmpName.erase(szPos, target.length());//删去wall_
 			stItemsList.emplace_back(std::move(TmpName), stBlocks.u64Counter * 1);
 
@@ -336,7 +317,7 @@ if (stBlocks.sBlockName->ends_with(target))
 	}
 
 	//注意，只处理放过花的花盆，否则跳过（如果本身叫flower_pot那就根本不需要转换）
-	static inline bool CvrtFlowerPot(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtFlowerPot(const BlockStats &stBlocks, ItemStackList &stItemsList)
 	{
 		//放了花的花盆以potted_开头，后跟花名
 		//否则叫flower_pot
@@ -344,7 +325,7 @@ if (stBlocks.sBlockName->ends_with(target))
 		{
 			//有的情况下转化为flower_pot+扩展花物品名的形式
 			stItemsList.emplace_back(MU8STR("minecraft:flower_pot"), stBlocks.u64Counter * 1);
-			auto TmpName = *stBlocks.sBlockName;
+			auto TmpName = *stBlocks.psBlockName;
 			TmpName.erase(szPos, target.length());//删去potted_
 			//检测末尾是否以_bush结尾
 			ENDSWITH("_bush")
@@ -362,7 +343,7 @@ if (stBlocks.sBlockName->ends_with(target))
 		return false;
 	}
 
-	static inline bool CvrtCauldron(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtCauldron(const BlockStats &stBlocks, ItemStackList &stItemsList)
 	{
 		//炼药锅：含水、岩浆、粉雪
 		//其中含水如果不满则转换到空瓶
@@ -383,7 +364,7 @@ if (stBlocks.sBlockName->ends_with(target))
 			{MU8STR("minecraft:powder_snow_cauldron"),Powder_snow_cauldron},
 		};
 
-		auto it = mapCauldron.find(*stBlocks.sBlockName);
+		auto it = mapCauldron.find(*stBlocks.psBlockName);
 		if (it != mapCauldron.end())
 		{
 			switch (it->second)
@@ -399,7 +380,7 @@ if (stBlocks.sBlockName->ends_with(target))
 					//扩展部分为水桶
 					stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
 					//判断方块标签
-					const auto &level = stBlocks.cpdProperties->GetString(MU8STR("level"));
+					const auto &level = stBlocks.pcpdProperties->GetString(MU8STR("level"));
 
 					if (level == MU8STR("1"))
 					{
@@ -438,13 +419,13 @@ if (stBlocks.sBlockName->ends_with(target))
 		return false;
 	}
 
-	static inline bool CvrtCandleCake(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtCandleCake(const BlockStats &stBlocks, ItemStackList &stItemsList)
 	{
 		ENDSWITH("_cake")
 		{
 			//转换为蜡烛+蛋糕
 			stItemsList.emplace_back(MU8STR("minecraft:cake"), stBlocks.u64Counter * 1);
-			auto TmpName = *stBlocks.sBlockName;
+			auto TmpName = *stBlocks.psBlockName;
 			TmpName.erase(TmpName.length() - target.length());//删去_cake
 			stItemsList.emplace_back(std::move(TmpName), stBlocks.u64Counter * 1);
 
@@ -454,7 +435,7 @@ if (stBlocks.sBlockName->ends_with(target))
 		return false;
 	}
 
-	static inline bool CvrtAliasBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//别名方块
+	static inline bool CvrtAliasBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)//别名方块
 	{
 		//映射
 		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapAliasBlocks =
@@ -466,7 +447,7 @@ if (stBlocks.sBlockName->ends_with(target))
 		};
 
 		//查找
-		const auto it = mapAliasBlocks.find(*stBlocks.sBlockName);
+		const auto it = mapAliasBlocks.find(*stBlocks.psBlockName);
 		if (it != mapAliasBlocks.end())//存在
 		{
 			stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1);//插入映射
@@ -476,20 +457,20 @@ if (stBlocks.sBlockName->ends_with(target))
 		return false;
 	}
 
-	static inline bool CvrtFluid(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//流体
+	static inline bool CvrtFluid(const BlockStats &stBlocks, ItemStackList &stItemsList)//流体
 	{
-		if (*stBlocks.sBlockName == MU8STR("minecraft:water"))
+		if (*stBlocks.psBlockName == MU8STR("minecraft:water"))
 		{
-			if (stBlocks.cpdProperties->GetString(MU8STR("level")) == MU8STR("0"))//是0就是水源
+			if (stBlocks.pcpdProperties->GetString(MU8STR("level")) == MU8STR("0"))//是0就是水源
 			{
 				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
 			}
 
 			return true;
 		}
-		else if (*stBlocks.sBlockName == MU8STR("minecraft:lava"))
+		else if (*stBlocks.psBlockName == MU8STR("minecraft:lava"))
 		{
-			if (stBlocks.cpdProperties->GetString(MU8STR("level")) == MU8STR("0"))//是0就是岩浆源
+			if (stBlocks.pcpdProperties->GetString(MU8STR("level")) == MU8STR("0"))//是0就是岩浆源
 			{
 				stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"), stBlocks.u64Counter * 1);
 			}
@@ -501,17 +482,17 @@ if (stBlocks.sBlockName->ends_with(target))
 		return false;
 	}
 
-	static inline bool CvrtSlabBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtSlabBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)
 	{
 		ENDSWITH("_slab")
 		{
-			if (stBlocks.cpdProperties->GetString(MU8STR("type")) == MU8STR("double"))//转换为2，否则为1
+			if (stBlocks.pcpdProperties->GetString(MU8STR("type")) == MU8STR("double"))//转换为2，否则为1
 			{
-				stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * 2);
+				stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 2);
 			}
 			else
 			{
-				stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * 1);
+				stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
 			}
 
 			return true;
@@ -520,11 +501,11 @@ if (stBlocks.sBlockName->ends_with(target))
 		return false;
 	}
 
-	static inline bool CvrtClusterBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtClusterBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)
 	{
 #define EMPLACE_CLUSTER_ITEMS(name)\
-const auto &##name = stBlocks.cpdProperties->GetString(MU8STR(#name));\
-stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(##name));
+const auto &##name = stBlocks.pcpdProperties->GetString(MU8STR(#name));\
+stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll(##name));
 
 		//蜡烛优先处理（多颜色方块）
 		ENDSWITH("candle")//蜡烛极其特殊，存在无颜色标签的版本（与床之类不同）
@@ -551,7 +532,7 @@ stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(
 			{MU8STR("minecraft:pink_petals"),Pink_petals},
 		};
 
-		const auto it = mapClusterBlocks.find(*stBlocks.sBlockName);
+		const auto it = mapClusterBlocks.find(*stBlocks.psBlockName);
 		if (it != mapClusterBlocks.end())
 		{
 
@@ -589,7 +570,7 @@ stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(
 #undef EMPLACE_CLUSTER_ITEMS
 	}
 
-	static inline bool CvrtPolyAttachBlocks(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//多面附着方块
+	static inline bool CvrtPolyAttachBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)//多面附着方块
 	{
 		const static std::unordered_set<NBT_Node::NBT_String> setPolyAttachBlocks =
 		{
@@ -609,13 +590,13 @@ stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(
 		};
 
 
-		if (setPolyAttachBlocks.count(*stBlocks.sBlockName) != 0)
+		if (setPolyAttachBlocks.count(*stBlocks.psBlockName) != 0)
 		{
 			//遍历面列表，查询每个面信息，如果存在，判断是不是true，如果是，计数+1
 			uint64_t u64Counter = 0;
 			for (const auto &it : pSurfaceNameList)
 			{
-				const auto pSurface = stBlocks.cpdProperties->HasString(MU8STR(it));
+				const auto pSurface = stBlocks.pcpdProperties->HasString(MU8STR(it));
 				if (pSurface != NULL)
 				{
 					if (*pSurface == MU8STR("true"))
@@ -626,7 +607,7 @@ stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(
 			}
 
 			//根据计数插入对应数量的多面附着块物品数
-			stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * u64Counter);
+			stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * u64Counter);
 
 			return true;
 		}
@@ -636,7 +617,7 @@ stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(
 
 
 	//所有此类转换函数都不处理普通单格植物
-	static inline bool CvrtMultiPartPlant(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//多格植株处理
+	static inline bool CvrtMultiPartPlant(const BlockStats &stBlocks, ItemStackList &stItemsList)//多格植株处理
 	{
 		//只转换植株其余非植株走普通方块normal处理
 		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapMultiPartPlant =
@@ -658,7 +639,7 @@ stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(
 			{MU8STR("minecraft:twisting_vines_plant"),MU8STR("minecraft:twisting_vines")},
 		};
 
-		const auto it = mapMultiPartPlant.find(*stBlocks.sBlockName);
+		const auto it = mapMultiPartPlant.find(*stBlocks.psBlockName);
 		if (it != mapMultiPartPlant.end())
 		{
 			stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1);//插入映射
@@ -675,7 +656,7 @@ stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(
 	}
 
 	//所有此类转换函数都不处理普通单格植物
-	static inline bool CvrtDoublePartPlant(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//双格植株处理
+	static inline bool CvrtDoublePartPlant(const BlockStats &stBlocks, ItemStackList &stItemsList)//双格植株处理
 	{
 		//只有根部破坏掉落，头部直接忽略
 		const static std::unordered_set<NBT_Node::NBT_String> setDoublePartPlant =
@@ -691,12 +672,12 @@ stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(
 		};
 
 		//判断是否存在于set中，是则处理上下部分
-		if (setDoublePartPlant.count(*stBlocks.sBlockName) != 0)
+		if (setDoublePartPlant.count(*stBlocks.psBlockName) != 0)
 		{
-			const auto &half = stBlocks.cpdProperties->GetString("half");
+			const auto &half = stBlocks.pcpdProperties->GetString("half");
 			if (half == MU8STR("lower"))
 			{
-				stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * 1);
+				stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
 			}
 			//else if (half == MU8STR("upper")) {}
 			//else {}
@@ -708,7 +689,7 @@ stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(
 	}
 	
 	//所有此类转换函数都不处理普通单格植物
-	static inline bool CvrtCropPlant(const BlockStatistics &stBlocks, ItemStackList &stItemsList)//作物植株处理
+	static inline bool CvrtCropPlant(const BlockStats &stBlocks, ItemStackList &stItemsList)//作物植株处理
 	{
 		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapCropPlant =
 		{
@@ -724,12 +705,12 @@ stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(
 			{MU8STR("minecraft:pitcher_crop"),MU8STR("minecraft:pitcher_pod")},//需要特判处理
 		};
 
-		const auto it = mapCropPlant.find(*stBlocks.sBlockName);
+		const auto it = mapCropPlant.find(*stBlocks.psBlockName);
 		if (it != mapCropPlant.end())
 		{
 			if (it->second == MU8STR("minecraft:pitcher_pod"))//需要判断原方块的half
 			{
-				const auto &half = stBlocks.cpdProperties->GetString("half");
+				const auto &half = stBlocks.pcpdProperties->GetString("half");
 				if (half == MU8STR("lower"))
 				{
 					stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1);
@@ -750,15 +731,15 @@ stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * std::stoll(
 	}
 
 	//注意该函数需要保证不进行任何block的compound判断
-	static inline void CvrtNormalBlock(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline void CvrtNormalBlock(const BlockStats &stBlocks, ItemStackList &stItemsList)
 	{
-		stItemsList.emplace_back(*stBlocks.sBlockName, stBlocks.u64Counter * 1);
+		stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
 	}
 
-	static inline void CvrtWaterLoggedBlock(const BlockStatistics &stBlocks, ItemStackList &stItemsList)
+	static inline void CvrtWaterLoggedBlock(const BlockStats &stBlocks, ItemStackList &stItemsList)
 	{
 		//判断是不是含水方块，如果是，加一个水桶
-		const auto it = stBlocks.cpdProperties->HasString("waterlogged");
+		const auto it = stBlocks.pcpdProperties->HasString("waterlogged");
 		if (it != NULL)
 		{
 			if (*it == MU8STR("true"))//含水
