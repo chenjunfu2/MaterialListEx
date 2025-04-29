@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 
 		static bool SortCmp(MapPair &l, MapPair &r)
 		{
-			if (l.second == r.second)//相等情况下按key的字典序
+			if (l.second == r.second)//数量相等情况下按key的字典序
 			{
 				return l.first < r.first;//升序
 			}
@@ -153,6 +153,7 @@ int main(int argc, char *argv[])
 			auto vtBlockStats = BlockProcess::GetBlockStats(RgCompound);//获取方块统计列表
 			for (const auto &itBlock : vtBlockStats)
 			{
+				//每个方块转换到物品，并通过map进行统计同类物品
 				auto istItemList = BlockProcess::BlockStatsToItemStack(itBlock);
 				for (const auto &itItem : istItemList)
 				{
@@ -163,7 +164,7 @@ int main(int argc, char *argv[])
 			//提前扩容减少插入开销
 			rgsData.vecSortItem.reserve(rgsData.mapItemCounter.size());
 			rgsData.vecSortItem.assign(rgsData.mapItemCounter.begin(), rgsData.mapItemCounter.end());//迭代器范围插入
-			//进行排序
+			//对物品按数量进行排序
 			std::sort(rgsData.vecSortItem.begin(), rgsData.vecSortItem.end(), RegionStats::SortCmp);
 		}
 
@@ -178,23 +179,8 @@ int main(int argc, char *argv[])
 	}
 
 	
-	for (const auto &itRgSt : vtRegionStats)
-	{
-		printf("Region:[%s]\n", ANSISTR(U16STR(*itRgSt.psRegionName)).c_str());
-		for (const auto &itItem : itRgSt.vecSortItem)
-		{
-			const auto &[sItemName, u64ItemCount] = itItem.get();
-			printf("%s: %llu\n", sItemName.c_str(), u64ItemCount);
-		}
-
-	}
 
 
-	return 0;
-
-
-
-	/*
 	//准备读取
 	Json zh_cn;
 	bool bLanguage = true;
@@ -220,31 +206,34 @@ int main(int argc, char *argv[])
 			bLanguage = false;
 		}
 	}
-	
-	//遍历mapItemCounter，转化为中文输出
-	for (const auto &it : vecSortItem)
-	{
-		const auto &[sItemName, u64ItemCount] = it.get();
 
-		if (bLanguage)
+
+	for (const auto &itRgSt : vtRegionStats)
+	{
+		printf("Region:[%s]\n", ANSISTR(U16STR(*itRgSt.psRegionName)).c_str());
+		for (const auto &itItem : itRgSt.vecSortItem)
 		{
-			const auto it = zh_cn.find(sItemName);
-			if (it != zh_cn.end() && it->is_string())
+			const auto &[sItemName, u64ItemCount] = itItem.get();
+			if (bLanguage)
 			{
-				printf("%s [%s]: %llu\n", ConvertUtf8ToAnsi(it->get<std::string>()).c_str(), sItemName.c_str(), u64ItemCount);
+				const auto it = zh_cn.find(sItemName);
+				if (it != zh_cn.end() && it->is_string())//转化为中文输出
+				{
+					printf("%s [%s]: %llu\n", ConvertUtf8ToAnsi(it->get<std::string>()).c_str(), sItemName.c_str(), u64ItemCount);
+				}
+				else
+				{
+					printf("[Unknown] [%s]: %llu\n", sItemName.c_str(), u64ItemCount);
+				}
 			}
 			else
 			{
-				printf("[Unknown] [%s]: %llu\n", sItemName.c_str(), u64ItemCount);
+				printf("%s: %llu\n", sItemName.c_str(), u64ItemCount);
 			}
 		}
-		else
-		{
-			printf("%s: %llu\n", sItemName.c_str(), u64ItemCount);
-		}
+
 	}
-	*/
-	
+
 	return 0;
 }
 

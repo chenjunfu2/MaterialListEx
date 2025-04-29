@@ -138,16 +138,6 @@ public:
 		{
 			return stItemsList;
 		}
-
-		//如果没有附加方块标签，则直接处理物品过滤，如果过滤成功直接返回，否则非过滤且无标签形式物品直接存储并返回
-		if (stBlocks.pcpdProperties == NULL)
-		{
-			if(!CvrtUnItemedBlocks(stBlocks, stItemsList))//无物品形式物品过滤成功判断
-			{
-				CvrtNormalBlock(stBlocks, stItemsList);//失败直接存储并返回
-			}
-			return stItemsList;
-		}
 		
 		/*
 		无物品形式方块\两格方块处理（门、床、活塞）（注：多格植物额外处理）\
@@ -248,6 +238,10 @@ if (stBlocks.psBlockName->ends_with(target))
 			ENDSWITH("_door")
 			{
 				//读取方块state判断是门的哪一部分
+				if (stBlocks.pcpdProperties == NULL)
+				{
+					return false;
+				}
 				const auto &half = stBlocks.pcpdProperties->GetString(MU8STR("half"));
 
 				if (half == MU8STR("lower"))
@@ -266,6 +260,10 @@ if (stBlocks.psBlockName->ends_with(target))
 			ENDSWITH("_bed")
 			{
 				//读取方块state判断是床的哪一部分
+				if (stBlocks.pcpdProperties == NULL)
+				{
+					return false;
+				}
 				const auto &part = stBlocks.pcpdProperties->GetString(MU8STR("part"));
 
 				if (part == MU8STR("head"))
@@ -380,6 +378,10 @@ if (stBlocks.psBlockName->ends_with(target))
 					//扩展部分为水桶
 					stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
 					//判断方块标签
+					if (stBlocks.pcpdProperties == NULL)
+					{
+						return false;
+					}
 					const auto &level = stBlocks.pcpdProperties->GetString(MU8STR("level"));
 
 					if (level == MU8STR("1"))
@@ -461,6 +463,10 @@ if (stBlocks.psBlockName->ends_with(target))
 	{
 		if (*stBlocks.psBlockName == MU8STR("minecraft:water"))
 		{
+			if (stBlocks.pcpdProperties == NULL)
+			{
+				return false;
+			}
 			if (stBlocks.pcpdProperties->GetString(MU8STR("level")) == MU8STR("0"))//是0就是水源
 			{
 				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
@@ -470,6 +476,10 @@ if (stBlocks.psBlockName->ends_with(target))
 		}
 		else if (*stBlocks.psBlockName == MU8STR("minecraft:lava"))
 		{
+			if (stBlocks.pcpdProperties == NULL)
+			{
+				return false;
+			}
 			if (stBlocks.pcpdProperties->GetString(MU8STR("level")) == MU8STR("0"))//是0就是岩浆源
 			{
 				stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"), stBlocks.u64Counter * 1);
@@ -486,6 +496,10 @@ if (stBlocks.psBlockName->ends_with(target))
 	{
 		ENDSWITH("_slab")
 		{
+			if (stBlocks.pcpdProperties == NULL)
+			{
+				return false;
+			}
 			if (stBlocks.pcpdProperties->GetString(MU8STR("type")) == MU8STR("double"))//转换为2，否则为1
 			{
 				stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 2);
@@ -506,6 +520,12 @@ if (stBlocks.psBlockName->ends_with(target))
 #define EMPLACE_CLUSTER_ITEMS(name)\
 const auto &##name = stBlocks.pcpdProperties->GetString(MU8STR(#name));\
 stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll(##name));
+
+		//先判断存不存在附加状态，下面所有代码路径都会使用，所以在开头排除
+		if (stBlocks.pcpdProperties == NULL)
+		{
+			return false;
+		}
 
 		//蜡烛优先处理（多颜色方块）
 		ENDSWITH("candle")//蜡烛极其特殊，存在无颜色标签的版本（与床之类不同）
@@ -592,6 +612,11 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 
 		if (setPolyAttachBlocks.count(*stBlocks.psBlockName) != 0)
 		{
+			if (stBlocks.pcpdProperties == NULL)
+			{
+				return false;
+			}
+
 			//遍历面列表，查询每个面信息，如果存在，判断是不是true，如果是，计数+1
 			uint64_t u64Counter = 0;
 			for (const auto &it : pSurfaceNameList)
@@ -674,6 +699,10 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 		//判断是否存在于set中，是则处理上下部分
 		if (setDoublePartPlant.count(*stBlocks.psBlockName) != 0)
 		{
+			if (stBlocks.pcpdProperties == NULL)
+			{
+				return false;
+			}
 			const auto &half = stBlocks.pcpdProperties->GetString("half");
 			if (half == MU8STR("lower"))
 			{
@@ -710,6 +739,10 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 		{
 			if (it->second == MU8STR("minecraft:pitcher_pod"))//需要判断原方块的half
 			{
+				if (stBlocks.pcpdProperties == NULL)
+				{
+					return false;
+				}
 				const auto &half = stBlocks.pcpdProperties->GetString("half");
 				if (half == MU8STR("lower"))
 				{
@@ -739,6 +772,10 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 	static inline void CvrtWaterLoggedBlock(const BlockStats &stBlocks, ItemStackList &stItemsList)
 	{
 		//判断是不是含水方块，如果是，加一个水桶
+		if (stBlocks.pcpdProperties == NULL)
+		{
+			return;//如果没有附加标签则无需判断
+		}
 		const auto it = stBlocks.pcpdProperties->HasString("waterlogged");
 		if (it != NULL)
 		{
