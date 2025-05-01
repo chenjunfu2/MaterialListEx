@@ -192,6 +192,8 @@ public:
 
 private:
 
+	/*警告，所有使用pcpdProperties的地方都需要判断是否为NULL！*/
+
 #define FIND(name)\
 const std::string target = MU8STR(name);\
 size_t szPos = stBlocks.psBlockName->find(target);\

@@ -170,16 +170,23 @@ int main(int argc, char *argv[])
 
 		//方块实体处理
 		{
-			auto vtTEItemStats = TileEntityProcess::GetTileEntityItemStats(RgCompound);
-
+			auto vtTEContainerStats = TileEntityProcess::GetTileEntityContainerStats(RgCompound);
+			for (const auto &it : vtTEContainerStats)
+			{
+				auto ret = TileEntityProcess::TileEntityContainerStatsToItemStack(it);
+				for (const auto &item : ret)
+				{
+					printf("[%s]:[%d]", item.sItemName.c_str(), (int)item.byteItemCount);
+					NBT_Helper::Print(item.cpdItemTag);
+				}
+			}
 		}
 
-
-		vtRegionStats.emplace_back(std::move(rgsData));
+		//vtRegionStats.emplace_back(std::move(rgsData));
 	}
 
 	
-
+	return 1145;
 
 	//准备读取
 	Json zh_cn;

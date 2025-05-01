@@ -12,7 +12,7 @@ public:
 	~TileEntityProcess() = delete;
 
 
-	struct TileEntityItemStats
+	struct TileEntityContainerStats
 	{
 		const NBT_Node::NBT_String *psTileEntityName{};
 		struct
@@ -22,11 +22,11 @@ public:
 		};
 	};
 
-	static std::vector<TileEntityItemStats> GetTileEntityItemStats(const NBT_Node::NBT_Compound &RgCompound)
+	static std::vector<TileEntityContainerStats> GetTileEntityContainerStats(const NBT_Node::NBT_Compound &RgCompound)
 	{
 		//获取方块实体列表
 		const auto &listTileEntity = RgCompound.GetList(MU8STR("TileEntities"));
-		std::vector<TileEntityItemStats> vtTileEntityStats{};
+		std::vector<TileEntityContainerStats> vtTileEntityStats{};
 		vtTileEntityStats.reserve(listTileEntity.size());//提前扩容
 
 		for (const auto &it : listTileEntity)
@@ -36,7 +36,7 @@ public:
 			*/
 
 			const auto &teCurrent = GetCompound(it);
-			TileEntityItemStats teStats{ &teCurrent.GetString(MU8STR("id")) };
+			TileEntityContainerStats teStats{ &teCurrent.GetString(MU8STR("id")) };
 
 
 			//尝试寻找Items（普通多格容器）
@@ -57,7 +57,8 @@ public:
 				NBT_Node::NBT_TAG enType{ NBT_Node::TAG_End };
 			};
 
-			const static std::unordered_map<NBT_Node::NBT_String, DataInfo> mapTileTntityDataName =
+			//用于映射特殊的方块实体容器里物品的名字
+			const static std::unordered_map<NBT_Node::NBT_String, DataInfo> mapContainerItemName =
 			{
 				{MU8STR("minecraft:jukebox"),{MU8STR("RecordItem"),NBT_Node::TAG_Compound}},
 				{MU8STR("minecraft:lectern"),{MU8STR("Book"),NBT_Node::TAG_Compound}},
@@ -65,8 +66,8 @@ public:
 			};
 
 			//查找方块实体id是否在map中
-			const auto findIt = mapTileTntityDataName.find(*teStats.psTileEntityName);
-			if (findIt == mapTileTntityDataName.end())//不在，不是可以存放物品的容器，跳过
+			const auto findIt = mapContainerItemName.find(*teStats.psTileEntityName);
+			if (findIt == mapContainerItemName.end())//不在，不是可以存放物品的容器，跳过
 			{
 				continue;//跳过此方块实体
 			}
@@ -78,6 +79,7 @@ public:
 				continue;//跳过此方块实体
 			}
 
+			//放入结构内
 			teStats.enType = findIt->second.enType;
 			teStats.pItems = pSearch;
 
@@ -91,44 +93,51 @@ public:
 	struct ItemStack
 	{
 		NBT_Node::NBT_String sItemName{};//物品名
-		NBT_Node::NBT_Compound pcpdItemTag{};//物品标签
-		uint64_t u64Counter = 0;//物品计数器
+		NBT_Node cpdItemTag{};//物品标签
+		NBT_Node::NBT_Byte byteItemCount = 0;//物品计数器
 	};
 
 	using ItemStackList = std::vector<ItemStack>;
 
-	static ItemStackList TileEntityItemStatsToItemStack(const TileEntityItemStats &stItemStats)
+	static ItemStackList TileEntityContainerStatsToItemStack(const TileEntityContainerStats &stContainerStats)
 	{
-		if (stItemStats.enType == NBT_Node::TAG_End)
+		if (stContainerStats.enType == NBT_Node::TAG_End)
 		{
 			return {};
 		}
-		if (stItemStats.pItems == NULL)
+		if (stContainerStats.pItems == NULL)
 		{
 			return {};
 		}
 
+		//读取每个物品的集合并解包出内容插入到ItemStack
 		ItemStackList vtItemStackList{};
-		if (stItemStats.enType == NBT_Node::TAG_Compound)//只有1个物品
+		auto EmplaceBackItem = [&vtItemStackList](const NBT_Node::NBT_Compound &cpdItem) -> void
 		{
+			const auto pcpdTag = cpdItem.Search(MU8STR("tag"));
+			ItemStack tmp =
+			{
+				.sItemName = cpdItem.GetString(MU8STR("id")),
+				.cpdItemTag = ((pcpdTag != NULL) ? *pcpdTag : NBT_Node{}),
+				.byteItemCount = cpdItem.GetByte("Count"),
+			};
 
-
-
-
-
+			vtItemStackList.emplace_back(std::move(tmp));
+		};
+		
+		if (stContainerStats.enType == NBT_Node::TAG_Compound)//只有一格物品
+		{
+			EmplaceBackItem(stContainerStats.pItems->GetCompound());
 		}
-		else if(stItemStats.enType == NBT_Node::TAG_List)//物品列表
+		else if(stContainerStats.enType == NBT_Node::TAG_List)//多格物品列表
 		{
-
-
-
-
-
+			for (const auto &it : stContainerStats.pItems->GetList())
+			{
+				EmplaceBackItem(it.GetCompound());
+			}
 		}
 		//else {}
 
 		return vtItemStackList;
 	}
-
-
 };

@@ -370,7 +370,7 @@ catch(...)\
 	};
 
 	template<typename T, bool bHasName = true>
-	static int GetbuiltInType(InputStream &tData, NBT_Node &nRoot)
+	static int GetBuiltinType(InputStream &tData, NBT_Node &nRoot)
 	{
 		int iRet = AllOk;
 		//获取NBT的N（名称）
@@ -718,32 +718,32 @@ catch(...)\
 			break;
 		case NBT_Node::TAG_Byte:
 			{
-				iRet = GetbuiltInType<NBT_Node::NBT_Byte, bHasName>(tData, nRoot);
+				iRet = GetBuiltinType<NBT_Node::NBT_Byte, bHasName>(tData, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Short:
 			{
-				iRet = GetbuiltInType<NBT_Node::NBT_Short, bHasName>(tData, nRoot);
+				iRet = GetBuiltinType<NBT_Node::NBT_Short, bHasName>(tData, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Int:
 			{
-				iRet = GetbuiltInType<NBT_Node::NBT_Int, bHasName>(tData, nRoot);
+				iRet = GetBuiltinType<NBT_Node::NBT_Int, bHasName>(tData, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Long:
 			{
-				iRet = GetbuiltInType<NBT_Node::NBT_Long, bHasName>(tData, nRoot);
+				iRet = GetBuiltinType<NBT_Node::NBT_Long, bHasName>(tData, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Float:
 			{
-				iRet = GetbuiltInType<NBT_Node::NBT_Float, bHasName>(tData, nRoot);
+				iRet = GetBuiltinType<NBT_Node::NBT_Float, bHasName>(tData, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Double:
 			{
-				iRet = GetbuiltInType<NBT_Node::NBT_Double, bHasName>(tData, nRoot);
+				iRet = GetBuiltinType<NBT_Node::NBT_Double, bHasName>(tData, nRoot);
 			}
 			break;
 		case NBT_Node::TAG_Byte_Array:
