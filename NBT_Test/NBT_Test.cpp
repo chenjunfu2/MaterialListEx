@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
 	//func<int>(1);
 	//func<std::vector<int>>({});
 
+	//*(long *)NULL = NULL;
 
 	if (argc != 2)
 	{
