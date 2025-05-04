@@ -39,6 +39,25 @@ public:
 		return find == Map::end() ? NULL : &((*find).second);
 	}
 
+	bool operator==(const MyCompound &_Right) const noexcept
+	{
+		return Map::operator==(Map(_Right));
+	}
+
+	bool operator!=(const MyCompound &_Right) const noexcept
+	{
+		return Map::operator!=(Map(_Right));
+	}
+
+	bool operator<(const MyCompound &_Right) const noexcept
+	{
+		return Map::operator<(Map(_Right));
+	}
+
+	bool operator>(const MyCompound &_Right) const noexcept
+	{
+		return Map::operator>(Map(_Right));
+	}
 
 #define TYPE_GET_FUNC(type)\
 inline const typename Map::mapped_type::NBT_##type &Get##type(const typename Map::key_type & sTagName) const\
@@ -99,6 +118,27 @@ public:
 	inline const typename List::value_type &Get(const typename List::size_type &szPos) const
 	{
 		return List::at(szPos);
+	}
+
+
+	bool operator==(const MyList &_Right) const noexcept
+	{
+		return List::operator==(List(_Right));
+	}
+	
+	bool operator!=(const MyList &_Right) const noexcept
+	{
+		return List::operator!=(List(_Right));
+	}
+	
+	bool operator<(const MyList &_Right) const noexcept
+	{
+		return List::operator<(List(_Right));
+	}
+	
+	bool operator>(const MyList &_Right) const noexcept
+	{
+		return List::operator>(List(_Right));
 	}
 
 
@@ -265,12 +305,31 @@ public:
 		return *this;
 	}
 
-
 	NBT_Node &operator=(NBT_Node &&_NBT_Node) noexcept
 	{
 		data = std::move(_NBT_Node.data);
 		_NBT_Node.data = NBT_End{};
 		return *this;
+	}
+
+	bool operator==(const NBT_Node &_Right) const noexcept
+	{
+		return data == _Right.data;
+	}
+
+	bool operator!=(const NBT_Node &_Right) const noexcept
+	{
+		return data != _Right.data;
+	}
+	
+	bool operator<(const NBT_Node &_Right) const noexcept
+	{
+		return data < _Right.data;
+	}
+
+	bool operator>(const NBT_Node &_Right) const noexcept
+	{
+		return data > _Right.data;
 	}
 
 	//清除所有数据

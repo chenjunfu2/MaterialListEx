@@ -23,6 +23,7 @@ public:
 	};
 
 private:
+	//处理多种集合数据情况并映射到TileEntityContainerStats
 	static bool MapTileEntityContainerStats(const NBT_Node::NBT_Compound &teCompound, TileEntityContainerStats &teStats)
 	{
 		/*
@@ -117,22 +118,30 @@ private:
 			return;//不处理直接返回
 		}
 
-		const auto pcpdTag = cpdItem.Search(MU8STR("tag"));
-
+		//先插入
 		vtItemStackList.emplace_back
 		(
 			cpdItem.GetString(MU8STR("id")),
-			((pcpdTag != NULL) ? pcpdTag->GetCompound() : NBT_Node::NBT_Compound{}),
+			NBT_Node::NBT_Compound{},//此处先留空，防止深度嵌套容器的大量拷贝
 			cpdItem.GetByte("Count")
 		);
 
-		const auto &current = vtItemStackList.back();
+		//如果pcpdTag为NULL则跳过处理直接返回
+		const auto pcpdTag = cpdItem.Search(MU8STR("tag"));
+		if (pcpdTag == NULL)
+		{
+			return;
+		}
+
+		//然后获取尾部数据为当前数据
+		auto &current = vtItemStackList.back();//因为有可能进行写入，需要设置为非const
+		const auto &cpdTag = pcpdTag->GetCompound();//先引用，然后处理容器，如果是容器则不拷贝，否则拷贝Tag以便处理特殊物品名（药水箭、药水、附魔书等名称随nbt变化的物品）
 
 		//检查物品是否有方块实体tag（C你*的麻将，明明方块实体叫TileEntity，怎么这里又叫BlockEntity，真的无语了）
 		//（前面写方块状态转换就麻烦的要死，各种不统一，一个含水都能搞出几种情况，写到这里真的蚌埠住了，我喷死你*的麻将）
-		const auto pBlockEntityTag = current.cpdItemTag.Search(MU8STR("BlockEntityTag"));
-		if (pBlockEntityTag != NULL)
-		{//处理方块实体
+		const auto pBlockEntityTag = cpdTag.Search(MU8STR("BlockEntityTag"));
+		if (pBlockEntityTag != NULL)//处理方块实体
+		{
 			const auto &cpdBlockEntityTag = pBlockEntityTag->GetCompound();
 
 			//映射需要物品id，获取一下（绝了，甚至还存在有BlockEntityTag内没有物品id的）
@@ -149,11 +158,14 @@ private:
 		//（卧槽收纳袋还不是BlockEntityTag内部嵌套Items的，是直接Items的，还得特殊处理，没救了麻将，我服了）
 		else if (current.sItemName == MU8STR("minecraft:bundle"))//没有BlockEntityTag，尝试处理收纳袋
 		{
-			const auto pItems = current.cpdItemTag.Search(MU8STR("Items"));
+			const auto pItems = cpdTag.Search(MU8STR("Items"));
 			TileEntityContainerStats teStats{ NULL,pItems,NBT_Node::TAG_List };//递归处理不需要id，且会处理pItems可能为NULL的情况
 			_TileEntityContainerStatsToItemStack(teStats, vtItemStackList, szStackDepth);//循环递归
 		}
-		//else {}
+		else//如果上面都没处理，则属于非容器，拷贝Tag以便后续分析，容器则跳过拷贝，Tag留空
+		{
+			current.cpdItemTag = cpdTag;//拷贝
+		}
 	};
 
 	static void _TileEntityContainerStatsToItemStack(const TileEntityContainerStats &stContainerStats, ItemStackList &vtItemStackList, size_t szStackDepth)

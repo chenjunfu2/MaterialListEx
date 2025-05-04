@@ -8,6 +8,7 @@
 #include "TileEntityProcess.hpp"
 #include "File_Tool.hpp"
 #include "Compression_Utils.hpp"
+#include "RegionProcess.h"
 
 #include "Windows_ANSI.hpp"
 
@@ -117,84 +118,14 @@ int main(int argc, char *argv[])
 	printf("root:\"%s\"\n", ANSISTR(U16STR(root.first)).c_str());
 	
 
-	struct RegionStats
-	{
-		const NBT_Node::NBT_String *psRegionName{};
-		struct
-		{
-			std::map<NBT_Node::NBT_String, uint64_t> mapItemCounter;//创建方块状态到物品映射map
-			using MapPair = decltype(mapItemCounter)::value_type;
-			std::vector<std::reference_wrapper<MapPair>> vecSortItem{};//通过vector创建map的元素排序（存储pair引用）std::reference_wrapper<>
-		};
-
-		static bool SortCmp(MapPair &l, MapPair &r)
-		{
-			if (l.second == r.second)//数量相等情况下按key的字典序
-			{
-				return l.first < r.first;//升序
-			}
-			else//否则按数值大小
-			{
-				return l.second > r.second;//降序
-			}
-		}
-	};
-
 	//获取regions，也就是区域，一个投影可能有多个区域（选区）
 	const auto &cpRegions = GetCompound(root.second).GetCompound(MU8STR("Regions"));
-	std::vector<RegionStats> vtRegionStats;
-	vtRegionStats.reserve(cpRegions.size());//提前扩容
-	for (const auto &[RgName, RgVal] : cpRegions)//遍历选区
-	{
-		RegionStats rgsData{ &RgName };
-		auto &RgCompound = GetCompound(RgVal);
-
-		//方块处理
-		{
-			auto vtBlockStats = BlockProcess::GetBlockStats(RgCompound);//获取方块统计列表
-			for (const auto &itBlock : vtBlockStats)
-			{
-				//每个方块转换到物品，并通过map进行统计同类物品
-				auto istItemList = BlockProcess::BlockStatsToItemStack(itBlock);
-				for (const auto &itItem : istItemList)
-				{
-					rgsData.mapItemCounter[itItem.sItemName] += itItem.u64Counter;//如果key不存在，则自动创建，且保证value为0
-				}
-			}
-
-			//提前扩容减少插入开销
-			rgsData.vecSortItem.reserve(rgsData.mapItemCounter.size());
-			rgsData.vecSortItem.assign(rgsData.mapItemCounter.begin(), rgsData.mapItemCounter.end());//迭代器范围插入
-			//对物品按数量进行排序
-			std::sort(rgsData.vecSortItem.begin(), rgsData.vecSortItem.end(), RegionStats::SortCmp);
-		}
-		
-		//方块实体容器处理
-		{
-			auto vtTEContainerStats = TileEntityProcess::GetTileEntityContainerStats(RgCompound);
-			for (const auto &it : vtTEContainerStats)
-			{
-				auto ret = TileEntityProcess::TileEntityContainerStatsToItemStack(it);
-				for (const auto &item : ret)
-				{
-					printf("[%s]:[%d]\n", item.sItemName.c_str(), (int)item.byteItemCount);
-				}
-			}
-		}
-
-		//实体处理
-
-
-		//实体容器处理
-
-
-		//TODO：实体物品栏处理
-
-		//vtRegionStats.emplace_back(std::move(rgsData));
-	}
+	auto vtRegionStats = RegionProcess(cpRegions);
 
 	
 	return 1145;
+
+	/*
 
 	//准备读取
 	Json zh_cn;
@@ -226,7 +157,7 @@ int main(int argc, char *argv[])
 	for (const auto &itRgSt : vtRegionStats)
 	{
 		printf("Region:[%s]\n", ANSISTR(U16STR(*itRgSt.psRegionName)).c_str());
-		for (const auto &itItem : itRgSt.vecSortItem)
+		for (const auto &itItem : itRgSt.mslBlock.vecSortItem)
 		{
 			const auto &[sItemName, u64ItemCount] = itItem.get();
 			if (bLanguage)
@@ -248,7 +179,7 @@ int main(int argc, char *argv[])
 		}
 
 	}
-
+	*/
 	return 0;
 }
 
