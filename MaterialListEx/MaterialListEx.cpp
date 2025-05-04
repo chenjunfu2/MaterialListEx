@@ -1,7 +1,6 @@
 ﻿//#include "MemoryLeakCheck.hpp"
 
 #include "MUTF8_Tool.hpp"
-#include "Windows_ANSI.hpp"
 #include "NBT_Helper.hpp"
 #include "NBT_Reader.hpp"
 #include "NBT_Writer.hpp"
@@ -9,6 +8,8 @@
 #include "TileEntityProcess.hpp"
 #include "File_Tool.hpp"
 #include "Compression_Utils.hpp"
+
+#include "Windows_ANSI.hpp"
 
 /*Json*/
 #include <nlohmann\json.hpp>
@@ -167,8 +168,8 @@ int main(int argc, char *argv[])
 			//对物品按数量进行排序
 			std::sort(rgsData.vecSortItem.begin(), rgsData.vecSortItem.end(), RegionStats::SortCmp);
 		}
-
-		//方块实体处理
+		
+		//方块实体容器处理
 		{
 			auto vtTEContainerStats = TileEntityProcess::GetTileEntityContainerStats(RgCompound);
 			for (const auto &it : vtTEContainerStats)
@@ -176,11 +177,18 @@ int main(int argc, char *argv[])
 				auto ret = TileEntityProcess::TileEntityContainerStatsToItemStack(it);
 				for (const auto &item : ret)
 				{
-					printf("[%s]:[%d]", item.sItemName.c_str(), (int)item.byteItemCount);
-					NBT_Helper::Print(item.cpdItemTag);
+					printf("[%s]:[%d]\n", item.sItemName.c_str(), (int)item.byteItemCount);
 				}
 			}
 		}
+
+		//实体处理
+
+
+		//实体容器处理
+
+
+		//TODO：实体物品栏处理
 
 		//vtRegionStats.emplace_back(std::move(rgsData));
 	}
