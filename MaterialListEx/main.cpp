@@ -1,13 +1,13 @@
 ﻿//#include "MemoryLeakCheck.hpp"
 
 #include "MUTF8_Tool.hpp"
+#include "NBT_Node.hpp"
 #include "NBT_Helper.hpp"
 #include "NBT_Reader.hpp"
 #include "NBT_Writer.hpp"
 #include "BlockProcess.hpp"
 #include "TileEntityProcess.hpp"
 #include "File_Tool.hpp"
-#include "Compression_Utils.hpp"
 #include "RegionProcess.h"
 
 #include "Windows_ANSI.hpp"
@@ -16,6 +16,10 @@
 #include <nlohmann\json.hpp>
 using Json = nlohmann::json;
 /*Json*/
+
+/*Compress*/
+#include "Compression_Utils.hpp"
+/*Compress*/
 
 #include <stdio.h>
 #include <string>

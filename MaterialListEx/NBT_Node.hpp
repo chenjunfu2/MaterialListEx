@@ -41,22 +41,27 @@ public:
 
 	bool operator==(const MyCompound &_Right) const noexcept
 	{
-		return Map::operator==(Map(_Right));
+		return (const Map &)*this == (const Map &)_Right;
 	}
 
 	bool operator!=(const MyCompound &_Right) const noexcept
 	{
-		return Map::operator!=(Map(_Right));
+		return (const Map &)*this != (const Map &)_Right;
 	}
 
 	bool operator<(const MyCompound &_Right) const noexcept
 	{
-		return Map::operator<(Map(_Right));
+		return (const Map &)*this < (const Map &)_Right;
 	}
 
 	bool operator>(const MyCompound &_Right) const noexcept
 	{
-		return Map::operator>(Map(_Right));
+		return (const Map &)*this > (const Map &)_Right;
+	}
+
+	auto operator<=>(const MyCompound &_Right) const noexcept
+	{
+		return (const Map &)*this <=> (const Map &)_Right;
 	}
 
 #define TYPE_GET_FUNC(type)\
@@ -120,27 +125,30 @@ public:
 		return List::at(szPos);
 	}
 
-
 	bool operator==(const MyList &_Right) const noexcept
 	{
-		return List::operator==(List(_Right));
-	}
-	
-	bool operator!=(const MyList &_Right) const noexcept
-	{
-		return List::operator!=(List(_Right));
-	}
-	
-	bool operator<(const MyList &_Right) const noexcept
-	{
-		return List::operator<(List(_Right));
-	}
-	
-	bool operator>(const MyList &_Right) const noexcept
-	{
-		return List::operator>(List(_Right));
+		return (const List &)*this == (const List &)_Right;
 	}
 
+	bool operator!=(const MyList &_Right) const noexcept
+	{
+		return (const List &)*this != (const List &)_Right;
+	}
+
+	bool operator<(const MyList &_Right) const noexcept
+	{
+		return (const List &)*this < (const List &)_Right;
+	}
+
+	bool operator>(const MyList &_Right) const noexcept
+	{
+		return (const List &)*this > (const List &)_Right;
+	}
+
+	auto operator<=>(const MyList &_Right) const noexcept
+	{
+		return (const List &)*this <=> (const List &)_Right;
+	}
 
 #define TYPE_GET_FUNC(type)\
 inline const typename List::value_type::NBT_##type &Get##type(const typename List::size_type &szPos) const\
@@ -316,7 +324,7 @@ public:
 	{
 		return data == _Right.data;
 	}
-
+	
 	bool operator!=(const NBT_Node &_Right) const noexcept
 	{
 		return data != _Right.data;
@@ -326,10 +334,15 @@ public:
 	{
 		return data < _Right.data;
 	}
-
+	
 	bool operator>(const NBT_Node &_Right) const noexcept
 	{
 		return data > _Right.data;
+	}
+
+	auto operator<=>(const NBT_Node &_Right) const noexcept
+	{
+		return data <=> _Right.data;
 	}
 
 	//清除所有数据
@@ -414,3 +427,6 @@ friend inline const NBT_##type&Get##type(const NBT_Node & node)\
 
 #undef TYPE_GET_FUNC
 };
+
+
+//TODO: NBT_Node_View

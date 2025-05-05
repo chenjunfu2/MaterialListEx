@@ -32,17 +32,17 @@ struct BlockPos
 	}
 };
 
-BlockPos getMinCorner(const BlockPos &l, const BlockPos &r)
+static inline BlockPos getMinCorner(const BlockPos &l, const BlockPos &r)
 {
 	return BlockPos{ Min(l.x,r.x),Min(l.y,r.y),Min(l.z,r.z) };
 }
 
-BlockPos getMaxCorner(const BlockPos &l, const BlockPos &r)
+static inline BlockPos getMaxCorner(const BlockPos &l, const BlockPos &r)
 {
 	return BlockPos{ Max(l.x,r.x),Max(l.y,r.y),Max(l.z,r.z) };
 }
 
-BlockPos getRelativeEndPositionFromAreaSize(const BlockPos &size)
+static inline BlockPos getRelativeEndPositionFromAreaSize(const BlockPos &size)
 {
 	auto x = size.x;
 	auto y = size.y;
@@ -56,7 +56,7 @@ BlockPos getRelativeEndPositionFromAreaSize(const BlockPos &size)
 }
 
 
-uint32_t numberOfLeadingZeros(uint32_t i)
+static inline uint32_t numberOfLeadingZeros(uint32_t i)
 {
 	if (i == 0)
 		return 32;
