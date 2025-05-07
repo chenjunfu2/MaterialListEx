@@ -48,23 +48,23 @@ struct TileEntityKey
 {
 	NBT_Node::NBT_String sName{};
 	NBT_Node::NBT_Compound cpdTag{};
-	//XXH64_hash_t cpdHash{ HashNbtTag(cpdTag) };//初始化顺序严格按照声明顺序，此处无问题
+	XXH64_hash_t cpdHash{ HashNbtTag(cpdTag) };//初始化顺序严格按照声明顺序，此处无问题
 	
-	//XXH64_hash_t HashNbtTag(const NBT_Node::NBT_Compound &tag)
-	//{
-	//	constexpr static XXH64_hash_t NBT_HASH_SEED = 0xDE35B92A7F41706C;
-	//	return NBT_Helper::Hash(tag, NBT_HASH_SEED);
-	//}
+	XXH64_hash_t HashNbtTag(const NBT_Node::NBT_Compound &tag)
+	{
+		constexpr static XXH64_hash_t NBT_HASH_SEED = 0xDE35B92A7F41706C;
+		return NBT_Helper::Hash(tag, NBT_HASH_SEED);
+	}
 
-	//static size_t Hash(const TileEntityKey &self)
-	//{
-	//	return std::hash<XXH64_hash_t>{}(self.cpdHash);
-	//}
-	//
-	//static bool Equal(const TileEntityKey &_l, const TileEntityKey &_r)
-	//{
-	//	return _l.sName == _r.sName && _l.cpdHash == _r.cpdHash && _l.cpdTag == _r.cpdTag;
-	//}
+	static size_t Hash(const TileEntityKey &self)
+	{
+		return std::hash<NBT_Node::NBT_String>{}(self.sName) ^ std::hash<XXH64_hash_t>{}(self.cpdHash);
+	}
+	
+	static bool Equal(const TileEntityKey &_l, const TileEntityKey &_r)
+	{
+		return _l.sName == _r.sName && _l.cpdHash == _r.cpdHash && _l.cpdTag == _r.cpdTag;
+	}
 
 	inline std::weak_ordering operator<=>(const TileEntityKey &_r) const
 	{
@@ -75,10 +75,10 @@ struct TileEntityKey
 		}
 
 		//然后按照哈希序
-		//if (auto tmp = (cpdHash <=> _r.cpdHash); tmp != 0)
-		//{
-		//	return tmp;
-		//}
+		if (auto tmp = (cpdHash <=> _r.cpdHash); tmp != 0)
+		{
+			return tmp;
+		}
 
 		//都相同最后按照Tag序
 		return cpdTag <=> _r.cpdTag;
@@ -89,10 +89,10 @@ struct TileEntityKey
 struct RegionStats
 {
 	NBT_Node::NBT_String sRegionName{};
-	//MapSortList<std::unordered_map<NBT_Node::NBT_String, uint64_t>> mslBlock{};
-	MapSortList<std::map<NBT_Node::NBT_String, uint64_t>> mslBlock{};
-	//MapSortList<std::unordered_map<TileEntityKey, uint64_t, decltype(&TileEntityKey::Hash), decltype(&TileEntityKey::Equal)>> mslTileEntityContainer{ {64 ,&TileEntityKey::Hash, &TileEntityKey::Equal} };
-	MapSortList<std::map<TileEntityKey, uint64_t>> mslTileEntityContainer{};
+	MapSortList<std::unordered_map<NBT_Node::NBT_String, uint64_t>> mslBlock{ .mapItemCounter{64} };
+	//MapSortList<std::map<NBT_Node::NBT_String, uint64_t>> mslBlock{};
+	MapSortList<std::unordered_map<TileEntityKey, uint64_t, decltype(&TileEntityKey::Hash), decltype(&TileEntityKey::Equal)>> mslTileEntityContainer{ {64 ,&TileEntityKey::Hash, &TileEntityKey::Equal} };
+	//MapSortList<std::map<TileEntityKey, uint64_t>> mslTileEntityContainer{};
 	//MapSortList mslEntity{};
 	//MapSortList mslEntityContainer{};
 };
