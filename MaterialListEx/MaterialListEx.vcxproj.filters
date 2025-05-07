@@ -25,9 +25,15 @@
     <Filter Include="头文件\nlohmann">
       <UniqueIdentifier>{3453bff3-d1d0-4b67-8f18-0290e2dd6b6b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\xxhash">
+      <UniqueIdentifier>{4bf7d670-9245-4528-b594-d7fc4b33d2e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\xxhash">
+      <UniqueIdentifier>{0dbf17c4-3b67-49f0-928a-aacd2f74024a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MaterialListEx.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="zlib\gzclose.c">
@@ -77,6 +83,15 @@
     </ClCompile>
     <ClCompile Include="Windows_ANSI.hpp">
       <Filter>头文件</Filter>
+    </ClCompile>
+    <ClCompile Include="RegionProcess.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="xxhash\xxhash.c">
+      <Filter>源文件\xxhash</Filter>
+    </ClCompile>
+    <ClCompile Include="xxhash\xxh_x86dispatch.c">
+      <Filter>源文件\xxhash</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -298,6 +313,18 @@
     </ClInclude>
     <ClInclude Include="Compression_Utils.hpp">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RegionProcess.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="xxhash\xxh3.h">
+      <Filter>头文件\xxhash</Filter>
+    </ClInclude>
+    <ClInclude Include="xxhash\xxhash.h">
+      <Filter>头文件\xxhash</Filter>
+    </ClInclude>
+    <ClInclude Include="xxhash\xxh_x86dispatch.h">
+      <Filter>头文件\xxhash</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
