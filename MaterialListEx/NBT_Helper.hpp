@@ -10,16 +10,15 @@ public:
 	NBT_Helper() = delete;
 	~NBT_Helper() = delete;
 public:
-	static void Print(NBT_Node_View<true> nRoot, bool bPadding = true, bool bNewLine = true)
+	static void Print(const NBT_Node_View<true> nRoot, bool bPadding = true, bool bNewLine = true)
 	{
 		size_t szLevelStart = bPadding ? 0 : (size_t)-1;//跳过打印
 
-		PrintSwitch(nRoot, 0);
+		PrintSwitch<true>(nRoot, 0);
 		if (bNewLine)
 		{
 			printf("\n");
 		}
-		GetCompound(nRoot);
 	}
 
 private:
@@ -48,7 +47,8 @@ private:
 		}
 	}
 
-	static void PrintSwitch(const NBT_Node_View<true> &nRoot, size_t szLevel)
+	template<bool bRoot = false>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+	static void PrintSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, size_t szLevel)
 	{
 		auto tag = nRoot.GetTag();
 		switch (tag)
