@@ -3,6 +3,7 @@
 #include "NBT_Node.hpp"
 #include "MUTF8_Tool.hpp"
 #include "Windows_ANSI.hpp"
+#include <bit>
 
 class NBT_Helper
 {
@@ -21,6 +22,12 @@ public:
 		}
 	}
 
+	static std::string Serialize(const NBT_Node_View<true> nRoot)
+	{
+		std::string sRet{};
+		SerializeSwitch<true>(nRoot, sRet);
+		return sRet;
+	}
 private:
 	constexpr const static inline char *const LevelPadding = "    ";
 
@@ -104,6 +111,38 @@ private:
 				printf("]");
 			}
 			break;
+		case NBT_Node::TAG_Int_Array:
+			{
+				auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
+				printf("[I;");
+				for (auto &it : arr)
+				{
+					printf("%d,", it);
+				}
+
+				if (arr.size() != 0)
+				{
+					printf("\b");
+				}
+				printf("]");
+			}
+			break;
+		case NBT_Node::TAG_Long_Array:
+			{
+				auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
+				printf("[L;");
+				for (auto &it : arr)
+				{
+					printf("%lld,", it);
+				}
+
+				if (arr.size() != 0)
+				{
+					printf("\b");
+				}
+				printf("]");
+			}
+			break;
 		case NBT_Node::TAG_String:
 			{
 				printf("\"%s\"", ANSISTR(U16STR(nRoot.GetData<NBT_Node::NBT_String>())).c_str());
@@ -151,38 +190,6 @@ private:
 				printf("}");
 			}
 			break;
-		case NBT_Node::TAG_Int_Array:
-			{
-				auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
-				printf("[I;");
-				for (auto &it : arr)
-				{
-					printf("%d,", it);
-				}
-
-				if (arr.size() != 0)
-				{
-					printf("\b");
-				}
-				printf("]");
-			}
-			break;
-		case NBT_Node::TAG_Long_Array:
-			{
-				auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
-				printf("[L;");
-				for (auto &it : arr)
-				{
-					printf("%lld,", it);
-				}
-
-				if (arr.size() != 0)
-				{
-					printf("\b");
-				}
-				printf("]");
-			}
-			break;
 		default:
 			{
 				printf("[Unknown NBT Tag Type [%02X(%d)]]", tag, tag);
@@ -190,5 +197,186 @@ private:
 			break;
 		}
 	}
+
+private:
+	template<typename T>
+	static void ToHexString(const T &value, std::string &result)
+	{
+		static_assert(std::is_arithmetic_v<T>, "T must be an arithmetic type");
+		static constexpr char hex_chars[] = "0123456789ABCDEF";
+
+		//按固定字节序处理
+		const unsigned char *bytes = (const unsigned char *)&value;
+		if constexpr (std::endian::native == std::endian::little)
+		{
+			for (size_t i = sizeof(T); i-- > 0; )
+			{
+				result += hex_chars[(bytes[i] >> 4) & 0x0F];//高4
+				result += hex_chars[(bytes[i] >> 0) & 0x0F];//低4
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < sizeof(T); ++i)
+			{
+				result += hex_chars[(bytes[i] >> 4) & 0x0F];//高4
+				result += hex_chars[(bytes[i] >> 0) & 0x0F];//低4
+			}
+		}
+	}
+
+template<bool bRoot = false>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, std::string &sRet)
+{
+	auto tag = nRoot.GetTag();
+	switch (tag)
+	{
+	case NBT_Node::TAG_End:
+		{
+			sRet += "[Compound End]";
+		}
+		break;
+	case NBT_Node::TAG_Byte:
+		{
+			ToHexString(nRoot.GetData<NBT_Node::NBT_Byte>(), sRet);
+			sRet += 'B';
+		}
+		break;
+	case NBT_Node::TAG_Short:
+		{
+			ToHexString(nRoot.GetData<NBT_Node::NBT_Short>(), sRet);
+			sRet += 'S';
+		}
+		break;
+	case NBT_Node::TAG_Int:
+		{
+			ToHexString(nRoot.GetData<NBT_Node::NBT_Int>(), sRet);
+			sRet += 'I';
+		}
+		break;
+	case NBT_Node::TAG_Long:
+		{
+			ToHexString(nRoot.GetData<NBT_Node::NBT_Long>(), sRet);
+			sRet += 'L';
+		}
+		break;
+	case NBT_Node::TAG_Float:
+		{
+			ToHexString(nRoot.GetData<NBT_Node::NBT_Float>(), sRet);
+			sRet += 'F';
+		}
+		break;
+	case NBT_Node::TAG_Double:
+		{
+			ToHexString(nRoot.GetData<NBT_Node::NBT_Double>(), sRet);
+			sRet += 'D';
+		}
+		break;
+	case NBT_Node::TAG_Byte_Array:
+		{
+			auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
+			sRet += "[B;";
+			for (auto &it : arr)
+			{
+				ToHexString(it, sRet);
+				sRet += ',';
+			}
+			if (arr.size() != 0)
+			{
+				sRet.pop_back();//删掉最后一个逗号
+			}
+
+			sRet += ']';
+		}
+		break;
+	case NBT_Node::TAG_Int_Array:
+		{
+			auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
+			sRet += "[I;";
+			for (auto &it : arr)
+			{
+				ToHexString(it, sRet);
+				sRet += ',';
+			}
+			if (arr.size() != 0)
+			{
+				sRet.pop_back();//删掉最后一个逗号
+			}
+
+			sRet += ']';
+		}
+		break;
+	case NBT_Node::TAG_Long_Array:
+		{
+			auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
+			sRet += "[L;";
+			for (auto &it : arr)
+			{
+				ToHexString(it, sRet);
+				sRet += ',';
+			}
+			if (arr.size() != 0)
+			{
+				sRet.pop_back();//删掉最后一个逗号
+			}
+
+			sRet += ']';
+		}
+		break;
+	case NBT_Node::TAG_String:
+		{
+			sRet += '\"';
+			sRet += nRoot.GetData<NBT_Node::NBT_String>();
+			sRet += '\"';
+		}
+		break;
+	case NBT_Node::TAG_List:
+		{
+			auto &list = nRoot.GetData<NBT_Node::NBT_List>();
+			sRet += '[';
+			for (auto &it : list)
+			{
+				SerializeSwitch(it, sRet);
+				sRet += ',';
+			}
+
+			if (list.size() != 0)
+			{
+				sRet.pop_back();//删掉最后一个逗号
+			}
+			sRet += ']';
+		}
+		break;
+	case NBT_Node::TAG_Compound://需要打印缩进的地方
+		{
+			auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
+			sRet += '{';
+
+			for (auto &it : cpd)
+			{
+				sRet += '\"';
+				sRet += it.first;
+				sRet += "\":";
+				SerializeSwitch(it.second, sRet);
+				sRet += ',';
+			}
+
+			if (cpd.size() != 0)
+			{
+				sRet.pop_back();//删掉最后一个逗号
+			}
+			sRet += '}';
+		}
+		break;
+	default:
+		{
+			sRet += "[Unknown NBT Tag Type [";
+			ToHexString((NBT_Node::NBT_TAG_RAW_TYPE)tag, sRet);
+			sRet += "]]";
+		}
+		break;
+	}
+}
+
 
 };

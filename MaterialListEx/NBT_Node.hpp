@@ -189,7 +189,8 @@ class NBT_Node
 	template <bool bIsConst>
 	friend class NBT_Node_View;
 public:
-	enum NBT_TAG : uint8_t
+	using NBT_TAG_RAW_TYPE = uint8_t;
+	enum NBT_TAG : NBT_TAG_RAW_TYPE
 	{
 		TAG_End = 0,	//结束项
 		TAG_Byte,		//int8_t
@@ -475,15 +476,23 @@ public:
 		static constexpr bool value = (std::is_same_v<T, Ts> || ...);
 	};
 
-	// 通用构造函数
-	template <typename T>
-	explicit NBT_Node_View(typename AddConstIf<T>::type &value) : data(&value)
+	// 通用构造函数（必须非const情况）
+	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, NBT_Node> && !bIsConst >>
+	NBT_Node_View(T &value) : data(&value)
 	{
 		static_assert(IsValidType<std::decay_t<T>, NBT_Node::NBT_TypeList>::value, "Invalid type for NBT node view");
 	}
 
-	//从NBT_Node构造
-	NBT_Node_View(typename AddConstIf<NBT_Node>::type &node)
+	// 通用构造函数
+	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, NBT_Node>>>
+	NBT_Node_View(const T &value) : data(&value)
+	{
+		static_assert(IsValidType<std::decay_t<T>, NBT_Node::NBT_TypeList>::value, "Invalid type for NBT node view");
+	}
+
+	//从NBT_Node构造（必须非const情况）
+	template<typename = std::enable_if_t<!bIsConst>>
+	NBT_Node_View(NBT_Node &node)
 	{
 		std::visit([this](auto &arg)
 			{
@@ -491,6 +500,14 @@ public:
 			}, node.data);
 	}
 
+	//从NBT_Node构造
+	NBT_Node_View(const NBT_Node &node)
+	{
+		std::visit([this](auto &arg)
+			{
+				this->data = &arg;
+			}, node.data);
+	}
 
 	// 允许从非 const 视图隐式转换到 const 视图
 	template<typename = std::enable_if_t<bIsConst>>
@@ -498,7 +515,7 @@ public:
 	{
 		std::visit([this](auto &arg)
 			{
-				this->data = arg;
+				this->data = arg;//此处arg为非const指针
 			}, other.data);
 	}
 
