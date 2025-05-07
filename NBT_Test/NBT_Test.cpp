@@ -10,6 +10,7 @@
 #include <stdio.h>
 //#include <source_location>
 #include <map>
+#include <iostream>
 
 
 //template <typename T>
@@ -19,8 +20,6 @@
 //	printf("%s %s [%d:%d]\n", c.file_name(), c.function_name(), c.line(), c.column());
 //	return {};
 //}
-
-
 
 int main(int argc, char *argv[])
 {
@@ -32,6 +31,97 @@ int main(int argc, char *argv[])
 	//func<std::vector<int>>({});
 
 	//*(long *)NULL = NULL;
+
+
+	using mp = std::pair<const NBT_Node::NBT_String, NBT_Node>;
+
+	NBT_Node 
+	a
+	{
+		NBT_Node::NBT_Compound
+		{
+			mp{"2",NBT_Node{}},
+			mp{"test0",NBT_Node{NBT_Node::NBT_String{"test1"}}},
+			mp{"test1",NBT_Node{1}},
+			mp{"test3",NBT_Node{}},
+			mp{"test2",NBT_Node{66.6}},
+			mp{"test4",NBT_Node{NBT_Node::NBT_List{NBT_Node(0),NBT_Node(1)}}},
+			mp{"test5",NBT_Node
+			{
+				NBT_Node::NBT_Compound
+				{
+					mp{"1",NBT_Node{}},
+					mp{"test0",NBT_Node{NBT_Node::NBT_String{"test2"}}},
+					mp{"test1",NBT_Node{1}},
+					mp{"test3",NBT_Node{1}},
+					mp{"test2",NBT_Node{66.6}},
+					mp{"test4",NBT_Node{NBT_Node::NBT_List{NBT_Node(0),NBT_Node(1)}}},
+				}
+			}}
+		}
+	},
+	b
+	{
+		NBT_Node::NBT_Compound
+		{
+			mp{"2",NBT_Node{}},
+			mp{"test0",NBT_Node{NBT_Node::NBT_String{"test1"}}},
+			mp{"test1",NBT_Node{1}},
+			mp{"test3",NBT_Node{}},
+			mp{"test2",NBT_Node{66.6}},
+			mp{"test4",NBT_Node{NBT_Node::NBT_List{NBT_Node(0),NBT_Node(1)}}},
+			mp{"test5",NBT_Node
+			{
+				NBT_Node::NBT_Compound
+				{
+					mp{"1",NBT_Node{}},
+					mp{"test0",NBT_Node{NBT_Node::NBT_String{"test2"}}},
+					mp{"test1",NBT_Node{1}},
+					mp{"test3",NBT_Node{2}},
+					mp{"test2",NBT_Node{66.6}},
+					mp{"test4",NBT_Node{NBT_Node::NBT_List{NBT_Node(0),NBT_Node(1)}}},
+				}
+			}}
+		}
+	};
+
+	std::partial_ordering tmp = a <=> b;
+
+	//std::strong_ordering;//强序
+	//std::weak_ordering;//弱序
+	//std::partial_ordering;//偏序
+
+	printf("a <=> b : a [");
+
+	if (tmp == std::partial_ordering::equivalent)
+	{
+		printf("equivalent");
+	}
+	else if (tmp == std::partial_ordering::greater)
+	{
+		printf("greater");
+	}
+	else if (tmp == std::partial_ordering::less)
+	{
+		printf("less");
+	}
+	else if (tmp == std::partial_ordering::unordered)
+	{
+		printf("unordered");
+	}
+	else
+	{
+		printf("unknown");
+	}
+	
+	printf("] b\n");
+
+	
+
+	return 0;
+
+
+	/*
 
 	if (argc != 2)
 	{
@@ -107,6 +197,6 @@ int main(int argc, char *argv[])
 		//NBT_Helper::Print(NBT_Node{ std::move(cpdTileEntity) });
 	}
 
-	
+	*/
 	return 0;
 }
