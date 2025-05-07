@@ -431,7 +431,6 @@ friend inline const NBT_##type &Get##type(const NBT_Node & node)\
 };
 
 
-//TODO: NBT_Node_View
 //用法和NBT_Node一致，但是只持有构造时传入对象的指针，且不持有对象
 //对象随时可销毁，如果销毁后使用持有销毁对象的view则行为未定义，用户自行负责
 //构造传入nullptr指针且进行使用则后果自负

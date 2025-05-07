@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 		for (const auto &itItem : it.mslTileEntityContainer.vecSortItem)
 		{
 			const auto &refItem = itItem.get();
-			printf("[%s]:%lld\n", refItem.first.sName.c_str(), refItem.second);
+			printf("[%s]%s:%lld\n", refItem.first.sName.c_str(), ANSISTR(U16STR(NBT_Helper::Serialize(refItem.first.cpdTag))).c_str(), refItem.second);
 		}
 	}
 
