@@ -123,8 +123,8 @@ int main(int argc, char *argv[])
 	
 
 	//获取regions，也就是区域，一个投影可能有多个区域（选区）
-	const auto &cpRegions = GetCompound(root.second).GetCompound(MU8STR("Regions"));
-	auto vtRegionStats = RegionProcess(cpRegions);
+	const auto &cpdRegions = GetCompound(root.second).GetCompound(MU8STR("Regions"));
+	auto vtRegionStats = RegionProcess(cpdRegions);
 
 	
 	return 1145;

@@ -10,7 +10,7 @@ public:
 	NBT_Helper() = delete;
 	~NBT_Helper() = delete;
 public:
-	static void Print(const NBT_Node &nRoot, bool bPadding = true, bool bNewLine = true)
+	static void Print(NBT_Node_View<true> nRoot, bool bPadding = true, bool bNewLine = true)
 	{
 		size_t szLevelStart = bPadding ? 0 : (size_t)-1;//Ìø¹ý´òÓ¡
 
@@ -19,6 +19,7 @@ public:
 		{
 			printf("\n");
 		}
+		GetCompound(nRoot);
 	}
 
 private:
@@ -47,7 +48,7 @@ private:
 		}
 	}
 
-	static void PrintSwitch(const NBT_Node &nRoot, size_t szLevel)
+	static void PrintSwitch(const NBT_Node_View<true> &nRoot, size_t szLevel)
 	{
 		auto tag = nRoot.GetTag();
 		switch (tag)
