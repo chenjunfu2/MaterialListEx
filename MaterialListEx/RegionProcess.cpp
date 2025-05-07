@@ -2,18 +2,6 @@
 
 #include "BlockProcess.hpp"
 #include "TileEntityProcess.hpp"
-#include "NBT_Helper.hpp"
-
-#include <xxhash.h>
-
-static const uint64_t NBT_HASH_SALT = 0x9e3779b97f4a7c15;//generate_random_salt();
-
-uint64_t compute_nbt_hash(const NBT_Node::NBT_Compound &tag)
-{
-	// 盐值与序列化数据合并
-	std::string serialized = NBT_Helper::Serialize(tag) + std::to_string(NBT_HASH_SALT);
-	return XXH3_64bits(serialized.data(), serialized.size());
-}
 
 RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 {

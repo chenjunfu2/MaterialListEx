@@ -124,7 +124,22 @@ int main(int argc, char *argv[])
 
 	//获取regions，也就是区域，一个投影可能有多个区域（选区）
 	const auto &cpdRegions = GetCompound(root.second).GetCompound(MU8STR("Regions"));
+
+	auto start = std::chrono::steady_clock::now();
 	auto vtRegionStats = RegionProcess(cpdRegions);
+	auto end = std::chrono::steady_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	printf("use:%lldus\n", duration.count());
+
+	for (const auto &it : vtRegionStats)
+	{
+		for (const auto &itItem : it.mslTileEntityContainer.vecSortItem)
+		{
+			const auto &refItem = itItem.get();
+			printf("[%s]:%lld\n", refItem.first.sName.c_str(), refItem.second);
+		}
+	}
 
 	
 	return 1145;

@@ -4,6 +4,7 @@
 #include "MUTF8_Tool.hpp"
 #include "Windows_ANSI.hpp"
 #include <bit>
+#include <xxhash.h>
 
 class NBT_Helper
 {
@@ -27,6 +28,18 @@ public:
 		std::string sRet{};
 		SerializeSwitch<true>(nRoot, sRet);
 		return sRet;
+	}
+
+	static XXH64_hash_t Hash(const NBT_Node_View<true> nRoot, XXH64_hash_t u64Seed)
+	{
+		XXH64_state_t * pHashState = XXH64_createState();
+		XXH64_reset(pHashState, u64Seed);
+
+		HashSwitch<true>(nRoot, pHashState);
+
+		XXH64_hash_t hashNBT = XXH64_digest(pHashState);
+		XXH64_freeState(pHashState);
+		return hashNBT;
 	}
 private:
 	constexpr const static inline char *const LevelPadding = "    ";
@@ -97,9 +110,9 @@ private:
 			break;
 		case NBT_Node::TAG_Byte_Array:
 			{
-				auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
+				const auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
 				printf("[B;");
-				for (auto &it : arr)
+				for (const auto &it : arr)
 				{
 					printf("%d,", it);
 				}
@@ -113,9 +126,9 @@ private:
 			break;
 		case NBT_Node::TAG_Int_Array:
 			{
-				auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
+				const auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
 				printf("[I;");
-				for (auto &it : arr)
+				for (const auto &it : arr)
 				{
 					printf("%d,", it);
 				}
@@ -129,9 +142,9 @@ private:
 			break;
 		case NBT_Node::TAG_Long_Array:
 			{
-				auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
+				const auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
 				printf("[L;");
-				for (auto &it : arr)
+				for (const auto &it : arr)
 				{
 					printf("%lld,", it);
 				}
@@ -150,10 +163,10 @@ private:
 			break;
 		case NBT_Node::TAG_List://需要打印缩进的地方
 			{
-				auto &list = nRoot.GetData<NBT_Node::NBT_List>();
+				const auto &list = nRoot.GetData<NBT_Node::NBT_List>();
 				PrintPadding(szLevel, false, true);
 				printf("[");
-				for (auto &it : list)
+				for (const auto &it : list)
 				{
 					PrintPadding(szLevel, true, it.GetTag() != NBT_Node::TAG_Compound && it.GetTag() != NBT_Node::TAG_List);
 					PrintSwitch(it, szLevel + 1);
@@ -170,11 +183,11 @@ private:
 			break;
 		case NBT_Node::TAG_Compound://需要打印缩进的地方
 			{
-				auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
+				const auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
 				PrintPadding(szLevel, false, true);
 				printf("{");
 
-				for (auto &it : cpd)
+				for (const auto &it : cpd)
 				{
 					PrintPadding(szLevel, true, true);
 					printf("\"%s\":", ANSISTR(U16STR(it.first)).c_str());
@@ -274,9 +287,9 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 		break;
 	case NBT_Node::TAG_Byte_Array:
 		{
-			auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
+			const auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
 			sRet += "[B;";
-			for (auto &it : arr)
+			for (const auto &it : arr)
 			{
 				ToHexString(it, sRet);
 				sRet += ',';
@@ -291,9 +304,9 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 		break;
 	case NBT_Node::TAG_Int_Array:
 		{
-			auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
+			const auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
 			sRet += "[I;";
-			for (auto &it : arr)
+			for (const auto &it : arr)
 			{
 				ToHexString(it, sRet);
 				sRet += ',';
@@ -308,9 +321,9 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 		break;
 	case NBT_Node::TAG_Long_Array:
 		{
-			auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
+			const auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
 			sRet += "[L;";
-			for (auto &it : arr)
+			for (const auto &it : arr)
 			{
 				ToHexString(it, sRet);
 				sRet += ',';
@@ -332,9 +345,9 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 		break;
 	case NBT_Node::TAG_List:
 		{
-			auto &list = nRoot.GetData<NBT_Node::NBT_List>();
+			const auto &list = nRoot.GetData<NBT_Node::NBT_List>();
 			sRet += '[';
-			for (auto &it : list)
+			for (const auto &it : list)
 			{
 				SerializeSwitch(it, sRet);
 				sRet += ',';
@@ -349,10 +362,10 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 		break;
 	case NBT_Node::TAG_Compound://需要打印缩进的地方
 		{
-			auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
+			const auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
 			sRet += '{';
 
-			for (auto &it : cpd)
+			for (const auto &it : cpd)
 			{
 				sRet += '\"';
 				sRet += it.first;
@@ -377,6 +390,122 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 		break;
 	}
 }
+
+private:
+	template<bool bRoot = false>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+	static void HashSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, XXH64_state_t *pHashState)
+	{
+		auto tag = nRoot.GetTag();
+
+		//把tag本身作为数据
+		{
+			const auto &tmp = tag;
+			XXH64_update(pHashState, &tmp, sizeof(tmp));
+		}
+
+		//再读出实际内容作为数据
+		switch (tag)
+		{
+		case NBT_Node::TAG_End:
+			{}
+			break;
+		case NBT_Node::TAG_Byte:
+			{
+				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Byte>();
+				XXH64_update(pHashState, &tmp, sizeof(tmp));
+			}
+			break;
+		case NBT_Node::TAG_Short:
+			{
+				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Short>();
+				XXH64_update(pHashState, &tmp, sizeof(tmp));
+			}
+			break;
+		case NBT_Node::TAG_Int:
+			{
+				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Int>();
+				XXH64_update(pHashState, &tmp, sizeof(tmp));
+			}
+			break;
+		case NBT_Node::TAG_Long:
+			{
+				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Long>();
+				XXH64_update(pHashState, &tmp, sizeof(tmp));
+			}
+			break;
+		case NBT_Node::TAG_Float:
+			{
+				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Float>();
+				XXH64_update(pHashState, &tmp, sizeof(tmp));
+			}
+			break;
+		case NBT_Node::TAG_Double:
+			{
+				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Double>();
+				XXH64_update(pHashState, &tmp, sizeof(tmp));
+			}
+			break;
+		case NBT_Node::TAG_Byte_Array:
+			{
+				const auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
+				for (const auto &it : arr)
+				{
+					const auto &tmp = it;
+					XXH64_update(pHashState, &tmp, sizeof(tmp));
+				}
+			}
+			break;
+		case NBT_Node::TAG_Int_Array:
+			{
+				const auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
+				for (const auto &it : arr)
+				{
+					const auto &tmp = it;
+					XXH64_update(pHashState, &tmp, sizeof(tmp));
+				}
+			}
+			break;
+		case NBT_Node::TAG_Long_Array:
+			{
+				const auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
+				for (const auto &it : arr)
+				{
+					const auto &tmp = it;
+					XXH64_update(pHashState, &tmp, sizeof(tmp));
+				}
+			}
+			break;
+		case NBT_Node::TAG_String:
+			{
+				const auto &tmp = nRoot.GetData<NBT_Node::NBT_String>();
+				XXH64_update(pHashState, tmp.data(), tmp.size());
+			}
+			break;
+		case NBT_Node::TAG_List:
+			{
+				const auto &list = nRoot.GetData<NBT_Node::NBT_List>();
+				for (const auto &it : list)
+				{
+					HashSwitch(it, pHashState);
+				}
+			}
+			break;
+		case NBT_Node::TAG_Compound://需要打印缩进的地方
+			{
+				const auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
+				for (const auto &it : cpd)
+				{
+					const auto &tmp = it.first;
+					XXH64_update(pHashState, tmp.data(), tmp.size());
+					HashSwitch(it.second, pHashState);
+				}
+			}
+			break;
+		default:
+			{}
+			break;
+		}
+	}
 
 
 };
