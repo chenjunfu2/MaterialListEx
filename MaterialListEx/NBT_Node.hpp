@@ -49,17 +49,7 @@ public:
 		return (const Map &)*this != (const Map &)_Right;
 	}
 
-	bool operator<(const MyCompound &_Right) const noexcept
-	{
-		return (const Map &)*this < (const Map &)_Right;
-	}
-
-	bool operator>(const MyCompound &_Right) const noexcept
-	{
-		return (const Map &)*this > (const Map &)_Right;
-	}
-
-	auto operator<=>(const MyCompound &_Right) const noexcept
+	std::partial_ordering operator<=>(const MyCompound &_Right) const noexcept
 	{
 		return (const Map &)*this <=> (const Map &)_Right;
 	}
@@ -135,17 +125,7 @@ public:
 		return (const List &)*this != (const List &)_Right;
 	}
 
-	bool operator<(const MyList &_Right) const noexcept
-	{
-		return (const List &)*this < (const List &)_Right;
-	}
-
-	bool operator>(const MyList &_Right) const noexcept
-	{
-		return (const List &)*this > (const List &)_Right;
-	}
-
-	auto operator<=>(const MyList &_Right) const noexcept
+	std::partial_ordering operator<=>(const MyList &_Right) const noexcept
 	{
 		return (const List &)*this <=> (const List &)_Right;
 	}
@@ -331,18 +311,8 @@ public:
 	{
 		return data != _Right.data;
 	}
-	
-	bool operator<(const NBT_Node &_Right) const noexcept
-	{
-		return data < _Right.data;
-	}
-	
-	bool operator>(const NBT_Node &_Right) const noexcept
-	{
-		return data > _Right.data;
-	}
 
-	auto operator<=>(const NBT_Node &_Right) const noexcept
+	std::partial_ordering operator<=>(const NBT_Node &_Right) const noexcept
 	{
 		return data <=> _Right.data;
 	}
@@ -544,6 +514,49 @@ public:
 	{
 		data = std::move(_NBT_Node_View.data);
 		return *this;
+	}
+
+
+	bool operator==(const NBT_Node_View &_Right) const noexcept
+	{
+		if (GetTag() != _Right.GetTag())
+		{
+			return false;
+		}
+
+		return std::visit([this](const auto *argL, const auto *argR)-> bool
+		{
+			using TL = const std::decay_t<decltype(argL)>;
+			return *argL == *(TL)argR;
+		}, this->data, _Right.data);
+	}
+
+	bool operator!=(const NBT_Node_View &_Right) const noexcept
+	{
+		if (GetTag() != _Right.GetTag())
+		{
+			return true;
+		}
+	
+		return std::visit([this](const auto *argL, const auto *argR)-> bool
+		{
+			using TL = const std::decay_t<decltype(argL)>;
+			return *argL != *(TL)argR;
+		}, this->data, _Right.data);
+	}
+	
+	std::partial_ordering operator<=>(const NBT_Node_View &_Right) const noexcept
+	{
+		if (GetTag() != _Right.GetTag())
+		{
+			return std::partial_ordering::unordered;
+		}
+	
+		return std::visit([this](const auto *argL, const auto *argR)-> std::partial_ordering
+		{
+			using TL = const std::decay_t<decltype(argL)>;
+			return *argL <=> *(TL)argR;
+		}, this->data, _Right.data);
 	}
 
 	//获取标签类型

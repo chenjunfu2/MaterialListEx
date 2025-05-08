@@ -66,7 +66,7 @@ struct TileEntityKey
 		return _l.sName == _r.sName && _l.cpdHash == _r.cpdHash && _l.cpdTag == _r.cpdTag;
 	}
 
-	inline std::weak_ordering operator<=>(const TileEntityKey &_r) const
+	inline std::partial_ordering operator<=>(const TileEntityKey &_r) const
 	{
 		//œ»∞¥’’√˚≥∆≈≈–Ú
 		if (auto tmp = (sName <=> _r.sName); tmp != 0)
