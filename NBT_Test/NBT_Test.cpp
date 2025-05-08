@@ -85,7 +85,11 @@ int main(int argc, char *argv[])
 		}
 	};
 
-	std::partial_ordering tmp = a <=> b;
+	//std::partial_ordering tmp = a <=> b;
+
+	NBT_Node_View<true> n0{ NBT_Node::NBT_Byte{0} }, n1{ NBT_Node::NBT_Byte{0} };
+
+	auto tmp = n0 <=> n1;
 
 	//std::strong_ordering;//强序
 	//std::weak_ordering;//弱序
