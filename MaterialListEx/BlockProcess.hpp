@@ -23,8 +23,20 @@ public:
 		uint64_t u64Counter = 0;//方块计数器
 	};
 
+
+	//过滤可获取的方块，不可获取的方块直接删除，半砖等特殊多物品方块转换数量
+	struct ItemStack
+	{
+		NBT_Node::NBT_String sItemName{};//物品名
+		uint64_t u64Counter = 0;//物品计数器
+	};
+
+	using ItemStackList = std::vector<ItemStack>;//(应对花盆、含水方块、炼药锅、蜡烛蛋糕等组合物品)
+	using BlockStatsList = std::vector<BlockStats>;
+
+public:
 	//使用指针指向nRoot内节点，请不要在使用nRoot作为参数调用此函数获取返回值的情况下，销毁nRoot
-	static std::vector<BlockStats> GetBlockStats(const NBT_Node::NBT_Compound &RgCompound)//block list
+	static BlockStatsList GetBlockStats(const NBT_Node::NBT_Compound &RgCompound)//block list
 	{
 		/*----------------区域大小计算、调色板获取----------------*/
 		//获取区域偏移
@@ -60,8 +72,8 @@ public:
 
 		/*----------------根据方块位图访问调色板，获取不同状态方块的计数----------------*/
 		//创建方块统计vector
-		std::vector<BlockStats> vtBlockStats;
-		vtBlockStats.reserve(BlockStatePalette.size());//提前分配
+		BlockStatsList listBlockStats;
+		listBlockStats.reserve(BlockStatePalette.size());//提前分配
 
 		//遍历BlockStatePalette方块调色板，并从中创建等效下标的方块统计vector
 		for (const auto &it : BlockStatePalette)
@@ -80,7 +92,7 @@ public:
 				bsTemp.pcpdProperties = NULL;
 			}
 
-			vtBlockStats.emplace_back(std::move(bsTemp));
+			listBlockStats.emplace_back(std::move(bsTemp));
 		}
 
 		//获取Long方块状态位图数组（用于作为下标访问调色板）
@@ -89,7 +101,7 @@ public:
 		if (BlockStates.size() * 64 / bitsPerBitMapElement < RegionFullSize)
 		{
 			//printf("BlockStates Too Small!\n");
-			return vtBlockStats;
+			return listBlockStats;
 		}
 
 		//存储格式：(y * sizeLayer) + z * sizeX + x = Long array index, sizeLayer = sizeX * sizeZ
@@ -111,29 +123,20 @@ public:
 				paletteIndex = ((uint64_t)BlockStates[startArrIndex] >> startBitOffset | (uint64_t)BlockStates[endArrIndex] << endBitOffset) & bitMaskOfElement;
 			}
 
-			++vtBlockStats[paletteIndex].u64Counter;
+			++listBlockStats[paletteIndex].u64Counter;
 		}
 		/*------------------------------------------------*/
 
 		//计数完成返回
-		return vtBlockStats;
+		return listBlockStats;
 	}
-
-	//过滤可获取的方块，不可获取的方块直接删除，半砖等特殊多物品方块转换数量
-	struct ItemStack
-	{
-		NBT_Node::NBT_String sItemName{};//物品名
-		uint64_t u64Counter = 0;//物品计数器
-	};
-
-	using ItemStackList = std::vector<ItemStack>;//(应对花盆、含水方块、炼药锅、蜡烛蛋糕等组合物品)
 
 	static ItemStackList BlockStatsToItemStack(const BlockStats &stBlocks)
 	{
 		//处理方块到物品转换
 		ItemStackList stItemsList{};
 
-		//先处理无compound的方块，同时检查方块名
+		//检查方块名
 		if (stBlocks.psBlockName == NULL)
 		{
 			return stItemsList;
@@ -207,7 +210,6 @@ if (stBlocks.psBlockName->starts_with(target))
 const std::string target = MU8STR(name);\
 if (stBlocks.psBlockName->ends_with(target))
 
-	//注意该函数需要保证不进行任何block的compound判断
 	static inline bool CvrtUnItemedBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)
 	{
 		//直接匹配所有不可获取的方块并返回空，注意是mc中所有无物品形式的，而非生存不可获取的

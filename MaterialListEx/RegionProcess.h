@@ -89,9 +89,9 @@ struct TileEntityKey
 struct RegionStats
 {
 	NBT_Node::NBT_String sRegionName{};
-	MapSortList<std::unordered_map<NBT_Node::NBT_String, uint64_t>> mslBlock{ .mapItemCounter{64} };
+	MapSortList<std::unordered_map<NBT_Node::NBT_String, uint64_t>> mslBlock{ .mapItemCounter{128} };
 	//MapSortList<std::map<NBT_Node::NBT_String, uint64_t>> mslBlock{};
-	MapSortList<std::unordered_map<TileEntityKey, uint64_t, decltype(&TileEntityKey::Hash), decltype(&TileEntityKey::Equal)>> mslTileEntityContainer{ {64 ,&TileEntityKey::Hash, &TileEntityKey::Equal} };
+	MapSortList<std::unordered_map<TileEntityKey, uint64_t, decltype(&TileEntityKey::Hash), decltype(&TileEntityKey::Equal)>> mslTileEntityContainer{ {128 ,&TileEntityKey::Hash, &TileEntityKey::Equal} };
 	//MapSortList<std::map<TileEntityKey, uint64_t>> mslTileEntityContainer{};
 	//MapSortList mslEntity{};
 	//MapSortList mslEntityContainer{};
