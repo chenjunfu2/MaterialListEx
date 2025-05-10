@@ -14,11 +14,7 @@ public:
 	struct TileEntityContainerStats
 	{
 		const NBT_Node::NBT_String *psTileEntityName{};
-		struct
-		{
-			const NBT_Node *pItems{};
-			NBT_Node::NBT_TAG enType{ NBT_Node::TAG_End };
-		};
+		const NBT_Node *pItems{};
 	};
 
 	struct ItemStack
@@ -72,7 +68,6 @@ private:
 			pItems != NULL && pItems->IsList())
 		{
 			teStats.pItems = pItems;
-			teStats.enType = NBT_Node::TAG_List;
 			return true;
 		}
 
@@ -106,7 +101,6 @@ private:
 
 		//放入结构内
 		teStats.pItems = pSearch;
-		teStats.enType = pSearch->GetTag();
 		return true;
 	}
 
@@ -158,7 +152,7 @@ private:
 		else if (current.sItemName == MU8STR("minecraft:bundle"))//没有BlockEntityTag，尝试处理收纳袋
 		{
 			const auto pItems = cpdTag.Search(MU8STR("Items"));
-			TileEntityContainerStats teStats{ NULL,pItems,NBT_Node::TAG_List };//递归处理不需要id，且会处理pItems可能为NULL的情况
+			TileEntityContainerStats teStats{ NULL,pItems };//递归处理不需要id，且会处理pItems可能为NULL的情况
 			_TileEntityContainerStatsToItemStack(teStats, vtItemStackList, szStackDepth);//循环递归
 		}
 		else//如果上面都没处理，则属于非容器，拷贝Tag以便后续分析，容器则跳过拷贝，Tag留空
@@ -176,11 +170,12 @@ private:
 
 		//读取每个物品的集合并解包出内容插入到ItemStack
 
-		if (stContainerStats.enType == NBT_Node::TAG_Compound)//只有一格物品
+		auto tagItem = stContainerStats.pItems->GetTag();
+		if (tagItem == NBT_Node::TAG_Compound)//只有一格物品
 		{
 			AddItems(stContainerStats.pItems->GetCompound(), vtItemStackList, szStackDepth - 1);
 		}
-		else if (stContainerStats.enType == NBT_Node::TAG_List)//多格物品列表
+		else if (tagItem == NBT_Node::TAG_List)//多格物品列表
 		{
 			const auto &tmp = stContainerStats.pItems->GetList();
 			for (const auto &it : tmp)
@@ -188,7 +183,7 @@ private:
 				AddItems(it.GetCompound(), vtItemStackList, szStackDepth - 1);
 			}
 		}
-		//else {}
+		//else {}//忽略
 	}
 
 };
