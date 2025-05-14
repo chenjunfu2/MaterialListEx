@@ -3,3 +3,4 @@ MaterialListEx/zlib/** linguist-vendored
 MaterialListEx/nlohmann/** linguist-vendored
 MaterialListEx/xxhash/** linguist-vendored
 MaterialListEx/*.html linguist-vendored
+MaterialListEx/*.py linguist-vendored
