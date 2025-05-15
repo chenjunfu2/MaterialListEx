@@ -15,8 +15,8 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 		//方块处理
 		{
 			auto &current = rgsData.mslBlock;
-			auto vtBlockStats = BlockProcess::GetBlockStats(RgCompound);//获取方块统计列表
-			for (const auto &itBlock : vtBlockStats)
+			auto listBlockStats = BlockProcess::GetBlockStats(RgCompound);//获取方块统计列表
+			for (const auto &itBlock : listBlockStats)
 			{
 				//每个方块转换到物品，并通过map进行统计同类物品
 				auto istItemList = BlockProcess::BlockStatsToItemStack(itBlock);
@@ -33,8 +33,8 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 		//方块实体容器处理
 		{
 			auto &current = rgsData.mslTileEntityContainer;
-			auto vtTEContainerStats = TileEntityProcess::GetTileEntityContainerStats(RgCompound);
-			for (const auto &it : vtTEContainerStats)
+			auto listTEContainerStats = TileEntityProcess::GetTileEntityContainerStats(RgCompound);
+			for (const auto &it : listTEContainerStats)
 			{
 				auto ret = TileEntityProcess::TileEntityContainerStatsToItemStack(it);
 				for (auto &itItem : ret)

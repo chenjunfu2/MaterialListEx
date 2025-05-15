@@ -3,6 +3,9 @@
 #include "NBT_Node.hpp"
 #include "MUTF8_Tool.hpp"
 #include "Windows_ANSI.hpp"
+
+#include <concepts>
+
 #include <bit>
 #include <xxhash.h>
 
@@ -30,16 +33,30 @@ public:
 		return sRet;
 	}
 
-	static XXH64_hash_t Hash(const NBT_Node_View<true> nRoot, XXH64_hash_t u64Seed)
+	static void DefaultFunc(XXH64_state_t *)
+	{
+		return;
+	}
+
+	using DefaultFuncType = std::decay_t<decltype(DefaultFunc)>;
+
+	template<typename TS = DefaultFuncType, typename TE = DefaultFuncType>//两个函数，分别在前后调用，可以用于插入哈希数据
+	static XXH64_hash_t Hash(const NBT_Node_View<true> nRoot, XXH64_hash_t u64Seed, TS funS = DefaultFunc, TE funE = DefaultFunc)
 	{
 		XXH64_state_t * pHashState = XXH64_createState();
 		XXH64_reset(pHashState, u64Seed);
 
+		funS(pHashState);
 		HashSwitch<true>(nRoot, pHashState);
+		funE(pHashState);
 
 		XXH64_hash_t hashNBT = XXH64_digest(pHashState);
 		XXH64_freeState(pHashState);
 		return hashNBT;
+
+		using DefaultFuncArg = std::decay_t<decltype(pHashState)>;
+		static_assert(std::is_invocable_v<TS, DefaultFuncArg>,"TS is not a callable object or parameter type mismatch.");
+		static_assert(std::is_invocable_v<TE, DefaultFuncArg>,"TE is not a callable object or parameter type mismatch.");
 	}
 private:
 	constexpr const static inline char *const LevelPadding = "    ";
