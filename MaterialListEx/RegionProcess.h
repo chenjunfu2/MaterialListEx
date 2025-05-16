@@ -6,11 +6,8 @@
 #include <unordered_map>
 #include <functional>
 
-#include <xxhash.h>
-
 #include "NBT_Node.hpp"
-#include "NBT_Helper.hpp"
-
+#include "ItemProcess.hpp"
 
 template<typename Map>
 struct MapSortList
@@ -44,69 +41,14 @@ struct MapSortList
 	}
 };
 
-struct TileEntityKey
-{
-	NBT_Node::NBT_String sName{};
-	NBT_Node::NBT_Compound cpdTag{};
-	uint64_t u64Hash{ DataHash() };//初始化顺序严格按照声明顺序，此处无问题
-private:
-	uint64_t DataHash(void)
-	{
-		static_assert(std::is_same_v<XXH64_hash_t, uint64_t>, "Hash type does not match the required type.");
-
-		constexpr static XXH64_hash_t HASH_SEED = 0xDE35B92A7F41706C;
-
-		if (cpdTag.empty())//tag为空只计算名称
-		{
-			return XXH64(sName.data(), sName.size(), HASH_SEED);
-		}
-		else//不为空则计算tag
-		{
-			return NBT_Helper::Hash(cpdTag, HASH_SEED,
-				[this](XXH64_state_t *pHashState) -> void//在tag之前加入名称
-				{
-					XXH64_update(pHashState, this->sName.data(), this->sName.size());
-				});
-		}
-	}
-public:
-
-	static size_t Hash(const TileEntityKey &self)
-	{
-		return self.u64Hash;
-	}
-	
-	static bool Equal(const TileEntityKey &_l, const TileEntityKey &_r)
-	{
-		return _l.u64Hash == _r.u64Hash && _l.sName == _r.sName && _l.cpdTag == _r.cpdTag;
-	}
-
-	inline std::partial_ordering operator<=>(const TileEntityKey &_r) const
-	{
-		//先按照哈希序
-		if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
-		{
-			return tmp;
-		}
-
-		//后按照名称序
-		if (auto tmp = (sName <=> _r.sName); tmp != 0)
-		{
-			return tmp;
-		}
-
-		//都相同最后按照Tag序
-		return cpdTag <=> _r.cpdTag;
-	}
-};
 
 
 struct RegionStats
 {
 	NBT_Node::NBT_String sRegionName{};
-	MapSortList<std::unordered_map<NBT_Node::NBT_String, uint64_t>> mslBlock{ .mapItemCounter{128} };
+	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslBlock{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
 	//MapSortList<std::map<NBT_Node::NBT_String, uint64_t>> mslBlock{};
-	MapSortList<std::unordered_map<TileEntityKey, uint64_t, decltype(&TileEntityKey::Hash), decltype(&TileEntityKey::Equal)>> mslTileEntityContainer{ {128 ,&TileEntityKey::Hash, &TileEntityKey::Equal} };
+	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslTileEntityContainer{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
 	//MapSortList<std::map<TileEntityKey, uint64_t>> mslTileEntityContainer{};
 	//MapSortList mslEntity{};
 	//MapSortList mslEntityContainer{};
@@ -118,5 +60,14 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions);
 
 /*
 TODO:
-解析药箭、药水、附魔、谜之炖菜等已知可读NBT信息进行格式化输出
+部分实体需要转换为物品形式，不能转换的直接显示实体信息
+比如漏斗矿车、盔甲架、掉落物、物品展示框等
+
+实体内容器信息解包
+
+实体物品栏解包
+
+物品需要解析药箭、药水、附魔、谜之炖菜、烟花火箭等级样式，旗帜样式等已知可读NBT信息进行格式化输出
+还在考虑要不要把带拴绳的实体的拴绳进行统计
+
 */
