@@ -326,5 +326,11 @@
     <ClInclude Include="xxhash\xxh_x86dispatch.h">
       <Filter>头文件\xxhash</Filter>
     </ClInclude>
+    <ClInclude Include="EntityProcess.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemProcess.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
