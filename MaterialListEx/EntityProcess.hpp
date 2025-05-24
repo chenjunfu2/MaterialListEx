@@ -3,6 +3,48 @@
 #include "NBT_Node.hpp"
 #include "MUTF8_Tool.hpp"
 
+#include <compare>
+
+struct Entity
+{
+	NBT_Node::NBT_String sName{};
+	//除了名字外，剩下全丢了，没意义
+	uint64_t u64Hash{ DataHash() };
+
+public:
+	uint64_t DataHash(void)
+	{
+		static_assert(std::is_same_v<XXH64_hash_t, uint64_t>, "Hash type does not match the required type.");
+
+		constexpr static XXH64_hash_t HASH_SEED = 0x83B0'1A83'062C'4F5D;
+
+		return XXH64(sName.data(), sName.size(), HASH_SEED);
+	}
+
+public:
+	static size_t Hash(const Entity &self)
+	{
+		return self.u64Hash;
+	}
+
+	static bool Equal(const Entity &_l, const Entity &_r)
+	{
+		return _l.u64Hash == _r.u64Hash && _l.sName == _r.sName;
+	}
+
+	inline std::strong_ordering operator<=>(const Entity &_r) const
+	{
+		//先按照哈希序
+		if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
+		{
+			return tmp;
+		}
+
+		//后按照名称序
+		return sName <=> _r.sName;
+	}
+};
+
 class EntityProcess
 {
 public:
@@ -34,9 +76,15 @@ public:
 		std::vector<Items> listSlot;
 	};
 
+	struct ItemStack
+	{
+		NBT_Node::NBT_String sItemName{};//物品名
+		NBT_Node::NBT_Compound cpdItemTag{};//物品标签
+		NBT_Node::NBT_Byte byteItemCount = 0;//物品计数器
+	};
 
 	using EntityStatsList = std::vector<EntityStats>;
-
+	using ItemStackList = std::vector<ItemStack>;
 public:
 	static EntityStatsList GetEntityStats(const NBT_Node::NBT_Compound &RgCompound)
 	{
@@ -94,11 +142,29 @@ public:
 		return listEntityStatsList;
 	}
 
+	//这个真的是我写到现在最简单的一个函数了（蚌埠住）
+	static Entity EntityStatsToEntity(const EntityStats &stEntityStats)
+	{
+		return Entity{ *stEntityStats.psEntityName };
+	}
 
-	
+	static ItemStackList EntityStatsContainerToItemStack(const EntityStats &stEntityStats)
+	{
 
 
 
+
+
+	}
+
+	static ItemStackList EntityStatsInventoryToItemStack(const EntityStats &stEntityStats)
+	{
+
+
+
+
+
+	}
 
 
 };

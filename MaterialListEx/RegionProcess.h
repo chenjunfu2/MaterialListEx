@@ -41,15 +41,31 @@ struct MapSortList
 	}
 };
 
-
-
 struct RegionStats
 {
 	NBT_Node::NBT_String sRegionName{};
-	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslBlock{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
+
+	//方块（原本形式）先不做
+	//MapSortList<std::unordered_map<Block, uint64_t, decltype(&Block::Hash), decltype(&Block::Equal)>> mslBlock{ .mapItemCounter{128, &Block::Hash, &Block::Equal} };
+
+	//方块（转换到物品形式）
+	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslBlockItem{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
+	
+	//方块实体（原本形式）先不做
+	//MapSortList<std::unordered_map<TileEntity, uint64_t, decltype(&TileEntity::Hash), decltype(&TileEntity::Equal)>> mslTileEntity{ .mapItemCounter{128, &TileEntity::Hash, &TileEntity::Equal} };
+
+	//方块实体容器
 	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslTileEntityContainer{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
-	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslEntity{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
+
+	//实体（原本形式）
+	MapSortList<std::unordered_map<Entity, uint64_t, decltype(&Entity::Hash), decltype(&Entity::Equal)>> mslEntity{ .mapItemCounter{128, &Entity::Hash, &Entity::Equal} };
+
+	//实体（转换到物品形式）先不做
+	//MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslEntityItem{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
+
+	//实体容器
 	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslEntityContainer{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
+	//实体物品栏
 	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslEntityInventory{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
 };
 

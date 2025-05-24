@@ -13,9 +13,9 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 		RegionStats rgsData{ RgName };
 		auto &RgCompound = GetCompound(RgVal);
 
-		//方块处理
+		//方块到物品处理
 		{
-			auto &current = rgsData.mslBlock;
+			auto &current = rgsData.mslBlockItem;
 			auto listBlockStats = BlockProcess::GetBlockStats(RgCompound);//获取方块统计列表
 			for (const auto &itBlock : listBlockStats)
 			{
@@ -57,7 +57,8 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 			//第一步先解出实体本身，第二步解出容器，第三步再解出物品栏
 			//因为你麻将方块和方块实体分开存放，而实体和实体tag是在一起的，
 			//分开处理反而很麻烦，只能这样（麻将神操作能不喷的都是神人了）
-
+			//注意实体非常特殊，很多时候获取方式并不局限于从物品得来，
+			//没办法直接转换到物品，所以单独放一个实体表
 			auto &current = rgsData.mslEntity;
 			auto &curContainer = rgsData.mslEntityContainer;
 			auto &curInventory = rgsData.mslEntityInventory;

@@ -8,6 +8,7 @@
 #include <string>
 #include <stdint.h>
 #include <typeinfo>
+#include <compare>
 
 template<typename Map>
 class MyCompound :public Map

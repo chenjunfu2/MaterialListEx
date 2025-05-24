@@ -3,20 +3,21 @@
 #include "NBT_Node.hpp"
 #include "NBT_Helper.hpp"
 
-
 #include <xxhash.h>
+#include <compare>
 
 struct Item
 {
 	NBT_Node::NBT_String sName{};
 	NBT_Node::NBT_Compound cpdTag{};
 	uint64_t u64Hash{ DataHash() };//初始化顺序严格按照声明顺序，此处无问题
-private:
+
+public:
 	uint64_t DataHash(void)
 	{
 		static_assert(std::is_same_v<XXH64_hash_t, uint64_t>, "Hash type does not match the required type.");
 
-		constexpr static XXH64_hash_t HASH_SEED = 0xDE35B92A7F41706C;
+		constexpr static XXH64_hash_t HASH_SEED = 0xDE35'B92A'7F41'806C;
 
 		if (cpdTag.empty())//tag为空只计算名称
 		{
@@ -31,8 +32,8 @@ private:
 				});
 		}
 	}
-public:
 
+public:
 	static size_t Hash(const Item &self)
 	{
 		return self.u64Hash;
