@@ -6,7 +6,6 @@
 
 #include <xxhash.h>
 
-
 struct Item
 {
 	NBT_Node::NBT_String sName{};

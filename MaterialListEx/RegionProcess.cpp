@@ -2,6 +2,7 @@
 
 #include "BlockProcess.hpp"
 #include "TileEntityProcess.hpp"
+#include "EntityProcess.hpp"
 
 RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 {
@@ -51,13 +52,34 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 		}
 
 		//实体处理
+		{
+			//与上面有些区别，在读取出来后需要做三步
+			//第一步先解出实体本身，第二步解出容器，第三步再解出物品栏
+			//因为你麻将方块和方块实体分开存放，而实体和实体tag是在一起的，
+			//分开处理反而很麻烦，只能这样（麻将神操作能不喷的都是神人了）
+
+			auto &current = rgsData.mslEntity;
+			auto &curContainer = rgsData.mslEntityContainer;
+			auto &curInventory = rgsData.mslEntityInventory;
+
+			auto listEntityStats = EntityProcess::GetEntityStats(RgCompound);
+			for (const auto &it : listEntityStats)
+			{
 
 
-		//实体容器处理
+			}
 
 
-		//TODO：实体物品栏处理
 
+			//执行排序
+			current.SortElement();
+			curContainer.SortElement();
+			curInventory.SortElement();
+		}
+
+		//上面几个没有带块语句的无名块，用于控制变量作用域，提升代码可读性
+
+		//处理完每个region后放入region列表
 		listRegionStats.emplace_back(std::move(rgsData));
 	}
 

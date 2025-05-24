@@ -47,27 +47,12 @@ struct RegionStats
 {
 	NBT_Node::NBT_String sRegionName{};
 	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslBlock{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
-	//MapSortList<std::map<NBT_Node::NBT_String, uint64_t>> mslBlock{};
 	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslTileEntityContainer{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
-	//MapSortList<std::map<TileEntityKey, uint64_t>> mslTileEntityContainer{};
-	//MapSortList mslEntity{};
-	//MapSortList mslEntityContainer{};
+	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslEntity{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
+	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslEntityContainer{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
+	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslEntityInventory{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
 };
 
 using RegionStatsList = std::vector<RegionStats>;
 
 RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions);
-
-/*
-TODO:
-部分实体需要转换为物品形式，不能转换的直接显示实体信息
-比如漏斗矿车、盔甲架、掉落物、物品展示框等
-
-实体内容器信息解包
-
-实体物品栏解包
-
-物品需要解析药箭、药水、附魔、谜之炖菜、烟花火箭等级样式，旗帜样式等已知可读NBT信息进行格式化输出
-还在考虑要不要把带拴绳的实体的拴绳进行统计
-
-*/
