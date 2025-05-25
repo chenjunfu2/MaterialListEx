@@ -4,6 +4,7 @@
 #include "MUTF8_Tool.hpp"
 #include "Windows_ANSI.hpp"
 #include "Calc_Tool.hpp"
+#include "ItemProcess.hpp"
 
 #include <stdint.h>
 #include <vector>
@@ -16,6 +17,8 @@ public:
 	BlockProcess() = delete;
 	~BlockProcess() = delete;
 
+	//过滤可获取的方块，不可获取的方块直接删除，半砖等特殊多物品方块转换数量
+	//(应对花盆、含水方块、炼药锅、蜡烛蛋糕等组合物品)
 	struct BlockStats
 	{
 		const NBT_Node::NBT_String *psBlockName{};
@@ -23,15 +26,6 @@ public:
 		uint64_t u64Counter = 0;//方块计数器
 	};
 
-
-	//过滤可获取的方块，不可获取的方块直接删除，半砖等特殊多物品方块转换数量
-	struct ItemStack
-	{
-		NBT_Node::NBT_String sItemName{};//物品名
-		uint64_t u64Counter = 0;//物品计数器
-	};
-
-	using ItemStackList = std::vector<ItemStack>;//(应对花盆、含水方块、炼药锅、蜡烛蛋糕等组合物品)
 	using BlockStatsList = std::vector<BlockStats>;
 
 public:
@@ -131,10 +125,10 @@ public:
 		return listBlockStats;
 	}
 
-	static ItemStackList BlockStatsToItemStack(const BlockStats &stBlocks)
+	static ItemProcess::BlockItemStackList BlockStatsToItemStack(const BlockStats &stBlocks)
 	{
 		//处理方块到物品转换
-		ItemStackList stItemsList{};
+		ItemProcess::BlockItemStackList stItemsList{};
 
 		//检查方块名
 		if (stBlocks.psBlockName == NULL)
@@ -210,7 +204,7 @@ if (stBlocks.psBlockName->starts_with(target))
 const std::string target = MU8STR(name);\
 if (stBlocks.psBlockName->ends_with(target))
 
-	static inline bool CvrtUnItemedBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtUnItemedBlocks(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)
 	{
 		//直接匹配所有不可获取的方块并返回空，注意是mc中所有无物品形式的，而非生存不可获取的
 		//注意不匹配门、床、活塞等多格方块的另一半，而由他们对应的函数自行处理
@@ -235,7 +229,7 @@ if (stBlocks.psBlockName->ends_with(target))
 		return setUnItemedBlocks.count(*stBlocks.psBlockName) != 0;
 	}
 
-	static inline bool CvrtDoublePartBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtDoublePartBlocks(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)
 	{
 		//门只有下半掉落，上半直接转为空
 		{
@@ -300,7 +294,7 @@ if (stBlocks.psBlockName->ends_with(target))
 	}
 
 	//注意只处理墙上的形式，如果是普通形式根本不需要处理
-	static inline bool CvrtWallVariantBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtWallVariantBlocks(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)
 	{
 		//理论上所有带墙上额外方块id的方块都会有wall限定词，且不以wall结尾
 		//去掉wall转换为item形式，经过查看，不存在诸如wall_结尾的方块名，也不存在wall_wall_之类的连续情况
@@ -319,7 +313,7 @@ if (stBlocks.psBlockName->ends_with(target))
 	}
 
 	//注意，只处理放过花的花盆，否则跳过（如果本身叫flower_pot那就根本不需要转换）
-	static inline bool CvrtFlowerPot(const BlockStats &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtFlowerPot(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)
 	{
 		//放了花的花盆以potted_开头，后跟花名
 		//否则叫flower_pot
@@ -345,7 +339,7 @@ if (stBlocks.psBlockName->ends_with(target))
 		return false;
 	}
 
-	static inline bool CvrtCauldron(const BlockStats &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtCauldron(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)
 	{
 		//炼药锅：含水、岩浆、粉雪
 		//其中含水如果不满则转换到空瓶
@@ -425,7 +419,7 @@ if (stBlocks.psBlockName->ends_with(target))
 		return false;
 	}
 
-	static inline bool CvrtCandleCake(const BlockStats &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtCandleCake(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)
 	{
 		ENDSWITH("_cake")
 		{
@@ -441,7 +435,7 @@ if (stBlocks.psBlockName->ends_with(target))
 		return false;
 	}
 
-	static inline bool CvrtAliasBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)//别名方块
+	static inline bool CvrtAliasBlocks(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)//别名方块
 	{
 		//映射
 		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapAliasBlocks =
@@ -463,7 +457,7 @@ if (stBlocks.psBlockName->ends_with(target))
 		return false;
 	}
 
-	static inline bool CvrtFluid(const BlockStats &stBlocks, ItemStackList &stItemsList)//流体
+	static inline bool CvrtFluid(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)//流体
 	{
 		if (*stBlocks.psBlockName == MU8STR("minecraft:water"))
 		{
@@ -496,7 +490,7 @@ if (stBlocks.psBlockName->ends_with(target))
 		return false;
 	}
 
-	static inline bool CvrtSlabBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtSlabBlocks(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)
 	{
 		ENDSWITH("_slab")
 		{
@@ -519,7 +513,7 @@ if (stBlocks.psBlockName->ends_with(target))
 		return false;
 	}
 
-	static inline bool CvrtClusterBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)
+	static inline bool CvrtClusterBlocks(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)
 	{
 #define EMPLACE_CLUSTER_ITEMS(name)\
 const auto &##name = stBlocks.pcpdProperties->GetString(MU8STR(#name));\
@@ -594,7 +588,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 #undef EMPLACE_CLUSTER_ITEMS
 	}
 
-	static inline bool CvrtPolyAttachBlocks(const BlockStats &stBlocks, ItemStackList &stItemsList)//多面附着方块
+	static inline bool CvrtPolyAttachBlocks(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)//多面附着方块
 	{
 		const static std::unordered_set<NBT_Node::NBT_String> setPolyAttachBlocks =
 		{
@@ -646,7 +640,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 
 
 	//所有此类转换函数都不处理普通单格植物
-	static inline bool CvrtMultiPartPlant(const BlockStats &stBlocks, ItemStackList &stItemsList)//多格植株处理
+	static inline bool CvrtMultiPartPlant(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)//多格植株处理
 	{
 		//只转换植株其余非植株走普通方块normal处理
 		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapMultiPartPlant =
@@ -685,7 +679,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 	}
 
 	//所有此类转换函数都不处理普通单格植物
-	static inline bool CvrtDoublePartPlant(const BlockStats &stBlocks, ItemStackList &stItemsList)//双格植株处理
+	static inline bool CvrtDoublePartPlant(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)//双格植株处理
 	{
 		//只有根部破坏掉落，头部直接忽略
 		const static std::unordered_set<NBT_Node::NBT_String> setDoublePartPlant =
@@ -722,7 +716,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 	}
 	
 	//所有此类转换函数都不处理普通单格植物
-	static inline bool CvrtCropPlant(const BlockStats &stBlocks, ItemStackList &stItemsList)//作物植株处理
+	static inline bool CvrtCropPlant(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)//作物植株处理
 	{
 		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapCropPlant =
 		{
@@ -768,12 +762,12 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 	}
 
 	//注意该函数需要保证不进行任何block的compound判断
-	static inline void CvrtNormalBlock(const BlockStats &stBlocks, ItemStackList &stItemsList)
+	static inline void CvrtNormalBlock(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)
 	{
 		stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
 	}
 
-	static inline void CvrtWaterLoggedBlock(const BlockStats &stBlocks, ItemStackList &stItemsList)
+	static inline void CvrtWaterLoggedBlock(const BlockStats &stBlocks, ItemProcess::BlockItemStackList &stItemsList)
 	{
 		//判断是不是含水方块，如果是，加一个水桶
 		if (stBlocks.pcpdProperties == NULL)

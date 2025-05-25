@@ -2,6 +2,7 @@
 
 #include "NBT_Node.hpp"
 #include "MUTF8_Tool.hpp"
+#include "ItemProcess.hpp"
 
 #include <unordered_map>
 
@@ -17,15 +18,8 @@ public:
 		const NBT_Node *pItems{};
 	};
 
-	struct ItemStack
-	{
-		NBT_Node::NBT_String sItemName{};//物品名
-		NBT_Node::NBT_Compound cpdItemTag{};//物品标签
-		NBT_Node::NBT_Byte byteItemCount = 0;//物品计数器
-	};
-
 	using TileEntityContainerStatsList = std::vector<TileEntityContainerStats>;
-	using ItemStackList = std::vector<ItemStack>;
+	
 public:
 	static TileEntityContainerStatsList GetTileEntityContainerStats(const NBT_Node::NBT_Compound &RgCompound)
 	{
@@ -48,13 +42,12 @@ public:
 		return listTileEntityStats;
 	}
 
-	static ItemStackList TileEntityContainerStatsToItemStack(const TileEntityContainerStats &stContainerStats, size_t szStackDepth = 64)
+	static ItemProcess::ItemStackList TileEntityContainerStatsToItemStack(const TileEntityContainerStats &stContainerStats, size_t szStackDepth = 64)
 	{
-		ItemStackList ret;
+		ItemProcess::ItemStackList ret;
 		_TileEntityContainerStatsToItemStack(stContainerStats, ret, szStackDepth);
 		return ret;
 	}
-
 private:
 	//处理多种集合数据情况并映射到TileEntityContainerStats
 	static bool MapTileEntityContainerStats(const NBT_Node::NBT_Compound &teCompound, TileEntityContainerStats &teStats)
@@ -104,7 +97,7 @@ private:
 		return true;
 	}
 
-	static void AddItems(const NBT_Node::NBT_Compound &cpdItem, ItemStackList &vtItemStackList, size_t szStackDepth)
+	static void AddItems(const NBT_Node::NBT_Compound &cpdItem, ItemProcess::ItemStackList &listItemStack, size_t szStackDepth)
 	{
 		if (szStackDepth <= 0)//递归栈深度检查
 		{
@@ -112,7 +105,7 @@ private:
 		}
 
 		//先插入
-		vtItemStackList.emplace_back
+		listItemStack.emplace_back
 		(
 			cpdItem.GetString(MU8STR("id")),
 			NBT_Node::NBT_Compound{},//此处先留空，防止深度嵌套容器的大量拷贝
@@ -127,7 +120,7 @@ private:
 		}
 
 		//然后获取尾部数据为当前数据
-		auto &current = vtItemStackList.back();//因为有可能进行写入，需要设置为非const
+		auto &current = listItemStack.back();//因为有可能进行写入，需要设置为非const
 		const auto &cpdTag = pcpdTag->GetCompound();//先引用，然后处理容器，如果是容器则不拷贝，否则拷贝Tag以便处理特殊物品名（药水箭、药水、附魔书等名称随nbt变化的物品）
 
 		//检查物品是否有方块实体tag（C你*的麻将，明明方块实体叫TileEntity，怎么这里又叫BlockEntity，真的无语了）
@@ -145,7 +138,7 @@ private:
 			if (MapTileEntityContainerStats(cpdBlockEntityTag, teStats))//尝试映射
 			{
 				//成功后递归解包内容
-				_TileEntityContainerStatsToItemStack(teStats, vtItemStackList, szStackDepth);//循环递归
+				_TileEntityContainerStatsToItemStack(teStats, listItemStack, szStackDepth);//循环递归
 			}
 		}
 		//（卧槽收纳袋还不是BlockEntityTag内部嵌套Items的，是直接Items的，还得特殊处理，没救了麻将，我服了）
@@ -153,7 +146,7 @@ private:
 		{
 			const auto pItems = cpdTag.Search(MU8STR("Items"));
 			TileEntityContainerStats teStats{ NULL,pItems };//递归处理不需要id，且会处理pItems可能为NULL的情况
-			_TileEntityContainerStatsToItemStack(teStats, vtItemStackList, szStackDepth);//循环递归
+			_TileEntityContainerStatsToItemStack(teStats, listItemStack, szStackDepth);//循环递归
 		}
 		else//如果上面都没处理，则属于非容器，拷贝Tag以便后续分析，容器则跳过拷贝，Tag留空
 		{
@@ -161,7 +154,7 @@ private:
 		}
 	};
 
-	static void _TileEntityContainerStatsToItemStack(const TileEntityContainerStats &stContainerStats, ItemStackList &vtItemStackList, size_t szStackDepth)
+	static void _TileEntityContainerStatsToItemStack(const TileEntityContainerStats &stContainerStats, ItemProcess::ItemStackList &listItemStack, size_t szStackDepth)
 	{
 		if (stContainerStats.pItems == NULL)
 		{
@@ -173,14 +166,14 @@ private:
 		auto tagItem = stContainerStats.pItems->GetTag();
 		if (tagItem == NBT_Node::TAG_Compound)//只有一格物品
 		{
-			AddItems(stContainerStats.pItems->GetCompound(), vtItemStackList, szStackDepth - 1);
+			AddItems(stContainerStats.pItems->GetCompound(), listItemStack, szStackDepth - 1);
 		}
 		else if (tagItem == NBT_Node::TAG_List)//多格物品列表
 		{
 			const auto &tmp = stContainerStats.pItems->GetList();
 			for (const auto &it : tmp)
 			{
-				AddItems(it.GetCompound(), vtItemStackList, szStackDepth - 1);
+				AddItems(it.GetCompound(), listItemStack, szStackDepth - 1);
 			}
 		}
 		//else {}//忽略

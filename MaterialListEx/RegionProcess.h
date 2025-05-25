@@ -8,6 +8,9 @@
 
 #include "NBT_Node.hpp"
 #include "ItemProcess.hpp"
+#include "BlockProcess.hpp"
+#include "TileEntityProcess.hpp"
+#include "EntityProcess.hpp"
 
 template<typename Map>
 struct MapSortList
@@ -49,24 +52,24 @@ struct RegionStats
 	//MapSortList<std::unordered_map<Block, uint64_t, decltype(&Block::Hash), decltype(&Block::Equal)>> mslBlock{ .mapItemCounter{128, &Block::Hash, &Block::Equal} };
 
 	//方块（转换到物品形式）
-	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslBlockItem{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
+	MapSortList<std::unordered_map<ItemInfo, uint64_t, decltype(&ItemInfo::Hash), decltype(&ItemInfo::Equal)>> mslBlockItem{ .mapItemCounter{128, &ItemInfo::Hash, &ItemInfo::Equal} };
 	
 	//方块实体（原本形式）先不做
 	//MapSortList<std::unordered_map<TileEntity, uint64_t, decltype(&TileEntity::Hash), decltype(&TileEntity::Equal)>> mslTileEntity{ .mapItemCounter{128, &TileEntity::Hash, &TileEntity::Equal} };
 
 	//方块实体容器
-	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslTileEntityContainer{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
+	MapSortList<std::unordered_map<ItemInfo, uint64_t, decltype(&ItemInfo::Hash), decltype(&ItemInfo::Equal)>> mslTileEntityContainer{ .mapItemCounter{128, &ItemInfo::Hash, &ItemInfo::Equal} };
 
 	//实体（原本形式）
 	MapSortList<std::unordered_map<Entity, uint64_t, decltype(&Entity::Hash), decltype(&Entity::Equal)>> mslEntity{ .mapItemCounter{128, &Entity::Hash, &Entity::Equal} };
 
 	//实体（转换到物品形式）先不做
-	//MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslEntityItem{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
+	//MapSortList<std::unordered_map<ItemInfo, uint64_t, decltype(&ItemInfo::Hash), decltype(&ItemInfo::Equal)>> mslEntityItem{ .mapItemCounter{128, &ItemInfo::Hash, &ItemInfo::Equal} };
 
 	//实体容器
-	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslEntityContainer{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
+	MapSortList<std::unordered_map<ItemInfo, uint64_t, decltype(&ItemInfo::Hash), decltype(&ItemInfo::Equal)>> mslEntityContainer{ .mapItemCounter{128, &ItemInfo::Hash, &ItemInfo::Equal} };
 	//实体物品栏
-	MapSortList<std::unordered_map<Item, uint64_t, decltype(&Item::Hash), decltype(&Item::Equal)>> mslEntityInventory{ .mapItemCounter{128, &Item::Hash, &Item::Equal} };
+	MapSortList<std::unordered_map<ItemInfo, uint64_t, decltype(&ItemInfo::Hash), decltype(&ItemInfo::Equal)>> mslEntityInventory{ .mapItemCounter{128, &ItemInfo::Hash, &ItemInfo::Equal} };
 };
 
 using RegionStatsList = std::vector<RegionStats>;
