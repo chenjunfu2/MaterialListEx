@@ -99,8 +99,8 @@ private:
 	static void FindAndConvert(std::vector<EntityItemSlot> &listSlot, const NBT_Node::NBT_Compound& cpdEntity)
 	{
 		//先对两个进行查找，然后判断
-		const auto pSaddle = cpdEntity.Search(MU8STR("Saddle"));
-		const auto pLeash = cpdEntity.Search(MU8STR("Leash"));
+		const auto pSaddle = cpdEntity.HasByte(MU8STR("Saddle"));
+		const auto pLeash = cpdEntity.HasCompound(MU8STR("Leash"));
 
 		//声明两个静态的成员，让EntityStats的指针指向它，伪装成正常读取的数据（不会被改写）
 		using CP = std::pair<const NBT_Node::NBT_String, NBT_Node>;
@@ -122,17 +122,15 @@ private:
 		};
 
 		//有鞍，加一个
-		if (pSaddle != NULL)
+		if (pSaddle != NULL && *pSaddle != 0)//以byte存储的bool值不为0
 		{
-			//这里的3就是上面数组的鞍
-			listSlot.emplace_back(3, &slotSaddleItem);
+			listSlot.emplace_back(3, &slotSaddleItem);//这里的3就是上面数组的鞍位置
 		}
 
 		//有拴绳信息并且信息非空（只要非空即可，是什么（比如坐标或者牵拉对象uuid）都不重要），加一个
-		if (pLeash != NULL && pLeash->GetCompound().size() != 0)//因为拴绳只在目标对象存储，拉拴绳的主体不存储，不会重复计算
+		if (pLeash != NULL && pLeash->size() != 0)//因为拴绳只在目标对象存储，拉拴绳的主体不存储，不会重复计算
 		{
-			//因为拴绳不属于任何一个实体物品栏类型，所以简单归属到物品栏（2）
-			listSlot.emplace_back(2, &slotLeadItem);
+			listSlot.emplace_back(2, &slotLeadItem);//因为拴绳不属于任何一个实体物品栏类型，所以简单归属到物品栏（2）
 		}
 
 	}
@@ -203,18 +201,6 @@ public:
 	比如漏斗矿车、盔甲架、掉落物、物品展示框等
 */
 
-private:
-	static void AddItems(const NBT_Node::NBT_Compound &cpdSlot, ItemProcess::ItemStackList &listItemStack)
-	{
-		const auto pcpdTag = cpdSlot.Search(MU8STR("tag"));
-		listItemStack.emplace_back
-		(
-			cpdSlot.GetString(MU8STR("id")),
-			pcpdTag == NULL ? NBT_Node::NBT_Compound{} : pcpdTag->GetCompound(), 
-			cpdSlot.GetByte(MU8STR("Count"))
-		);
-	}
-
 public:
 	static EntitySlot EntityStatsToEntitySlot(const EntityStats &stEntityStats)
 	{
@@ -243,14 +229,14 @@ public:
 			const auto tag = it.pItems->GetTag();
 			if (tag == NBT_Node::TAG_Compound)
 			{
-				AddItems(it.pItems->GetCompound(), *pCurList);
+				pCurList->push_back(ItemProcess::ItemCompoundToItemStack(it.pItems->GetCompound()));
 			}
 			else if (tag == NBT_Node::TAG_List)
 			{
 				const auto &tmp = it.pItems->GetList();
 				for (const auto &cur : tmp)
 				{
-					AddItems(cur.GetCompound(), *pCurList);
+					pCurList->push_back(ItemProcess::ItemCompoundToItemStack(cur.GetCompound()));
 				}
 			}
 			//else {}

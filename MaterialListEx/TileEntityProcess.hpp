@@ -163,12 +163,12 @@ private:
 
 		//读取每个物品的集合并解包出内容插入到ItemStack
 
-		auto tagItem = stContainerStats.pItems->GetTag();
-		if (tagItem == NBT_Node::TAG_Compound)//只有一格物品
+		auto tag = stContainerStats.pItems->GetTag();
+		if (tag == NBT_Node::TAG_Compound)//只有一格物品
 		{
 			AddItems(stContainerStats.pItems->GetCompound(), listItemStack, szStackDepth - 1);
 		}
-		else if (tagItem == NBT_Node::TAG_List)//多格物品列表
+		else if (tag == NBT_Node::TAG_List)//多格物品列表
 		{
 			const auto &tmp = stContainerStats.pItems->GetList();
 			for (const auto &it : tmp)
