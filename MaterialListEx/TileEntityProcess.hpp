@@ -94,11 +94,15 @@ public:
 
 	static ItemProcess::ItemStackList TileEntityContainerStatsToItemStack(const TileEntityContainerStats &stContainerStats)
 	{
-		ItemProcess::ItemStackList listItemStack;
+		ItemProcess::ItemStackList listItemStack{};
 
 		auto tag = stContainerStats.pItems->GetTag();
 		if (tag == NBT_Node::TAG_Compound)//只有一格物品
 		{
+			if (stContainerStats.pItems->GetCompound().empty())
+			{
+				return listItemStack;//空，直接返回
+			}
 			listItemStack.push_back(ItemProcess::ItemCompoundToItemStack(stContainerStats.pItems->GetCompound()));
 		}
 		else if (tag == NBT_Node::TAG_List)//多格物品列表
@@ -106,7 +110,11 @@ public:
 			const auto &tmp = stContainerStats.pItems->GetList();
 			for (const auto &it : tmp)
 			{
-				listItemStack.push_back(ItemProcess::ItemCompoundToItemStack(stContainerStats.pItems->GetCompound()));
+				if (it.GetCompound().empty())
+				{
+					continue;//空，处理下一个
+				}
+				listItemStack.push_back(ItemProcess::ItemCompoundToItemStack(it.GetCompound()));
 			}
 		}
 

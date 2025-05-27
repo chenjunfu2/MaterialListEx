@@ -229,6 +229,10 @@ public:
 			const auto tag = it.pItems->GetTag();
 			if (tag == NBT_Node::TAG_Compound)
 			{
+				if (it.pItems->GetCompound().empty())
+				{
+					continue;//¿Õtag£¬Ìø¹ý
+				}
 				pCurList->push_back(ItemProcess::ItemCompoundToItemStack(it.pItems->GetCompound()));
 			}
 			else if (tag == NBT_Node::TAG_List)
@@ -238,7 +242,7 @@ public:
 				{
 					if (cur.GetCompound().empty())
 					{
-						continue;
+						continue;//¿Õtag£¬Ìø¹ý
 					}
 					pCurList->push_back(ItemProcess::ItemCompoundToItemStack(cur.GetCompound()));
 				}
