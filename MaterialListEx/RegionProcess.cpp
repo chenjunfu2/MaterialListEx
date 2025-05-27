@@ -17,10 +17,9 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 			{
 				//每个方块转换到物品，并通过map进行统计同类物品
 				auto istItemList = BlockProcess::BlockStatsToItemStack(itBlock);
-				for (const auto &itItem : istItemList)
+				for (auto &itItem : istItemList)
 				{
-					ItemInfo tmp{ std::move(itItem.sItemName) };//转移所有权
-					current.mapItemCounter[std::move(tmp)] += itItem.u64Counter;//如果key不存在，则自动创建，且保证value为0
+					current.map[{ std::move(itItem.sItemName) }] += itItem.u64Counter;//如果key不存在，则自动创建，且保证value为0
 				}
 			}
 
@@ -35,11 +34,11 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 			for (const auto &it : listTEContainerStats)
 			{
 				//转换每个方块实体
-				auto ret = TileEntityProcess::TileEntityContainerStatsToItemStack(it);
-				for (auto &itItem : ret)
+				auto tmp = TileEntityProcess::TileEntityContainerStatsToItemStack(it);
+				tmp = ItemProcess::ItemStackListUnpackContainer(std::move(tmp));//解包内部的容器
+				for (auto &itItem : tmp)
 				{
-					ItemInfo tmp{ std::move(itItem.sItemName), std::move(itItem.cpdItemTag) };//转移所有权
-					current.mapItemCounter[std::move(tmp)] += (uint64_t)(uint8_t)itItem.byteItemCount;//先转换到unsigned，然后再进行扩展
+					current.map[{ std::move(itItem.sItemName), std::move(itItem.cpdItemTag) }] += itItem.u64ItemCount;
 				}
 			}
 
@@ -62,11 +61,27 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 			auto listEntityStats = EntityProcess::GetEntityStats(RgCompound);
 			for (const auto &it : listEntityStats)
 			{
+				//转换实体
+				auto tmpEntity = EntityProcess::EntityStatsToEntity(it);
+				current.map[std::move(tmpEntity)] += 1;//每次遇到+1即可
 
+				//转换实体物品栏和容器
+				auto tmpSlot = EntityProcess::EntityStatsToEntitySlot(it);
 
+				//对内部的物品容器进行解包
+				tmpSlot.listContainer = ItemProcess::ItemStackListUnpackContainer(std::move(tmpSlot.listContainer));
+				tmpSlot.listInventory = ItemProcess::ItemStackListUnpackContainer(std::move(tmpSlot.listInventory));
+
+				//遍历并合并相同物品
+				for (auto &itItem : tmpSlot.listContainer)
+				{
+					curContainer.map[{std::move(itItem.sItemName), std::move(itItem.cpdItemTag)}] += itItem.u64ItemCount;
+				}
+				for (auto &itItem : tmpSlot.listInventory)
+				{
+					curInventory.map[{std::move(itItem.sItemName), std::move(itItem.cpdItemTag)}] += itItem.u64ItemCount;
+				}
 			}
-
-
 
 			//执行排序
 			current.SortElement();

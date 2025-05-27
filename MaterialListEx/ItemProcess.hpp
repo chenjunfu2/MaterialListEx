@@ -81,7 +81,7 @@ public:
 	{
 		NBT_Node::NBT_String sItemName{};//物品名
 		NBT_Node::NBT_Compound cpdItemTag{};//物品标签
-		NBT_Node::NBT_Byte byteItemCount = 0;//物品计数器
+		uint64_t u64ItemCount = 0;//物品计数器
 	};
 
 	using ItemStackList = std::vector<ItemStack>;
@@ -112,23 +112,27 @@ public:
 
 	static ItemStack ItemCompoundToItemStack(const NBT_Node::NBT_Compound &cpdItem)
 	{
+		auto sName = cpdItem.HasString(MU8STR("id"));
 		auto cpdTag = cpdItem.HasCompound(MU8STR("tag"));
+		auto byteCount = cpdItem.HasByte(MU8STR("Count"));
 		return ItemStack
 		{
-			cpdItem.GetString(MU8STR("id")),
+			sName == NULL ? NBT_Node::NBT_String{} : *sName,
 			cpdTag == NULL ? NBT_Node::NBT_Compound{} : *cpdTag,
-			cpdItem.GetByte(MU8STR("Count"))
+			byteCount == NULL ? uint64_t{} : (uint64_t)(uint8_t)*byteCount
 		};
 	}
 
 	static ItemStack ItemCompoundToItemStack(NBT_Node::NBT_Compound &&cpdItem)
 	{
+		auto sName = cpdItem.HasString(MU8STR("id"));
 		auto cpdTag = cpdItem.HasCompound(MU8STR("tag"));
+		auto byteCount = cpdItem.HasByte(MU8STR("Count"));
 		return ItemStack
 		{
-			std::move(cpdItem.GetString(MU8STR("id"))),
+			sName == NULL ? NBT_Node::NBT_String{} : std::move(*sName),
 			cpdTag == NULL ? NBT_Node::NBT_Compound{} : std::move(*cpdTag),
-			std::move(cpdItem.GetByte(MU8STR("Count")))
+			byteCount == NULL ? uint64_t{} : (uint64_t)(uint8_t)*byteCount//内置类型直接拷贝，移动个P
 		};
 	}
 
@@ -169,13 +173,13 @@ private:
 
 			//现在找内部的Items（潜影盒内部只能是这个，不用想了）
 			auto pcpdItems = pcpdBlockEntityTag->Search(MU8STR("Items"));//这里不用HasXXX而是Search是为了不解包出类型，兼容TraversalItems参数
-			TraversalItems(pcpdItems, listItemStack, szStackDepth);
+			TraversalItems(pcpdItems, listItemStack, stItemStack.u64ItemCount, szStackDepth);//获取当前容器的物品个数作为容器内所有物品的倍率
 		}
 		else if (stItemStack.sItemName == MU8STR("minecraft:bundle"))//收纳袋特殊处理
 		{
 			//直接找到Items
 			auto plistItems = stItemStack.cpdItemTag.Search(MU8STR("Items"));//这里不用HasXXX而是Search是为了不解包出类型，兼容TraversalItems参数
-			TraversalItems(plistItems, listItemStack, szStackDepth);
+			TraversalItems(plistItems, listItemStack, stItemStack.u64ItemCount, szStackDepth);
 		}
 		//else {} //上面几个都不是，无需解包，直接插入就行
 
@@ -186,7 +190,7 @@ private:
 		return;
 	}
 
-	static void TraversalItems(NBT_Node *pItems, ItemStackList &listItemStack, size_t szStackDepth)
+	static void TraversalItems(NBT_Node *pItems, ItemStackList &listItemStack, uint64_t u64Scale, size_t szStackDepth)
 	{
 		if (pItems == NULL)
 		{
@@ -199,8 +203,11 @@ private:
 		{
 			auto &tmp = pItems->GetCompound();
 			ItemStack tmpItem = ItemCompoundToItemStack(std::move(tmp));
-			ItemStackUnpackContainer(std::move(tmpItem), listItemStack, szStackDepth - 1);//递归 - 1
 			pItems->GetCompound().clear();//清空（内部数据已经转移所有权，不应该再使用）
+
+			//对内部的物品乘以倍率缩放
+			tmpItem.u64ItemCount *= u64Scale;
+			ItemStackUnpackContainer(std::move(tmpItem), listItemStack, szStackDepth - 1);//递归 - 1
 		}
 		else if (tag == NBT_Node::TAG_List)
 		{
@@ -208,8 +215,12 @@ private:
 			for (auto &it : tmp)//遍历list
 			{
 				ItemStack tmpItem = ItemCompoundToItemStack(std::move(it.GetCompound()));
+				//这里先不清理
+				//对内部的物品乘以倍率缩放
+				tmpItem.u64ItemCount *= u64Scale;
 				ItemStackUnpackContainer(std::move(tmpItem), listItemStack, szStackDepth - 1);//递归 - 1
 			}
+			//最后统一清空
 			tmp.clear();//清空（内部数据已经转移所有权，不应该再使用）
 		}
 		//else {}//忽略

@@ -6,7 +6,7 @@
 
 #include <compare>
 
-struct Entity
+struct EntityInfo
 {
 	NBT_Node::NBT_String sName{};
 	//除了名字外，剩下全丢了，没意义
@@ -23,17 +23,17 @@ public:
 	}
 
 public:
-	static size_t Hash(const Entity &self)
+	static size_t Hash(const EntityInfo &self)
 	{
 		return self.u64Hash;
 	}
 
-	static bool Equal(const Entity &_l, const Entity &_r)
+	static bool Equal(const EntityInfo &_l, const EntityInfo &_r)
 	{
 		return _l.u64Hash == _r.u64Hash && _l.sName == _r.sName;
 	}
 
-	inline std::strong_ordering operator<=>(const Entity &_r) const
+	inline std::strong_ordering operator<=>(const EntityInfo &_r) const
 	{
 		//先按照哈希序
 		if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
@@ -67,6 +67,7 @@ public:
 		//MU8STR(""),
 	};//此数组不能乱改，有索引强相关！
 
+	//掉落物和物品展示框这些都算Item，会走实体容器处理，符合要求，无需特判
 
 	struct EntityItemSlot
 	{
@@ -96,7 +97,7 @@ private:
 	如果实体有带拴绳，则存在Leash这个compound标签，内部有拴绳坐标或者是拉着他的实体的uuid，总之不为空，这种情况下转换为拴绳
 	*/
 	//查找并转换那些特殊的数据值到物品
-	static void FindAndConvert(std::vector<EntityItemSlot> &listSlot, const NBT_Node::NBT_Compound& cpdEntity)
+	static void ExtractSpecial(std::vector<EntityItemSlot> &listSlot, const NBT_Node::NBT_Compound& cpdEntity)
 	{
 		//先对两个进行查找，然后判断
 		const auto pSaddle = cpdEntity.HasByte(MU8STR("Saddle"));
@@ -153,7 +154,7 @@ public:
 			//在每个entity内查找所有可能出现的可以容纳物品的tag
 			EntityStats stEntityStats{ &curEntity.GetString(MU8STR("id")) };//先获取实体名字
 			//转换特殊的实体id数据值到物品
-			FindAndConvert(stEntityStats.listSlot, curEntity);
+			ExtractSpecial(stEntityStats.listSlot, curEntity);
 
 			//遍历所有可以存放物品的格子名字
 			for (const auto &itTag : sSlotTagName)
@@ -177,9 +178,9 @@ public:
 	}
 
 	//这个真的是我写到现在最简单的一个函数了（蚌埠住）
-	static Entity EntityStatsToEntity(const EntityStats &stEntityStats)
+	static EntityInfo EntityStatsToEntity(const EntityStats &stEntityStats)
 	{
-		return Entity{ *stEntityStats.psEntityName };
+		return EntityInfo{ *stEntityStats.psEntityName };
 	}
 
 	/*
@@ -201,7 +202,6 @@ public:
 	比如漏斗矿车、盔甲架、掉落物、物品展示框等
 */
 
-public:
 	static EntitySlot EntityStatsToEntitySlot(const EntityStats &stEntityStats)
 	{
 		if (*stEntityStats.psEntityName == MU8STR("minecraft:item_display"))//跳过
@@ -236,6 +236,10 @@ public:
 				const auto &tmp = it.pItems->GetList();
 				for (const auto &cur : tmp)
 				{
+					if (cur.GetCompound().empty())
+					{
+						continue;
+					}
 					pCurList->push_back(ItemProcess::ItemCompoundToItemStack(cur.GetCompound()));
 				}
 			}
