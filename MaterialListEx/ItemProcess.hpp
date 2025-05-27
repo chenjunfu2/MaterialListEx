@@ -63,6 +63,45 @@ public:
 	}
 };
 
+struct NoTagItemInfo
+{
+	NBT_Node::NBT_String sName{};
+	uint64_t u64Hash{ DataHash() };
+
+public:
+	uint64_t DataHash(void)
+	{
+		static_assert(std::is_same_v<XXH64_hash_t, uint64_t>, "Hash type does not match the required type.");
+
+		constexpr static XXH64_hash_t HASH_SEED = 0x83B0'1A83'062C'4F5D;
+
+		return XXH64(sName.data(), sName.size(), HASH_SEED);
+	}
+
+public:
+	static size_t Hash(const NoTagItemInfo &self)
+	{
+		return self.u64Hash;
+	}
+
+	static bool Equal(const NoTagItemInfo &_l, const NoTagItemInfo &_r)
+	{
+		return _l.u64Hash == _r.u64Hash && _l.sName == _r.sName;
+	}
+
+	inline std::strong_ordering operator<=>(const NoTagItemInfo &_r) const
+	{
+		//先按照哈希序
+		if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
+		{
+			return tmp;
+		}
+
+		//后按照名称序
+		return sName <=> _r.sName;
+	}
+};
+
 /*
 物品需要解析药箭、药水、附魔、谜之炖菜、烟花火箭等级样式，旗帜样式等已知可读NBT信息进行格式化输出
 决定把方块实体对于物品的处理逻辑移动到此，这样实体内物品处理也会走这里

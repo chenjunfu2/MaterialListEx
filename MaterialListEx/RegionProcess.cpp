@@ -16,8 +16,8 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 			for (const auto &itBlock : listBlockStats)
 			{
 				//每个方块转换到物品，并通过map进行统计同类物品
-				auto istItemList = BlockProcess::BlockStatsToItemStack(itBlock);
-				for (auto &itItem : istItemList)
+				auto tmp = BlockProcess::BlockStatsToItemStack(itBlock);
+				for (auto &itItem : tmp)
 				{
 					current.map[{ std::move(itItem.sItemName) }] += itItem.u64Counter;//如果key不存在，则自动创建，且保证value为0
 				}

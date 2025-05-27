@@ -48,28 +48,35 @@ struct RegionStats
 {
 	NBT_Node::NBT_String sRegionName{};
 
+	//简化声明
+#define MAPSORTLIST(key,val,size,name) \
+MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Equal)>> name{ .map{size, &key::Hash, &key::Equal} }
+
 	//方块（原本形式）先不做
-	//MapSortList<std::unordered_map<Block, uint64_t, decltype(&Block::Hash), decltype(&Block::Equal)>> mslBlock{ .map{128, &Block::Hash, &Block::Equal} };
+	//MAPSORTLIST(BlockInfo, uint64_t, 128, mslBlock);
 
 	//方块（转换到物品形式）
-	MapSortList<std::unordered_map<ItemInfo, uint64_t, decltype(&ItemInfo::Hash), decltype(&ItemInfo::Equal)>> mslBlockItem{ .map{128, &ItemInfo::Hash, &ItemInfo::Equal} };
+	MAPSORTLIST(NoTagItemInfo, uint64_t, 128, mslBlockItem);
 	
 	//方块实体（原本形式）先不做
-	//MapSortList<std::unordered_map<TileEntity, uint64_t, decltype(&TileEntity::Hash), decltype(&TileEntity::Equal)>> mslTileEntity{ .map{128, &TileEntity::Hash, &TileEntity::Equal} };
+	//MAPSORTLIST(TileEntityInfo, uint64_t, 128, mslTileEntity);
 
 	//方块实体容器
-	MapSortList<std::unordered_map<ItemInfo, uint64_t, decltype(&ItemInfo::Hash), decltype(&ItemInfo::Equal)>> mslTileEntityContainer{ .map{128, &ItemInfo::Hash, &ItemInfo::Equal} };
+	MAPSORTLIST(ItemInfo, uint64_t, 128, mslTileEntityContainer);
 
 	//实体（原本形式）
-	MapSortList<std::unordered_map<EntityInfo, uint64_t, decltype(&EntityInfo::Hash), decltype(&EntityInfo::Equal)>> mslEntity{ .map{128, &EntityInfo::Hash, &EntityInfo::Equal} };
+	MAPSORTLIST(EntityInfo, uint64_t, 128, mslEntity);
 
 	//实体（转换到物品形式）先不做
-	//MapSortList<std::unordered_map<ItemInfo, uint64_t, decltype(&ItemInfo::Hash), decltype(&ItemInfo::Equal)>> mslEntityItem{ .map{128, &ItemInfo::Hash, &ItemInfo::Equal} };
+	//MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityItem);
 
 	//实体容器
-	MapSortList<std::unordered_map<ItemInfo, uint64_t, decltype(&ItemInfo::Hash), decltype(&ItemInfo::Equal)>> mslEntityContainer{ .map{128, &ItemInfo::Hash, &ItemInfo::Equal} };
+	MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityContainer);
+
 	//实体物品栏
-	MapSortList<std::unordered_map<ItemInfo, uint64_t, decltype(&ItemInfo::Hash), decltype(&ItemInfo::Equal)>> mslEntityInventory{ .map{128, &ItemInfo::Hash, &ItemInfo::Equal} };
+	MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityInventory);
+
+#undef MAPSORTLIST
 };
 
 using RegionStatsList = std::vector<RegionStats>;

@@ -27,6 +27,26 @@ using Json = nlohmann::json;
 
 //NBT一般使用GZIP压缩，也有部分使用ZLIB压缩
 
+template<typename T>
+void PrintInfo(const T &info)
+{
+	for (const auto &itItem : info)
+	{
+		const auto &refItem = itItem.get();
+		printf("[%s]%s:%lld\n", refItem.first.sName.c_str(), ANSISTR(U16STR(NBT_Helper::Serialize(refItem.first.cpdTag))).c_str(), refItem.second);
+	}
+}
+
+template<typename T>
+void PrintNoTagInfo(const T &info)
+{
+	for (const auto &itItem : info)
+	{
+		const auto &refItem = itItem.get();
+		printf("[%s]:%lld\n", refItem.first.sName.c_str(), refItem.second);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc != 2)
@@ -134,13 +154,19 @@ int main(int argc, char *argv[])
 
 	for (const auto &it : vtRegionStats)
 	{
-		for (const auto &itItem : it.mslTileEntityContainer.vecSortItem)
-		{
-			const auto &refItem = itItem.get();
-			printf("[%s]%s:%lld\n", refItem.first.sName.c_str(), ANSISTR(U16STR(NBT_Helper::Serialize(refItem.first.cpdTag))).c_str(), refItem.second);
-		}
+		printf("==============Region:[%s]==============\n", ANSISTR(U16STR(it.sRegionName)).c_str());
+		
+		printf("\n==============[block item]==============\n");
+		PrintNoTagInfo(it.mslBlockItem.vecSortItem);//方块转物品
+		printf("\n========[tile entity container]========\n");
+		PrintInfo(it.mslTileEntityContainer.vecSortItem);//方块实体容器
+		printf("\n=============[entity info]=============\n");
+		PrintNoTagInfo(it.mslEntity.vecSortItem);//实体
+		printf("\n===========[entity container]===========\n");
+		PrintInfo(it.mslEntityContainer.vecSortItem);//实体容器
+		printf("\n===========[entity inventory]===========\n");
+		PrintInfo(it.mslEntityInventory.vecSortItem);//实体物品栏
 	}
-
 	
 	return 1145;
 

@@ -6,45 +6,8 @@
 
 #include <compare>
 
-struct EntityInfo
-{
-	NBT_Node::NBT_String sName{};
-	//除了名字外，剩下全丢了，没意义
-	uint64_t u64Hash{ DataHash() };
-
-public:
-	uint64_t DataHash(void)
-	{
-		static_assert(std::is_same_v<XXH64_hash_t, uint64_t>, "Hash type does not match the required type.");
-
-		constexpr static XXH64_hash_t HASH_SEED = 0x83B0'1A83'062C'4F5D;
-
-		return XXH64(sName.data(), sName.size(), HASH_SEED);
-	}
-
-public:
-	static size_t Hash(const EntityInfo &self)
-	{
-		return self.u64Hash;
-	}
-
-	static bool Equal(const EntityInfo &_l, const EntityInfo &_r)
-	{
-		return _l.u64Hash == _r.u64Hash && _l.sName == _r.sName;
-	}
-
-	inline std::strong_ordering operator<=>(const EntityInfo &_r) const
-	{
-		//先按照哈希序
-		if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
-		{
-			return tmp;
-		}
-
-		//后按照名称序
-		return sName <=> _r.sName;
-	}
-};
+//目前实体信息只有名字，很符合无tag物品情况，直接起个别名
+using EntityInfo = NoTagItemInfo;
 
 class EntityProcess
 {
