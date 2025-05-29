@@ -12,11 +12,7 @@
 #include "CodeTimer.hpp"
 
 #include "Windows_ANSI.hpp"
-
-/*Json*/
-#include <nlohmann\json.hpp>
-using Json = nlohmann::json;
-/*Json*/
+#include "Language.hpp"
 
 /*Compress*/
 #include "Compression_Utils.hpp"
@@ -28,23 +24,30 @@ using Json = nlohmann::json;
 
 //NBT一般使用GZIP压缩，也有部分使用ZLIB压缩
 
-template<typename T>
-void PrintInfo(const T &info)
+template<Language::KeyType enKeyType, typename T>
+void PrintInfo(const T &info, const Language &lang)
 {
 	for (const auto &itItem : info)
 	{
 		const auto &refItem = itItem.get();
-		printf("[%s]%s:%lld\n", refItem.first.sName.c_str(), ANSISTR(U16STR(NBT_Helper::Serialize(refItem.first.cpdTag))).c_str(), refItem.second);
+		printf("%s[%s]%s:%lld\n",
+			U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)).c_str(),
+			refItem.first.sName.c_str(),
+			U16ANSI(U16STR(NBT_Helper::Serialize(refItem.first.cpdTag))).c_str(),
+			refItem.second);
 	}
 }
 
-template<typename T>
-void PrintNoTagInfo(const T &info)
+template<Language::KeyType enKeyType, typename T>
+void PrintNoTagInfo(const T &info, const Language &lang)
 {
 	for (const auto &itItem : info)
 	{
 		const auto &refItem = itItem.get();
-		printf("[%s]:%lld\n", refItem.first.sName.c_str(), refItem.second);
+		printf("%s[%s]:%lld\n",
+			U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)).c_str(),
+			refItem.first.sName.c_str(),
+			refItem.second);
 	}
 }
 
@@ -62,22 +65,22 @@ int main(int argc, char *argv[])
 	timer.Start();
 	if (!ReadFile(argv[1], sNbtData))
 	{
-		printf("File read fail\n");
+		printf("Nbt File read fail\n");
 		return -1;
 	}
 	timer.Stop();
-	timer.PrintElapsed("ReadFile:");
 
 	 printf("File read size: [%zu]\n", sNbtData.size());
+	 timer.PrintElapsed("File read time:[", "]\n");
 
 	if (gzip::is_compressed(sNbtData.data(), sNbtData.size()))//如果nbt已压缩，解压，否则保持原样
 	{
 		timer.Start();
 		sNbtData = gzip::decompress(sNbtData.data(), sNbtData.size());
 		timer.Stop();
-		timer.PrintElapsed("decompress:");
 
 		printf("File decompressed size: [%lld]\n", (uint64_t)sNbtData.size());
+		timer.PrintElapsed("decompress time:[", "]\n");
 
 		//路径预处理
 		std::string sPath{ argv[1] };
@@ -119,7 +122,7 @@ int main(int argc, char *argv[])
 			pFile = NULL;
 
 			printf("is maked successfuly\n");
-			timer.PrintElapsed("fwrite:");
+			timer.PrintElapsed("Write file time:[", "]\n");
 		}
 	}
 	else
@@ -137,9 +140,9 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	timer.Stop();
-	timer.PrintElapsed("ReadNBT:");
 
 	printf("NBT read ok!\n");
+	timer.PrintElapsed("Read NBT time:[", "]\n");
 
 	//NBT_Helper::Print(nRoot);
 	//return 0;
@@ -153,7 +156,7 @@ int main(int argc, char *argv[])
 
 	//输出名称（一般是空字符串）
 	const auto &root = *tmp.begin();
-	printf("root:\"%s\"\n", ANSISTR(U16STR(root.first)).c_str());
+	printf("root:\"%s\"\n", U16ANSI(U16STR(root.first)).c_str());
 	
 
 	//获取regions，也就是区域，一个投影可能有多个区域（选区）
@@ -162,59 +165,38 @@ int main(int argc, char *argv[])
 	timer.Start();
 	auto vtRegionStats = RegionProcess(cpdRegions);
 	timer.Stop();
-	timer.PrintElapsed("RegionProcess:");
+	timer.PrintElapsed("RegionProcess time:[", "]\n");
+
+	Language lang;
+	timer.Start();
+	lang.ReadLanguageFile("zh_cn.json");
+	timer.Stop();
+	timer.PrintElapsed("Language file read time:[", "]\n");
 
 	for (const auto &it : vtRegionStats)
 	{
-		printf("==============Region:[%s]==============\n", ANSISTR(U16STR(it.sRegionName)).c_str());
+		printf("==============Region:[%s]==============\n", U16ANSI(U16STR(it.sRegionName)).c_str());
 		
 		printf("\n==============[block item]==============\n");
-		PrintNoTagInfo(it.mslBlockItem.vecSortItem);//方块转物品
+		PrintNoTagInfo<Language::Block>(it.mslBlockItem.listSort, lang);//方块转物品
 		printf("\n========[tile entity container]========\n");
-		PrintInfo(it.mslTileEntityContainer.vecSortItem);//方块实体容器
+		PrintInfo<Language::Item>(it.mslTileEntityContainer.listSort, lang);//方块实体容器
 		printf("\n=============[entity info]=============\n");
-		PrintNoTagInfo(it.mslEntity.vecSortItem);//实体
+		PrintNoTagInfo<Language::Entity>(it.mslEntity.listSort, lang);//实体
 		printf("\n===========[entity container]===========\n");
-		PrintInfo(it.mslEntityContainer.vecSortItem);//实体容器
+		PrintInfo<Language::Item>(it.mslEntityContainer.listSort, lang);//实体容器
 		printf("\n===========[entity inventory]===========\n");
-		PrintInfo(it.mslEntityInventory.vecSortItem);//实体物品栏
+		PrintInfo<Language::Item>(it.mslEntityInventory.listSort, lang);//实体物品栏
 	}
 	
 	return 1145;
 
 	/*
 
-	//准备读取
-	Json zh_cn;
-	bool bLanguage = true;
-
-	//读取json语言文件
-	std::string sJsonData;
-	if (!ReadFile("zh_cn__.json", sJsonData))
-	{
-		printf("Json File Read Fail\n");
-		bLanguage = false;
-	}
-	else
-	{
-		//从语言文件创建json对象
-		try
-		{
-			zh_cn = Json::parse(sJsonData);
-		}
-		catch (const Json::parse_error &e)
-		{
-			// 输出异常详细信息
-			printf("JSON parse error: %s\nError Pos: [%zu]\n", e.what(), e.byte);
-			bLanguage = false;
-		}
-	}
-
-
 	for (const auto &itRgSt : vtRegionStats)
 	{
-		printf("Region:[%s]\n", ANSISTR(U16STR(*itRgSt.psRegionName)).c_str());
-		for (const auto &itItem : itRgSt.mslBlock.vecSortItem)
+		printf("Region:[%s]\n", U16ANSI(U16STR(*itRgSt.psRegionName)).c_str());
+		for (const auto &itItem : itRgSt.mslBlock.listSort)
 		{
 			const auto &[sItemName, u64ItemCount] = itItem.get();
 			if (bLanguage)

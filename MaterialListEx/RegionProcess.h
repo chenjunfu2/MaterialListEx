@@ -20,7 +20,7 @@ struct MapSortList
 	//map用于查重统计，不需要真的用key来查找，所以key是什么无所谓
 	Map map{};//创建方块状态到物品映射map
 	//通过vector创建map的元素排序（存储pair引用）std::reference_wrapper<>
-	std::vector<std::reference_wrapper<MapPair>> vecSortItem{};
+	std::vector<std::reference_wrapper<MapPair>> listSort{};
 
 	static bool SortCmp(MapPair &l, MapPair &r)
 	{
@@ -37,10 +37,10 @@ struct MapSortList
 	void SortElement(void)
 	{
 		//提前扩容减少插入开销
-		vecSortItem.reserve(map.size());
-		vecSortItem.assign(map.begin(), map.end());//迭代器范围插入
+		listSort.reserve(map.size());
+		listSort.assign(map.begin(), map.end());//迭代器范围插入
 		//对物品按数量进行排序
-		std::sort(vecSortItem.begin(), vecSortItem.end(), SortCmp);
+		std::sort(listSort.begin(), listSort.end(), SortCmp);
 	}
 };
 

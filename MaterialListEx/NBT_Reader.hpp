@@ -403,7 +403,7 @@ catch(...)\
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move((*((T *)&tTmpData))));//无损数据类型转换
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(T).name());
+				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(T).name());
 			}
 			MYCATCH_BADALLOC
 		}
@@ -470,7 +470,7 @@ catch(...)\
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move(tArray));
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(tArray).name());
+				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(tArray).name());
 			}
 			MYCATCH_BADALLOC
 		}
@@ -517,7 +517,7 @@ catch(...)\
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move(nodeTemp));
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_Compound).name());
+				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_Compound).name());
 			}
 			MYCATCH_BADALLOC
 		}
@@ -578,7 +578,7 @@ catch(...)\
 			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move(sString));
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_String).name());
+				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_String).name());
 			}
 			MYCATCH_BADALLOC
 		}
@@ -689,7 +689,7 @@ catch(...)\
 			if (!ret.second)//插入失败，元素已存在
 			{
 				//此处实为警告而非错误，无需return
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", ANSISTR(U16STR(sName)).c_str(), typeid(tmpList).name());
+				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(tmpList).name());
 			}
 			MYCATCH_BADALLOC
 		}

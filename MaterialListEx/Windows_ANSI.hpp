@@ -33,7 +33,7 @@ std::basic_string<char> ConvertUtf16ToAnsi(const std::basic_string<U16T> &u16Str
 		//ERROR_INVALID_PARAMETER//。 任何参数值都无效。
 		//ERROR_NO_UNICODE_TRANSLATION//。 在字符串中发现无效的 Unicode。
 		
-		printf("\nWideCharToMultiByte failed. Error code: %lu\n", GetLastError());
+		printf("\nfirst WideCharToMultiByte failed. Error code: %lu\n", GetLastError());
 		return std::basic_string<char>{};
 	}
 
@@ -55,7 +55,7 @@ std::basic_string<char> ConvertUtf16ToAnsi(const std::basic_string<U16T> &u16Str
 
 	if (convertedSize == 0)
 	{
-		printf("\nWideCharToMultiByte failed. Error code: %lu\n", GetLastError());
+		printf("\nsecond WideCharToMultiByte failed. Error code: %lu\n", GetLastError());
 		return std::basic_string<char>{};
 	}
 
@@ -84,7 +84,7 @@ std::basic_string<char> ConvertUtf8ToAnsi(const std::basic_string<U8T> &u8String
 
     if (lengthNeeded == 0)
     {
-        printf("\nMultiByteToWideChar failed. Error code: %lu\n", GetLastError());
+        printf("\nfirst MultiByteToWideChar failed. Error code: %lu\n", GetLastError());
         return std::basic_string<char>{};
     }
 
@@ -99,7 +99,7 @@ std::basic_string<char> ConvertUtf8ToAnsi(const std::basic_string<U8T> &u8String
         (wchar_t *)utf16Str.data(), 
 		lengthNeeded))
     {
-        printf("\nMultiByteToWideChar failed. Error code: %lu\n", GetLastError());
+        printf("\nsecond MultiByteToWideChar failed. Error code: %lu\n", GetLastError());
         return std::basic_string<char>{};
     }
 
@@ -107,4 +107,5 @@ std::basic_string<char> ConvertUtf8ToAnsi(const std::basic_string<U8T> &u8String
 	return ConvertUtf16ToAnsi(utf16Str);
 }
 
-#define ANSISTR(u16str) ConvertUtf16ToAnsi(u16str)
+#define U16ANSI(u16str) ConvertUtf16ToAnsi(u16str)
+#define U8ANSI(u8str) ConvertUtf8ToAnsi(u8str)
