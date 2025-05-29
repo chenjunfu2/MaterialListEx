@@ -9,6 +9,7 @@
 #include "TileEntityProcess.hpp"
 #include "File_Tool.hpp"
 #include "RegionProcess.h"
+#include "CodeTimer.hpp"
 
 #include "Windows_ANSI.hpp"
 
@@ -49,6 +50,8 @@ void PrintNoTagInfo(const T &info)
 
 int main(int argc, char *argv[])
 {
+	CodeTimer timer;
+
 	if (argc != 2)
 	{
 		printf("Only one input file is needed\n");
@@ -56,18 +59,25 @@ int main(int argc, char *argv[])
 	}
 
 	std::string sNbtData;
+	timer.Start();
 	if (!ReadFile(argv[1], sNbtData))
 	{
-		printf("Nbt File Read Fail\n");
+		printf("File read fail\n");
 		return -1;
 	}
+	timer.Stop();
+	timer.PrintElapsed("ReadFile:");
 
-	 printf("NBT file read size: [%zu]\n", sNbtData.size());
+	 printf("File read size: [%zu]\n", sNbtData.size());
 
 	if (gzip::is_compressed(sNbtData.data(), sNbtData.size()))//如果nbt已压缩，解压，否则保持原样
 	{
+		timer.Start();
 		sNbtData = gzip::decompress(sNbtData.data(), sNbtData.size());
-		printf("NBT file decompressed size: [%lld]\n", (uint64_t)sNbtData.size());
+		timer.Stop();
+		timer.PrintElapsed("decompress:");
+
+		printf("File decompressed size: [%lld]\n", (uint64_t)sNbtData.size());
 
 		//路径预处理
 		std::string sPath{ argv[1] };
@@ -98,34 +108,38 @@ int main(int argc, char *argv[])
 				return -1;
 			}
 
+			timer.Start();
 			if (fwrite(sNbtData.data(), sizeof(sNbtData[0]), sNbtData.size(), pFile) != sNbtData.size())
 			{
 				return -1;
 			}
+			timer.Stop();
 
 			fclose(pFile);
 			pFile = NULL;
 
 			printf("is maked successfuly\n");
+			timer.PrintElapsed("fwrite:");
 		}
 	}
 	else
 	{
-		printf("NBT file is not compressed\n");
+		printf("File is not compressed\n");
 	}
 
 	//以下使用nbt
 	NBT_Node nRoot;
+	timer.Start();
 	if (!NBT_Reader<std::string>::ReadNBT(nRoot, sNbtData))
 	{
 		printf("\nData before the error was encountered:");
 		NBT_Helper::Print(nRoot);
 		return -1;
 	}
-	else
-	{
-		printf("Read Ok!\n");
-	}
+	timer.Stop();
+	timer.PrintElapsed("ReadNBT:");
+
+	printf("NBT read ok!\n");
 
 	//NBT_Helper::Print(nRoot);
 	//return 0;
@@ -145,12 +159,10 @@ int main(int argc, char *argv[])
 	//获取regions，也就是区域，一个投影可能有多个区域（选区）
 	const auto &cpdRegions = GetCompound(root.second).GetCompound(MU8STR("Regions"));
 
-	auto start = std::chrono::steady_clock::now();
+	timer.Start();
 	auto vtRegionStats = RegionProcess(cpdRegions);
-	auto end = std::chrono::steady_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-
-	printf("use:%lldus\n", duration.count());
+	timer.Stop();
+	timer.PrintElapsed("RegionProcess:");
 
 	for (const auto &it : vtRegionStats)
 	{
