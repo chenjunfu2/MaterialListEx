@@ -18,7 +18,7 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 			{
 				//转换方块
 				auto tmpBlock = BlockProcess::BlockStatsToBlockInfo(itBlock);
-				current.map[std::move(tmpBlock)] += 1;//每次遇到+=1
+				current.map[std::move(tmpBlock)] += itBlock.u64Counter;//艸，这里要加计数器，而不是加一，因为前面都统计完了
 
 				//每个方块转换到物品，并通过map进行统计同类物品
 				auto tmp = BlockProcess::BlockStatsToItemStack(itBlock);
@@ -69,7 +69,7 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 			{
 				//转换实体
 				auto tmpEntity = EntityProcess::EntityStatsToEntityInfo(it);
-				current.map[std::move(tmpEntity)] += 1;//每次遇到+1即可
+				current.map[std::move(tmpEntity)] += 1;//每次遇到+1即可，因为每次处理的实体只有一个
 
 				//转换实体物品栏和容器
 				auto tmpSlot = EntityProcess::EntityStatsToEntitySlot(it);
