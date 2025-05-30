@@ -11,6 +11,10 @@
 #include <unordered_set>
 #include <unordered_map>
 
+
+//跟物品类似，同样起个别名
+using BlockInfo = ItemInfo;
+
 class BlockProcess
 {
 public:
@@ -187,6 +191,15 @@ public:
 		return stItemsList;
 	}
 
+	//哈哈，这个跟entityinfo一样，也很简单捏
+	static BlockInfo BlockStatsToBlockInfo(const BlockStats &stBlocks)
+	{
+		return BlockInfo
+		{ 
+			stBlocks.psBlockName == NULL ? NBT_Node::NBT_String{} : *stBlocks.psBlockName,
+			stBlocks.pcpdProperties == NULL ? NBT_Node::NBT_Compound{} : *stBlocks.pcpdProperties
+		};
+	}
 private:
 
 	/*警告，所有使用pcpdProperties的地方都需要判断是否为NULL！*/

@@ -52,8 +52,8 @@ struct RegionStats
 #define MAPSORTLIST(key,val,size,name) \
 MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Equal)>> name{ .map{size, &key::Hash, &key::Equal} }
 
-	//方块（原本形式）先不做
-	//MAPSORTLIST(BlockInfo, uint64_t, 128, mslBlock);
+	//方块（原本形式）
+	MAPSORTLIST(BlockInfo, uint64_t, 128, mslBlock);
 
 	//方块（转换到物品形式）
 	MAPSORTLIST(NoTagItemInfo, uint64_t, 128, mslBlockItem);
@@ -69,6 +69,7 @@ MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Eq
 
 	//实体（转换到物品形式）先不做
 	//MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityItem);
+	//如果做这个，那么要在实体容器内排除掉落物，然后把掉落物转换到这里面
 
 	//实体容器
 	MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityContainer);

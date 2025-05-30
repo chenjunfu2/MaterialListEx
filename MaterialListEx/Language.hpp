@@ -89,8 +89,6 @@ public:
 		ENUM_END,
 	};
 
-	//block可能有item，item可能有block，需要预处理去掉json的前缀并且把.改成:然后直接查询而不是自己去操作拼接
-
 	const std::string &KeyTranslate(KeyType enKeyType, const NBT_Node::NBT_String &sKeyName) const
 	{
 		static const NBT_Node::NBT_String sKeyTypePrefix[] =
@@ -107,21 +105,28 @@ public:
 
 		//拆解sKeyName并与sKeyTypePrefix[enKeyType]组合
 
-		NBT_Node::NBT_String sJsonKey = sKeyTypePrefix[enKeyType] + sKeyName;
-		size_t szPos = sKeyName.find(':');
-		if (szPos != sKeyName.npos)
-		{
-			szPos += sKeyTypePrefix[enKeyType].size();
-			sJsonKey[szPos] = '.';
-		}
+		//把名称空间的:转换成.
+		NBT_Node::NBT_String sJsonKey = sKeyName;//拷贝一份
+		std::replace(sJsonKey.begin(), sJsonKey.end(), ':', '.');
 
-		auto itFind = data.find(sJsonKey);
-		if (itFind == data.end())
+		while (true)
 		{
-			return EmptyStr;
-		}
+			auto itFind = data.find(sKeyTypePrefix[enKeyType] + sJsonKey);
+			if (itFind == data.end())
+			{
+				//是空的情况下判断是不是item，是的话需要再查一次block
+				if (enKeyType == Item)//因为方块物品在block内
+				{
+					enKeyType = Block;//改成方块（下次不会再命中此if）
+					continue;
+				}
 
-		return itFind.value().get_ref<const std::string &>();
+				return EmptyStr;
+			}
+
+			//返回查找结果
+			return itFind.value().get_ref<const std::string &>();
+		}
 	}
 
 };

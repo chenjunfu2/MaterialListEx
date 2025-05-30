@@ -141,7 +141,7 @@ public:
 	}
 
 	//这个真的是我写到现在最简单的一个函数了（蚌埠住）
-	static EntityInfo EntityStatsToEntity(const EntityStats &stEntityStats)
+	static EntityInfo EntityStatsToEntityInfo(const EntityStats &stEntityStats)
 	{
 		return EntityInfo{ *stEntityStats.psEntityName };
 	}

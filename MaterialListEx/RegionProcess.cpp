@@ -11,20 +11,26 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 
 		//方块到物品处理
 		{
-			auto &current = rgsData.mslBlockItem;
+			auto &current = rgsData.mslBlock;
+			auto &curBlockItem = rgsData.mslBlockItem;
 			auto listBlockStats = BlockProcess::GetBlockStats(RgCompound);//获取方块统计列表
 			for (const auto &itBlock : listBlockStats)
 			{
+				//转换方块
+				auto tmpBlock = BlockProcess::BlockStatsToBlockInfo(itBlock);
+				current.map[std::move(tmpBlock)] += 1;//每次遇到+=1
+
 				//每个方块转换到物品，并通过map进行统计同类物品
 				auto tmp = BlockProcess::BlockStatsToItemStack(itBlock);
 				for (auto &itItem : tmp)
 				{
-					current.map[{ std::move(itItem.sItemName) }] += itItem.u64Counter;//如果key不存在，则自动创建，且保证value为0
+					curBlockItem.map[{ std::move(itItem.sItemName) }] += itItem.u64Counter;//如果key不存在，则自动创建，且保证value为0
 				}
 			}
 
 			//执行排序
 			current.SortElement();
+			curBlockItem.SortElement();
 		}
 
 		//方块实体容器处理
@@ -62,7 +68,7 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 			for (const auto &it : listEntityStats)
 			{
 				//转换实体
-				auto tmpEntity = EntityProcess::EntityStatsToEntity(it);
+				auto tmpEntity = EntityProcess::EntityStatsToEntityInfo(it);
 				current.map[std::move(tmpEntity)] += 1;//每次遇到+1即可
 
 				//转换实体物品栏和容器

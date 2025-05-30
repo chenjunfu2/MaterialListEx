@@ -177,8 +177,10 @@ int main(int argc, char *argv[])
 	{
 		printf("==============Region:[%s]==============\n", U16ANSI(U16STR(it.sRegionName)).c_str());
 		
+		printf("\n================[block]================\n");
+		PrintInfo<Language::Item>(it.mslBlock.listSort, lang);//方块
 		printf("\n==============[block item]==============\n");
-		PrintNoTagInfo<Language::Block>(it.mslBlockItem.listSort, lang);//方块转物品
+		PrintNoTagInfo<Language::Item>(it.mslBlockItem.listSort, lang);//方块转物品
 		printf("\n========[tile entity container]========\n");
 		PrintInfo<Language::Item>(it.mslTileEntityContainer.listSort, lang);//方块实体容器
 		printf("\n=============[entity info]=============\n");
@@ -189,36 +191,6 @@ int main(int argc, char *argv[])
 		PrintInfo<Language::Item>(it.mslEntityInventory.listSort, lang);//实体物品栏
 	}
 	
-	return 1145;
-
-	/*
-
-	for (const auto &itRgSt : vtRegionStats)
-	{
-		printf("Region:[%s]\n", U16ANSI(U16STR(*itRgSt.psRegionName)).c_str());
-		for (const auto &itItem : itRgSt.mslBlock.listSort)
-		{
-			const auto &[sItemName, u64ItemCount] = itItem.get();
-			if (bLanguage)
-			{
-				const auto it = zh_cn.find(sItemName);
-				if (it != zh_cn.end() && it->is_string())//转化为中文输出
-				{
-					printf("%s [%s]: %llu\n", ConvertUtf8ToAnsi(it->get<std::string>()).c_str(), sItemName.c_str(), u64ItemCount);
-				}
-				else
-				{
-					printf("[Unknown] [%s]: %llu\n", sItemName.c_str(), u64ItemCount);
-				}
-			}
-			else
-			{
-				printf("%s: %llu\n", sItemName.c_str(), u64ItemCount);
-			}
-		}
-
-	}
-	*/
 	return 0;
 }
 
