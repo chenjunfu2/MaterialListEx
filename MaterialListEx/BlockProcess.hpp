@@ -195,7 +195,7 @@ public:
 	static BlockInfo BlockStatsToBlockInfo(const BlockStats &stBlocks)
 	{
 		return BlockInfo
-		{ 
+		{
 			stBlocks.psBlockName == NULL ? NBT_Node::NBT_String{} : *stBlocks.psBlockName,
 			stBlocks.pcpdProperties == NULL ? NBT_Node::NBT_Compound{} : *stBlocks.pcpdProperties
 		};

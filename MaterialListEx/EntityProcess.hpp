@@ -143,7 +143,10 @@ public:
 	//这个真的是我写到现在最简单的一个函数了（蚌埠住）
 	static EntityInfo EntityStatsToEntityInfo(const EntityStats &stEntityStats)
 	{
-		return EntityInfo{ *stEntityStats.psEntityName };
+		return EntityInfo
+		{
+			stEntityStats.psEntityName == NULL ? NBT_Node::NBT_String{} : *stEntityStats.psEntityName
+		};
 	}
 
 	/*
