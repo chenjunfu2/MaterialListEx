@@ -1,31 +1,28 @@
 #pragma once
 
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string>
 
-bool ReadFile(const char *const _FileName, std::string &_Data)
-{
-	FILE *pFile = fopen(_FileName, "rb");
-	if (pFile == NULL)
-	{
-		return false;
-	}
-	//»ñÈ¡ÎÄ¼ş´óĞ¡
-	if (_fseeki64(pFile, 0, SEEK_END) != 0)
-	{
-		return false;
-	}
-	uint64_t qwFileSize = _ftelli64(pFile);
-	//»Øµ½ÎÄ¼ş¿ªÍ·
-	rewind(pFile);
+bool ReadFile(const char *const _FileName, std::string &_Data) {
+  FILE *pFile = fopen(_FileName, "rb");
+  if (pFile == NULL) {
+    return false;
+  }
+  // è·å–æ–‡ä»¶å¤§å°
+  if (_fseeki64(pFile, 0, SEEK_END) != 0) {
+    return false;
+  }
+  uint64_t qwFileSize = _ftelli64(pFile);
+  // å›åˆ°æ–‡ä»¶å¼€å¤´
+  rewind(pFile);
 
-	//Ö±½Ó¸øÊı¾İÈûstringÀï
-	_Data.resize(qwFileSize);//ÉèÖÃ³¤¶È c++23ÓÃresize_and_overwrite
-	fread(_Data.data(), sizeof(_Data[0]), qwFileSize, pFile);//Ö±½Ó¶ÁÈëdata
-	//Íê³É£¬¹Ø±ÕÎÄ¼ş
-	fclose(pFile);
-	pFile = NULL;
+  // ç›´æ¥ç»™æ•°æ®å¡stringé‡Œ
+  _Data.resize(qwFileSize); // è®¾ç½®é•¿åº¦ c++23ç”¨resize_and_overwrite
+  fread(_Data.data(), sizeof(_Data[0]), qwFileSize, pFile); // ç›´æ¥è¯»å…¥data
+  // å®Œæˆï¼Œå…³é—­æ–‡ä»¶
+  fclose(pFile);
+  pFile = NULL;
 
-	return true;
+  return true;
 }

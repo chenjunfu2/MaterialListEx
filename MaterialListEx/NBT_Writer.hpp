@@ -1,259 +1,211 @@
 #pragma once
 
 #include "NBT_Node.hpp"
-#include <new>//bad alloc
+#include <new> //bad alloc
 
-template <typename T>
-class MyOutputStream
-{
-	template<typename T>
-	struct has_emplace_back
-	{
-	private:
-		template<typename U>
-		static auto test(int) -> decltype(std::declval<U>().emplace_back(std::declval<typename U::value_type>()), std::true_type{});
+template <typename T> class MyOutputStream {
+  template <typename T> struct has_emplace_back {
+  private:
+    template <typename U>
+    static auto
+    test(int) -> decltype(std::declval<U>().emplace_back(
+                              std::declval<typename U::value_type>()),
+                          std::true_type{});
 
-		template<typename>
-		static std::false_type test(...);
+    template <typename> static std::false_type test(...);
 
-	public:
-		static constexpr bool value = std::true_type::value;
-	};
+  public:
+    static constexpr bool value = std::true_type::value;
+  };
+
 private:
-	T &tData;
+  T &tData;
+
 public:
-	MyOutputStream(T &_tData, size_t szStartIdx = 0) :tData(_tData)
-	{
-		tData.resize(szStartIdx);
-	}
-	~MyOutputStream() = default;
+  MyOutputStream(T &_tData, size_t szStartIdx = 0) : tData(_tData) {
+    tData.resize(szStartIdx);
+  }
+  ~MyOutputStream() = default;
 
-	bool PutOnce(const typename T::value_type &c) noexcept
-	{
-		try
-		{
-			tData.push_back(c);
-			return true;
-		}
-		catch (const std::bad_alloc&)
-		{
-			return false;
-		}
-	}
+  bool PutOnce(const typename T::value_type &c) noexcept {
+    try {
+      tData.push_back(c);
+      return true;
+    } catch (const std::bad_alloc &) {
+      return false;
+    }
+  }
 
-	bool PutOnce(typename T::value_type &&c) noexcept
-	{
-		try
-		{
-			tData.push_back(std::move(c));
-			return true;
-		}
-		catch (const std::bad_alloc &)
-		{
-			return false;
-		}
-	}
+  bool PutOnce(typename T::value_type &&c) noexcept {
+    try {
+      tData.push_back(std::move(c));
+      return true;
+    } catch (const std::bad_alloc &) {
+      return false;
+    }
+  }
 
-	bool PutRange(typename T::const_iterator itBeg, typename T::const_iterator itEnd) noexcept
-	{
-		try
-		{
-			tData.append(itBeg, itEnd);
-			return true;
-		}
-		catch (const std::bad_alloc &)
-		{
-			return false;
-		}
-	}
+  bool PutRange(typename T::const_iterator itBeg,
+                typename T::const_iterator itEnd) noexcept {
+    try {
+      tData.append(itBeg, itEnd);
+      return true;
+    } catch (const std::bad_alloc &) {
+      return false;
+    }
+  }
 
-	template<typename... Args, typename = std::enable_if_t<has_emplace_back<T>::value>>
-	bool EmplaceOnce(Args&&... args) noexcept
-	{
-		try
-		{
-			tData.emplace_back(std::forward<Args>(args)...);
-			return true;
-		}
-		catch (const std::bad_alloc &)
-		{
-			return false;
-		}
-	}
+  template <typename... Args,
+            typename = std::enable_if_t<has_emplace_back<T>::value>>
+  bool EmplaceOnce(Args &&...args) noexcept {
+    try {
+      tData.emplace_back(std::forward<Args>(args)...);
+      return true;
+    } catch (const std::bad_alloc &) {
+      return false;
+    }
+  }
 
-	void UnPut() noexcept
-	{
-		tData.pop_back();
-	}
+  void UnPut() noexcept { tData.pop_back(); }
 
-	size_t GetSize() const noexcept
-	{
-		return tData.size();
-	}
+  size_t GetSize() const noexcept { return tData.size(); }
 
-	void Reset() noexcept
-	{
-		tData.clear();
-	}
+  void Reset() noexcept { tData.clear(); }
 
-	const T &Data() const noexcept
-	{
-		return tData;
-	}
+  const T &Data() const noexcept { return tData; }
 
-	T &Data() noexcept
-	{
-		return tData;
-	}
+  T &Data() noexcept { return tData; }
 };
 
-
-template <typename DataType = std::string>
-class NBT_Writer
-{
-	using OutputStream = MyOutputStream<DataType>;//Á÷ÀàĞÍ
+template <typename DataType = std::string> class NBT_Writer {
+  using OutputStream = MyOutputStream<DataType>; // æµç±»å‹
 private:
-	enum ErrCode : int
-	{
-		ERRCODE_END = -2,
+  enum ErrCode : int {
+    ERRCODE_END = -2,
 
-		OutOfMemoryError,//ÄÚ´æ²»×ã´íÎó
-		StringTooLongError,
-		AllOk,
-	};
+    OutOfMemoryError, // å†…å­˜ä¸è¶³é”™è¯¯
+    StringTooLongError,
+    AllOk,
+  };
 
-	//È·±£[·Ç´íÎóÂë]ÎªÁã£¬·ÀÖ¹³öÏÖ·Ç·¨µÄ[·Ç´íÎóÂë]µ¼ÖÂÅĞ¶ÏÊ§Ğ§Êı×éÒç³ö
-	static_assert(AllOk == 0, "AllOk != 0");
+  // ç¡®ä¿[éé”™è¯¯ç ]ä¸ºé›¶ï¼Œé˜²æ­¢å‡ºç°éæ³•çš„[éé”™è¯¯ç ]å¯¼è‡´åˆ¤æ–­å¤±æ•ˆæ•°ç»„æº¢å‡º
+  static_assert(AllOk == 0, "AllOk != 0");
 
-	static inline const char *const errReason[] =//·´ÏòÊı×éÔËËã·½Ê½£º(-ERRCODE_END - 1) + ErrCode
-	{
-		"StringTooLongError",
-		"AllOk",
-	};
+  static inline const char
+      *const errReason[] = // åå‘æ•°ç»„è¿ç®—æ–¹å¼ï¼š(-ERRCODE_END - 1) + ErrCode
+      {
+          "StringTooLongError",
+          "AllOk",
+  };
 
-	//¼ÇµÃÍ¬²½Êı×é£¡
-	static_assert(sizeof(errReason) / sizeof(errReason[0]) == (-ERRCODE_END), "errReason array out sync");
+  // è®°å¾—åŒæ­¥æ•°ç»„ï¼
+  static_assert(sizeof(errReason) / sizeof(errReason[0]) == (-ERRCODE_END),
+                "errReason array out sync");
 
+  enum WarnCode : int {
+    NoWarn = 0,
 
-	enum WarnCode : int
-	{
-		NoWarn = 0,
+    WARNCODE_END,
+  };
 
-		WARNCODE_END,
-	};
+  // ç¡®ä¿[éè­¦å‘Šç ]ä¸ºé›¶ï¼Œé˜²æ­¢å‡ºç°éæ³•çš„[éè­¦å‘Šç ]å¯¼è‡´åˆ¤æ–­å¤±æ•ˆæ•°ç»„æº¢å‡º
+  static_assert(NoWarn == 0, "NoWarn != 0");
 
-	//È·±£[·Ç¾¯¸æÂë]ÎªÁã£¬·ÀÖ¹³öÏÖ·Ç·¨µÄ[·Ç¾¯¸æÂë]µ¼ÖÂÅĞ¶ÏÊ§Ğ§Êı×éÒç³ö
-	static_assert(NoWarn == 0, "NoWarn != 0");
+  static inline const char *const warnReason[] = // æ­£å¸¸æ•°ç»„ï¼Œç›´æ¥ç”¨WarnCodeè®¿é—®
+      {
+          "NoWarn",
+  };
 
-	static inline const char *const warnReason[] =//Õı³£Êı×é£¬Ö±½ÓÓÃWarnCode·ÃÎÊ
-	{
-		"NoWarn",
-	};
+  // è®°å¾—åŒæ­¥æ•°ç»„ï¼
+  static_assert(sizeof(warnReason) / sizeof(warnReason[0]) == WARNCODE_END,
+                "warnReason array out sync");
 
-	//¼ÇµÃÍ¬²½Êı×é£¡
-	static_assert(sizeof(warnReason) / sizeof(warnReason[0]) == WARNCODE_END, "warnReason array out sync");
+  // errorå¤„ç†
+  // ä½¿ç”¨å˜å‚å½¢å‚è¡¨+vprintfä»£ç†å¤æ‚è¾“å‡ºï¼Œç»™å‡ºæ›´å¤šæ‰©å±•ä¿¡æ¯
+  template <typename T,
+            typename std::enable_if<std::is_same<T, ErrCode>::value ||
+                                        std::is_same<T, WarnCode>::value,
+                                    int>::type = 0>
+  static int _cdecl Error(
+      const T &code, const OutputStream &tData,
+      _Printf_format_string_ const char *const cpExtraInfo = NULL, ...) {
+    /*è€ƒè™‘æ·»åŠ æ ˆå›æº¯ï¼Œè¾“å‡ºè¯¦ç»†é”™è¯¯å‘ç”Ÿçš„nbtåµŒå¥—è·¯å¾„*/
 
-	//error´¦Àí
-	//Ê¹ÓÃ±ä²ÎĞÎ²Î±í+vprintf´úÀí¸´ÔÓÊä³ö£¬¸ø³ö¸ü¶àÀ©Õ¹ĞÅÏ¢
-	template <typename T, typename std::enable_if<std::is_same<T, ErrCode>::value || std::is_same<T, WarnCode>::value, int>::type = 0>
-	static int _cdecl Error(const T &code, const OutputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...)
-	{
-		/*¿¼ÂÇÌí¼ÓÕ»»ØËİ£¬Êä³öÏêÏ¸´íÎó·¢ÉúµÄnbtÇ¶Ì×Â·¾¶*/
+    return code;
+  }
 
+  // å¤§å°ç«¯è½¬æ¢
+  template <typename T>
+  static inline int WriteBigEndian(OutputStream &tData, const T &tVal) {
+    int iRet = AllOk;
+    if constexpr (sizeof(T) == 1) {
+      if (!tData.PutOnce((uint8_t)tVal)) {
+        iRet = OutOfMemoryError;
+        // iRet = Error(xxx);
+        // STACK_TRACEBACK
+        // return iRet;
+        return iRet;
+      }
+    } else {
+      // ç»Ÿä¸€åˆ°æ— ç¬¦å·ç±»å‹ï¼Œé˜²æ­¢æœ‰ç¬¦å·å³ç§»é”™è¯¯
+      using UT = typename std::make_unsigned<T>::type;
+      UT tTmp = (UT)tVal;
+      for (size_t i = 0; i < sizeof(T); ++i) {
+        if (!tData.PutOnce((uint8_t)tTmp)) {
+          iRet = OutOfMemoryError;
+          // iRet = Error(xxx);
+          // STACK_TRACEBACK
+          // return iRet;
+          return iRet;
+        }
+        tTmp >>= 8;
+      }
+    }
 
+    return iRet;
+  }
 
-		return code;
-	}
+  // PutName
+  static int PutName(OutputStream &tData, const NBT_Node::NBT_String &sName) {
+    int iRet = AllOk;
+    // æ£€æŸ¥å¤§å°æ˜¯å¦ç¬¦åˆä¸Šé™
+    if (sName.length() > UINT16_MAX) {
+      iRet = Error(StringTooLongError, tData,
+                   __FUNCSIG__ ": sName.length()[%zu] > UINT16_MAX[%zu]",
+                   sName.length(), UINT16_MAX);
+      // STACK_TRACEBACK
+      return iRet;
+    }
 
-	//´óĞ¡¶Ë×ª»»
-	template<typename T>
-	static inline int WriteBigEndian(OutputStream &tData, const T &tVal)
-	{
-		int iRet = AllOk;
-		if constexpr (sizeof(T) == 1)
-		{
-			if (!tData.PutOnce((uint8_t)tVal))
-			{
-				iRet = OutOfMemoryError;
-				//iRet = Error(xxx);
-				//STACK_TRACEBACK
-				//return iRet;
-				return iRet;
-			}
-		}
-		else
-		{
-			//Í³Ò»µ½ÎŞ·ûºÅÀàĞÍ£¬·ÀÖ¹ÓĞ·ûºÅÓÒÒÆ´íÎó
-			using UT = typename std::make_unsigned<T>::type;
-			UT tTmp = (UT)tVal;
-			for (size_t i = 0; i < sizeof(T); ++i)
-			{
-				if (!tData.PutOnce((uint8_t)tTmp))
-				{	
-					iRet = OutOfMemoryError;
-					//iRet = Error(xxx);
-					//STACK_TRACEBACK
-					//return iRet;
-					return iRet;
-				}
-				tTmp >>= 8;
-			}
-		}
+    // è¾“å‡ºåç§°é•¿åº¦
+    uint16_t wNameLength = (uint16_t)sName.length();
+    iRet = WriteBigEndian(tData, wNameLength);
+    if (iRet < AllOk) {
+    }
+    // è¾“å‡ºåç§°
+    if (!tData.PutRange(sName.begin(), sName.end())) {
+    }
 
-		return iRet;
-	}
+    return AllOk;
+  }
 
-	//PutName
-	static int PutName(OutputStream &tData, const NBT_Node::NBT_String &sName)
-	{
-		int iRet = AllOk;
-		//¼ì²é´óĞ¡ÊÇ·ñ·ûºÏÉÏÏŞ
-		if (sName.length() > UINT16_MAX)
-		{
-			iRet = Error(StringTooLongError, tData, __FUNCSIG__ ": sName.length()[%zu] > UINT16_MAX[%zu]", sName.length(), UINT16_MAX);
-			//STACK_TRACEBACK
-			return iRet;
-		}
+  // PutbuiltInType
 
-		//Êä³öÃû³Æ³¤¶È
-		uint16_t wNameLength = (uint16_t)sName.length();
-		iRet = WriteBigEndian(tData, wNameLength);
-		if (iRet < AllOk)
-		{
+  // PutArrayType
 
-			
+  // PutCompoundType
 
-		}
-		//Êä³öÃû³Æ
-		if (!tData.PutRange(sName.begin(), sName.end()))
-		{
+  // PutStringType
 
+  // PutListType
 
-		}
+  // SwitchNBT
 
-		return AllOk;
-	}
-
-	//PutbuiltInType
-
-	//PutArrayType
-
-	//PutCompoundType
-
-	//PutStringType
-
-	//PutListType
-
-	//SwitchNBT
-
-	//PutNBT
+  // PutNBT
 
 public:
-	NBT_Writer(void) = delete;
-	~NBT_Writer(void) = delete;
+  NBT_Writer(void) = delete;
+  ~NBT_Writer(void) = delete;
 
-	static bool WriteNBT(DataType &tData, const NBT_Node &nRoot)
-	{
-
-	}
+  static bool WriteNBT(DataType &tData, const NBT_Node &nRoot) {}
 };

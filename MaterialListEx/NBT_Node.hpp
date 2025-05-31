@@ -1,637 +1,553 @@
 #pragma once
 
-//#include <list>
-#include <vector>
-#include <map>
-#include <variant>
-#include <type_traits>
-#include <string>
-#include <stdint.h>
-#include <typeinfo>
+// #include <list>
 #include <compare>
+#include <map>
+#include <stdint.h>
+#include <string>
+#include <type_traits>
+#include <typeinfo>
+#include <variant>
+#include <vector>
 
-template<typename Map>
-class MyCompound :public Map
-{
+template <typename Map> class MyCompound : public Map {
 public:
-	//¼Ì³Ğ»ùÀà¹¹Ôì
-	using Map::Map;
+  // ç»§æ‰¿åŸºç±»æ„é€ 
+  using Map::Map;
 
-	//¼ò»¯map²éÑ¯
-	inline typename Map::mapped_type &Get(const typename Map::key_type &sTagName)
-	{
-		return Map::at(sTagName);
-	}
+  // ç®€åŒ–mapæŸ¥è¯¢
+  inline typename Map::mapped_type &
+  Get(const typename Map::key_type &sTagName) {
+    return Map::at(sTagName);
+  }
 
-	inline const typename Map::mapped_type &Get(const  typename Map::key_type &sTagName) const
-	{
-		return Map::at(sTagName);
-	}
+  inline const typename Map::mapped_type &
+  Get(const typename Map::key_type &sTagName) const {
+    return Map::at(sTagName);
+  }
 
-	inline typename Map::mapped_type *Search(const  typename Map::key_type &sTagName)
-	{
-		auto find = Map::find(sTagName);
-		return find == Map::end() ? NULL : &((*find).second);
-	}
+  inline typename Map::mapped_type *
+  Search(const typename Map::key_type &sTagName) {
+    auto find = Map::find(sTagName);
+    return find == Map::end() ? NULL : &((*find).second);
+  }
 
-	inline const typename Map::mapped_type *Search(const typename Map::key_type &sTagName) const
-	{
-		auto find = Map::find(sTagName);
-		return find == Map::end() ? NULL : &((*find).second);
-	}
+  inline const typename Map::mapped_type *
+  Search(const typename Map::key_type &sTagName) const {
+    auto find = Map::find(sTagName);
+    return find == Map::end() ? NULL : &((*find).second);
+  }
 
-	bool operator==(const MyCompound &_Right) const noexcept
-	{
-		return (const Map &)*this == (const Map &)_Right;
-	}
+  bool operator==(const MyCompound &_Right) const noexcept {
+    return (const Map &)*this == (const Map &)_Right;
+  }
 
-	bool operator!=(const MyCompound &_Right) const noexcept
-	{
-		return (const Map &)*this != (const Map &)_Right;
-	}
+  bool operator!=(const MyCompound &_Right) const noexcept {
+    return (const Map &)*this != (const Map &)_Right;
+  }
 
-	std::partial_ordering operator<=>(const MyCompound &_Right) const noexcept
-	{
-		return (const Map &)*this <=> (const Map &)_Right;
-	}
+  std::partial_ordering operator<=>(const MyCompound &_Right) const noexcept {
+    return (const Map &)*this <=> (const Map &)_Right;
+  }
 
-#define TYPE_GET_FUNC(type)\
-inline const typename Map::mapped_type::NBT_##type &Get##type(const typename Map::key_type & sTagName) const\
-{\
-	return Map::at(sTagName).Get##type();\
-}\
-\
-inline typename Map::mapped_type::NBT_##type &Get##type(const typename Map::key_type & sTagName)\
-{\
-	return Map::at(sTagName).Get##type();\
-}\
-\
-inline const typename Map::mapped_type::NBT_##type *Has##type(const typename Map::key_type & sTagName) const\
-{\
-	auto find = Map::find(sTagName);\
-	return find != Map::end() && find->second.Is##type() ? &(find->second.Get##type()) : NULL;\
-}\
-\
-inline typename Map::mapped_type::NBT_##type *Has##type(const typename Map::key_type & sTagName)\
-{\
-	auto find = Map::find(sTagName);\
-	return find != Map::end() && find->second.Is##type() ? &(find->second.Get##type()) : NULL;\
-}
+#define TYPE_GET_FUNC(type)                                                    \
+  inline const typename Map::mapped_type::NBT_##type &Get##type(               \
+      const typename Map::key_type &sTagName) const {                          \
+    return Map::at(sTagName).Get##type();                                      \
+  }                                                                            \
+                                                                               \
+  inline typename Map::mapped_type::NBT_##type &Get##type(                     \
+      const typename Map::key_type &sTagName) {                                \
+    return Map::at(sTagName).Get##type();                                      \
+  }                                                                            \
+                                                                               \
+  inline const typename Map::mapped_type::NBT_##type *Has##type(               \
+      const typename Map::key_type &sTagName) const {                          \
+    auto find = Map::find(sTagName);                                           \
+    return find != Map::end() && find->second.Is##type()                       \
+               ? &(find->second.Get##type())                                   \
+               : NULL;                                                         \
+  }                                                                            \
+                                                                               \
+  inline typename Map::mapped_type::NBT_##type *Has##type(                     \
+      const typename Map::key_type &sTagName) {                                \
+    auto find = Map::find(sTagName);                                           \
+    return find != Map::end() && find->second.Is##type()                       \
+               ? &(find->second.Get##type())                                   \
+               : NULL;                                                         \
+  }
 
-	TYPE_GET_FUNC(End);
-	TYPE_GET_FUNC(Byte);
-	TYPE_GET_FUNC(Short);
-	TYPE_GET_FUNC(Int);
-	TYPE_GET_FUNC(Long);
-	TYPE_GET_FUNC(Float);
-	TYPE_GET_FUNC(Double);
-	TYPE_GET_FUNC(ByteArray);
-	TYPE_GET_FUNC(IntArray);
-	TYPE_GET_FUNC(LongArray);
-	TYPE_GET_FUNC(String);
-	TYPE_GET_FUNC(List);
-	TYPE_GET_FUNC(Compound);
-
-
-#undef TYPE_GET_FUNC
-
-};
-
-
-template<typename List>
-class MyList :public List
-{
-public:
-	//¼Ì³Ğ»ùÀà¹¹Ôì
-	using List::List;
-
-	//¼ò»¯list²éÑ¯
-	inline typename List::value_type &Get(const typename List::size_type &szPos)
-	{
-		return List::at(szPos);
-	}
-
-	inline const typename List::value_type &Get(const typename List::size_type &szPos) const
-	{
-		return List::at(szPos);
-	}
-
-	bool operator==(const MyList &_Right) const noexcept
-	{
-		return (const List &)*this == (const List &)_Right;
-	}
-
-	bool operator!=(const MyList &_Right) const noexcept
-	{
-		return (const List &)*this != (const List &)_Right;
-	}
-
-	std::partial_ordering operator<=>(const MyList &_Right) const noexcept
-	{
-		return (const List &)*this <=> (const List &)_Right;
-	}
-
-#define TYPE_GET_FUNC(type)\
-inline const typename List::value_type::NBT_##type &Get##type(const typename List::size_type &szPos) const\
-{\
-	return List::at(szPos).Get##type();\
-}\
-\
-inline typename List::value_type::NBT_##type &Get##type(const typename List::size_type &szPos)\
-{\
-	return List::at(szPos).Get##type();\
-}
-
-
-	TYPE_GET_FUNC(End);
-	TYPE_GET_FUNC(Byte);
-	TYPE_GET_FUNC(Short);
-	TYPE_GET_FUNC(Int);
-	TYPE_GET_FUNC(Long);
-	TYPE_GET_FUNC(Float);
-	TYPE_GET_FUNC(Double);
-	TYPE_GET_FUNC(ByteArray);
-	TYPE_GET_FUNC(IntArray);
-	TYPE_GET_FUNC(LongArray);
-	TYPE_GET_FUNC(String);
-	TYPE_GET_FUNC(List);
-	TYPE_GET_FUNC(Compound);
-
-
-#undef TYPE_GET_FUNC
-
-};
-
-template <bool bIsConst>
-class NBT_Node_View;
-
-class NBT_Node
-{
-	template <bool bIsConst>
-	friend class NBT_Node_View;
-public:
-	using NBT_TAG_RAW_TYPE = uint8_t;
-	enum NBT_TAG : NBT_TAG_RAW_TYPE
-	{
-		TAG_End = 0,	//½áÊøÏî
-		TAG_Byte,		//int8_t
-		TAG_Short,		//int16_t
-		TAG_Int,		//int32_t
-		TAG_Long,		//int64_t
-		TAG_Float,		//float 4byte
-		TAG_Double,		//double 8byte
-		TAG_Byte_Array,	//std::vector<int8_t>
-		TAG_String,		//std::string->ÓĞ³¤¶ÈÊı¾İ£¬ÇÒÎª·Ç0ÖÕÖ¹×Ö·û´®!!
-		TAG_List,		//std::list<NBT_Node>->vector
-		TAG_Compound,	//std::map<std::string, NBT_Node>->×Ö·û´®ÎªNBTÏîÃû³Æ
-		TAG_Int_Array,	//std::vector<int32_t>
-		TAG_Long_Array,	//std::vector<int64_t>
-		ENUM_END,		//½áÊø±ê¼Ç£¬ÓÃÓÚ¼ÆËãenumÔªËØ¸öÊı
-	};
-
-	using NBT_End			= std::monostate;//ÎŞ×´Ì¬
-	using NBT_Byte			= int8_t;
-	using NBT_Short			= int16_t;
-	using NBT_Int			= int32_t;
-	using NBT_Long			= int64_t;
-	using NBT_Float			= std::conditional_t<(sizeof(float) == sizeof(uint32_t)), float, uint32_t>;//Í¨¹ı±àÒëÆÚÈ·ÈÏÀàĞÍ´óĞ¡À´Ñ¡ÔñÕıÈ·µÄÀàĞÍ£¬ÓÅÏÈ¸¡µãÀàĞÍ£¬Èç¹ûÊ§°ÜÔòÌæ»»Îª¶ÔÓ¦µÄ¿ÉÓÃÀàĞÍ
-	using NBT_Double		= std::conditional_t<(sizeof(double) == sizeof(uint64_t)), double, uint64_t>;
-	using NBT_ByteArray		= std::vector<NBT_Byte>;
-	using NBT_IntArray		= std::vector<NBT_Int>;
-	using NBT_LongArray		= std::vector<NBT_Long>;
-	using NBT_String		= std::string;//mu8-string
-	using NBT_List			= MyList<std::vector<NBT_Node>>;//´æ´¢Ò»ÏµÁĞÍ¬ÀàĞÍ±êÇ©µÄÓĞĞ§¸ºÔØ£¨ÎŞ±êÇ© ID »òÃû³Æ£©//Ô­ÏÈÎªlist£¬ÒòÎªmcÄÚlistÒ²Í¨¹ıÏÂ±ê·ÃÎÊ£¬¸ÄÎªvectorÄ£Äâ
-	using NBT_Compound		= MyCompound<std::map<NBT_Node::NBT_String, NBT_Node>>;//¹ÒÔÚĞòÁĞÏÂµÄÄÚÈİ¶¼Í¨¹ımap°ó¶¨Ãû³Æ
-
-	template<typename... Ts> struct TypeList{};
-	using NBT_TypeList = TypeList
-	<
-		NBT_End,
-		NBT_Byte,
-		NBT_Short,
-		NBT_Int,
-		NBT_Long,
-		NBT_Float,
-		NBT_Double,
-		NBT_ByteArray,
-		NBT_String,
-		NBT_List,
-		NBT_Compound,
-		NBT_IntArray,
-		NBT_LongArray
-	>;
-
-private:
-	template <typename T>
-	struct TypeListToVariant;
-
-	template <typename... Ts>
-	struct TypeListToVariant<TypeList<Ts...>>
-	{
-		using type = std::variant<Ts...>;
-	};
-
-	using VariantData = TypeListToVariant<NBT_TypeList>::type;
-
-	VariantData data;
-
-	//enumÓëË÷Òı´óĞ¡¼ì²é
-	static_assert((std::variant_size_v<VariantData>) == ENUM_END, "Enumeration does not match the number of types in the mutator");
-public:
-	// ÀàĞÍ´æÔÚ¼ì²é
-	template <typename T, typename List>
-	struct IsValidType;
-
-	template <typename T, typename... Ts>
-	struct IsValidType<T, TypeList<Ts...>>
-	{
-		static constexpr bool value = (std::is_same_v<T, Ts> || ...);
-	};
-
-	// ÏÔÊ½¹¹Ôì£¨Í¨¹ı±êÇ©£©
-	template <typename T, typename... Args>
-	explicit NBT_Node(std::in_place_type_t<T>, Args&&... args) : data(std::in_place_type<T>, std::forward<Args>(args)...)
-	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
-	}
-
-	// ÏÔÊ½¹¹Ôì£¨Í¨¹ı±êÇ©£©
-	template <typename T, typename... Args>
-	explicit NBT_Node(Args&&... args) : data(std::forward<Args>(args)...)
-	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
-	}
-
-	// Í¨ÓÃ¹¹Ôìº¯Êı
-	// Ê¹ÓÃSFINAEÅÅ³ıNBT_NodeÀàĞÍ
-	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, NBT_Node>>>
-	explicit NBT_Node(T &&value) : data(std::forward<T>(value))
-	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
-	}
-
-	// Í¨ÓÃÔ­Î»¹¹Ôì½Ó¿Ú
-	template <typename T, typename... Args>
-	T &emplace(Args&&... args)
-	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
-		return data.emplace<T>(std::forward<Args>(args)...);
-	}
-
-	// Ä¬ÈÏ¹¹Ôì£¨TAG_End£©
-	NBT_Node() : data(NBT_End{})
-	{}
-
-	// ×Ô¶¯Îö¹¹ÓÉvariant´¦Àí
-	~NBT_Node() = default;
-
-	NBT_Node(const NBT_Node &_NBT_Node) : data(_NBT_Node.data)
-	{}
-
-	NBT_Node(NBT_Node &&_NBT_Node) noexcept : data(std::move(_NBT_Node.data))
-	{}
-
-	NBT_Node &operator=(const NBT_Node &_NBT_Node)
-	{
-		data = _NBT_Node.data;
-		return *this;
-	}
-
-	NBT_Node &operator=(NBT_Node &&_NBT_Node) noexcept
-	{
-		data = std::move(_NBT_Node.data);
-		return *this;
-	}
-
-	bool operator==(const NBT_Node &_Right) const noexcept
-	{
-		return data == _Right.data;
-	}
-	
-	bool operator!=(const NBT_Node &_Right) const noexcept
-	{
-		return data != _Right.data;
-	}
-
-	std::partial_ordering operator<=>(const NBT_Node &_Right) const noexcept
-	{
-		return data <=> _Right.data;
-	}
-
-	//Çå³ıËùÓĞÊı¾İ
-	void Clear(void)
-	{
-		data.emplace<NBT_End>();
-	}
-
-	//»ñÈ¡±êÇ©ÀàĞÍ
-	NBT_TAG GetTag() const noexcept
-	{
-		return (NBT_TAG)data.index();//·µ»Øµ±Ç°´æ´¢ÀàĞÍµÄindex£¨0»ùË÷Òı£¬ÓëNBT_TAG enumÒ»Ò»¶ÔÓ¦£©
-	}
-
-
-	//ÀàĞÍ°²È«·ÃÎÊ
-	template<typename T>
-	const T &GetData() const
-	{
-		return std::get<T>(data);
-	}
-
-	template<typename T>
-	T &GetData()
-	{
-		return std::get<T>(data);
-	}
-
-	// ÀàĞÍ¼ì²é
-	template<typename T>
-	bool TypeHolds() const
-	{
-		return std::holds_alternative<T>(data);
-	}
-
-	//Õë¶ÔÃ¿ÖÖÀàĞÍÖØÔØÒ»¸ö·½±ãµÄº¯Êı
-	/*
-		´¿ÀàĞÍÃûº¯Êı£ºÖ±½Ó»ñÈ¡´ËÀàĞÍ£¬²»×öÈÎºÎ¼ì²é£¬ÓÉ±ê×¼¿âstd::get¾ßÌåÊµÏÖ¾ö¶¨
-		Is¿ªÍ·µÄÀàĞÍÃûº¯Êı£ºÅĞ¶Ïµ±Ç°NBT_NodeÊÇ·ñÎª´ËÀàĞÍ
-		´¿ÀàĞÍÃûº¯Êı´ø²ÎÊı°æ±¾£º²éÕÒµ±Ç°CompoundÖ¸¶¨µÄName²¢×ª»»µ½ÀàĞÍÒıÓÃ·µ»Ø£¬²»×ö¼ì²é£¬¾ßÌåÓÉ±ê×¼¿âÊµÏÖ¶¨Òå
-		Has¿ªÍ·µÄÀàĞÍÃûº¯Êı´ø²ÎÊı°æ±¾£º²éÕÒµ±Ç°CompoundÊÇ·ñÓĞÌØ¶¨NameµÄTag£¬²¢·µ»Ø´ËNameµÄTag£¨×ª»»µ½Ö¸¶¨ÀàĞÍ£©µÄÖ¸Õë
-	*/
-#define TYPE_GET_FUNC(type)\
-inline const NBT_##type &Get##type() const\
-{\
-	return std::get<NBT_##type>(data);\
-}\
-\
-inline NBT_##type &Get##type()\
-{\
-	return std::get<NBT_##type>(data);\
-}\
-\
-inline bool Is##type() const\
-{\
-	return std::holds_alternative<NBT_##type>(data);\
-}\
-\
-friend inline NBT_##type &Get##type(NBT_Node & node)\
-{\
-	return node.Get##type();\
-}\
-\
-friend inline const NBT_##type &Get##type(const NBT_Node & node)\
-{\
-	return node.Get##type();\
-}
-
-	TYPE_GET_FUNC(End);
-	TYPE_GET_FUNC(Byte);
-	TYPE_GET_FUNC(Short);
-	TYPE_GET_FUNC(Int);
-	TYPE_GET_FUNC(Long);
-	TYPE_GET_FUNC(Float);
-	TYPE_GET_FUNC(Double);
-	TYPE_GET_FUNC(ByteArray);
-	TYPE_GET_FUNC(IntArray);
-	TYPE_GET_FUNC(LongArray);
-	TYPE_GET_FUNC(String);
-	TYPE_GET_FUNC(List);
-	TYPE_GET_FUNC(Compound);
+  TYPE_GET_FUNC(End);
+  TYPE_GET_FUNC(Byte);
+  TYPE_GET_FUNC(Short);
+  TYPE_GET_FUNC(Int);
+  TYPE_GET_FUNC(Long);
+  TYPE_GET_FUNC(Float);
+  TYPE_GET_FUNC(Double);
+  TYPE_GET_FUNC(ByteArray);
+  TYPE_GET_FUNC(IntArray);
+  TYPE_GET_FUNC(LongArray);
+  TYPE_GET_FUNC(String);
+  TYPE_GET_FUNC(List);
+  TYPE_GET_FUNC(Compound);
 
 #undef TYPE_GET_FUNC
 };
 
-
-//ÓÃ·¨ºÍNBT_NodeÒ»ÖÂ£¬µ«ÊÇÖ»³ÖÓĞ¹¹ÔìÊ±´«Èë¶ÔÏóµÄÖ¸Õë£¬ÇÒ²»³ÖÓĞ¶ÔÏó
-//¶ÔÏóËæÊ±¿ÉÏú»Ù£¬Èç¹ûÏú»ÙºóÊ¹ÓÃ³ÖÓĞÏú»Ù¶ÔÏóµÄviewÔòĞĞÎªÎ´¶¨Òå£¬ÓÃ»§×ÔĞĞ¸ºÔğ
-//¹¹Ôì´«ÈënullptrÖ¸ÕëÇÒ½øĞĞÊ¹ÓÃÔòºó¹û×Ô¸º
-
-template <bool bIsConst>
-class NBT_Node_View
-{
-	template <bool bIsConst>
-	friend class NBT_Node_View;
-private:
-	template <typename T>
-	struct AddConstIf
-	{
-		using type = std::conditional<bIsConst, const T, T>::type;
-	};
-
-	template <typename T>
-	using PtrType = typename AddConstIf<T>::type *;
-
-	template <typename T>
-	struct TypeListPointerToVariant;
-
-	template <typename... Ts>
-	struct TypeListPointerToVariant<NBT_Node::TypeList<Ts...>>
-	{
-		using type = std::variant<PtrType<Ts>...>;//Õ¹¿ª³ÉÖ¸ÕëÀàĞÍ
-	};
-
-	using VariantData = TypeListPointerToVariant<NBT_Node::NBT_TypeList>::type;
-
-	VariantData data;
+template <typename List> class MyList : public List {
 public:
-	static inline constexpr bool is_const = bIsConst;
+  // ç»§æ‰¿åŸºç±»æ„é€ 
+  using List::List;
 
-	// ÀàĞÍ´æÔÚ¼ì²é
-	template <typename T, typename List>
-	struct IsValidType;
+  // ç®€åŒ–listæŸ¥è¯¢
+  inline typename List::value_type &Get(const typename List::size_type &szPos) {
+    return List::at(szPos);
+  }
 
-	template <typename T, typename... Ts>
-	struct IsValidType<T, NBT_Node::TypeList<Ts...>>
-	{
-		static constexpr bool value = (std::is_same_v<T, Ts> || ...);
-	};
+  inline const typename List::value_type &
+  Get(const typename List::size_type &szPos) const {
+    return List::at(szPos);
+  }
 
-	// Í¨ÓÃ¹¹Ôìº¯Êı£¨±ØĞë·ÇconstÇé¿ö£©
-	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, NBT_Node> && !bIsConst >>
-	NBT_Node_View(T &value) : data(&value)
-	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_Node::NBT_TypeList>::value, "Invalid type for NBT node view");
-	}
+  bool operator==(const MyList &_Right) const noexcept {
+    return (const List &)*this == (const List &)_Right;
+  }
 
-	// Í¨ÓÃ¹¹Ôìº¯Êı
-	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, NBT_Node>>>
-	NBT_Node_View(const T &value) : data(&value)
-	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_Node::NBT_TypeList>::value, "Invalid type for NBT node view");
-	}
+  bool operator!=(const MyList &_Right) const noexcept {
+    return (const List &)*this != (const List &)_Right;
+  }
 
-	//´ÓNBT_Node¹¹Ôì£¨±ØĞë·ÇconstÇé¿ö£©
-	template<typename = std::enable_if_t<!bIsConst>>
-	NBT_Node_View(NBT_Node &node)
-	{
-		std::visit([this](auto &arg)
-			{
-				this->data = &arg;
-			}, node.data);
-	}
+  std::partial_ordering operator<=>(const MyList &_Right) const noexcept {
+    return (const List &)*this <=> (const List &)_Right;
+  }
 
-	//´ÓNBT_Node¹¹Ôì
-	NBT_Node_View(const NBT_Node &node)
-	{
-		std::visit([this](auto &arg)
-			{
-				this->data = &arg;
-			}, node.data);
-	}
+#define TYPE_GET_FUNC(type)                                                    \
+  inline const typename List::value_type::NBT_##type &Get##type(               \
+      const typename List::size_type &szPos) const {                           \
+    return List::at(szPos).Get##type();                                        \
+  }                                                                            \
+                                                                               \
+  inline typename List::value_type::NBT_##type &Get##type(                     \
+      const typename List::size_type &szPos) {                                 \
+    return List::at(szPos).Get##type();                                        \
+  }
 
-	// ÔÊĞí´Ó·Ç const ÊÓÍ¼ÒşÊ½×ª»»µ½ const ÊÓÍ¼
-	template<typename = std::enable_if_t<bIsConst>>
-	NBT_Node_View(const NBT_Node_View<false> &other)
-	{
-		std::visit([this](auto &arg)
-			{
-				this->data = arg;//´Ë´¦argÎª·ÇconstÖ¸Õë
-			}, other.data);
-	}
+  TYPE_GET_FUNC(End);
+  TYPE_GET_FUNC(Byte);
+  TYPE_GET_FUNC(Short);
+  TYPE_GET_FUNC(Int);
+  TYPE_GET_FUNC(Long);
+  TYPE_GET_FUNC(Float);
+  TYPE_GET_FUNC(Double);
+  TYPE_GET_FUNC(ByteArray);
+  TYPE_GET_FUNC(IntArray);
+  TYPE_GET_FUNC(LongArray);
+  TYPE_GET_FUNC(String);
+  TYPE_GET_FUNC(List);
+  TYPE_GET_FUNC(Compound);
+
+#undef TYPE_GET_FUNC
+};
+
+template <bool bIsConst> class NBT_Node_View;
+
+class NBT_Node {
+  template <bool bIsConst> friend class NBT_Node_View;
+
+public:
+  using NBT_TAG_RAW_TYPE = uint8_t;
+  enum NBT_TAG : NBT_TAG_RAW_TYPE {
+    TAG_End = 0,    // ç»“æŸé¡¹
+    TAG_Byte,       // int8_t
+    TAG_Short,      // int16_t
+    TAG_Int,        // int32_t
+    TAG_Long,       // int64_t
+    TAG_Float,      // float 4byte
+    TAG_Double,     // double 8byte
+    TAG_Byte_Array, // std::vector<int8_t>
+    TAG_String,    // std::string->æœ‰é•¿åº¦æ•°æ®ï¼Œä¸”ä¸ºé0ç»ˆæ­¢å­—ç¬¦ä¸²!!
+    TAG_List,      // std::list<NBT_Node>->vector
+    TAG_Compound,  // std::map<std::string, NBT_Node>->å­—ç¬¦ä¸²ä¸ºNBTé¡¹åç§°
+    TAG_Int_Array, // std::vector<int32_t>
+    TAG_Long_Array, // std::vector<int64_t>
+    ENUM_END,       // ç»“æŸæ ‡è®°ï¼Œç”¨äºè®¡ç®—enumå…ƒç´ ä¸ªæ•°
+  };
+
+  using NBT_End = std::monostate; // æ— çŠ¶æ€
+  using NBT_Byte = int8_t;
+  using NBT_Short = int16_t;
+  using NBT_Int = int32_t;
+  using NBT_Long = int64_t;
+  using NBT_Float = std::conditional_t<
+      (sizeof(float) == sizeof(uint32_t)), float,
+      uint32_t>; // é€šè¿‡ç¼–è¯‘æœŸç¡®è®¤ç±»å‹å¤§å°æ¥é€‰æ‹©æ­£ç¡®çš„ç±»å‹ï¼Œä¼˜å…ˆæµ®ç‚¹ç±»å‹ï¼Œå¦‚æœå¤±è´¥åˆ™æ›¿æ¢ä¸ºå¯¹åº”çš„å¯ç”¨ç±»å‹
+  using NBT_Double = std::conditional_t<(sizeof(double) == sizeof(uint64_t)),
+                                        double, uint64_t>;
+  using NBT_ByteArray = std::vector<NBT_Byte>;
+  using NBT_IntArray = std::vector<NBT_Int>;
+  using NBT_LongArray = std::vector<NBT_Long>;
+  using NBT_String = std::string; // mu8-string
+  using NBT_List = MyList<std::vector<
+      NBT_Node>>; // å­˜å‚¨ä¸€ç³»åˆ—åŒç±»å‹æ ‡ç­¾çš„æœ‰æ•ˆè´Ÿè½½ï¼ˆæ— æ ‡ç­¾ ID
+                  // æˆ–åç§°ï¼‰//åŸå…ˆä¸ºlistï¼Œå› ä¸ºmcå†…listä¹Ÿé€šè¿‡ä¸‹æ ‡è®¿é—®ï¼Œæ”¹ä¸ºvectoræ¨¡æ‹Ÿ
+  using NBT_Compound =
+      MyCompound<std::map<NBT_Node::NBT_String,
+                          NBT_Node>>; // æŒ‚åœ¨åºåˆ—ä¸‹çš„å†…å®¹éƒ½é€šè¿‡mapç»‘å®šåç§°
+
+  template <typename... Ts> struct TypeList {};
+  using NBT_TypeList =
+      TypeList<NBT_End, NBT_Byte, NBT_Short, NBT_Int, NBT_Long, NBT_Float,
+               NBT_Double, NBT_ByteArray, NBT_String, NBT_List, NBT_Compound,
+               NBT_IntArray, NBT_LongArray>;
 
 private:
-	// Òş²ØÄ¬ÈÏ¹¹Ôì£¨TAG_End£©
-	NBT_Node_View() = default;
+  template <typename T> struct TypeListToVariant;
+
+  template <typename... Ts> struct TypeListToVariant<TypeList<Ts...>> {
+    using type = std::variant<Ts...>;
+  };
+
+  using VariantData = TypeListToVariant<NBT_TypeList>::type;
+
+  VariantData data;
+
+  // enumä¸ç´¢å¼•å¤§å°æ£€æŸ¥
+  static_assert(
+      (std::variant_size_v<VariantData>) == ENUM_END,
+      "Enumeration does not match the number of types in the mutator");
+
 public:
+  // ç±»å‹å­˜åœ¨æ£€æŸ¥
+  template <typename T, typename List> struct IsValidType;
 
-	// ×Ô¶¯Îö¹¹ÓÉvariant´¦Àí
-	~NBT_Node_View() = default;
+  template <typename T, typename... Ts> struct IsValidType<T, TypeList<Ts...>> {
+    static constexpr bool value = (std::is_same_v<T, Ts> || ...);
+  };
 
-	//¿½±´¹¹Ôì
-	NBT_Node_View(const NBT_Node_View & _NBT_Node_View) : data(_NBT_Node_View.data)
-	{}
+  // æ˜¾å¼æ„é€ ï¼ˆé€šè¿‡æ ‡ç­¾ï¼‰
+  template <typename T, typename... Args>
+  explicit NBT_Node(std::in_place_type_t<T>, Args &&...args)
+      : data(std::in_place_type<T>, std::forward<Args>(args)...) {
+    static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value,
+                  "Invalid type for NBT node");
+  }
 
-	//ÒÆ¶¯¹¹Ôì
-	NBT_Node_View(NBT_Node_View &&_NBT_Node_View) noexcept : data(std::move(_NBT_Node_View.data))
-	{}
+  // æ˜¾å¼æ„é€ ï¼ˆé€šè¿‡æ ‡ç­¾ï¼‰
+  template <typename T, typename... Args>
+  explicit NBT_Node(Args &&...args) : data(std::forward<Args>(args)...) {
+    static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value,
+                  "Invalid type for NBT node");
+  }
 
-	NBT_Node_View &operator=(const NBT_Node_View &_NBT_Node_View)
-	{
-		data = _NBT_Node_View.data;
-		return *this;
-	}
+  // é€šç”¨æ„é€ å‡½æ•°
+  // ä½¿ç”¨SFINAEæ’é™¤NBT_Nodeç±»å‹
+  template <typename T, typename = std::enable_if_t<
+                            !std::is_same_v<std::decay_t<T>, NBT_Node>>>
+  explicit NBT_Node(T &&value) : data(std::forward<T>(value)) {
+    static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value,
+                  "Invalid type for NBT node");
+  }
 
-	NBT_Node_View &operator=(NBT_Node_View &&_NBT_Node_View) noexcept
-	{
-		data = std::move(_NBT_Node_View.data);
-		return *this;
-	}
+  // é€šç”¨åŸä½æ„é€ æ¥å£
+  template <typename T, typename... Args> T &emplace(Args &&...args) {
+    static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value,
+                  "Invalid type for NBT node");
+    return data.emplace<T>(std::forward<Args>(args)...);
+  }
 
+  // é»˜è®¤æ„é€ ï¼ˆTAG_Endï¼‰
+  NBT_Node() : data(NBT_End{}) {}
 
-	bool operator==(const NBT_Node_View &_Right) const noexcept
-	{
-		if (GetTag() != _Right.GetTag())
-		{
-			return false;
-		}
+  // è‡ªåŠ¨ææ„ç”±variantå¤„ç†
+  ~NBT_Node() = default;
 
-		return std::visit([this](const auto *argL, const auto *argR)-> bool
-		{
-			using TL = const std::decay_t<decltype(argL)>;
-			return *argL == *(TL)argR;
-		}, this->data, _Right.data);
-	}
+  NBT_Node(const NBT_Node &_NBT_Node) : data(_NBT_Node.data) {}
 
-	bool operator!=(const NBT_Node_View &_Right) const noexcept
-	{
-		if (GetTag() != _Right.GetTag())
-		{
-			return true;
-		}
-	
-		return std::visit([this](const auto *argL, const auto *argR)-> bool
-		{
-			using TL = const std::decay_t<decltype(argL)>;
-			return *argL != *(TL)argR;
-		}, this->data, _Right.data);
-	}
-	
-	std::partial_ordering operator<=>(const NBT_Node_View &_Right) const noexcept
-	{
-		if (GetTag() != _Right.GetTag())
-		{
-			return std::partial_ordering::unordered;
-		}
-	
-		return std::visit([this](const auto *argL, const auto *argR)-> std::partial_ordering
-		{
-			using TL = const std::decay_t<decltype(argL)>;
-			return *argL <=> *(TL)argR;
-		}, this->data, _Right.data);
-	}
+  NBT_Node(NBT_Node &&_NBT_Node) noexcept : data(std::move(_NBT_Node.data)) {}
 
-	//»ñÈ¡±êÇ©ÀàĞÍ
-	NBT_Node::NBT_TAG GetTag() const noexcept
-	{
-		return (NBT_Node::NBT_TAG)data.index();//·µ»Øµ±Ç°´æ´¢ÀàĞÍµÄindex£¨0»ùË÷Òı£¬ÓëNBT_TAG enumÒ»Ò»¶ÔÓ¦£©
-	}
+  NBT_Node &operator=(const NBT_Node &_NBT_Node) {
+    data = _NBT_Node.data;
+    return *this;
+  }
 
-	//ÀàĞÍ°²È«·ÃÎÊ
-	template<typename T>
-	const T &GetData() const
-	{
-		return *std::get<PtrType<T>>(data);
-	}
+  NBT_Node &operator=(NBT_Node &&_NBT_Node) noexcept {
+    data = std::move(_NBT_Node.data);
+    return *this;
+  }
 
-	template<typename T, typename = std::enable_if_t<!bIsConst>>
-	T &GetData()
-	{
-		return *std::get<PtrType<T>>(data);
-	}
+  bool operator==(const NBT_Node &_Right) const noexcept {
+    return data == _Right.data;
+  }
 
-	// ÀàĞÍ¼ì²é
-	template<typename T>
-	bool TypeHolds() const
-	{
-		return std::holds_alternative<PtrType<T>>(data);
-	}
+  bool operator!=(const NBT_Node &_Right) const noexcept {
+    return data != _Right.data;
+  }
 
-	//Õë¶ÔÃ¿ÖÖÀàĞÍÖØÔØÒ»¸ö·½±ãµÄº¯Êı
-	/*
-		´¿ÀàĞÍÃûº¯Êı£ºÖ±½Ó»ñÈ¡´ËÀàĞÍ£¬²»×öÈÎºÎ¼ì²é£¬ÓÉ±ê×¼¿âstd::get¾ßÌåÊµÏÖ¾ö¶¨
-		Is¿ªÍ·µÄÀàĞÍÃûº¯Êı£ºÅĞ¶Ïµ±Ç°NBT_NodeÊÇ·ñÎª´ËÀàĞÍ
-		´¿ÀàĞÍÃûº¯Êı´ø²ÎÊı°æ±¾£º²éÕÒµ±Ç°CompoundÖ¸¶¨µÄName²¢×ª»»µ½ÀàĞÍÒıÓÃ·µ»Ø£¬²»×ö¼ì²é£¬¾ßÌåÓÉ±ê×¼¿âÊµÏÖ¶¨Òå
-		Has¿ªÍ·µÄÀàĞÍÃûº¯Êı´ø²ÎÊı°æ±¾£º²éÕÒµ±Ç°CompoundÊÇ·ñÓĞÌØ¶¨NameµÄTag£¬²¢·µ»Ø´ËNameµÄTag£¨×ª»»µ½Ö¸¶¨ÀàĞÍ£©µÄÖ¸Õë
-	*/
-#define TYPE_GET_FUNC(type)\
-inline const NBT_Node::NBT_##type &Get##type() const\
-{\
-	return *std::get<PtrType<NBT_Node::NBT_##type>>(data);\
-}\
-\
-template<typename = std::enable_if_t<!bIsConst>>\
-inline NBT_Node::NBT_##type &Get##type()\
-{\
-	return *std::get<PtrType<NBT_Node::NBT_##type>>(data);\
-}\
-\
-inline bool Is##type() const\
-{\
-	return std::holds_alternative<PtrType<NBT_Node::NBT_##type>>(data);\
-}\
-friend inline std::conditional_t<bIsConst, const NBT_Node::NBT_##type &, NBT_Node::NBT_##type &> Get##type(NBT_Node_View & node)\
-{\
-	return node.Get##type();\
-}\
-\
-friend inline const NBT_Node::NBT_##type &Get##type(const NBT_Node_View & node)\
-{\
-	return node.Get##type();\
-}
+  std::partial_ordering operator<=>(const NBT_Node &_Right) const noexcept {
+    return data <=> _Right.data;
+  }
 
-	TYPE_GET_FUNC(End);
-	TYPE_GET_FUNC(Byte);
-	TYPE_GET_FUNC(Short);
-	TYPE_GET_FUNC(Int);
-	TYPE_GET_FUNC(Long);
-	TYPE_GET_FUNC(Float);
-	TYPE_GET_FUNC(Double);
-	TYPE_GET_FUNC(ByteArray);
-	TYPE_GET_FUNC(IntArray);
-	TYPE_GET_FUNC(LongArray);
-	TYPE_GET_FUNC(String);
-	TYPE_GET_FUNC(List);
-	TYPE_GET_FUNC(Compound);
+  // æ¸…é™¤æ‰€æœ‰æ•°æ®
+  void Clear(void) { data.emplace<NBT_End>(); }
+
+  // è·å–æ ‡ç­¾ç±»å‹
+  NBT_TAG GetTag() const noexcept {
+    return (NBT_TAG)data
+        .index(); // è¿”å›å½“å‰å­˜å‚¨ç±»å‹çš„indexï¼ˆ0åŸºç´¢å¼•ï¼Œä¸NBT_TAG enumä¸€ä¸€å¯¹åº”ï¼‰
+  }
+
+  // ç±»å‹å®‰å…¨è®¿é—®
+  template <typename T> const T &GetData() const { return std::get<T>(data); }
+
+  template <typename T> T &GetData() { return std::get<T>(data); }
+
+  // ç±»å‹æ£€æŸ¥
+  template <typename T> bool TypeHolds() const {
+    return std::holds_alternative<T>(data);
+  }
+
+  // é’ˆå¯¹æ¯ç§ç±»å‹é‡è½½ä¸€ä¸ªæ–¹ä¾¿çš„å‡½æ•°
+  /*
+          çº¯ç±»å‹åå‡½æ•°ï¼šç›´æ¥è·å–æ­¤ç±»å‹ï¼Œä¸åšä»»ä½•æ£€æŸ¥ï¼Œç”±æ ‡å‡†åº“std::getå…·ä½“å®ç°å†³å®š
+          Iså¼€å¤´çš„ç±»å‹åå‡½æ•°ï¼šåˆ¤æ–­å½“å‰NBT_Nodeæ˜¯å¦ä¸ºæ­¤ç±»å‹
+          çº¯ç±»å‹åå‡½æ•°å¸¦å‚æ•°ç‰ˆæœ¬ï¼šæŸ¥æ‰¾å½“å‰CompoundæŒ‡å®šçš„Nameå¹¶è½¬æ¢åˆ°ç±»å‹å¼•ç”¨è¿”å›ï¼Œä¸åšæ£€æŸ¥ï¼Œå…·ä½“ç”±æ ‡å‡†åº“å®ç°å®šä¹‰
+          Haså¼€å¤´çš„ç±»å‹åå‡½æ•°å¸¦å‚æ•°ç‰ˆæœ¬ï¼šæŸ¥æ‰¾å½“å‰Compoundæ˜¯å¦æœ‰ç‰¹å®šNameçš„Tagï¼Œå¹¶è¿”å›æ­¤Nameçš„Tagï¼ˆè½¬æ¢åˆ°æŒ‡å®šç±»å‹ï¼‰çš„æŒ‡é’ˆ
+  */
+#define TYPE_GET_FUNC(type)                                                    \
+  inline const NBT_##type &Get##type() const {                                 \
+    return std::get<NBT_##type>(data);                                         \
+  }                                                                            \
+                                                                               \
+  inline NBT_##type &Get##type() { return std::get<NBT_##type>(data); }        \
+                                                                               \
+  inline bool Is##type() const {                                               \
+    return std::holds_alternative<NBT_##type>(data);                           \
+  }                                                                            \
+                                                                               \
+  friend inline NBT_##type &Get##type(NBT_Node &node) {                        \
+    return node.Get##type();                                                   \
+  }                                                                            \
+                                                                               \
+  friend inline const NBT_##type &Get##type(const NBT_Node &node) {            \
+    return node.Get##type();                                                   \
+  }
+
+  TYPE_GET_FUNC(End);
+  TYPE_GET_FUNC(Byte);
+  TYPE_GET_FUNC(Short);
+  TYPE_GET_FUNC(Int);
+  TYPE_GET_FUNC(Long);
+  TYPE_GET_FUNC(Float);
+  TYPE_GET_FUNC(Double);
+  TYPE_GET_FUNC(ByteArray);
+  TYPE_GET_FUNC(IntArray);
+  TYPE_GET_FUNC(LongArray);
+  TYPE_GET_FUNC(String);
+  TYPE_GET_FUNC(List);
+  TYPE_GET_FUNC(Compound);
+
+#undef TYPE_GET_FUNC
+};
+
+// ç”¨æ³•å’ŒNBT_Nodeä¸€è‡´ï¼Œä½†æ˜¯åªæŒæœ‰æ„é€ æ—¶ä¼ å…¥å¯¹è±¡çš„æŒ‡é’ˆï¼Œä¸”ä¸æŒæœ‰å¯¹è±¡
+// å¯¹è±¡éšæ—¶å¯é”€æ¯ï¼Œå¦‚æœé”€æ¯åä½¿ç”¨æŒæœ‰é”€æ¯å¯¹è±¡çš„viewåˆ™è¡Œä¸ºæœªå®šä¹‰ï¼Œç”¨æˆ·è‡ªè¡Œè´Ÿè´£
+// æ„é€ ä¼ å…¥nullptræŒ‡é’ˆä¸”è¿›è¡Œä½¿ç”¨åˆ™åæœè‡ªè´Ÿ
+
+template <bool bIsConst> class NBT_Node_View {
+  template <bool bIsConst> friend class NBT_Node_View;
+
+private:
+  template <typename T> struct AddConstIf {
+    using type = std::conditional<bIsConst, const T, T>::type;
+  };
+
+  template <typename T> using PtrType = typename AddConstIf<T>::type *;
+
+  template <typename T> struct TypeListPointerToVariant;
+
+  template <typename... Ts>
+  struct TypeListPointerToVariant<NBT_Node::TypeList<Ts...>> {
+    using type = std::variant<PtrType<Ts>...>; // å±•å¼€æˆæŒ‡é’ˆç±»å‹
+  };
+
+  using VariantData = TypeListPointerToVariant<NBT_Node::NBT_TypeList>::type;
+
+  VariantData data;
+
+public:
+  static inline constexpr bool is_const = bIsConst;
+
+  // ç±»å‹å­˜åœ¨æ£€æŸ¥
+  template <typename T, typename List> struct IsValidType;
+
+  template <typename T, typename... Ts>
+  struct IsValidType<T, NBT_Node::TypeList<Ts...>> {
+    static constexpr bool value = (std::is_same_v<T, Ts> || ...);
+  };
+
+  // é€šç”¨æ„é€ å‡½æ•°ï¼ˆå¿…é¡»éconstæƒ…å†µï¼‰
+  template <typename T,
+            typename = std::enable_if_t<
+                !std::is_same_v<std::decay_t<T>, NBT_Node> && !bIsConst>>
+  NBT_Node_View(T &value) : data(&value) {
+    static_assert(IsValidType<std::decay_t<T>, NBT_Node::NBT_TypeList>::value,
+                  "Invalid type for NBT node view");
+  }
+
+  // é€šç”¨æ„é€ å‡½æ•°
+  template <typename T, typename = std::enable_if_t<
+                            !std::is_same_v<std::decay_t<T>, NBT_Node>>>
+  NBT_Node_View(const T &value) : data(&value) {
+    static_assert(IsValidType<std::decay_t<T>, NBT_Node::NBT_TypeList>::value,
+                  "Invalid type for NBT node view");
+  }
+
+  // ä»NBT_Nodeæ„é€ ï¼ˆå¿…é¡»éconstæƒ…å†µï¼‰
+  NBT_Node_View(NBT_Node &node) {
+    std::visit([this](auto &arg) { this->data = &arg; }, node.data);
+  }
+
+  // ä»NBT_Nodeæ„é€ 
+  NBT_Node_View(const NBT_Node &node) {
+    std::visit([this](auto &arg) { this->data = &arg; }, node.data);
+  }
+
+  // å…è®¸ä»é const è§†å›¾éšå¼è½¬æ¢åˆ° const è§†å›¾
+  NBT_Node_View(const NBT_Node_View<false> &other) {
+    std::visit(
+        [this](auto &arg) {
+          this->data = arg; // æ­¤å¤„argä¸ºéconstæŒ‡é’ˆ
+        },
+        other.data);
+  }
+
+private:
+  // éšè—é»˜è®¤æ„é€ ï¼ˆTAG_Endï¼‰
+  NBT_Node_View() = default;
+
+public:
+  // è‡ªåŠ¨ææ„ç”±variantå¤„ç†
+  ~NBT_Node_View() = default;
+
+  // æ‹·è´æ„é€ 
+  //   NBT_Node_View(const NBT_Node_View &_NBT_Node_View)
+  //       : data(_NBT_Node_View.data) {}
+
+  // ç§»åŠ¨æ„é€ 
+  NBT_Node_View(NBT_Node_View &&_NBT_Node_View) noexcept
+      : data(std::move(_NBT_Node_View.data)) {}
+
+  NBT_Node_View &operator=(const NBT_Node_View &_NBT_Node_View) {
+    data = _NBT_Node_View.data;
+    return *this;
+  }
+
+  NBT_Node_View &operator=(NBT_Node_View &&_NBT_Node_View) noexcept {
+    data = std::move(_NBT_Node_View.data);
+    return *this;
+  }
+
+  bool operator==(const NBT_Node_View &_Right) const noexcept {
+    if (GetTag() != _Right.GetTag()) {
+      return false;
+    }
+
+    return std::visit(
+        [this](const auto *argL, const auto *argR) -> bool {
+          using TL = const std::decay_t<decltype(argL)>;
+          return *argL == *(TL)argR;
+        },
+        this->data, _Right.data);
+  }
+
+  bool operator!=(const NBT_Node_View &_Right) const noexcept {
+    if (GetTag() != _Right.GetTag()) {
+      return true;
+    }
+
+    return std::visit(
+        [this](const auto *argL, const auto *argR) -> bool {
+          using TL = const std::decay_t<decltype(argL)>;
+          return *argL != *(TL)argR;
+        },
+        this->data, _Right.data);
+  }
+
+  std::partial_ordering
+  operator<=>(const NBT_Node_View &_Right) const noexcept {
+    if (GetTag() != _Right.GetTag()) {
+      return std::partial_ordering::unordered;
+    }
+
+    return std::visit(
+        [this](const auto *argL, const auto *argR) -> std::partial_ordering {
+          using TL = const std::decay_t<decltype(argL)>;
+          return *argL <=> *(TL)argR;
+        },
+        this->data, _Right.data);
+  }
+
+  // è·å–æ ‡ç­¾ç±»å‹
+  NBT_Node::NBT_TAG GetTag() const noexcept {
+    return (NBT_Node::NBT_TAG)data
+        .index(); // è¿”å›å½“å‰å­˜å‚¨ç±»å‹çš„indexï¼ˆ0åŸºç´¢å¼•ï¼Œä¸NBT_TAG enumä¸€ä¸€å¯¹åº”ï¼‰
+  }
+
+  // ç±»å‹å®‰å…¨è®¿é—®
+  template <typename T> const T &GetData() const {
+    return *std::get<PtrType<T>>(data);
+  }
+
+  template <typename T> T &GetData() { return *std::get<PtrType<T>>(data); }
+
+  // ç±»å‹æ£€æŸ¥
+  template <typename T> bool TypeHolds() const {
+    return std::holds_alternative<PtrType<T>>(data);
+  }
+
+  // é’ˆå¯¹æ¯ç§ç±»å‹é‡è½½ä¸€ä¸ªæ–¹ä¾¿çš„å‡½æ•°
+  /*
+          çº¯ç±»å‹åå‡½æ•°ï¼šç›´æ¥è·å–æ­¤ç±»å‹ï¼Œä¸åšä»»ä½•æ£€æŸ¥ï¼Œç”±æ ‡å‡†åº“std::getå…·ä½“å®ç°å†³å®š
+          Iså¼€å¤´çš„ç±»å‹åå‡½æ•°ï¼šåˆ¤æ–­å½“å‰NBT_Nodeæ˜¯å¦ä¸ºæ­¤ç±»å‹
+          çº¯ç±»å‹åå‡½æ•°å¸¦å‚æ•°ç‰ˆæœ¬ï¼šæŸ¥æ‰¾å½“å‰CompoundæŒ‡å®šçš„Nameå¹¶è½¬æ¢åˆ°ç±»å‹å¼•ç”¨è¿”å›ï¼Œä¸åšæ£€æŸ¥ï¼Œå…·ä½“ç”±æ ‡å‡†åº“å®ç°å®šä¹‰
+          Haså¼€å¤´çš„ç±»å‹åå‡½æ•°å¸¦å‚æ•°ç‰ˆæœ¬ï¼šæŸ¥æ‰¾å½“å‰Compoundæ˜¯å¦æœ‰ç‰¹å®šNameçš„Tagï¼Œå¹¶è¿”å›æ­¤Nameçš„Tagï¼ˆè½¬æ¢åˆ°æŒ‡å®šç±»å‹ï¼‰çš„æŒ‡é’ˆ
+  */
+#define TYPE_GET_FUNC(type)                                                    \
+  inline const NBT_Node::NBT_##type &Get##type() const {                       \
+    return *std::get<PtrType<NBT_Node::NBT_##type>>(data);                     \
+  }                                                                            \
+                                                                               \
+  inline NBT_Node::NBT_##type &Get##type() {                                   \
+    return *std::get<PtrType<NBT_Node::NBT_##type>>(data);                     \
+  }                                                                            \
+                                                                               \
+  inline bool Is##type() const {                                               \
+    return std::holds_alternative<PtrType<NBT_Node::NBT_##type>>(data);        \
+  }                                                                            \
+  friend inline std::conditional_t<bIsConst, const NBT_Node::NBT_##type &,     \
+                                   NBT_Node::NBT_##type &>                     \
+      Get##type(NBT_Node_View &node) {                                         \
+    return node.Get##type();                                                   \
+  }                                                                            \
+                                                                               \
+  friend inline const NBT_Node::NBT_##type &Get##type(                         \
+      const NBT_Node_View &node) {                                             \
+    return node.Get##type();                                                   \
+  }
+
+  TYPE_GET_FUNC(End);
+  TYPE_GET_FUNC(Byte);
+  TYPE_GET_FUNC(Short);
+  TYPE_GET_FUNC(Int);
+  TYPE_GET_FUNC(Long);
+  TYPE_GET_FUNC(Float);
+  TYPE_GET_FUNC(Double);
+  TYPE_GET_FUNC(ByteArray);
+  TYPE_GET_FUNC(IntArray);
+  TYPE_GET_FUNC(LongArray);
+  TYPE_GET_FUNC(String);
+  TYPE_GET_FUNC(List);
+  TYPE_GET_FUNC(Compound);
 
 #undef TYPE_GET_FUNC
 };

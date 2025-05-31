@@ -4,107 +4,88 @@
 #include <stdio.h>
 #include <string>
 
-template<typename U16T = char16_t>
-std::basic_string<char> ConvertUtf16ToAnsi(const std::basic_string<U16T> &u16String)
-{
-	static_assert(sizeof(U16T) == sizeof(wchar_t), "U16T size must be same as wchar_t size");
+template <typename U16T = char16_t>
+std::basic_string<char>
+ConvertUtf16ToAnsi(const std::basic_string<U16T> &u16String) {
+  static_assert(sizeof(U16T) == sizeof(wchar_t),
+                "U16T size must be same as wchar_t size");
 
-	if (u16String.empty())
-	{
-		return std::basic_string<char>{};//·µ»Ø¿Õ×Ö·û´®
-	}
+  if (u16String.empty()) {
+    return std::basic_string<char>{}; // è¿”å›ç©ºå­—ç¬¦ä¸²
+  }
 
-	// »ñÈ¡×ª»»ºóËùĞèµÄ»º³åÇø´óĞ¡£¨°üÀ¨ÖÕÖ¹·û£©
-	const int sizeNeeded = WideCharToMultiByte(//×¢Òâ´Ëº¯Êıu16½ÓÊÜ×Ö·ûÊı£¬¶øu8½ÓÊÜ×Ö½ÚÊı
-		CP_ACP,                // Ê¹ÓÃµ±Ç°ANSI´úÂëÒ³
-		WC_NO_BEST_FIT_CHARS,  // Ìæ»»ÎŞ·¨Ö±½ÓÓ³ÉäµÄ×Ö·û
-		(wchar_t*)u16String.data(),//static_assert±£Ö¤µ×²ã´óĞ¡ÏàÍ¬
-		u16String.size(),//Ö÷¶¯´«Èë´óĞ¡£¬Ôò×ª»»½á¹û²»°üº¬\0
-		NULL,
-		0,
-		NULL,
-		NULL
-	);
+  // è·å–è½¬æ¢åæ‰€éœ€çš„ç¼“å†²åŒºå¤§å°ï¼ˆåŒ…æ‹¬ç»ˆæ­¢ç¬¦ï¼‰
+  const int sizeNeeded =
+      WideCharToMultiByte( // æ³¨æ„æ­¤å‡½æ•°u16æ¥å—å­—ç¬¦æ•°ï¼Œè€Œu8æ¥å—å­—èŠ‚æ•°
+          CP_ACP,          // ä½¿ç”¨å½“å‰ANSIä»£ç é¡µ
+          WC_NO_BEST_FIT_CHARS,        // æ›¿æ¢æ— æ³•ç›´æ¥æ˜ å°„çš„å­—ç¬¦
+          (wchar_t *)u16String.data(), // static_assertä¿è¯åº•å±‚å¤§å°ç›¸åŒ
+          u16String.size(), // ä¸»åŠ¨ä¼ å…¥å¤§å°ï¼Œåˆ™è½¬æ¢ç»“æœä¸åŒ…å«\0
+          NULL, 0, NULL, NULL);
 
-	if (sizeNeeded == 0)
-	{
-		//ERROR_INSUFFICIENT_BUFFER//¡£ Ìá¹©µÄ»º³åÇø´óĞ¡²»¹»´ó£¬»òÕß´íÎóµØÉèÖÃÎª NULL¡£
-		//ERROR_INVALID_FLAGS//¡£ Îª±êÖ¾Ìá¹©µÄÖµÎŞĞ§¡£
-		//ERROR_INVALID_PARAMETER//¡£ ÈÎºÎ²ÎÊıÖµ¶¼ÎŞĞ§¡£
-		//ERROR_NO_UNICODE_TRANSLATION//¡£ ÔÚ×Ö·û´®ÖĞ·¢ÏÖÎŞĞ§µÄ Unicode¡£
-		
-		printf("\nfirst WideCharToMultiByte failed. Error code: %lu\n", GetLastError());
-		return std::basic_string<char>{};
-	}
+  if (sizeNeeded == 0) {
+    // ERROR_INSUFFICIENT_BUFFER//ã€‚ æä¾›çš„ç¼“å†²åŒºå¤§å°ä¸å¤Ÿå¤§ï¼Œæˆ–è€…é”™è¯¯åœ°è®¾ç½®ä¸º
+    // NULLã€‚ ERROR_INVALID_FLAGS//ã€‚ ä¸ºæ ‡å¿—æä¾›çš„å€¼æ— æ•ˆã€‚
+    // ERROR_INVALID_PARAMETER//ã€‚ ä»»ä½•å‚æ•°å€¼éƒ½æ— æ•ˆã€‚
+    // ERROR_NO_UNICODE_TRANSLATION//ã€‚ åœ¨å­—ç¬¦ä¸²ä¸­å‘ç°æ— æ•ˆçš„ Unicodeã€‚
 
-	//´´½¨string²¢Ô¤·ÖÅä´óĞ¡
-	std::basic_string<char> ansiString;
-	ansiString.resize(sizeNeeded);
+    printf("\nfirst WideCharToMultiByte failed. Error code: %lu\n",
+           GetLastError());
+    return std::basic_string<char>{};
+  }
 
-	// Ö´ĞĞÊµ¼Ê×ª»»
-	int convertedSize = WideCharToMultiByte(
-		CP_ACP,
-		WC_NO_BEST_FIT_CHARS,
-		(wchar_t *)u16String.data(),
-		u16String.size(),
-		ansiString.data(),
-		ansiString.size(),
-		NULL,
-		NULL
-	);
+  // åˆ›å»ºstringå¹¶é¢„åˆ†é…å¤§å°
+  std::basic_string<char> ansiString;
+  ansiString.resize(sizeNeeded);
 
-	if (convertedSize == 0)
-	{
-		printf("\nsecond WideCharToMultiByte failed. Error code: %lu\n", GetLastError());
-		return std::basic_string<char>{};
-	}
+  // æ‰§è¡Œå®é™…è½¬æ¢
+  int convertedSize = WideCharToMultiByte(
+      CP_ACP, WC_NO_BEST_FIT_CHARS, (wchar_t *)u16String.data(),
+      u16String.size(), ansiString.data(), ansiString.size(), NULL, NULL);
 
-	return ansiString;
+  if (convertedSize == 0) {
+    printf("\nsecond WideCharToMultiByte failed. Error code: %lu\n",
+           GetLastError());
+    return std::basic_string<char>{};
+  }
+
+  return ansiString;
 }
 
-template<typename U8T = char8_t>
-std::basic_string<char> ConvertUtf8ToAnsi(const std::basic_string<U8T> &u8String)
-{
-    static_assert(sizeof(U8T) == sizeof(char), "U8T size must be same as char size");
+template <typename U8T = char8_t>
+std::basic_string<char>
+ConvertUtf8ToAnsi(const std::basic_string<U8T> &u8String) {
+  static_assert(sizeof(U8T) == sizeof(char),
+                "U8T size must be same as char size");
 
-    if (u8String.empty())
-    {
-        return std::basic_string<char>{};
-    }
+  if (u8String.empty()) {
+    return std::basic_string<char>{};
+  }
 
-    // UTF-8 -> UTF-16
-    const int lengthNeeded = MultiByteToWideChar(
-        CP_UTF8,
-        MB_ERR_INVALID_CHARS,
-        (char *)u8String.data(),
-		u8String.size(),
-        nullptr,
-        0
-    );
+  // UTF-8 -> UTF-16
+  const int lengthNeeded =
+      MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+                          (char *)u8String.data(), u8String.size(), nullptr, 0);
 
-    if (lengthNeeded == 0)
-    {
-        printf("\nfirst MultiByteToWideChar failed. Error code: %lu\n", GetLastError());
-        return std::basic_string<char>{};
-    }
+  if (lengthNeeded == 0) {
+    printf("\nfirst MultiByteToWideChar failed. Error code: %lu\n",
+           GetLastError());
+    return std::basic_string<char>{};
+  }
 
-    std::basic_string<wchar_t> utf16Str;
-    utf16Str.resize(lengthNeeded);
+  std::basic_string<wchar_t> utf16Str;
+  utf16Str.resize(lengthNeeded);
 
-    if (!MultiByteToWideChar(
-        CP_UTF8,
-        MB_ERR_INVALID_CHARS,
-        (char *)u8String.data(),
-		u8String.size(),
-        (wchar_t *)utf16Str.data(), 
-		lengthNeeded))
-    {
-        printf("\nsecond MultiByteToWideChar failed. Error code: %lu\n", GetLastError());
-        return std::basic_string<char>{};
-    }
+  if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+                           (char *)u8String.data(), u8String.size(),
+                           (wchar_t *)utf16Str.data(), lengthNeeded)) {
+    printf("\nsecond MultiByteToWideChar failed. Error code: %lu\n",
+           GetLastError());
+    return std::basic_string<char>{};
+  }
 
-    // UTF-16 -> ANSI
-	return ConvertUtf16ToAnsi(utf16Str);
+  // UTF-16 -> ANSI
+  return ConvertUtf16ToAnsi(utf16Str);
 }
 
 #define U16ANSI(u16str) ConvertUtf16ToAnsi(u16str)
