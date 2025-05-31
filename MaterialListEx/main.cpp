@@ -162,7 +162,8 @@ int main(int argc, char *argv[]) {
     printf("\n================[block]================\n");
     PrintInfo<Language::Item>(it.mslBlock.listSort, lang); // 方块
     printf("\n==============[block item]==============\n");
-    PrintNoTagInfo<Language::Item>(it.mslBlockItem.listSort, lang); // 方块转物品
+    PrintNoTagInfo<Language::Item>(it.mslBlockItem.listSort,
+                                   lang); // 方块转物品
     printf("\n========[tile entity container]========\n");
     PrintInfo<Language::Item>(it.mslTileEntityContainer.listSort,
                               lang); // 方块实体容器

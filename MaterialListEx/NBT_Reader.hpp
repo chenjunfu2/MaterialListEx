@@ -203,7 +203,7 @@ private:
 #define STRLING(l) #l
 
 #define STACK_TRACEBACK(fmt, ...)                                              \
-  printf("In [" _RP___FUNCSIG__ "] Line:[" _RP___LINE__ "]: \n" fmt "\n\n",   \
+  printf("In [" _RP___FUNCSIG__ "] Line:[" _RP___LINE__ "]: \n" fmt "\n\n",    \
          __VA_ARGS__);
 #define CHECK_STACK_DEPTH(Depth)                                               \
   {                                                                            \
@@ -713,9 +713,10 @@ private:
     case NBT_Node::TAG_String: {
       iRet = GetStringType<bHasName>(tData, nRoot);
     } break;
-    case NBT_Node::TAG_List: // 需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签
-                             // ID 或名称）
-    { // 最复杂
+    case NBT_Node::
+        TAG_List: // 需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签
+                  // ID 或名称）
+    {             // 最复杂
       iRet = GetListType<bHasName>(tData, nRoot,
                                    szStackDepth); // 选择函数不减少递归层
     } break;
@@ -814,8 +815,9 @@ public:
   {
     MYTRY
     // 初始化NBT根对象
-    nRoot.Clear(); // 清掉原来的数据（注意如果nbt较大的情况下，这是一个较深的递归清理过程，不排除栈空间不足导致清理失败），可能抛出异常之类的，需要try
-                   // catch
+    nRoot
+        .Clear(); // 清掉原来的数据（注意如果nbt较大的情况下，这是一个较深的递归清理过程，不排除栈空间不足导致清理失败），可能抛出异常之类的，需要try
+                  // catch
     nRoot.emplace<NBT_Node::NBT_Compound>(); // 设置为compound
 
     // 初始化数据流对象

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "NBT_Node.hpp"
 #include "MUTF8_Tool.hpp"
+#include "NBT_Node.hpp"
 #include "Windows_ANSI.hpp"
 
 #include <bit>
@@ -149,7 +149,8 @@ private:
       printf("]");
     } break;
     case NBT_Node::TAG_String: {
-      printf("\"%s\"", U16ANSI(U16STR(nRoot.GetData<NBT_Node::NBT_String>())).c_str());
+      printf("\"%s\"",
+             U16ANSI(U16STR(nRoot.GetData<NBT_Node::NBT_String>())).c_str());
     } break;
     case NBT_Node::TAG_List: // 需要打印缩进的地方
     {
@@ -178,7 +179,7 @@ private:
 
       for (const auto &it : cpd) {
         PrintPadding(szLevel, true, true);
-        					printf("\"%s\":", U16ANSI(U16STR(it.first)).c_str());
+        printf("\"%s\":", U16ANSI(U16STR(it.first)).c_str());
         PrintSwitch(it.second, szLevel + 1);
         printf(",");
       }

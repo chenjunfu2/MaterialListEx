@@ -402,7 +402,7 @@ public:
                   "Invalid type for NBT node view");
   }
 
-  // 从NBT_Node构造（必须非const情况） 
+  // 从NBT_Node构造（必须非const情况）
   NBT_Node_View(NBT_Node &node) {
     std::visit([this](auto &arg) { this->data = &arg; }, node.data);
   }
@@ -430,8 +430,8 @@ public:
   ~NBT_Node_View() = default;
 
   // 拷贝构造
-//   NBT_Node_View(const NBT_Node_View &_NBT_Node_View)
-//       : data(_NBT_Node_View.data) {}
+  //   NBT_Node_View(const NBT_Node_View &_NBT_Node_View)
+  //       : data(_NBT_Node_View.data) {}
 
   // 移动构造
   NBT_Node_View(NBT_Node_View &&_NBT_Node_View) noexcept
@@ -498,9 +498,7 @@ public:
     return *std::get<PtrType<T>>(data);
   }
 
-  template <typename T> T &GetData() {
-    return *std::get<PtrType<T>>(data);
-  }
+  template <typename T> T &GetData() { return *std::get<PtrType<T>>(data); }
 
   // 类型检查
   template <typename T> bool TypeHolds() const {
@@ -519,7 +517,6 @@ public:
     return *std::get<PtrType<NBT_Node::NBT_##type>>(data);                     \
   }                                                                            \
                                                                                \
-                              \
   inline NBT_Node::NBT_##type &Get##type() {                                   \
     return *std::get<PtrType<NBT_Node::NBT_##type>>(data);                     \
   }                                                                            \

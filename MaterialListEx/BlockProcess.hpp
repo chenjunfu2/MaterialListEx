@@ -527,7 +527,8 @@ private:
                     ItemProcess::NoTagItemList &stItemsList) {
 #define make_pack(data) (data)
 #define EMPLACE_CLUSTER_ITEMS(name)                                            \
-  const auto & make_pack(name) = stBlocks.pcpdProperties->GetString(MU8STR(#name));      \
+  const auto &make_pack(name) =                                                \
+      stBlocks.pcpdProperties->GetString(MU8STR(#name));                       \
   stItemsList.emplace_back(*stBlocks.psBlockName,                              \
                            stBlocks.u64Counter *std::stoll(make_pack(name)));
 
