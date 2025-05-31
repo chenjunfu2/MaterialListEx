@@ -1,132 +1,115 @@
 #pragma once
 /*Json*/
-#include <nlohmann\json.hpp>
+#include <nlohmann/json.hpp>
 using Json = nlohmann::json;
 /*Json*/
 
-#include "NBT_Node.hpp"
 #include "MUTF8_Tool.hpp"
+#include "NBT_Node.hpp"
 
 #include <set>
 #include <string>
 
-class Language
-{
+class Language {
 public:
-	Json data{};
+  Json data{};
+
 public:
-	Language() = default;
-	~Language() = default;
+  Language() = default;
+  ~Language() = default;
 
+  bool ReadLanguageFile(const char *const pcFileName) {
+    FILE *pFile = fopen(pcFileName, "rb");
+    if (pFile == NULL) {
+      printf("Langage file open fail\n");
+      return false;
+    }
 
-	bool ReadLanguageFile(const char*const pcFileName)
-	{
-		FILE *pFile = fopen(pcFileName, "rb");
-		if (pFile == NULL)
-		{
-			printf("Langage file open fail\n");
-			return false;
-		}
-		
-		//´ÓÓïÑÔÎÄ¼ş´´½¨json¶ÔÏó
-		try
-		{
-			data = Json::parse(pFile);
-		}
-		catch (const Json::parse_error &e)
-		{
-			// Êä³öÒì³£ÏêÏ¸ĞÅÏ¢
-			printf("JSON parse error: %s\nError Pos: [%zu]\n", e.what(), e.byte);
+    // ä»è¯­è¨€æ–‡ä»¶åˆ›å»ºjsonå¯¹è±¡
+    try {
+      data = Json::parse(pFile);
+    } catch (const Json::parse_error &e) {
+      // è¾“å‡ºå¼‚å¸¸è¯¦ç»†ä¿¡æ¯
+      printf("JSON parse error: %s\nError Pos: [%zu]\n", e.what(), e.byte);
 
-			fclose(pFile);
-			return false;
-		}
+      fclose(pFile);
+      return false;
+    }
 
-		fclose(pFile);
-		return true;
-	}
+    fclose(pFile);
+    return true;
+  }
 
-	void PrintPrefixes(void) const//´Ëº¯Êı´úÂëÓÉAI±àĞ´
-	{
-		std::set<std::string> printedPrefixes; // ÓÃÓÚ¼ÇÂ¼ÒÑ´òÓ¡µÄÇ°×º
+  void PrintPrefixes(void) const // æ­¤å‡½æ•°ä»£ç ç”±AIç¼–å†™
+  {
+    std::set<std::string> printedPrefixes; // ç”¨äºè®°å½•å·²æ‰“å°çš„å‰ç¼€
 
-		for (auto &element : data.items())
-		{
-			const std::string &key = element.key();
-			size_t dotPos = key.find('.');
+    for (auto &element : data.items()) {
+      const std::string &key = element.key();
+      size_t dotPos = key.find('.');
 
-			if (dotPos == std::string::npos)
-			{
-				// Èç¹û¼üÖĞÃ»ÓĞµãºÅ£¬Õû¸ö¼ü×÷ÎªÇ°×º
-				if (printedPrefixes.find(key) == printedPrefixes.end())
-				{
-					printf("%s\n", key.c_str());
-					printedPrefixes.insert(key);
-				}
-			}
-			else
-			{
-				// ÌáÈ¡µÚÒ»¸öµãºÅÇ°µÄ²¿·Ö×÷ÎªÇ°×º
-				std::string prefix = key.substr(0, dotPos);
+      if (dotPos == std::string::npos) {
+        // å¦‚æœé”®ä¸­æ²¡æœ‰ç‚¹å·ï¼Œæ•´ä¸ªé”®ä½œä¸ºå‰ç¼€
+        if (printedPrefixes.find(key) == printedPrefixes.end()) {
+          printf("%s\n", key.c_str());
+          printedPrefixes.insert(key);
+        }
+      } else {
+        // æå–ç¬¬ä¸€ä¸ªç‚¹å·å‰çš„éƒ¨åˆ†ä½œä¸ºå‰ç¼€
+        std::string prefix = key.substr(0, dotPos);
 
-				// Èç¹û´ËÇ°×ºÎ´´òÓ¡¹ı£¬Ôò´òÓ¡²¢¼ÇÂ¼
-				if (printedPrefixes.find(prefix) == printedPrefixes.end())
-				{
-					printf("%s\n", prefix.c_str());
-					printedPrefixes.insert(prefix);
-				}
-			}
-		}
-	}
+        // å¦‚æœæ­¤å‰ç¼€æœªæ‰“å°è¿‡ï¼Œåˆ™æ‰“å°å¹¶è®°å½•
+        if (printedPrefixes.find(prefix) == printedPrefixes.end()) {
+          printf("%s\n", prefix.c_str());
+          printedPrefixes.insert(prefix);
+        }
+      }
+    }
+  }
 
+  enum KeyType {
+    None = 0, // Unknown or None
+    Block,
+    Entity,
+    Item,
+    ENUM_END,
+  };
 
-	enum KeyType
-	{
-		None = 0,//Unknown or None
-		Block,
-		Entity,
-		Item,
-		ENUM_END,
-	};
+  const std::string &KeyTranslate(KeyType enKeyType,
+                                  const NBT_Node::NBT_String &sKeyName) const {
+    static const NBT_Node::NBT_String sKeyTypePrefix[] = {
+        MU8STR(""), // æœªçŸ¥ç•™ç©º
+        MU8STR("block."),
+        MU8STR("entity."),
+        MU8STR("item."),
+    };
 
-	const std::string &KeyTranslate(KeyType enKeyType, const NBT_Node::NBT_String &sKeyName) const
-	{
-		static const NBT_Node::NBT_String sKeyTypePrefix[] =
-		{
-			MU8STR(""),//Î´ÖªÁô¿Õ
-			MU8STR("block."),
-			MU8STR("entity."),
-			MU8STR("item."),
-		};
+    static const std::string EmptyStr{""};
 
-		static const std::string EmptyStr{ "" };
+    static_assert(sizeof(sKeyTypePrefix) / sizeof(sKeyTypePrefix[0]) ==
+                  ENUM_END);
 
-		static_assert(sizeof(sKeyTypePrefix) / sizeof(sKeyTypePrefix[0]) == ENUM_END);
+    // æ‹†è§£sKeyNameå¹¶ä¸sKeyTypePrefix[enKeyType]ç»„åˆ
 
-		//²ğ½âsKeyName²¢ÓësKeyTypePrefix[enKeyType]×éºÏ
+    // æŠŠåç§°ç©ºé—´çš„:è½¬æ¢æˆ.
+    NBT_Node::NBT_String sJsonKey = sKeyName; // æ‹·è´ä¸€ä»½
+    std::replace(sJsonKey.begin(), sJsonKey.end(), ':', '.');
 
-		//°ÑÃû³Æ¿Õ¼äµÄ:×ª»»³É.
-		NBT_Node::NBT_String sJsonKey = sKeyName;//¿½±´Ò»·İ
-		std::replace(sJsonKey.begin(), sJsonKey.end(), ':', '.');
+    while (true) {
+      auto itFind = data.find(sKeyTypePrefix[enKeyType] + sJsonKey);
+      if (itFind == data.end()) {
+        // æ˜¯ç©ºçš„æƒ…å†µä¸‹åˆ¤æ–­æ˜¯ä¸æ˜¯itemï¼Œæ˜¯çš„è¯éœ€è¦å†æŸ¥ä¸€æ¬¡block
+        if (enKeyType == Item) // å› ä¸ºæ–¹å—ç‰©å“åœ¨blockå†…
+        {
+          enKeyType = Block; // æ”¹æˆæ–¹å—ï¼ˆä¸‹æ¬¡ä¸ä¼šå†å‘½ä¸­æ­¤ifï¼‰
+          continue;
+        }
 
-		while (true)
-		{
-			auto itFind = data.find(sKeyTypePrefix[enKeyType] + sJsonKey);
-			if (itFind == data.end())
-			{
-				//ÊÇ¿ÕµÄÇé¿öÏÂÅĞ¶ÏÊÇ²»ÊÇitem£¬ÊÇµÄ»°ĞèÒªÔÙ²éÒ»´Îblock
-				if (enKeyType == Item)//ÒòÎª·½¿éÎïÆ·ÔÚblockÄÚ
-				{
-					enKeyType = Block;//¸Ä³É·½¿é£¨ÏÂ´Î²»»áÔÙÃüÖĞ´Ëif£©
-					continue;
-				}
+        return EmptyStr;
+      }
 
-				return EmptyStr;
-			}
-
-			//·µ»Ø²éÕÒ½á¹û
-			return itFind.value().get_ref<const std::string &>();
-		}
-	}
-
+      // è¿”å›æŸ¥æ‰¾ç»“æœ
+      return itFind.value().get_ref<const std::string &>();
+    }
+  }
 };
