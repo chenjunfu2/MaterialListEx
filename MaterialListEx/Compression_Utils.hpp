@@ -6,9 +6,9 @@
 /*zlib*/
 
 /*gzip*/
-#include <compress.hpp>
-#include <config.hpp>
-#include <decompress.hpp>
-#include <utils.hpp>
-#include <version.hpp>
+#include <gzip/compress.hpp>
+#include <gzip/config.hpp>
+#include <gzip/decompress.hpp>
+#include <gzip/utils.hpp>
+#include <gzip/version.hpp>
 /*gzip*/

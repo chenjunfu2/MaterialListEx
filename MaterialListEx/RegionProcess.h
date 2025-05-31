@@ -1,81 +1,77 @@
 #pragma once
 
 #include <algorithm>
-#include <vector>
-#include <map>
-#include <unordered_map>
 #include <functional>
+#include <unordered_map>
+#include <vector>
 
-#include "NBT_Node.hpp"
-#include "ItemProcess.hpp"
 #include "BlockProcess.hpp"
-#include "TileEntityProcess.hpp"
 #include "EntityProcess.hpp"
+#include "ItemProcess.hpp"
+#include "NBT_Node.hpp"
 
-template<typename Map>
-struct MapSortList
-{
-	using MapPair = Map::value_type;
+template <typename Map> struct MapSortList {
+  using MapPair = Map::value_type;
 
-	//mapÓÃÓÚ²éÖØÍ³¼Æ£¬²»ĞèÒªÕæµÄÓÃkeyÀ´²éÕÒ£¬ËùÒÔkeyÊÇÊ²Ã´ÎŞËùÎ½
-	Map map{};//´´½¨·½¿é×´Ì¬µ½ÎïÆ·Ó³Éämap
-	//Í¨¹ıvector´´½¨mapµÄÔªËØÅÅĞò£¨´æ´¢pairÒıÓÃ£©std::reference_wrapper<>
-	std::vector<std::reference_wrapper<MapPair>> listSort{};
+  // mapç”¨äºæŸ¥é‡ç»Ÿè®¡ï¼Œä¸éœ€è¦çœŸçš„ç”¨keyæ¥æŸ¥æ‰¾ï¼Œæ‰€ä»¥keyæ˜¯ä»€ä¹ˆæ— æ‰€è°“
+  Map map{}; // åˆ›å»ºæ–¹å—çŠ¶æ€åˆ°ç‰©å“æ˜ å°„map
+  // é€šè¿‡vectoråˆ›å»ºmapçš„å…ƒç´ æ’åºï¼ˆå­˜å‚¨pairå¼•ç”¨ï¼‰std::reference_wrapper<>
+  std::vector<std::reference_wrapper<MapPair>> listSort{};
 
-	static bool SortCmp(MapPair &l, MapPair &r)
-	{
-		if (l.second == r.second)//ÊıÁ¿ÏàµÈÇé¿öÏÂ°´keyÅÅĞò
-		{
-			return l.first < r.first;//ÉıĞò
-		}
-		else//·ñÔòvalÅÅĞò
-		{
-			return l.second > r.second;//½µĞò
-		}
-	}
-	
-	void SortElement(void)
-	{
-		//ÌáÇ°À©Èİ¼õÉÙ²åÈë¿ªÏú
-		listSort.reserve(map.size());
-		listSort.assign(map.begin(), map.end());//µü´úÆ÷·¶Î§²åÈë
-		//¶ÔÎïÆ·°´ÊıÁ¿½øĞĞÅÅĞò
-		std::sort(listSort.begin(), listSort.end(), SortCmp);
-	}
+  static bool SortCmp(MapPair &l, MapPair &r) {
+    if (l.second == r.second) // æ•°é‡ç›¸ç­‰æƒ…å†µä¸‹æŒ‰keyæ’åº
+    {
+      return l.first < r.first; // å‡åº
+    } else                      // å¦åˆ™valæ’åº
+    {
+      return l.second > r.second; // é™åº
+    }
+  }
+
+  void SortElement(void) {
+    // æå‰æ‰©å®¹å‡å°‘æ’å…¥å¼€é”€
+    listSort.reserve(map.size());
+    listSort.assign(map.begin(), map.end()); // è¿­ä»£å™¨èŒƒå›´æ’å…¥
+    // å¯¹ç‰©å“æŒ‰æ•°é‡è¿›è¡Œæ’åº
+    std::sort(listSort.begin(), listSort.end(), SortCmp);
+  }
 };
 
-struct RegionStats
-{
-	NBT_Node::NBT_String sRegionName{};
+struct RegionStats {
+  NBT_Node::NBT_String sRegionName{};
 
-	//¼ò»¯ÉùÃ÷
-#define MAPSORTLIST(key,val,size,name) \
-MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Equal)>> name{ .map{size, &key::Hash, &key::Equal} }
+  // ç®€åŒ–å£°æ˜
+#define MAPSORTLIST(key, val, size, name)                                      \
+  MapSortList<std::unordered_map<key, val, decltype(&key::Hash),               \
+                                 decltype(&key::Equal)>>                       \
+      name {                                                                   \
+    .map { size, &key::Hash, &key::Equal }                                     \
+  }
 
-	//·½¿é£¨Ô­±¾ĞÎÊ½£©
-	MAPSORTLIST(BlockInfo, uint64_t, 128, mslBlock);
+  // æ–¹å—ï¼ˆåŸæœ¬å½¢å¼ï¼‰
+  MAPSORTLIST(BlockInfo, uint64_t, 128, mslBlock);
 
-	//·½¿é£¨×ª»»µ½ÎïÆ·ĞÎÊ½£©
-	MAPSORTLIST(NoTagItemInfo, uint64_t, 128, mslBlockItem);
-	
-	//·½¿éÊµÌå£¨Ô­±¾ĞÎÊ½£©ÏÈ²»×ö
-	//MAPSORTLIST(TileEntityInfo, uint64_t, 128, mslTileEntity);
+  // æ–¹å—ï¼ˆè½¬æ¢åˆ°ç‰©å“å½¢å¼ï¼‰
+  MAPSORTLIST(NoTagItemInfo, uint64_t, 128, mslBlockItem);
 
-	//·½¿éÊµÌåÈİÆ÷
-	MAPSORTLIST(ItemInfo, uint64_t, 128, mslTileEntityContainer);
+  // æ–¹å—å®ä½“ï¼ˆåŸæœ¬å½¢å¼ï¼‰å…ˆä¸åš
+  // MAPSORTLIST(TileEntityInfo, uint64_t, 128, mslTileEntity);
 
-	//ÊµÌå£¨Ô­±¾ĞÎÊ½£©
-	MAPSORTLIST(EntityInfo, uint64_t, 128, mslEntity);
+  // æ–¹å—å®ä½“å®¹å™¨
+  MAPSORTLIST(ItemInfo, uint64_t, 128, mslTileEntityContainer);
 
-	//ÊµÌå£¨×ª»»µ½ÎïÆ·ĞÎÊ½£©ÏÈ²»×ö
-	//MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityItem);
-	//Èç¹û×öÕâ¸ö£¬ÄÇÃ´ÒªÔÚÊµÌåÈİÆ÷ÄÚÅÅ³ıµôÂäÎï£¬È»ºó°ÑµôÂäÎï×ª»»µ½ÕâÀïÃæ
+  // å®ä½“ï¼ˆåŸæœ¬å½¢å¼ï¼‰
+  MAPSORTLIST(EntityInfo, uint64_t, 128, mslEntity);
 
-	//ÊµÌåÈİÆ÷
-	MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityContainer);
+  // å®ä½“ï¼ˆè½¬æ¢åˆ°ç‰©å“å½¢å¼ï¼‰å…ˆä¸åš
+  // MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityItem);
+  // å¦‚æœåšè¿™ä¸ªï¼Œé‚£ä¹ˆè¦åœ¨å®ä½“å®¹å™¨å†…æ’é™¤æ‰è½ç‰©ï¼Œç„¶åæŠŠæ‰è½ç‰©è½¬æ¢åˆ°è¿™é‡Œé¢
 
-	//ÊµÌåÎïÆ·À¸
-	MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityInventory);
+  // å®ä½“å®¹å™¨
+  MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityContainer);
+
+  // å®ä½“ç‰©å“æ 
+  MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityInventory);
 
 #undef MAPSORTLIST
 };

@@ -1,528 +1,427 @@
 #pragma once
 
-#include "NBT_Node.hpp"
 #include "MUTF8_Tool.hpp"
+#include "NBT_Node.hpp"
 #include "Windows_ANSI.hpp"
-
-#include <concepts>
 
 #include <bit>
 #include <xxhash.h>
 
-class NBT_Helper
-{
+class NBT_Helper {
 public:
-	NBT_Helper() = delete;
-	~NBT_Helper() = delete;
+  NBT_Helper() = delete;
+  ~NBT_Helper() = delete;
+
 public:
-	static void Print(const NBT_Node_View<true> nRoot, bool bPadding = true, bool bNewLine = true)
-	{
-		size_t szLevelStart = bPadding ? 0 : (size_t)-1;//Ìø¹ı´òÓ¡
+  static void Print(const NBT_Node_View<true> nRoot, bool bPadding = true,
+                    bool bNewLine = true) {
+    size_t szLevelStart = bPadding ? 0 : (size_t)-1; // è·³è¿‡æ‰“å°
 
-		PrintSwitch<true>(nRoot, 0);
-		if (bNewLine)
-		{
-			printf("\n");
-		}
-	}
+    PrintSwitch<true>(nRoot, 0);
+    if (bNewLine) {
+      printf("\n");
+    }
+  }
 
-	static std::string Serialize(const NBT_Node_View<true> nRoot)
-	{
-		std::string sRet{};
-		SerializeSwitch<true>(nRoot, sRet);
-		return sRet;
-	}
+  static std::string Serialize(const NBT_Node_View<true> nRoot) {
+    std::string sRet{};
+    SerializeSwitch<true>(nRoot, sRet);
+    return sRet;
+  }
 
-	static void DefaultFunc(XXH64_state_t *)
-	{
-		return;
-	}
+  static void DefaultFunc(XXH64_state_t *) { return; }
 
-	using DefaultFuncType = std::decay_t<decltype(DefaultFunc)>;
+  using DefaultFuncType = std::decay_t<decltype(DefaultFunc)>;
 
-	template<typename TS = DefaultFuncType, typename TE = DefaultFuncType>//Á½¸öº¯Êı£¬·Ö±ğÔÚÇ°ºóµ÷ÓÃ£¬¿ÉÒÔÓÃÓÚ²åÈë¹şÏ£Êı¾İ
-	static XXH64_hash_t Hash(const NBT_Node_View<true> nRoot, XXH64_hash_t u64Seed, TS funS = DefaultFunc, TE funE = DefaultFunc)
-	{
-		XXH64_state_t * pHashState = XXH64_createState();
-		XXH64_reset(pHashState, u64Seed);
+  template <
+      typename TS = DefaultFuncType,
+      typename TE =
+          DefaultFuncType> // ä¸¤ä¸ªå‡½æ•°ï¼Œåˆ†åˆ«åœ¨å‰åè°ƒç”¨ï¼Œå¯ä»¥ç”¨äºæ’å…¥å“ˆå¸Œæ•°æ®
+  static XXH64_hash_t Hash(const NBT_Node_View<true> nRoot,
+                           XXH64_hash_t u64Seed, TS funS = DefaultFunc,
+                           TE funE = DefaultFunc) {
+    XXH64_state_t *pHashState = XXH64_createState();
+    XXH64_reset(pHashState, u64Seed);
 
-		funS(pHashState);
-		HashSwitch<true>(nRoot, pHashState);
-		funE(pHashState);
+    funS(pHashState);
+    HashSwitch<true>(nRoot, pHashState);
+    funE(pHashState);
 
-		XXH64_hash_t hashNBT = XXH64_digest(pHashState);
-		XXH64_freeState(pHashState);
-		return hashNBT;
+    XXH64_hash_t hashNBT = XXH64_digest(pHashState);
+    XXH64_freeState(pHashState);
+    return hashNBT;
 
-		using DefaultFuncArg = std::decay_t<decltype(pHashState)>;
-		static_assert(std::is_invocable_v<TS, DefaultFuncArg>,"TS is not a callable object or parameter type mismatch.");
-		static_assert(std::is_invocable_v<TE, DefaultFuncArg>,"TE is not a callable object or parameter type mismatch.");
-	}
-private:
-	constexpr const static inline char *const LevelPadding = "    ";
-
-	static void PrintPadding(size_t szLevel, bool bSubLevel, bool bNewLine)//bSubLevel»áÈÃËõ½ø¶àÒ»²ã
-	{
-		if (szLevel == (size_t)-1)//Ìø¹ı´òÓ¡
-		{
-			return;
-		}
-
-		if (bNewLine)
-		{
-			putchar('\n');
-		}
-		
-		for (size_t i = 0; i < szLevel; ++i)
-		{
-			printf(LevelPadding);
-		}
-
-		if (bSubLevel)
-		{
-			printf(LevelPadding);
-		}
-	}
-
-	template<bool bRoot = false>//Ê×´ÎÊ¹ÓÃNBT_Node_View½â°ü£¬ºóĞøÖ±½ÓÊ¹ÓÃNBT_NodeÒıÓÃÃâ³ı¶îÍâ³õÊ¼»¯¿ªÏú
-	static void PrintSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, size_t szLevel)
-	{
-		auto tag = nRoot.GetTag();
-		switch (tag)
-		{
-		case NBT_Node::TAG_End:
-			{
-				printf("[Compound End]");
-			}
-			break;
-		case NBT_Node::TAG_Byte:
-			{
-				printf("%dB", nRoot.GetData<NBT_Node::NBT_Byte>());
-			}
-			break;
-		case NBT_Node::TAG_Short:
-			{
-				printf("%dS", nRoot.GetData<NBT_Node::NBT_Short>());
-			}
-			break;
-		case NBT_Node::TAG_Int:
-			{
-				printf("%dI", nRoot.GetData<NBT_Node::NBT_Int>());
-			}
-			break;
-		case NBT_Node::TAG_Long:
-			{
-				printf("%lldL", nRoot.GetData<NBT_Node::NBT_Long>());
-			}
-			break;
-		case NBT_Node::TAG_Float:
-			{
-				printf("%gF", nRoot.GetData<NBT_Node::NBT_Float>());
-			}
-			break;
-		case NBT_Node::TAG_Double:
-			{
-				printf("%gD", nRoot.GetData<NBT_Node::NBT_Double>());
-			}
-			break;
-		case NBT_Node::TAG_Byte_Array:
-			{
-				const auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
-				printf("[B;");
-				for (const auto &it : arr)
-				{
-					printf("%d,", it);
-				}
-				if (arr.size() != 0)
-				{
-					printf("\b");
-				}
-
-				printf("]");
-			}
-			break;
-		case NBT_Node::TAG_Int_Array:
-			{
-				const auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
-				printf("[I;");
-				for (const auto &it : arr)
-				{
-					printf("%d,", it);
-				}
-
-				if (arr.size() != 0)
-				{
-					printf("\b");
-				}
-				printf("]");
-			}
-			break;
-		case NBT_Node::TAG_Long_Array:
-			{
-				const auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
-				printf("[L;");
-				for (const auto &it : arr)
-				{
-					printf("%lld,", it);
-				}
-
-				if (arr.size() != 0)
-				{
-					printf("\b");
-				}
-				printf("]");
-			}
-			break;
-		case NBT_Node::TAG_String:
-			{
-				printf("\"%s\"", U16ANSI(U16STR(nRoot.GetData<NBT_Node::NBT_String>())).c_str());
-			}
-			break;
-		case NBT_Node::TAG_List://ĞèÒª´òÓ¡Ëõ½øµÄµØ·½
-			{
-				const auto &list = nRoot.GetData<NBT_Node::NBT_List>();
-				PrintPadding(szLevel, false, true);
-				printf("[");
-				for (const auto &it : list)
-				{
-					PrintPadding(szLevel, true, it.GetTag() != NBT_Node::TAG_Compound && it.GetTag() != NBT_Node::TAG_List);
-					PrintSwitch(it, szLevel + 1);
-					printf(",");
-				}
-
-				if (list.size() != 0)
-				{
-					printf("\b \b");//Çå³ı×îºóÒ»¸ö¶ººÅ
-					PrintPadding(szLevel, false, true);//¿ÕÁĞ±íÎŞĞè»»ĞĞÒÔ¼°¶ÔÆë
-				}
-				printf("]");
-			}
-			break;
-		case NBT_Node::TAG_Compound://ĞèÒª´òÓ¡Ëõ½øµÄµØ·½
-			{
-				const auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
-				PrintPadding(szLevel, false, true);
-				printf("{");
-
-				for (const auto &it : cpd)
-				{
-					PrintPadding(szLevel, true, true);
-					printf("\"%s\":", U16ANSI(U16STR(it.first)).c_str());
-					PrintSwitch(it.second, szLevel + 1);
-					printf(",");
-				}
-
-				if (cpd.size() != 0)
-				{
-					printf("\b \b");//Çå³ı×îºóÒ»¸ö¶ººÅ
-					PrintPadding(szLevel, false, true);//¿Õ¼¯ºÏÎŞĞè»»ĞĞÒÔ¼°¶ÔÆë
-				}
-				printf("}");
-			}
-			break;
-		default:
-			{
-				printf("[Unknown NBT Tag Type [%02X(%d)]]", tag, tag);
-			}
-			break;
-		}
-	}
+    using DefaultFuncArg = std::decay_t<decltype(pHashState)>;
+    static_assert(std::is_invocable_v<TS, DefaultFuncArg>,
+                  "TS is not a callable object or parameter type mismatch.");
+    static_assert(std::is_invocable_v<TE, DefaultFuncArg>,
+                  "TE is not a callable object or parameter type mismatch.");
+  }
 
 private:
-	template<typename T>
-	static void ToHexString(const T &value, std::string &result)
-	{
-		static_assert(std::is_arithmetic_v<T>, "T must be an arithmetic type");
-		static constexpr char hex_chars[] = "0123456789ABCDEF";
+  constexpr const static inline char *const LevelPadding = "    ";
 
-		//°´¹Ì¶¨×Ö½ÚĞò´¦Àí
-		const unsigned char *bytes = (const unsigned char *)&value;
-		if constexpr (std::endian::native == std::endian::little)
-		{
-			for (size_t i = sizeof(T); i-- > 0; )
-			{
-				result += hex_chars[(bytes[i] >> 4) & 0x0F];//¸ß4
-				result += hex_chars[(bytes[i] >> 0) & 0x0F];//µÍ4
-			}
-		}
-		else
-		{
-			for (size_t i = 0; i < sizeof(T); ++i)
-			{
-				result += hex_chars[(bytes[i] >> 4) & 0x0F];//¸ß4
-				result += hex_chars[(bytes[i] >> 0) & 0x0F];//µÍ4
-			}
-		}
-	}
+  static void PrintPadding(size_t szLevel, bool bSubLevel,
+                           bool bNewLine) // bSubLevelä¼šè®©ç¼©è¿›å¤šä¸€å±‚
+  {
+    if (szLevel == (size_t)-1) // è·³è¿‡æ‰“å°
+    {
+      return;
+    }
 
-template<bool bRoot = false>//Ê×´ÎÊ¹ÓÃNBT_Node_View½â°ü£¬ºóĞøÖ±½ÓÊ¹ÓÃNBT_NodeÒıÓÃÃâ³ı¶îÍâ³õÊ¼»¯¿ªÏú
-static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, std::string &sRet)
-{
-	auto tag = nRoot.GetTag();
-	switch (tag)
-	{
-	case NBT_Node::TAG_End:
-		{
-			sRet += "[Compound End]";
-		}
-		break;
-	case NBT_Node::TAG_Byte:
-		{
-			ToHexString(nRoot.GetData<NBT_Node::NBT_Byte>(), sRet);
-			sRet += 'B';
-		}
-		break;
-	case NBT_Node::TAG_Short:
-		{
-			ToHexString(nRoot.GetData<NBT_Node::NBT_Short>(), sRet);
-			sRet += 'S';
-		}
-		break;
-	case NBT_Node::TAG_Int:
-		{
-			ToHexString(nRoot.GetData<NBT_Node::NBT_Int>(), sRet);
-			sRet += 'I';
-		}
-		break;
-	case NBT_Node::TAG_Long:
-		{
-			ToHexString(nRoot.GetData<NBT_Node::NBT_Long>(), sRet);
-			sRet += 'L';
-		}
-		break;
-	case NBT_Node::TAG_Float:
-		{
-			ToHexString(nRoot.GetData<NBT_Node::NBT_Float>(), sRet);
-			sRet += 'F';
-		}
-		break;
-	case NBT_Node::TAG_Double:
-		{
-			ToHexString(nRoot.GetData<NBT_Node::NBT_Double>(), sRet);
-			sRet += 'D';
-		}
-		break;
-	case NBT_Node::TAG_Byte_Array:
-		{
-			const auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
-			sRet += "[B;";
-			for (const auto &it : arr)
-			{
-				ToHexString(it, sRet);
-				sRet += ',';
-			}
-			if (arr.size() != 0)
-			{
-				sRet.pop_back();//É¾µô×îºóÒ»¸ö¶ººÅ
-			}
+    if (bNewLine) {
+      putchar('\n');
+    }
 
-			sRet += ']';
-		}
-		break;
-	case NBT_Node::TAG_Int_Array:
-		{
-			const auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
-			sRet += "[I;";
-			for (const auto &it : arr)
-			{
-				ToHexString(it, sRet);
-				sRet += ',';
-			}
-			if (arr.size() != 0)
-			{
-				sRet.pop_back();//É¾µô×îºóÒ»¸ö¶ººÅ
-			}
+    for (size_t i = 0; i < szLevel; ++i) {
+      printf(LevelPadding);
+    }
 
-			sRet += ']';
-		}
-		break;
-	case NBT_Node::TAG_Long_Array:
-		{
-			const auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
-			sRet += "[L;";
-			for (const auto &it : arr)
-			{
-				ToHexString(it, sRet);
-				sRet += ',';
-			}
-			if (arr.size() != 0)
-			{
-				sRet.pop_back();//É¾µô×îºóÒ»¸ö¶ººÅ
-			}
+    if (bSubLevel) {
+      printf(LevelPadding);
+    }
+  }
 
-			sRet += ']';
-		}
-		break;
-	case NBT_Node::TAG_String:
-		{
-			sRet += '\"';
-			sRet += nRoot.GetData<NBT_Node::NBT_String>();
-			sRet += '\"';
-		}
-		break;
-	case NBT_Node::TAG_List:
-		{
-			const auto &list = nRoot.GetData<NBT_Node::NBT_List>();
-			sRet += '[';
-			for (const auto &it : list)
-			{
-				SerializeSwitch(it, sRet);
-				sRet += ',';
-			}
+  template <
+      bool bRoot =
+          false> // é¦–æ¬¡ä½¿ç”¨NBT_Node_Viewè§£åŒ…ï¼Œåç»­ç›´æ¥ä½¿ç”¨NBT_Nodeå¼•ç”¨å…é™¤é¢å¤–åˆå§‹åŒ–å¼€é”€
+  static void PrintSwitch(
+      std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>
+          nRoot,
+      size_t szLevel) {
+    auto tag = nRoot.GetTag();
+    switch (tag) {
+    case NBT_Node::TAG_End: {
+      printf("[Compound End]");
+    } break;
+    case NBT_Node::TAG_Byte: {
+      printf("%dB", nRoot.GetData<NBT_Node::NBT_Byte>());
+    } break;
+    case NBT_Node::TAG_Short: {
+      printf("%dS", nRoot.GetData<NBT_Node::NBT_Short>());
+    } break;
+    case NBT_Node::TAG_Int: {
+      printf("%dI", nRoot.GetData<NBT_Node::NBT_Int>());
+    } break;
+    case NBT_Node::TAG_Long: {
+      printf("%lldL", nRoot.GetData<NBT_Node::NBT_Long>());
+    } break;
+    case NBT_Node::TAG_Float: {
+      printf("%gF", nRoot.GetData<NBT_Node::NBT_Float>());
+    } break;
+    case NBT_Node::TAG_Double: {
+      printf("%gD", nRoot.GetData<NBT_Node::NBT_Double>());
+    } break;
+    case NBT_Node::TAG_Byte_Array: {
+      const auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
+      printf("[B;");
+      for (const auto &it : arr) {
+        printf("%d,", it);
+      }
+      if (arr.size() != 0) {
+        printf("\b");
+      }
 
-			if (list.size() != 0)
-			{
-				sRet.pop_back();//É¾µô×îºóÒ»¸ö¶ººÅ
-			}
-			sRet += ']';
-		}
-		break;
-	case NBT_Node::TAG_Compound://ĞèÒª´òÓ¡Ëõ½øµÄµØ·½
-		{
-			const auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
-			sRet += '{';
+      printf("]");
+    } break;
+    case NBT_Node::TAG_Int_Array: {
+      const auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
+      printf("[I;");
+      for (const auto &it : arr) {
+        printf("%d,", it);
+      }
 
-			for (const auto &it : cpd)
-			{
-				sRet += '\"';
-				sRet += it.first;
-				sRet += "\":";
-				SerializeSwitch(it.second, sRet);
-				sRet += ',';
-			}
+      if (arr.size() != 0) {
+        printf("\b");
+      }
+      printf("]");
+    } break;
+    case NBT_Node::TAG_Long_Array: {
+      const auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
+      printf("[L;");
+      for (const auto &it : arr) {
+        printf("%lld,", it);
+      }
 
-			if (cpd.size() != 0)
-			{
-				sRet.pop_back();//É¾µô×îºóÒ»¸ö¶ººÅ
-			}
-			sRet += '}';
-		}
-		break;
-	default:
-		{
-			sRet += "[Unknown NBT Tag Type [";
-			ToHexString((NBT_Node::NBT_TAG_RAW_TYPE)tag, sRet);
-			sRet += "]]";
-		}
-		break;
-	}
-}
+      if (arr.size() != 0) {
+        printf("\b");
+      }
+      printf("]");
+    } break;
+    case NBT_Node::TAG_String: {
+      printf("\"%s\"",
+             U16ANSI(U16STR(nRoot.GetData<NBT_Node::NBT_String>())).c_str());
+    } break;
+    case NBT_Node::TAG_List: // éœ€è¦æ‰“å°ç¼©è¿›çš„åœ°æ–¹
+    {
+      const auto &list = nRoot.GetData<NBT_Node::NBT_List>();
+      PrintPadding(szLevel, false, true);
+      printf("[");
+      for (const auto &it : list) {
+        PrintPadding(szLevel, true,
+                     it.GetTag() != NBT_Node::TAG_Compound &&
+                         it.GetTag() != NBT_Node::TAG_List);
+        PrintSwitch(it, szLevel + 1);
+        printf(",");
+      }
+
+      if (list.size() != 0) {
+        printf("\b \b");                    // æ¸…é™¤æœ€åä¸€ä¸ªé€—å·
+        PrintPadding(szLevel, false, true); // ç©ºåˆ—è¡¨æ— éœ€æ¢è¡Œä»¥åŠå¯¹é½
+      }
+      printf("]");
+    } break;
+    case NBT_Node::TAG_Compound: // éœ€è¦æ‰“å°ç¼©è¿›çš„åœ°æ–¹
+    {
+      const auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
+      PrintPadding(szLevel, false, true);
+      printf("{");
+
+      for (const auto &it : cpd) {
+        PrintPadding(szLevel, true, true);
+        printf("\"%s\":", U16ANSI(U16STR(it.first)).c_str());
+        PrintSwitch(it.second, szLevel + 1);
+        printf(",");
+      }
+
+      if (cpd.size() != 0) {
+        printf("\b \b");                    // æ¸…é™¤æœ€åä¸€ä¸ªé€—å·
+        PrintPadding(szLevel, false, true); // ç©ºé›†åˆæ— éœ€æ¢è¡Œä»¥åŠå¯¹é½
+      }
+      printf("}");
+    } break;
+    default: {
+      printf("[Unknown NBT Tag Type [%02X(%d)]]", tag, tag);
+    } break;
+    }
+  }
 
 private:
-	template<bool bRoot = false>//Ê×´ÎÊ¹ÓÃNBT_Node_View½â°ü£¬ºóĞøÖ±½ÓÊ¹ÓÃNBT_NodeÒıÓÃÃâ³ı¶îÍâ³õÊ¼»¯¿ªÏú
-	static void HashSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, XXH64_state_t *pHashState)
-	{
-		auto tag = nRoot.GetTag();
+  template <typename T>
+  static void ToHexString(const T &value, std::string &result) {
+    static_assert(std::is_arithmetic_v<T>, "T must be an arithmetic type");
+    static constexpr char hex_chars[] = "0123456789ABCDEF";
 
-		//°Ñtag±¾Éí×÷ÎªÊı¾İ
-		{
-			const auto &tmp = tag;
-			XXH64_update(pHashState, &tmp, sizeof(tmp));
-		}
+    // æŒ‰å›ºå®šå­—èŠ‚åºå¤„ç†
+    const unsigned char *bytes = (const unsigned char *)&value;
+    if constexpr (std::endian::native == std::endian::little) {
+      for (size_t i = sizeof(T); i-- > 0;) {
+        result += hex_chars[(bytes[i] >> 4) & 0x0F]; // é«˜4
+        result += hex_chars[(bytes[i] >> 0) & 0x0F]; // ä½4
+      }
+    } else {
+      for (size_t i = 0; i < sizeof(T); ++i) {
+        result += hex_chars[(bytes[i] >> 4) & 0x0F]; // é«˜4
+        result += hex_chars[(bytes[i] >> 0) & 0x0F]; // ä½4
+      }
+    }
+  }
 
-		//ÔÙ¶Á³öÊµ¼ÊÄÚÈİ×÷ÎªÊı¾İ
-		switch (tag)
-		{
-		case NBT_Node::TAG_End:
-			{}
-			break;
-		case NBT_Node::TAG_Byte:
-			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Byte>();
-				XXH64_update(pHashState, &tmp, sizeof(tmp));
-			}
-			break;
-		case NBT_Node::TAG_Short:
-			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Short>();
-				XXH64_update(pHashState, &tmp, sizeof(tmp));
-			}
-			break;
-		case NBT_Node::TAG_Int:
-			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Int>();
-				XXH64_update(pHashState, &tmp, sizeof(tmp));
-			}
-			break;
-		case NBT_Node::TAG_Long:
-			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Long>();
-				XXH64_update(pHashState, &tmp, sizeof(tmp));
-			}
-			break;
-		case NBT_Node::TAG_Float:
-			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Float>();
-				XXH64_update(pHashState, &tmp, sizeof(tmp));
-			}
-			break;
-		case NBT_Node::TAG_Double:
-			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Double>();
-				XXH64_update(pHashState, &tmp, sizeof(tmp));
-			}
-			break;
-		case NBT_Node::TAG_Byte_Array:
-			{
-				const auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
-				for (const auto &it : arr)
-				{
-					const auto &tmp = it;
-					XXH64_update(pHashState, &tmp, sizeof(tmp));
-				}
-			}
-			break;
-		case NBT_Node::TAG_Int_Array:
-			{
-				const auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
-				for (const auto &it : arr)
-				{
-					const auto &tmp = it;
-					XXH64_update(pHashState, &tmp, sizeof(tmp));
-				}
-			}
-			break;
-		case NBT_Node::TAG_Long_Array:
-			{
-				const auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
-				for (const auto &it : arr)
-				{
-					const auto &tmp = it;
-					XXH64_update(pHashState, &tmp, sizeof(tmp));
-				}
-			}
-			break;
-		case NBT_Node::TAG_String:
-			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_String>();
-				XXH64_update(pHashState, tmp.data(), tmp.size());
-			}
-			break;
-		case NBT_Node::TAG_List:
-			{
-				const auto &list = nRoot.GetData<NBT_Node::NBT_List>();
-				for (const auto &it : list)
-				{
-					HashSwitch(it, pHashState);
-				}
-			}
-			break;
-		case NBT_Node::TAG_Compound://ĞèÒª´òÓ¡Ëõ½øµÄµØ·½
-			{
-				const auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
-				for (const auto &it : cpd)
-				{
-					const auto &tmp = it.first;
-					XXH64_update(pHashState, tmp.data(), tmp.size());
-					HashSwitch(it.second, pHashState);
-				}
-			}
-			break;
-		default:
-			{}
-			break;
-		}
-	}
+  template <
+      bool bRoot =
+          false> // é¦–æ¬¡ä½¿ç”¨NBT_Node_Viewè§£åŒ…ï¼Œåç»­ç›´æ¥ä½¿ç”¨NBT_Nodeå¼•ç”¨å…é™¤é¢å¤–åˆå§‹åŒ–å¼€é”€
+  static void SerializeSwitch(
+      std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>
+          nRoot,
+      std::string &sRet) {
+    auto tag = nRoot.GetTag();
+    switch (tag) {
+    case NBT_Node::TAG_End: {
+      sRet += "[Compound End]";
+    } break;
+    case NBT_Node::TAG_Byte: {
+      ToHexString(nRoot.GetData<NBT_Node::NBT_Byte>(), sRet);
+      sRet += 'B';
+    } break;
+    case NBT_Node::TAG_Short: {
+      ToHexString(nRoot.GetData<NBT_Node::NBT_Short>(), sRet);
+      sRet += 'S';
+    } break;
+    case NBT_Node::TAG_Int: {
+      ToHexString(nRoot.GetData<NBT_Node::NBT_Int>(), sRet);
+      sRet += 'I';
+    } break;
+    case NBT_Node::TAG_Long: {
+      ToHexString(nRoot.GetData<NBT_Node::NBT_Long>(), sRet);
+      sRet += 'L';
+    } break;
+    case NBT_Node::TAG_Float: {
+      ToHexString(nRoot.GetData<NBT_Node::NBT_Float>(), sRet);
+      sRet += 'F';
+    } break;
+    case NBT_Node::TAG_Double: {
+      ToHexString(nRoot.GetData<NBT_Node::NBT_Double>(), sRet);
+      sRet += 'D';
+    } break;
+    case NBT_Node::TAG_Byte_Array: {
+      const auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
+      sRet += "[B;";
+      for (const auto &it : arr) {
+        ToHexString(it, sRet);
+        sRet += ',';
+      }
+      if (arr.size() != 0) {
+        sRet.pop_back(); // åˆ æ‰æœ€åä¸€ä¸ªé€—å·
+      }
 
+      sRet += ']';
+    } break;
+    case NBT_Node::TAG_Int_Array: {
+      const auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
+      sRet += "[I;";
+      for (const auto &it : arr) {
+        ToHexString(it, sRet);
+        sRet += ',';
+      }
+      if (arr.size() != 0) {
+        sRet.pop_back(); // åˆ æ‰æœ€åä¸€ä¸ªé€—å·
+      }
 
+      sRet += ']';
+    } break;
+    case NBT_Node::TAG_Long_Array: {
+      const auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
+      sRet += "[L;";
+      for (const auto &it : arr) {
+        ToHexString(it, sRet);
+        sRet += ',';
+      }
+      if (arr.size() != 0) {
+        sRet.pop_back(); // åˆ æ‰æœ€åä¸€ä¸ªé€—å·
+      }
+
+      sRet += ']';
+    } break;
+    case NBT_Node::TAG_String: {
+      sRet += '\"';
+      sRet += nRoot.GetData<NBT_Node::NBT_String>();
+      sRet += '\"';
+    } break;
+    case NBT_Node::TAG_List: {
+      const auto &list = nRoot.GetData<NBT_Node::NBT_List>();
+      sRet += '[';
+      for (const auto &it : list) {
+        SerializeSwitch(it, sRet);
+        sRet += ',';
+      }
+
+      if (list.size() != 0) {
+        sRet.pop_back(); // åˆ æ‰æœ€åä¸€ä¸ªé€—å·
+      }
+      sRet += ']';
+    } break;
+    case NBT_Node::TAG_Compound: // éœ€è¦æ‰“å°ç¼©è¿›çš„åœ°æ–¹
+    {
+      const auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
+      sRet += '{';
+
+      for (const auto &it : cpd) {
+        sRet += '\"';
+        sRet += it.first;
+        sRet += "\":";
+        SerializeSwitch(it.second, sRet);
+        sRet += ',';
+      }
+
+      if (cpd.size() != 0) {
+        sRet.pop_back(); // åˆ æ‰æœ€åä¸€ä¸ªé€—å·
+      }
+      sRet += '}';
+    } break;
+    default: {
+      sRet += "[Unknown NBT Tag Type [";
+      ToHexString((NBT_Node::NBT_TAG_RAW_TYPE)tag, sRet);
+      sRet += "]]";
+    } break;
+    }
+  }
+
+private:
+  template <
+      bool bRoot =
+          false> // é¦–æ¬¡ä½¿ç”¨NBT_Node_Viewè§£åŒ…ï¼Œåç»­ç›´æ¥ä½¿ç”¨NBT_Nodeå¼•ç”¨å…é™¤é¢å¤–åˆå§‹åŒ–å¼€é”€
+  static void HashSwitch(
+      std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>
+          nRoot,
+      XXH64_state_t *pHashState) {
+    auto tag = nRoot.GetTag();
+
+    // æŠŠtagæœ¬èº«ä½œä¸ºæ•°æ®
+    {
+      const auto &tmp = tag;
+      XXH64_update(pHashState, &tmp, sizeof(tmp));
+    }
+
+    // å†è¯»å‡ºå®é™…å†…å®¹ä½œä¸ºæ•°æ®
+    switch (tag) {
+    case NBT_Node::TAG_End: {
+    } break;
+    case NBT_Node::TAG_Byte: {
+      const auto &tmp = nRoot.GetData<NBT_Node::NBT_Byte>();
+      XXH64_update(pHashState, &tmp, sizeof(tmp));
+    } break;
+    case NBT_Node::TAG_Short: {
+      const auto &tmp = nRoot.GetData<NBT_Node::NBT_Short>();
+      XXH64_update(pHashState, &tmp, sizeof(tmp));
+    } break;
+    case NBT_Node::TAG_Int: {
+      const auto &tmp = nRoot.GetData<NBT_Node::NBT_Int>();
+      XXH64_update(pHashState, &tmp, sizeof(tmp));
+    } break;
+    case NBT_Node::TAG_Long: {
+      const auto &tmp = nRoot.GetData<NBT_Node::NBT_Long>();
+      XXH64_update(pHashState, &tmp, sizeof(tmp));
+    } break;
+    case NBT_Node::TAG_Float: {
+      const auto &tmp = nRoot.GetData<NBT_Node::NBT_Float>();
+      XXH64_update(pHashState, &tmp, sizeof(tmp));
+    } break;
+    case NBT_Node::TAG_Double: {
+      const auto &tmp = nRoot.GetData<NBT_Node::NBT_Double>();
+      XXH64_update(pHashState, &tmp, sizeof(tmp));
+    } break;
+    case NBT_Node::TAG_Byte_Array: {
+      const auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
+      for (const auto &it : arr) {
+        const auto &tmp = it;
+        XXH64_update(pHashState, &tmp, sizeof(tmp));
+      }
+    } break;
+    case NBT_Node::TAG_Int_Array: {
+      const auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
+      for (const auto &it : arr) {
+        const auto &tmp = it;
+        XXH64_update(pHashState, &tmp, sizeof(tmp));
+      }
+    } break;
+    case NBT_Node::TAG_Long_Array: {
+      const auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
+      for (const auto &it : arr) {
+        const auto &tmp = it;
+        XXH64_update(pHashState, &tmp, sizeof(tmp));
+      }
+    } break;
+    case NBT_Node::TAG_String: {
+      const auto &tmp = nRoot.GetData<NBT_Node::NBT_String>();
+      XXH64_update(pHashState, tmp.data(), tmp.size());
+    } break;
+    case NBT_Node::TAG_List: {
+      const auto &list = nRoot.GetData<NBT_Node::NBT_List>();
+      for (const auto &it : list) {
+        HashSwitch(it, pHashState);
+      }
+    } break;
+    case NBT_Node::TAG_Compound: // éœ€è¦æ‰“å°ç¼©è¿›çš„åœ°æ–¹
+    {
+      const auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
+      for (const auto &it : cpd) {
+        const auto &tmp = it.first;
+        XXH64_update(pHashState, tmp.data(), tmp.size());
+        HashSwitch(it.second, pHashState);
+      }
+    } break;
+    default: {
+    } break;
+    }
+  }
 };

@@ -1,23 +1,21 @@
 #pragma once
 
 #ifdef _DEBUG
-#define new new( _NORMAL_BLOCK , __FILE__ , __LINE__ )
+#define new new (_NORMAL_BLOCK, __FILE__, __LINE__)
 #define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
 #include <crtdbg.h>
+#include <stdlib.h>
 
-struct _SetCheckStatus
-{
+struct _SetCheckStatus {
 public:
-	_SetCheckStatus(void)
-	{
-		_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
-		_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG | _CRTDBG_MODE_FILE);
-		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_ALWAYS_DF);
-	}
-	~_SetCheckStatus(void)
-	{
-		//_CrtDumpMemoryLeaks();³ÌĞò½áÎ²µ÷ÓÃ£¬ÓĞ_CRTDBG_LEAK_CHECK_DF±êÖ¾»á×Ô¶¯µ÷ÓÃ¿ÉÒÔÊ¡ÂÔ£¬ÒòÎªĞèÒªÔÚËùÓĞÎö¹¹º¯Êıºó½øĞĞ¼ì²é
-	}
-}g_SetCheckStatus{};
+  _SetCheckStatus(void) {
+    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG | _CRTDBG_MODE_FILE);
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF |
+                   _CRTDBG_CHECK_ALWAYS_DF);
+  }
+  ~_SetCheckStatus(void) {
+    //_CrtDumpMemoryLeaks();ç¨‹åºç»“å°¾è°ƒç”¨ï¼Œæœ‰_CRTDBG_LEAK_CHECK_DFæ ‡å¿—ä¼šè‡ªåŠ¨è°ƒç”¨å¯ä»¥çœç•¥ï¼Œå› ä¸ºéœ€è¦åœ¨æ‰€æœ‰ææ„å‡½æ•°åè¿›è¡Œæ£€æŸ¥
+  }
+} g_SetCheckStatus{};
 #endif

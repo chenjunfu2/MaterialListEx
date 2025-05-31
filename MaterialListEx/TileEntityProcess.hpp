@@ -1,123 +1,117 @@
 #pragma once
 
-#include "NBT_Node.hpp"
-#include "MUTF8_Tool.hpp"
 #include "ItemProcess.hpp"
+#include "MUTF8_Tool.hpp"
+#include "NBT_Node.hpp"
 
 #include <unordered_map>
 
-class TileEntityProcess
-{
+class TileEntityProcess {
 public:
-	TileEntityProcess() = delete;
-	~TileEntityProcess() = delete;
+  TileEntityProcess() = delete;
+  ~TileEntityProcess() = delete;
 
-	struct TileEntityContainerStats
-	{
-		const NBT_Node::NBT_String *psTileEntityName{};
-		const NBT_Node *pItems{};
-	};
+  struct TileEntityContainerStats {
+    const NBT_Node::NBT_String *psTileEntityName{};
+    const NBT_Node *pItems{};
+  };
 
-	using TileEntityContainerStatsList = std::vector<TileEntityContainerStats>;
-	
+  using TileEntityContainerStatsList = std::vector<TileEntityContainerStats>;
+
 private:
-	//´¦Àí¶àÖÖ¼¯ºÏÊı¾İÇé¿ö²¢Ó³Éäµ½TileEntityContainerStats
-	static bool MapTileEntityContainerStats(const NBT_Node::NBT_Compound &teCompound, TileEntityContainerStats &teStats)
-	{
-		/*
-			ÓĞºÃ¼¸ÖÖÇé¿ö£ºitem-Compound¡¢Items-List¡¢ÌØÊâÃû³Æ-Compound
-		*/
+  // å¤„ç†å¤šç§é›†åˆæ•°æ®æƒ…å†µå¹¶æ˜ å°„åˆ°TileEntityContainerStats
+  static bool
+  MapTileEntityContainerStats(const NBT_Node::NBT_Compound &teCompound,
+                              TileEntityContainerStats &teStats) {
+    /*
+            æœ‰å¥½å‡ ç§æƒ…å†µï¼šitem-Compoundã€Items-Listã€ç‰¹æ®Šåç§°-Compound
+    */
 
-		//³¢ÊÔÑ°ÕÒItems£¨ÆÕÍ¨¶à¸ñÈİÆ÷£©
-		if (const auto pItems = teCompound.Search(MU8STR("Items"));
-			pItems != NULL && pItems->IsList())
-		{
-			teStats.pItems = pItems;
-			return true;
-		}
+    // å°è¯•å¯»æ‰¾Itemsï¼ˆæ™®é€šå¤šæ ¼å®¹å™¨ï¼‰
+    if (const auto pItems = teCompound.Search(MU8STR("Items"));
+        pItems != NULL && pItems->IsList()) {
+      teStats.pItems = pItems;
+      return true;
+    }
 
-		//³¢ÊÔ´¦ÀíÌØÊâ·½¿é
-		//ÓÃÓÚÓ³ÉäÌØÊâµÄ·½¿éÊµÌåÈİÆ÷ÀïÎïÆ·µÄÃû×Ö
-		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapContainerTagName =
-		{
-			{MU8STR("minecraft:jukebox"),MU8STR("RecordItem")},
-			{MU8STR("minecraft:lectern"),MU8STR("Book")},
-			{MU8STR("minecraft:brushable_block"),MU8STR("item")},
-		};
+    // å°è¯•å¤„ç†ç‰¹æ®Šæ–¹å—
+    // ç”¨äºæ˜ å°„ç‰¹æ®Šçš„æ–¹å—å®ä½“å®¹å™¨é‡Œç‰©å“çš„åå­—
+    const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String>
+        mapContainerTagName = {
+            {MU8STR("minecraft:jukebox"), MU8STR("RecordItem")},
+            {MU8STR("minecraft:lectern"), MU8STR("Book")},
+            {MU8STR("minecraft:brushable_block"), MU8STR("item")},
+        };
 
-		if (teStats.psTileEntityName == NULL)
-		{
-			//TODO:Èç¹ûÃ»ÓĞ·½¿éÊµÌåid£¬ÔòÍ¨¹ı·½¿é->·½¿éÊµÌåÓ³Éä±í²éÕÒ£¬¶ø²»ÊÇ·µ»ØÊ§°Ü
-			return false;
-		}
+    if (teStats.psTileEntityName == NULL) {
+      // TODO:å¦‚æœæ²¡æœ‰æ–¹å—å®ä½“idï¼Œåˆ™é€šè¿‡æ–¹å—->æ–¹å—å®ä½“æ˜ å°„è¡¨æŸ¥æ‰¾ï¼Œè€Œä¸æ˜¯è¿”å›å¤±è´¥
+      return false;
+    }
 
-		//²éÕÒ·½¿éÊµÌåidÊÇ·ñÔÚmapÖĞ
-		const auto findIt = mapContainerTagName.find(*teStats.psTileEntityName);
-		if (findIt == mapContainerTagName.end())//²»ÔÚ£¬²»ÊÇ¿ÉÒÔ´æ·ÅÎïÆ·µÄÈİÆ÷£¬Ìø¹ı
-		{
-			return false;//Ìø¹ı´Ë·½¿éÊµÌå
-		}
+    // æŸ¥æ‰¾æ–¹å—å®ä½“idæ˜¯å¦åœ¨mapä¸­
+    const auto findIt = mapContainerTagName.find(*teStats.psTileEntityName);
+    if (findIt ==
+        mapContainerTagName.end()) // ä¸åœ¨ï¼Œä¸æ˜¯å¯ä»¥å­˜æ”¾ç‰©å“çš„å®¹å™¨ï¼Œè·³è¿‡
+    {
+      return false; // è·³è¿‡æ­¤æ–¹å—å®ä½“
+    }
 
-		//Í¨¹ıÓ³ÉäÃû²éÕÒ¶ÔÓ¦ÎïÆ·´æ´¢Î»ÖÃ
-		const auto pSearch = teCompound.Search(findIt->second);
-		if (pSearch == NULL)//²éÕÒÊ§°Ü
-		{
-			return false;//Ìø¹ı´Ë·½¿éÊµÌå
-		}
+    // é€šè¿‡æ˜ å°„åæŸ¥æ‰¾å¯¹åº”ç‰©å“å­˜å‚¨ä½ç½®
+    const auto pSearch = teCompound.Search(findIt->second);
+    if (pSearch == NULL) // æŸ¥æ‰¾å¤±è´¥
+    {
+      return false; // è·³è¿‡æ­¤æ–¹å—å®ä½“
+    }
 
-		//·ÅÈë½á¹¹ÄÚ
-		teStats.pItems = pSearch;
-		return true;
-	}
+    // æ”¾å…¥ç»“æ„å†…
+    teStats.pItems = pSearch;
+    return true;
+  }
 
 public:
-	static TileEntityContainerStatsList GetTileEntityContainerStats(const NBT_Node::NBT_Compound &RgCompound)
-	{
-		//»ñÈ¡·½¿éÊµÌåÁĞ±í
-		const auto &listTileEntity = RgCompound.GetList(MU8STR("TileEntities"));
-		TileEntityContainerStatsList listTileEntityStats{};
-		listTileEntityStats.reserve(listTileEntity.size());//ÌáÇ°À©Èİ
+  static TileEntityContainerStatsList
+  GetTileEntityContainerStats(const NBT_Node::NBT_Compound &RgCompound) {
+    // è·å–æ–¹å—å®ä½“åˆ—è¡¨
+    const auto &listTileEntity = RgCompound.GetList(MU8STR("TileEntities"));
+    TileEntityContainerStatsList listTileEntityStats{};
+    listTileEntityStats.reserve(listTileEntity.size()); // æå‰æ‰©å®¹
 
-		for (const auto &it : listTileEntity)
-		{
-			const auto &cur = GetCompound(it);
+    for (const auto &it : listTileEntity) {
+      const auto &cur = GetCompound(it);
 
-			TileEntityContainerStats teStats{ cur.HasString(MU8STR("id")) };
-			if (MapTileEntityContainerStats(cur, teStats))
-			{
-				listTileEntityStats.emplace_back(std::move(teStats));
-			}
-		}
+      TileEntityContainerStats teStats{cur.HasString(MU8STR("id"))};
+      if (MapTileEntityContainerStats(cur, teStats)) {
+        listTileEntityStats.emplace_back(std::move(teStats));
+      }
+    }
 
-		return listTileEntityStats;
-	}
+    return listTileEntityStats;
+  }
 
-	static ItemProcess::ItemStackList TileEntityContainerStatsToItemStack(const TileEntityContainerStats &stContainerStats)
-	{
-		ItemProcess::ItemStackList listItemStack{};
+  static ItemProcess::ItemStackList TileEntityContainerStatsToItemStack(
+      const TileEntityContainerStats &stContainerStats) {
+    ItemProcess::ItemStackList listItemStack{};
 
-		auto tag = stContainerStats.pItems->GetTag();
-		if (tag == NBT_Node::TAG_Compound)//Ö»ÓĞÒ»¸ñÎïÆ·
-		{
-			if (stContainerStats.pItems->GetCompound().empty())
-			{
-				return listItemStack;//¿Õ£¬Ö±½Ó·µ»Ø
-			}
-			listItemStack.push_back(ItemProcess::ItemCompoundToItemStack(stContainerStats.pItems->GetCompound()));
-		}
-		else if (tag == NBT_Node::TAG_List)//¶à¸ñÎïÆ·ÁĞ±í
-		{
-			const auto &tmp = stContainerStats.pItems->GetList();
-			for (const auto &it : tmp)
-			{
-				if (it.GetCompound().empty())
-				{
-					continue;//¿Õ£¬´¦ÀíÏÂÒ»¸ö
-				}
-				listItemStack.push_back(ItemProcess::ItemCompoundToItemStack(it.GetCompound()));
-			}
-		}
+    auto tag = stContainerStats.pItems->GetTag();
+    if (tag == NBT_Node::TAG_Compound) // åªæœ‰ä¸€æ ¼ç‰©å“
+    {
+      if (stContainerStats.pItems->GetCompound().empty()) {
+        return listItemStack; // ç©ºï¼Œç›´æ¥è¿”å›
+      }
+      listItemStack.push_back(ItemProcess::ItemCompoundToItemStack(
+          stContainerStats.pItems->GetCompound()));
+    } else if (tag == NBT_Node::TAG_List) // å¤šæ ¼ç‰©å“åˆ—è¡¨
+    {
+      const auto &tmp = stContainerStats.pItems->GetList();
+      for (const auto &it : tmp) {
+        if (it.GetCompound().empty()) {
+          continue; // ç©ºï¼Œå¤„ç†ä¸‹ä¸€ä¸ª
+        }
+        listItemStack.push_back(
+            ItemProcess::ItemCompoundToItemStack(it.GetCompound()));
+      }
+    }
 
-		return listItemStack;
-	}
+    return listItemStack;
+  }
 };

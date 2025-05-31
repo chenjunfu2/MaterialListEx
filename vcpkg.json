@@ -1,0 +1,10 @@
+{
+  "name": "materual-list-ex",
+  "version": "0.0.1",
+  "dependencies": [
+    "gzip-hpp",
+    "nlohmann-json",
+    "xxhash",
+    "zlib"
+  ]
+}

@@ -1,806 +1,791 @@
 #pragma once
 
-#include "NBT_Node.hpp"
-#include "MUTF8_Tool.hpp"
-#include "Windows_ANSI.hpp"
 #include "Calc_Tool.hpp"
 #include "ItemProcess.hpp"
+#include "MUTF8_Tool.hpp"
+#include "NBT_Node.hpp"
 
 #include <stdint.h>
-#include <vector>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
-
-//¸úÎïÆ·ÀàËÆ£¬Í¬ÑùÆğ¸ö±ğÃû
+// è·Ÿç‰©å“ç±»ä¼¼ï¼ŒåŒæ ·èµ·ä¸ªåˆ«å
 using BlockInfo = ItemInfo;
 
-class BlockProcess
-{
+class BlockProcess {
 public:
-	BlockProcess() = delete;
-	~BlockProcess() = delete;
+  BlockProcess() = delete;
+  ~BlockProcess() = delete;
 
-	//¹ıÂË¿É»ñÈ¡µÄ·½¿é£¬²»¿É»ñÈ¡µÄ·½¿éÖ±½ÓÉ¾³ı£¬°ë×©µÈÌØÊâ¶àÎïÆ··½¿é×ª»»ÊıÁ¿
-	//(Ó¦¶Ô»¨Åè¡¢º¬Ë®·½¿é¡¢Á¶Ò©¹ø¡¢À¯Öòµ°¸âµÈ×éºÏÎïÆ·)
-	struct BlockStats
-	{
-		const NBT_Node::NBT_String *psBlockName{};
-		const NBT_Node::NBT_Compound *pcpdProperties{};
-		uint64_t u64Counter = 0;//·½¿é¼ÆÊıÆ÷
-	};
+  // è¿‡æ»¤å¯è·å–çš„æ–¹å—ï¼Œä¸å¯è·å–çš„æ–¹å—ç›´æ¥åˆ é™¤ï¼ŒåŠç –ç­‰ç‰¹æ®Šå¤šç‰©å“æ–¹å—è½¬æ¢æ•°é‡
+  //(åº”å¯¹èŠ±ç›†ã€å«æ°´æ–¹å—ã€ç‚¼è¯é”…ã€èœ¡çƒ›è›‹ç³•ç­‰ç»„åˆç‰©å“)
+  struct BlockStats {
+    const NBT_Node::NBT_String *psBlockName{};
+    const NBT_Node::NBT_Compound *pcpdProperties{};
+    uint64_t u64Counter = 0; // æ–¹å—è®¡æ•°å™¨
+  };
 
-	using BlockStatsList = std::vector<BlockStats>;
+  using BlockStatsList = std::vector<BlockStats>;
 
 public:
-	//Ê¹ÓÃÖ¸ÕëÖ¸ÏònRootÄÚ½Úµã£¬Çë²»ÒªÔÚÊ¹ÓÃnRoot×÷Îª²ÎÊıµ÷ÓÃ´Ëº¯Êı»ñÈ¡·µ»ØÖµµÄÇé¿öÏÂ£¬Ïú»ÙnRoot
-	static BlockStatsList GetBlockStats(const NBT_Node::NBT_Compound &RgCompound)//block list
-	{
-		/*----------------ÇøÓò´óĞ¡¼ÆËã¡¢µ÷É«°å»ñÈ¡----------------*/
-		//»ñÈ¡ÇøÓòÆ«ÒÆ
-		const auto &Position = RgCompound.GetCompound(MU8STR("Position"));
-		const BlockPos reginoPos =
-		{
-			.x = Position.GetInt(MU8STR("x")),
-			.y = Position.GetInt(MU8STR("y")),
-			.z = Position.GetInt(MU8STR("z")),
-		};
-		//»ñÈ¡ÇøÓò´óĞ¡£¨¿ÉÄÜÎª¸º£¬½áºÏÇøÓòÆ«ÒÆ¼ÆËãÊµ¼Ê´óĞ¡£©
-		const auto &Size = RgCompound.GetCompound(MU8STR("Size"));
-		const BlockPos regionSize =
-		{
-			.x = Size.GetInt(MU8STR("x")),
-			.y = Size.GetInt(MU8STR("y")),
-			.z = Size.GetInt(MU8STR("z")),
-		};
-		//¼ÆËãÇøÓòÊµ¼Ê´óĞ¡
-		const BlockPos posEndRel = getRelativeEndPositionFromAreaSize(regionSize).add(reginoPos);
-		const BlockPos posMin = getMinCorner(reginoPos, posEndRel);
-		const BlockPos posMax = getMaxCorner(reginoPos, posEndRel);
-		const BlockPos size = posMax.sub(posMin).add({ 1,1,1 });
+  // ä½¿ç”¨æŒ‡é’ˆæŒ‡å‘nRootå†…èŠ‚ç‚¹ï¼Œè¯·ä¸è¦åœ¨ä½¿ç”¨nRootä½œä¸ºå‚æ•°è°ƒç”¨æ­¤å‡½æ•°è·å–è¿”å›å€¼çš„æƒ…å†µä¸‹ï¼Œé”€æ¯nRoot
+  static BlockStatsList
+  GetBlockStats(const NBT_Node::NBT_Compound &RgCompound) // block list
+  {
+    /*----------------åŒºåŸŸå¤§å°è®¡ç®—ã€è°ƒè‰²æ¿è·å–----------------*/
+    // è·å–åŒºåŸŸåç§»
+    const auto &Position = RgCompound.GetCompound(MU8STR("Position"));
+    const BlockPos reginoPos = {
+        .x = Position.GetInt(MU8STR("x")),
+        .y = Position.GetInt(MU8STR("y")),
+        .z = Position.GetInt(MU8STR("z")),
+    };
+    // è·å–åŒºåŸŸå¤§å°ï¼ˆå¯èƒ½ä¸ºè´Ÿï¼Œç»“åˆåŒºåŸŸåç§»è®¡ç®—å®é™…å¤§å°ï¼‰
+    const auto &Size = RgCompound.GetCompound(MU8STR("Size"));
+    const BlockPos regionSize = {
+        .x = Size.GetInt(MU8STR("x")),
+        .y = Size.GetInt(MU8STR("y")),
+        .z = Size.GetInt(MU8STR("z")),
+    };
+    // è®¡ç®—åŒºåŸŸå®é™…å¤§å°
+    const BlockPos posEndRel =
+        getRelativeEndPositionFromAreaSize(regionSize).add(reginoPos);
+    const BlockPos posMin = getMinCorner(reginoPos, posEndRel);
+    const BlockPos posMax = getMaxCorner(reginoPos, posEndRel);
+    const BlockPos size = posMax.sub(posMin).add({1, 1, 1});
 
-		//printf("RegionSize: [%d, %d, %d]\n", size.x, size.y, size.z);
+    // printf("RegionSize: [%d, %d, %d]\n", size.x, size.y, size.z);
 
-		//»ñÈ¡µ÷É«°å£¨·½¿éÖÖÀà£©
-		const auto &BlockStatePalette = RgCompound.GetList(MU8STR("BlockStatePalette"));
-		const uint32_t bitsPerBitMapElement = Max(2U, (uint32_t)sizeof(uint32_t) * 8 - numberOfLeadingZeros(BlockStatePalette.size() - 1));//¼ÆËãÎ»Í¼ÖĞÒ»¸öÔªËØÕ¼ÓÃµÄbit´óĞ¡
-		const uint32_t bitMaskOfElement = (1 << bitsPerBitMapElement) - 1;//»ñÈ¡ÕÚÕÖÎ»£¬ÓÃÓÚÈ¡bitmapÄÚ²¿ÄÚÈİ
-		//printf("BlockStatePaletteSize: [%zu]\nbitsPerBitMapElement: [%d]\n", BlockStatePalette.size(), bitsPerBitMapElement);
-		/*------------------------------------------------*/
+    // è·å–è°ƒè‰²æ¿ï¼ˆæ–¹å—ç§ç±»ï¼‰
+    const auto &BlockStatePalette =
+        RgCompound.GetList(MU8STR("BlockStatePalette"));
+    const uint32_t bitsPerBitMapElement =
+        Max(2U, (uint32_t)sizeof(uint32_t) * 8 -
+                    numberOfLeadingZeros(BlockStatePalette.size() -
+                                         1)); // è®¡ç®—ä½å›¾ä¸­ä¸€ä¸ªå…ƒç´ å ç”¨çš„bitå¤§å°
+    const uint32_t bitMaskOfElement =
+        (1 << bitsPerBitMapElement) - 1; // è·å–é®ç½©ä½ï¼Œç”¨äºå–bitmapå†…éƒ¨å†…å®¹
+    // printf("BlockStatePaletteSize: [%zu]\nbitsPerBitMapElement: [%d]\n",
+    // BlockStatePalette.size(), bitsPerBitMapElement);
+    /*------------------------------------------------*/
 
-		/*----------------¸ù¾İ·½¿éÎ»Í¼·ÃÎÊµ÷É«°å£¬»ñÈ¡²»Í¬×´Ì¬·½¿éµÄ¼ÆÊı----------------*/
-		//´´½¨·½¿éÍ³¼Ævector
-		BlockStatsList listBlockStats;
-		listBlockStats.reserve(BlockStatePalette.size());//ÌáÇ°·ÖÅä
+    /*----------------æ ¹æ®æ–¹å—ä½å›¾è®¿é—®è°ƒè‰²æ¿ï¼Œè·å–ä¸åŒçŠ¶æ€æ–¹å—çš„è®¡æ•°----------------*/
+    // åˆ›å»ºæ–¹å—ç»Ÿè®¡vector
+    BlockStatsList listBlockStats;
+    listBlockStats.reserve(BlockStatePalette.size()); // æå‰åˆ†é…
 
-		//±éÀúBlockStatePalette·½¿éµ÷É«°å£¬²¢´ÓÖĞ´´½¨µÈĞ§ÏÂ±êµÄ·½¿éÍ³¼Ævector
-		for (const auto &it : BlockStatePalette)
-		{
-			const auto &itBlockCompound = GetCompound(it);
+    // éå†BlockStatePaletteæ–¹å—è°ƒè‰²æ¿ï¼Œå¹¶ä»ä¸­åˆ›å»ºç­‰æ•ˆä¸‹æ ‡çš„æ–¹å—ç»Ÿè®¡vector
+    for (const auto &it : BlockStatePalette) {
+      const auto &itBlockCompound = GetCompound(it);
 
-			BlockStats bsTemp{};
-			bsTemp.psBlockName = &itBlockCompound.GetString(MU8STR("Name"));
-			const auto find = itBlockCompound.HasCompound(MU8STR("Properties"));//¼ì²é·½¿éÊÇ·ñÓĞ¶îÍâÊôĞÔ
-			if (find != NULL)
-			{
-				bsTemp.pcpdProperties = find;
-			}
-			else
-			{
-				bsTemp.pcpdProperties = NULL;
-			}
+      BlockStats bsTemp{};
+      bsTemp.psBlockName = &itBlockCompound.GetString(MU8STR("Name"));
+      const auto find = itBlockCompound.HasCompound(
+          MU8STR("Properties")); // æ£€æŸ¥æ–¹å—æ˜¯å¦æœ‰é¢å¤–å±æ€§
+      if (find != NULL) {
+        bsTemp.pcpdProperties = find;
+      } else {
+        bsTemp.pcpdProperties = NULL;
+      }
 
-			listBlockStats.emplace_back(std::move(bsTemp));
-		}
+      listBlockStats.emplace_back(std::move(bsTemp));
+    }
 
-		//»ñÈ¡Long·½¿é×´Ì¬Î»Í¼Êı×é£¨ÓÃÓÚ×÷ÎªÏÂ±ê·ÃÎÊµ÷É«°å£©
-		const auto &BlockStates = RgCompound.GetLongArray(MU8STR("BlockStates"));
-		const uint64_t RegionFullSize = (uint64_t)size.x * (uint64_t)size.y * (uint64_t)size.z;
-		if (BlockStates.size() * 64 / bitsPerBitMapElement < RegionFullSize)
-		{
-			//printf("BlockStates Too Small!\n");
-			return listBlockStats;
-		}
+    // è·å–Longæ–¹å—çŠ¶æ€ä½å›¾æ•°ç»„ï¼ˆç”¨äºä½œä¸ºä¸‹æ ‡è®¿é—®è°ƒè‰²æ¿ï¼‰
+    const auto &BlockStates = RgCompound.GetLongArray(MU8STR("BlockStates"));
+    const uint64_t RegionFullSize =
+        (uint64_t)size.x * (uint64_t)size.y * (uint64_t)size.z;
+    if (BlockStates.size() * 64 / bitsPerBitMapElement < RegionFullSize) {
+      // printf("BlockStates Too Small!\n");
+      return listBlockStats;
+    }
 
-		//´æ´¢¸ñÊ½£º(y * sizeLayer) + z * sizeX + x = Long array index, sizeLayer = sizeX * sizeZ
-		//±éÀú·½¿éÎ»Í¼£¬ÉèÖÃµ÷É«°åÁĞ±í¶ÔÓ¦·½¿éµÄ¼ÆÊıÆ÷
-		for (uint64_t startOffset = 0; startOffset < (RegionFullSize * (uint64_t)bitsPerBitMapElement); startOffset += (uint64_t)bitsPerBitMapElement)//startOffset´ÓµÚ¶ş´Î¿ªÊ¼µİÔö
-		{
-			const uint64_t startArrIndex = (uint64_t)(startOffset >> 6);//div 64
-			const uint64_t startBitOffset = (uint64_t)(startOffset & 0x3F);//mod 64
-			const uint64_t endArrIndex = (uint64_t)((startOffset + (uint64_t)bitsPerBitMapElement - 1ULL) >> 6);//div 64
-			uint64_t paletteIndex = 0;
+    // å­˜å‚¨æ ¼å¼ï¼š(y * sizeLayer) + z * sizeX + x = Long array index, sizeLayer =
+    // sizeX * sizeZ éå†æ–¹å—ä½å›¾ï¼Œè®¾ç½®è°ƒè‰²æ¿åˆ—è¡¨å¯¹åº”æ–¹å—çš„è®¡æ•°å™¨
+    for (uint64_t startOffset = 0;
+         startOffset < (RegionFullSize * (uint64_t)bitsPerBitMapElement);
+         startOffset +=
+         (uint64_t)bitsPerBitMapElement) // startOffsetä»ç¬¬äºŒæ¬¡å¼€å§‹é€’å¢
+    {
+      const uint64_t startArrIndex = (uint64_t)(startOffset >> 6);    // div 64
+      const uint64_t startBitOffset = (uint64_t)(startOffset & 0x3F); // mod 64
+      const uint64_t endArrIndex =
+          (uint64_t)((startOffset + (uint64_t)bitsPerBitMapElement - 1ULL) >>
+                     6); // div 64
+      uint64_t paletteIndex = 0;
 
-			if (startArrIndex == endArrIndex)
-			{
-				paletteIndex = ((uint64_t)BlockStates[startArrIndex] >> startBitOffset) & bitMaskOfElement;
-			}
-			else
-			{
-				const uint64_t endBitOffset = sizeof(uint64_t) * 8 - startBitOffset;
-				paletteIndex = ((uint64_t)BlockStates[startArrIndex] >> startBitOffset | (uint64_t)BlockStates[endArrIndex] << endBitOffset) & bitMaskOfElement;
-			}
+      if (startArrIndex == endArrIndex) {
+        paletteIndex =
+            ((uint64_t)BlockStates[startArrIndex] >> startBitOffset) &
+            bitMaskOfElement;
+      } else {
+        const uint64_t endBitOffset = sizeof(uint64_t) * 8 - startBitOffset;
+        paletteIndex = ((uint64_t)BlockStates[startArrIndex] >> startBitOffset |
+                        (uint64_t)BlockStates[endArrIndex] << endBitOffset) &
+                       bitMaskOfElement;
+      }
 
-			++listBlockStats[paletteIndex].u64Counter;
-		}
-		/*------------------------------------------------*/
+      ++listBlockStats[paletteIndex].u64Counter;
+    }
+    /*------------------------------------------------*/
 
-		//¼ÆÊıÍê³É·µ»Ø
-		return listBlockStats;
-	}
+    // è®¡æ•°å®Œæˆè¿”å›
+    return listBlockStats;
+  }
 
-	static ItemProcess::NoTagItemList BlockStatsToItemStack(const BlockStats &stBlocks)
-	{
-		//´¦Àí·½¿éµ½ÎïÆ·×ª»»
-		ItemProcess::NoTagItemList stItemsList{};
+  static ItemProcess::NoTagItemList
+  BlockStatsToItemStack(const BlockStats &stBlocks) {
+    // å¤„ç†æ–¹å—åˆ°ç‰©å“è½¬æ¢
+    ItemProcess::NoTagItemList stItemsList{};
 
-		//¼ì²é·½¿éÃû
-		if (stBlocks.psBlockName == NULL)
-		{
-			return stItemsList;
-		}
-		
-		/*
-		ÎŞÎïÆ·ĞÎÊ½·½¿é\Á½¸ñ·½¿é´¦Àí£¨ÃÅ¡¢´²¡¢»îÈû£©£¨×¢£º¶à¸ñÖ²Îï¶îÍâ´¦Àí£©\
-		Ç½ÉÏµÄ·½¿é\
-		²»Í¬ÖÖÀà»¨Åè£¨¶Å¾éidÓĞÀıÍâÒª×¢Òâ£©\Á¶Ò©¹ø£¨²»Í¬ÄÚÈİÎï²»Í¬id£©\´øÀ¯ÖòµÄµ°¸â×ª»»Îªµ°¸â+À¯Öò\
-		°íÏßµ½Ïß\ÆøÅİÖù×ª»»ÎªË®\¸ûµØ¡¢ÍÁ¾¶×ªÎªÄàÍÁ\
-		Ë®¡¢ÑÒ½¬µÈÁ÷Ìå´¦Àí\°ë×©´¦Àí\
-		Í¬Ò»¸ñÄÚ¶à¸öÎïÆ·ÊıÁ¿µÄ·½¿é×ª»»£¨Ñ©\º£¹êµ°\º£Åİ²Ë\À¯Öò\Ó£»¨´Ø£©\
-		Í¬Ò»¸ñÄÚ¶àÃæÉú³¤·½¿é×ª»»£¨ÌÙÂû£¬·¢¹âµØÒÂ£¬ÓÄÄäÂöÂç£©\
-		¶à¸ñÖ²ÖêÖ²Îï´¦Àí£¨º£´øÓĞÖ²Öê¸úÉÏ²¿£¬´óĞÍ´¹µÎÓĞ¾±²¿ºÍÒ¶²¿£¬(×Ïİ¿»¨ÎŞĞèÌØÊâ´¦Àí£¬Ö±½ÓÌø¹ı×ßÄ¬ÈÏÀı³Ì£¨×Ïİ¿Ö²ÖêÒ²Ö±½Ó×ª»¯ÎªÎïÆ·£¨·´ÕıÉú´æ²»¿É»ñÈ¡£¬µ«ÊÇ´´ÔìÄÜÄÃ£©)
-			·¢¹â½¬¹ûÖ²Öê£¨¶´Ñ¨ÌÙÂû×ª»»£©ÓĞÖ²ÖêºÍ¸ù²¿£¬´¹ÀáÌÙÓĞÖ²ÖêºÍ¸ù²¿²¿µÄÇø±ğ£¬²øÔ¹ÌÙÒ²ÓĞÖ²ÖêºÍ¸ù²¿£©£¬ÖñËñºÍÖñ×Ó×ª»»£¬
-			×¢Òâº£´ø¼«ÆäÌØÊâ£¬²»´øº¬Ë®±êÇ©ÇÒ±Øº¬Ë®£¬²»¹ı¸ù¾İÊµ¼ÊÇé¿ö£¬¿ÉÒÔÖ±½ÓºöÂÔº£´ø±¾Éí×Ô´øµÄË®£¬ÏëÁËÏëËãÁË»¹ÊÇ¶à¼ÓÒ»¸öË®Í°°É£¬·½±ãÍ³¼Æ\
-		Á½¸ñÖ²Îï´¦Àí£¬Ğ¡ĞÍ´¹µÎÒ¶¡¢¸ß²İ¡¢º£²İ¡¢´óĞÍ¾ï¡¢¶à¸ñ»¨¡¢Æ¿×Ó²İÖ²Öê\
+    // æ£€æŸ¥æ–¹å—å
+    if (stBlocks.psBlockName == NULL) {
+      return stItemsList;
+    }
 
-		×÷Îï´¦Àí£ºÂíÁåÊí¡¢ºúÂÜ²·¡¢Ìğ²Ë¸ù¡¢Ğ¡Âó¡¢Î÷¹ÏÄÏ¹ÏµÄÖÖ×Ó£¬ºÍËûÃÇµÄ×÷ÎïĞÎÊ½×ª»»£¬Î÷¹Ï¡¢ÄÏ¹Ï¾¥ÓĞ½á¹ûµÄĞÎÌ¬ºÍÆÕÍ¨ĞÎÌ¬
-			¶îÍâ£º»ğ°Ñ»¨×÷Îï×ª»»µ½»ğ°Ñ»¨ÖÖ×Ó£¬Æ¿×Ó²İ×÷Îï£¨ÏÂ°ë²¿·Ö£©×ª»»µ½Æ¿×Ó²İ¼Ô¹û\
+    /*
+    æ— ç‰©å“å½¢å¼æ–¹å—\ä¸¤æ ¼æ–¹å—å¤„ç†ï¼ˆé—¨ã€åºŠã€æ´»å¡ï¼‰ï¼ˆæ³¨ï¼šå¤šæ ¼æ¤ç‰©é¢å¤–å¤„ç†ï¼‰\
+    å¢™ä¸Šçš„æ–¹å—\
+    ä¸åŒç§ç±»èŠ±ç›†ï¼ˆæœé¹ƒidæœ‰ä¾‹å¤–è¦æ³¨æ„ï¼‰\ç‚¼è¯é”…ï¼ˆä¸åŒå†…å®¹ç‰©ä¸åŒidï¼‰\å¸¦èœ¡çƒ›çš„è›‹ç³•è½¬æ¢ä¸ºè›‹ç³•+èœ¡çƒ›\
+    ç»Šçº¿åˆ°çº¿\æ°”æ³¡æŸ±è½¬æ¢ä¸ºæ°´\è€•åœ°ã€åœŸå¾„è½¬ä¸ºæ³¥åœŸ\
+    æ°´ã€å²©æµ†ç­‰æµä½“å¤„ç†\åŠç –å¤„ç†\
+    åŒä¸€æ ¼å†…å¤šä¸ªç‰©å“æ•°é‡çš„æ–¹å—è½¬æ¢ï¼ˆé›ª\æµ·é¾Ÿè›‹\æµ·æ³¡èœ\èœ¡çƒ›\æ¨±èŠ±ç°‡ï¼‰\
+    åŒä¸€æ ¼å†…å¤šé¢ç”Ÿé•¿æ–¹å—è½¬æ¢ï¼ˆè—¤è”“ï¼Œå‘å…‰åœ°è¡£ï¼Œå¹½åŒ¿è„‰ç»œï¼‰\
+    å¤šæ ¼æ¤æ ªæ¤ç‰©å¤„ç†ï¼ˆæµ·å¸¦æœ‰æ¤æ ªè·Ÿä¸Šéƒ¨ï¼Œå¤§å‹å‚æ»´æœ‰é¢ˆéƒ¨å’Œå¶éƒ¨ï¼Œ(ç´«è˜èŠ±æ— éœ€ç‰¹æ®Šå¤„ç†ï¼Œç›´æ¥è·³è¿‡èµ°é»˜è®¤ä¾‹ç¨‹ï¼ˆç´«è˜æ¤æ ªä¹Ÿç›´æ¥è½¬åŒ–ä¸ºç‰©å“ï¼ˆåæ­£ç”Ÿå­˜ä¸å¯è·å–ï¼Œä½†æ˜¯åˆ›é€ èƒ½æ‹¿ï¼‰)
+            å‘å…‰æµ†æœæ¤æ ªï¼ˆæ´ç©´è—¤è”“è½¬æ¢ï¼‰æœ‰æ¤æ ªå’Œæ ¹éƒ¨ï¼Œå‚æ³ªè—¤æœ‰æ¤æ ªå’Œæ ¹éƒ¨éƒ¨çš„åŒºåˆ«ï¼Œç¼ æ€¨è—¤ä¹Ÿæœ‰æ¤æ ªå’Œæ ¹éƒ¨ï¼‰ï¼Œç«¹ç¬‹å’Œç«¹å­è½¬æ¢ï¼Œ
+            æ³¨æ„æµ·å¸¦æå…¶ç‰¹æ®Šï¼Œä¸å¸¦å«æ°´æ ‡ç­¾ä¸”å¿…å«æ°´ï¼Œä¸è¿‡æ ¹æ®å®é™…æƒ…å†µï¼Œå¯ä»¥ç›´æ¥å¿½ç•¥æµ·å¸¦æœ¬èº«è‡ªå¸¦çš„æ°´ï¼Œæƒ³äº†æƒ³ç®—äº†è¿˜æ˜¯å¤šåŠ ä¸€ä¸ªæ°´æ¡¶å§ï¼Œæ–¹ä¾¿ç»Ÿè®¡\
+    ä¸¤æ ¼æ¤ç‰©å¤„ç†ï¼Œå°å‹å‚æ»´å¶ã€é«˜è‰ã€æµ·è‰ã€å¤§å‹æ’…ã€å¤šæ ¼èŠ±ã€ç“¶å­è‰æ¤æ ª\
 
-		ÆÕÍ¨·½¿éÓëº¬Ë®·½¿é´¦Àí£¨º¬Ë®Ôò×ª»»ÎªË®Í°£©\
-		*/
-		//×¢Òâ£¬Ê¹ÓÃÁË¶ÌÂ·ÇóÖµÔ­Àí£¬Ö»ÒªÆäÖĞÒ»¸öº¯Êı³É¹¦·µ»Ø£¬ÔòÊ£ÏÂÈ«²¿Ìø¹ı£¬²¢ÇÒbRetCvrtÎªtrue
-		bool bRetCvrt =
-			CvrtUnItemedBlocks(stBlocks, stItemsList) ||		//ÎŞÎïÆ·ĞÎÊ½·½¿é´¦Àí
-			CvrtDoublePartBlocks(stBlocks, stItemsList) ||		//Á½¸ñ·½¿é´¦Àí
-			CvrtWallVariantBlocks(stBlocks, stItemsList) ||		//Ç½ÉÏ·½¿é´¦Àí
-			CvrtFlowerPot(stBlocks, stItemsList) ||				//»¨Åè´¦Àí
-			CvrtCauldron(stBlocks, stItemsList) ||				//Á¶Ò©¹ø´¦Àí
-			CvrtCandleCake(stBlocks, stItemsList) ||			//À¯Öòµ°¸â´¦Àí
-			CvrtAliasBlocks(stBlocks, stItemsList) ||			//±ğÃû·½¿é´¦Àí
-			CvrtFluid(stBlocks, stItemsList) ||					//Á÷Ìå´¦Àí
-			CvrtSlabBlocks(stBlocks, stItemsList) ||			//°ë×©´¦Àí
-			CvrtClusterBlocks(stBlocks, stItemsList) ||			//¸´ºÏ·½¿é´¦Àí
-			CvrtPolyAttachBlocks(stBlocks, stItemsList) ||		//¶àÃæ¸½×Å·½¿é´¦Àí
-			CvrtMultiPartPlant(stBlocks, stItemsList) ||		//¶à¸ñÖ²Öê´¦Àí
-			CvrtDoublePartPlant(stBlocks, stItemsList) ||		//Á½¸ñÖ²Öê´¦Àí
-			CvrtCropPlant(stBlocks, stItemsList) ||				//×÷ÎïÖ²Öê´¦Àí
+    ä½œç‰©å¤„ç†ï¼šé©¬é“ƒè–¯ã€èƒ¡èåœã€ç”œèœæ ¹ã€å°éº¦ã€è¥¿ç“œå—ç“œçš„ç§å­ï¼Œå’Œä»–ä»¬çš„ä½œç‰©å½¢å¼è½¬æ¢ï¼Œè¥¿ç“œã€å—ç“œèŒæœ‰ç»“æœçš„å½¢æ€å’Œæ™®é€šå½¢æ€
+            é¢å¤–ï¼šç«æŠŠèŠ±ä½œç‰©è½¬æ¢åˆ°ç«æŠŠèŠ±ç§å­ï¼Œç“¶å­è‰ä½œç‰©ï¼ˆä¸‹åŠéƒ¨åˆ†ï¼‰è½¬æ¢åˆ°ç“¶å­è‰èšæœ\
 
-			false;//´Ë´¦falseÖ»ÊÇÎªÁËÍ³Ò»¸ñÊ½£ºÈÃº¯Êıµ÷ÓÃºóÍ³Ò»¼Ó||²»±¨´í£¬²»¸Ä±ä×îÖÕÖ´ĞĞ½á¹û
+    æ™®é€šæ–¹å—ä¸å«æ°´æ–¹å—å¤„ç†ï¼ˆå«æ°´åˆ™è½¬æ¢ä¸ºæ°´æ¡¶ï¼‰\
+    */
+    // æ³¨æ„ï¼Œä½¿ç”¨äº†çŸ­è·¯æ±‚å€¼åŸç†ï¼Œåªè¦å…¶ä¸­ä¸€ä¸ªå‡½æ•°æˆåŠŸè¿”å›ï¼Œåˆ™å‰©ä¸‹å…¨éƒ¨è·³è¿‡ï¼Œå¹¶ä¸”bRetCvrtä¸ºtrue
+    bool bRetCvrt =
+        CvrtUnItemedBlocks(stBlocks, stItemsList) || // æ— ç‰©å“å½¢å¼æ–¹å—å¤„ç†
+        CvrtDoublePartBlocks(stBlocks, stItemsList) ||  // ä¸¤æ ¼æ–¹å—å¤„ç†
+        CvrtWallVariantBlocks(stBlocks, stItemsList) || // å¢™ä¸Šæ–¹å—å¤„ç†
+        CvrtFlowerPot(stBlocks, stItemsList) ||         // èŠ±ç›†å¤„ç†
+        CvrtCauldron(stBlocks, stItemsList) ||          // ç‚¼è¯é”…å¤„ç†
+        CvrtCandleCake(stBlocks, stItemsList) ||        // èœ¡çƒ›è›‹ç³•å¤„ç†
+        CvrtAliasBlocks(stBlocks, stItemsList) ||       // åˆ«åæ–¹å—å¤„ç†
+        CvrtFluid(stBlocks, stItemsList) ||             // æµä½“å¤„ç†
+        CvrtSlabBlocks(stBlocks, stItemsList) ||        // åŠç –å¤„ç†
+        CvrtClusterBlocks(stBlocks, stItemsList) ||     // å¤åˆæ–¹å—å¤„ç†
+        CvrtPolyAttachBlocks(stBlocks, stItemsList) || // å¤šé¢é™„ç€æ–¹å—å¤„ç†
+        CvrtMultiPartPlant(stBlocks, stItemsList) ||   // å¤šæ ¼æ¤æ ªå¤„ç†
+        CvrtDoublePartPlant(stBlocks, stItemsList) || // ä¸¤æ ¼æ¤æ ªå¤„ç†
+        CvrtCropPlant(stBlocks, stItemsList) ||       // ä½œç‰©æ¤æ ªå¤„ç†
 
-		//ÌØÊâ·½¿é¡¢¸´ºÏ·½¿é£¬¶à¸ñ·½¿é£¬º¬Ë®·½¿é×ª»»£¬ËùÓĞµÄ×ª»»Ö»»á×ª»»ÌØÊâ×´Ì¬£¬Èç¹û±¾Éí¾ÍºÍÎïÆ·ÃûĞÎÊ½Ò»ÖÂÔòÌø¹ı£¬ËùÒÔº¯Êı×îºóÈç¹ûËùÓĞ×ª»»¶¼Ã»ÉúĞ§ÔòÎªÕı³£ÎïÆ·
-		//Èç¹ûÇ°ÃæÈ«²¿Ã»½øÈë´¦Àí£¬ÔòÎªÆÕÍ¨·½¿é£¬Ö±½Ó·µ»ØÔ­Ê¼Öµ
-		//×¢Òâ´æÔÚÒ»ÖÖÎïÆ·£¬ÓĞ±êÇ©£¬²»ÔÚ¹ıÂË±íÄÚ£¬ËùÒÔ´Ë´¦ÔÙ´Î´¦Àí
-		if (!bRetCvrt)
-		{
-			CvrtNormalBlock(stBlocks, stItemsList);
-		}
+        false; // æ­¤å¤„falseåªæ˜¯ä¸ºäº†ç»Ÿä¸€æ ¼å¼ï¼šè®©å‡½æ•°è°ƒç”¨åç»Ÿä¸€åŠ ||ä¸æŠ¥é”™ï¼Œä¸æ”¹å˜æœ€ç»ˆæ‰§è¡Œç»“æœ
 
-		//ÓĞ±êÇ©·½¿é½øĞĞº¬Ë®·½¿é´¦Àí£¨ÈÎºÎ·½¿é¶¼ÓĞ¿ÉÄÜÊÇ£¬È«²¿¹ıÒ»±é£©
-		CvrtWaterLoggedBlock(stBlocks, stItemsList);
+    // ç‰¹æ®Šæ–¹å—ã€å¤åˆæ–¹å—ï¼Œå¤šæ ¼æ–¹å—ï¼Œå«æ°´æ–¹å—è½¬æ¢ï¼Œæ‰€æœ‰çš„è½¬æ¢åªä¼šè½¬æ¢ç‰¹æ®ŠçŠ¶æ€ï¼Œå¦‚æœæœ¬èº«å°±å’Œç‰©å“åå½¢å¼ä¸€è‡´åˆ™è·³è¿‡ï¼Œæ‰€ä»¥å‡½æ•°æœ€åå¦‚æœæ‰€æœ‰è½¬æ¢éƒ½æ²¡ç”Ÿæ•ˆåˆ™ä¸ºæ­£å¸¸ç‰©å“
+    // å¦‚æœå‰é¢å…¨éƒ¨æ²¡è¿›å…¥å¤„ç†ï¼Œåˆ™ä¸ºæ™®é€šæ–¹å—ï¼Œç›´æ¥è¿”å›åŸå§‹å€¼
+    // æ³¨æ„å­˜åœ¨ä¸€ç§ç‰©å“ï¼Œæœ‰æ ‡ç­¾ï¼Œä¸åœ¨è¿‡æ»¤è¡¨å†…ï¼Œæ‰€ä»¥æ­¤å¤„å†æ¬¡å¤„ç†
+    if (!bRetCvrt) {
+      CvrtNormalBlock(stBlocks, stItemsList);
+    }
 
-		return stItemsList;
-	}
+    // æœ‰æ ‡ç­¾æ–¹å—è¿›è¡Œå«æ°´æ–¹å—å¤„ç†ï¼ˆä»»ä½•æ–¹å—éƒ½æœ‰å¯èƒ½æ˜¯ï¼Œå…¨éƒ¨è¿‡ä¸€éï¼‰
+    CvrtWaterLoggedBlock(stBlocks, stItemsList);
 
-	//¹ş¹ş£¬Õâ¸ö¸úentityinfoÒ»Ñù£¬Ò²ºÜ¼òµ¥Äó
-	static BlockInfo BlockStatsToBlockInfo(const BlockStats &stBlocks)
-	{
-		return BlockInfo
-		{
-			stBlocks.psBlockName == NULL ? NBT_Node::NBT_String{} : *stBlocks.psBlockName,
-			stBlocks.pcpdProperties == NULL ? NBT_Node::NBT_Compound{} : *stBlocks.pcpdProperties
-		};
-	}
+    return stItemsList;
+  }
+
+  // å“ˆå“ˆï¼Œè¿™ä¸ªè·Ÿentityinfoä¸€æ ·ï¼Œä¹Ÿå¾ˆç®€å•æ
+  static BlockInfo BlockStatsToBlockInfo(const BlockStats &stBlocks) {
+    return BlockInfo{stBlocks.psBlockName == NULL ? NBT_Node::NBT_String{}
+                                                  : *stBlocks.psBlockName,
+                     stBlocks.pcpdProperties == NULL
+                         ? NBT_Node::NBT_Compound{}
+                         : *stBlocks.pcpdProperties};
+  }
+
 private:
+  /*è­¦å‘Šï¼Œæ‰€æœ‰ä½¿ç”¨pcpdPropertiesçš„åœ°æ–¹éƒ½éœ€è¦åˆ¤æ–­æ˜¯å¦ä¸ºNULLï¼*/
 
-	/*¾¯¸æ£¬ËùÓĞÊ¹ÓÃpcpdPropertiesµÄµØ·½¶¼ĞèÒªÅĞ¶ÏÊÇ·ñÎªNULL£¡*/
+// æ‰€æœ‰ä½¿ç”¨ä¸‹åˆ—å®çš„åœ°æ–¹å¿…é¡»æ˜¯å¸¸é‡å­—ç¬¦ä¸²ï¼
+#define FIND(name)                                                             \
+  const static std::string target = MU8STR(name);                              \
+  size_t szPos = stBlocks.psBlockName->find(target);                           \
+  if (szPos != std::string::npos)
 
-//ËùÓĞÊ¹ÓÃÏÂÁĞºêµÄµØ·½±ØĞëÊÇ³£Á¿×Ö·û´®£¡
-#define FIND(name)\
-const static std::string target = MU8STR(name);\
-size_t szPos = stBlocks.psBlockName->find(target);\
-if (szPos != std::string::npos)
+#define STARTSWITH(name)                                                       \
+  const static std::string target = MU8STR(name);                              \
+  if (stBlocks.psBlockName->starts_with(target))
 
-#define STARTSWITH(name)\
-const static std::string target = MU8STR(name);\
-if (stBlocks.psBlockName->starts_with(target))
+#define ENDSWITH(name)                                                         \
+  const static std::string target = MU8STR(name);                              \
+  if (stBlocks.psBlockName->ends_with(target))
 
-#define ENDSWITH(name)\
-const static std::string target = MU8STR(name);\
-if (stBlocks.psBlockName->ends_with(target))
+  static inline bool
+  CvrtUnItemedBlocks(const BlockStats &stBlocks,
+                     ItemProcess::NoTagItemList &stItemsList) {
+    // ç›´æ¥åŒ¹é…æ‰€æœ‰ä¸å¯è·å–çš„æ–¹å—å¹¶è¿”å›ç©ºï¼Œæ³¨æ„æ˜¯mcä¸­æ‰€æœ‰æ— ç‰©å“å½¢å¼çš„ï¼Œè€Œéç”Ÿå­˜ä¸å¯è·å–çš„
+    // æ³¨æ„ä¸åŒ¹é…é—¨ã€åºŠã€æ´»å¡ç­‰å¤šæ ¼æ–¹å—çš„å¦ä¸€åŠï¼Œè€Œç”±ä»–ä»¬å¯¹åº”çš„å‡½æ•°è‡ªè¡Œå¤„ç†
+    const static std::unordered_set<NBT_Node::NBT_String> setUnItemedBlocks = {
+        // ç©ºæ°”ç±»
+        MU8STR("minecraft:air"),
+        MU8STR("minecraft:void_air"),
+        MU8STR("minecraft:cave_air"),
+        // ä¼ é€é—¨ç±»
+        MU8STR("minecraft:nether_portal"),
+        MU8STR("minecraft:end_portal"),
+        MU8STR("minecraft:end_gateway"),
+        // ç«ç±»
+        MU8STR("minecraft:fire"),
+        MU8STR("minecraft:minecraft:soul_fire"),
+        // ç§»åŠ¨ä¸­çš„æ´»å¡
+        MU8STR("minecraft:moving_piston"),
+    };
 
-	static inline bool CvrtUnItemedBlocks(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)
-	{
-		//Ö±½ÓÆ¥ÅäËùÓĞ²»¿É»ñÈ¡µÄ·½¿é²¢·µ»Ø¿Õ£¬×¢ÒâÊÇmcÖĞËùÓĞÎŞÎïÆ·ĞÎÊ½µÄ£¬¶ø·ÇÉú´æ²»¿É»ñÈ¡µÄ
-		//×¢Òâ²»Æ¥ÅäÃÅ¡¢´²¡¢»îÈûµÈ¶à¸ñ·½¿éµÄÁíÒ»°ë£¬¶øÓÉËûÃÇ¶ÔÓ¦µÄº¯Êı×ÔĞĞ´¦Àí
-		const static std::unordered_set<NBT_Node::NBT_String> setUnItemedBlocks =
-		{
-			//¿ÕÆøÀà
-			MU8STR("minecraft:air"),
-			MU8STR("minecraft:void_air"),
-			MU8STR("minecraft:cave_air"),
-			//´«ËÍÃÅÀà
-			MU8STR("minecraft:nether_portal"),
-			MU8STR("minecraft:end_portal"),
-			MU8STR("minecraft:end_gateway"),
-			//»ğÀà
-			MU8STR("minecraft:fire"),
-			MU8STR("minecraft:minecraft:soul_fire"),
-			//ÒÆ¶¯ÖĞµÄ»îÈû
-			MU8STR("minecraft:moving_piston"),
-		};
+    // å¦‚æœcountè¿”å›ä¸æ˜¯0åˆ™ä»£è¡¨å­˜åœ¨ï¼Œç›´æ¥è¿”å›trueå³å¯ï¼ŒstItemsåˆå§‹åŒ–å³ä¸ºå…¨ç©ºå…¨0
+    return setUnItemedBlocks.count(*stBlocks.psBlockName) != 0;
+  }
 
-		//Èç¹ûcount·µ»Ø²»ÊÇ0Ôò´ú±í´æÔÚ£¬Ö±½Ó·µ»Øtrue¼´¿É£¬stItems³õÊ¼»¯¼´ÎªÈ«¿ÕÈ«0
-		return setUnItemedBlocks.count(*stBlocks.psBlockName) != 0;
-	}
+  static inline bool
+  CvrtDoublePartBlocks(const BlockStats &stBlocks,
+                       ItemProcess::NoTagItemList &stItemsList) {
+    // é—¨åªæœ‰ä¸‹åŠæ‰è½ï¼Œä¸ŠåŠç›´æ¥è½¬ä¸ºç©º
+    {
+      ENDSWITH("_door") {
+        // è¯»å–æ–¹å—stateåˆ¤æ–­æ˜¯é—¨çš„å“ªä¸€éƒ¨åˆ†
+        if (stBlocks.pcpdProperties == NULL) {
+          return false;
+        }
+        const auto &half = stBlocks.pcpdProperties->GetString(MU8STR("half"));
 
-	static inline bool CvrtDoublePartBlocks(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)
-	{
-		//ÃÅÖ»ÓĞÏÂ°ëµôÂä£¬ÉÏ°ëÖ±½Ó×ªÎª¿Õ
-		{
-			ENDSWITH("_door")
-			{
-				//¶ÁÈ¡·½¿éstateÅĞ¶ÏÊÇÃÅµÄÄÄÒ»²¿·Ö
-				if (stBlocks.pcpdProperties == NULL)
-				{
-					return false;
-				}
-				const auto &half = stBlocks.pcpdProperties->GetString(MU8STR("half"));
+        if (half == MU8STR("lower")) {
+          stItemsList.emplace_back(*stBlocks.psBlockName,
+                                   stBlocks.u64Counter * 1);
+        }
+        // else if (half == MU8STR("upper")){}
+        // else{}
 
-				if (half == MU8STR("lower"))
-				{
-					stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
-				}
-				//else if (half == MU8STR("upper")){}
-				//else{}
+        return true;
+      }
+    }
 
-				return true;
-			}
-		}
+    // åºŠåªæœ‰å¤´æ‰è½ï¼Œè„šç›´æ¥è½¬ä¸ºç©º
+    {
+      ENDSWITH("_bed") {
+        // è¯»å–æ–¹å—stateåˆ¤æ–­æ˜¯åºŠçš„å“ªä¸€éƒ¨åˆ†
+        if (stBlocks.pcpdProperties == NULL) {
+          return false;
+        }
+        const auto &part = stBlocks.pcpdProperties->GetString(MU8STR("part"));
 
-		//´²Ö»ÓĞÍ·µôÂä£¬½ÅÖ±½Ó×ªÎª¿Õ
-		{
-			ENDSWITH("_bed")
-			{
-				//¶ÁÈ¡·½¿éstateÅĞ¶ÏÊÇ´²µÄÄÄÒ»²¿·Ö
-				if (stBlocks.pcpdProperties == NULL)
-				{
-					return false;
-				}
-				const auto &part = stBlocks.pcpdProperties->GetString(MU8STR("part"));
+        if (part == MU8STR("head")) {
+          stItemsList.emplace_back(*stBlocks.psBlockName,
+                                   stBlocks.u64Counter * 1);
+        }
+        // else if (part == MU8STR("foot")){}
+        // else{}
 
-				if (part == MU8STR("head"))
-				{
-					stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
-				}
-				//else if (part == MU8STR("foot")){}
-				//else{}
+        return true;
+      }
+    }
 
-				return true;
-			}
-		}
+    // æ´»å¡åªæœ‰èº«å­æ‰è½ï¼Œå¤´ç›´æ¥è½¬ä¸ºç©ºï¼Œæ³¨æ„ç§»åŠ¨ä¸­çš„æ´»å¡ä¸å¯è·å–ï¼Œå·²è¢«å…¶å®ƒä¾‹ç¨‹æ’é™¤
+    {
+      FIND("piston") {
+        // åˆ¤æ–­æ˜¯ä¸æ˜¯piston_head
+        if (*stBlocks.psBlockName != MU8STR("minecraft:piston_head")) {
+          stItemsList.emplace_back(*stBlocks.psBlockName,
+                                   stBlocks.u64Counter * 1);
+        }
+        // else{}
 
-		//»îÈûÖ»ÓĞÉí×ÓµôÂä£¬Í·Ö±½Ó×ªÎª¿Õ£¬×¢ÒâÒÆ¶¯ÖĞµÄ»îÈû²»¿É»ñÈ¡£¬ÒÑ±»ÆäËüÀı³ÌÅÅ³ı
-		{
-			FIND("piston")
-			{
-				//ÅĞ¶ÏÊÇ²»ÊÇpiston_head
-				if (*stBlocks.psBlockName != MU8STR("minecraft:piston_head"))
-				{
-					stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
-				}
-				//else{}
+        return true;
+      }
+    }
 
-				return true;
-			}
-		}
+    return false;
+  }
 
-		return false;
-	}
+  // æ³¨æ„åªå¤„ç†å¢™ä¸Šçš„å½¢å¼ï¼Œå¦‚æœæ˜¯æ™®é€šå½¢å¼æ ¹æœ¬ä¸éœ€è¦å¤„ç†
+  static inline bool
+  CvrtWallVariantBlocks(const BlockStats &stBlocks,
+                        ItemProcess::NoTagItemList &stItemsList) {
+    // ç†è®ºä¸Šæ‰€æœ‰å¸¦å¢™ä¸Šé¢å¤–æ–¹å—idçš„æ–¹å—éƒ½ä¼šæœ‰wallé™å®šè¯ï¼Œä¸”ä¸ä»¥wallç»“å°¾
+    // å»æ‰wallè½¬æ¢ä¸ºitemå½¢å¼ï¼Œç»è¿‡æŸ¥çœ‹ï¼Œä¸å­˜åœ¨è¯¸å¦‚wall_ç»“å°¾çš„æ–¹å—åï¼Œä¹Ÿä¸å­˜åœ¨wall_wall_ä¹‹ç±»çš„è¿ç»­æƒ…å†µ
+    // ç›´æ¥åŒ¹é…wall_å¹¶åˆ é™¤ï¼Œå³å¯æ­£ç¡®å¤„ç†è¯¸å¦‚wall_torchæˆ–è€…cyan_wall_bannerä¸ºç‰©å“å½¢å¼
 
-	//×¢ÒâÖ»´¦ÀíÇ½ÉÏµÄĞÎÊ½£¬Èç¹ûÊÇÆÕÍ¨ĞÎÊ½¸ù±¾²»ĞèÒª´¦Àí
-	static inline bool CvrtWallVariantBlocks(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)
-	{
-		//ÀíÂÛÉÏËùÓĞ´øÇ½ÉÏ¶îÍâ·½¿éidµÄ·½¿é¶¼»áÓĞwallÏŞ¶¨´Ê£¬ÇÒ²»ÒÔwall½áÎ²
-		//È¥µôwall×ª»»ÎªitemĞÎÊ½£¬¾­¹ı²é¿´£¬²»´æÔÚÖîÈçwall_½áÎ²µÄ·½¿éÃû£¬Ò²²»´æÔÚwall_wall_Ö®ÀàµÄÁ¬ĞøÇé¿ö
-		//Ö±½ÓÆ¥Åäwall_²¢É¾³ı£¬¼´¿ÉÕıÈ·´¦ÀíÖîÈçwall_torch»òÕßcyan_wall_bannerÎªÎïÆ·ĞÎÊ½
+    FIND("wall_") {
+      auto TmpName = *stBlocks.psBlockName;
+      TmpName.erase(szPos, target.length()); // åˆ å»wall_
+      stItemsList.emplace_back(std::move(TmpName), stBlocks.u64Counter * 1);
 
-		FIND("wall_")
-		{
-			auto TmpName = *stBlocks.psBlockName;
-			TmpName.erase(szPos, target.length());//É¾È¥wall_
-			stItemsList.emplace_back(std::move(TmpName), stBlocks.u64Counter * 1);
+      return true;
+    }
 
-			return true;
-		}
+    return false;
+  }
 
-		return false;
-	}
+  // æ³¨æ„ï¼Œåªå¤„ç†æ”¾è¿‡èŠ±çš„èŠ±ç›†ï¼Œå¦åˆ™è·³è¿‡ï¼ˆå¦‚æœæœ¬èº«å«flower_poté‚£å°±æ ¹æœ¬ä¸éœ€è¦è½¬æ¢ï¼‰
+  static inline bool CvrtFlowerPot(const BlockStats &stBlocks,
+                                   ItemProcess::NoTagItemList &stItemsList) {
+    // æ”¾äº†èŠ±çš„èŠ±ç›†ä»¥potted_å¼€å¤´ï¼Œåè·ŸèŠ±å
+    // å¦åˆ™å«flower_pot
+    FIND("potted_") {
+      // æœ‰çš„æƒ…å†µä¸‹è½¬åŒ–ä¸ºflower_pot+æ‰©å±•èŠ±ç‰©å“åçš„å½¢å¼
+      stItemsList.emplace_back(MU8STR("minecraft:flower_pot"),
+                               stBlocks.u64Counter * 1);
+      auto TmpName = *stBlocks.psBlockName;
+      TmpName.erase(szPos, target.length()); // åˆ å»potted_
+      // æ£€æµ‹æœ«å°¾æ˜¯å¦ä»¥_bushç»“å°¾
+      ENDSWITH("_bush") {
+        // æœé¹ƒèŠ±é¢å¤–å¤„ç†
+        // åˆ å»bush
+        TmpName.erase(TmpName.length() - target.length()); // åˆ å»æœ«å°¾_bush
+      }
 
-	//×¢Òâ£¬Ö»´¦Àí·Å¹ı»¨µÄ»¨Åè£¬·ñÔòÌø¹ı£¨Èç¹û±¾Éí½Ğflower_potÄÇ¾Í¸ù±¾²»ĞèÒª×ª»»£©
-	static inline bool CvrtFlowerPot(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)
-	{
-		//·ÅÁË»¨µÄ»¨ÅèÒÔpotted_¿ªÍ·£¬ºó¸ú»¨Ãû
-		//·ñÔò½Ğflower_pot
-		FIND("potted_")
-		{
-			//ÓĞµÄÇé¿öÏÂ×ª»¯Îªflower_pot+À©Õ¹»¨ÎïÆ·ÃûµÄĞÎÊ½
-			stItemsList.emplace_back(MU8STR("minecraft:flower_pot"), stBlocks.u64Counter * 1);
-			auto TmpName = *stBlocks.psBlockName;
-			TmpName.erase(szPos, target.length());//É¾È¥potted_
-			//¼ì²âÄ©Î²ÊÇ·ñÒÔ_bush½áÎ²
-			ENDSWITH("_bush")
-			{
-				//¶Å¾é»¨¶îÍâ´¦Àí
-				//É¾È¥bush
-				TmpName.erase(TmpName.length() - target.length());//É¾È¥Ä©Î²_bush
-			}
+      stItemsList.emplace_back(std::move(TmpName), stBlocks.u64Counter * 1);
 
-			stItemsList.emplace_back(std::move(TmpName), stBlocks.u64Counter * 1);
+      return true;
+    }
 
-			return true;
-		}
+    return false;
+  }
 
-		return false;
-	}
+  static inline bool CvrtCauldron(const BlockStats &stBlocks,
+                                  ItemProcess::NoTagItemList &stItemsList) {
+    // ç‚¼è¯é”…ï¼šå«æ°´ã€å²©æµ†ã€ç²‰é›ª
+    // å…¶ä¸­å«æ°´å¦‚æœä¸æ»¡åˆ™è½¬æ¢åˆ°ç©ºç“¶
 
-	static inline bool CvrtCauldron(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)
-	{
-		//Á¶Ò©¹ø£ºº¬Ë®¡¢ÑÒ½¬¡¢·ÛÑ©
-		//ÆäÖĞº¬Ë®Èç¹û²»ÂúÔò×ª»»µ½¿ÕÆ¿
+    enum CauldronType {
+      Cauldron = 0,
+      Water_cauldron,
+      Lava_cauldron,
+      Powder_snow_cauldron,
+    };
 
-		enum CauldronType
-		{
-			Cauldron = 0,
-			Water_cauldron,
-			Lava_cauldron,
-			Powder_snow_cauldron,
-		};
+    const static std::unordered_map<NBT_Node::NBT_String, CauldronType>
+        mapCauldron = {
+            {MU8STR("minecraft:cauldron"), Cauldron},
+            {MU8STR("minecraft:water_cauldron"), Water_cauldron},
+            {MU8STR("minecraft:lava_cauldron"), Lava_cauldron},
+            {MU8STR("minecraft:powder_snow_cauldron"), Powder_snow_cauldron},
+        };
 
-		const static std::unordered_map<NBT_Node::NBT_String, CauldronType> mapCauldron =
-		{
-			{MU8STR("minecraft:cauldron"),Cauldron},
-			{MU8STR("minecraft:water_cauldron"),Water_cauldron},
-			{MU8STR("minecraft:lava_cauldron"),Lava_cauldron},
-			{MU8STR("minecraft:powder_snow_cauldron"),Powder_snow_cauldron},
-		};
+    auto it = mapCauldron.find(*stBlocks.psBlockName);
+    if (it != mapCauldron.end()) {
+      switch (it->second) {
+      case Cauldron: {
+        stItemsList.emplace_back(MU8STR("minecraft:cauldron"),
+                                 stBlocks.u64Counter * 1);
+      } break;
+      case Water_cauldron: {
+        stItemsList.emplace_back(MU8STR("minecraft:cauldron"),
+                                 stBlocks.u64Counter * 1);
+        // æ‰©å±•éƒ¨åˆ†ä¸ºæ°´æ¡¶
+        stItemsList.emplace_back(MU8STR("minecraft:water_bucket"),
+                                 stBlocks.u64Counter * 1);
+        // åˆ¤æ–­æ–¹å—æ ‡ç­¾
+        if (stBlocks.pcpdProperties == NULL) {
+          return false;
+        }
+        const auto &level = stBlocks.pcpdProperties->GetString(MU8STR("level"));
 
-		auto it = mapCauldron.find(*stBlocks.psBlockName);
-		if (it != mapCauldron.end())
-		{
-			switch (it->second)
-			{
-			case Cauldron:
-				{
-					stItemsList.emplace_back(MU8STR("minecraft:cauldron"), stBlocks.u64Counter * 1);
-				}
-				break;
-			case Water_cauldron:
-				{
-					stItemsList.emplace_back(MU8STR("minecraft:cauldron"), stBlocks.u64Counter * 1);
-					//À©Õ¹²¿·ÖÎªË®Í°
-					stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
-					//ÅĞ¶Ï·½¿é±êÇ©
-					if (stBlocks.pcpdProperties == NULL)
-					{
-						return false;
-					}
-					const auto &level = stBlocks.pcpdProperties->GetString(MU8STR("level"));
+        if (level == MU8STR("1")) {
+          stItemsList.emplace_back(MU8STR("minecraft:glass_bottle"),
+                                   stBlocks.u64Counter *
+                                       2); // 2ä¸ªç©ºç“¶ç§»é™¤æ°´ï¼Œå‰©ä½™1
+        } else if (level == MU8STR("2")) {
+          stItemsList.emplace_back(MU8STR("minecraft:glass_bottle"),
+                                   stBlocks.u64Counter *
+                                       1); // 1ä¸ªç©ºç“¶ç§»é™¤æ°´ï¼Œå‰©ä½™2
+        }
+        // else if (level == MU8STR("3")){}//0ä¸ªç©ºç“¶ç§»é™¤æ°´ï¼Œå‰©ä½™3
+        // else{}
+      } break;
+      case Lava_cauldron: {
+        stItemsList.emplace_back(MU8STR("minecraft:cauldron"),
+                                 stBlocks.u64Counter * 1);
+        // æ‰©å±•éƒ¨åˆ†ä¸ºå²©æµ†æ¡¶
+        stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"),
+                                 stBlocks.u64Counter * 1);
+      } break;
+      case Powder_snow_cauldron: {
+        stItemsList.emplace_back(MU8STR("minecraft:cauldron"),
+                                 stBlocks.u64Counter * 1);
+        // æ‰©å±•éƒ¨åˆ†ä¸ºç²‰é›ªæ¡¶
+        stItemsList.emplace_back(MU8STR("minecraft:powder_snow_bucket"),
+                                 stBlocks.u64Counter * 1);
+      } break;
+      default:
+        return false;
+        break;
+      }
 
-					if (level == MU8STR("1"))
-					{
-						stItemsList.emplace_back(MU8STR("minecraft:glass_bottle"), stBlocks.u64Counter * 2);//2¸ö¿ÕÆ¿ÒÆ³ıË®£¬Ê£Óà1
-					}
-					else if (level == MU8STR("2"))
-					{
-						stItemsList.emplace_back(MU8STR("minecraft:glass_bottle"), stBlocks.u64Counter * 1);//1¸ö¿ÕÆ¿ÒÆ³ıË®£¬Ê£Óà2
-					}
-					//else if (level == MU8STR("3")){}//0¸ö¿ÕÆ¿ÒÆ³ıË®£¬Ê£Óà3
-					//else{}
-				}
-				break;
-			case Lava_cauldron:
-				{
-					stItemsList.emplace_back(MU8STR("minecraft:cauldron"), stBlocks.u64Counter * 1);
-					//À©Õ¹²¿·ÖÎªÑÒ½¬Í°
-					stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"), stBlocks.u64Counter * 1);
-				}
-				break;
-			case Powder_snow_cauldron:
-				{
-					stItemsList.emplace_back(MU8STR("minecraft:cauldron"), stBlocks.u64Counter * 1);
-					//À©Õ¹²¿·ÖÎª·ÛÑ©Í°
-					stItemsList.emplace_back(MU8STR("minecraft:powder_snow_bucket"), stBlocks.u64Counter * 1);
-				}
-				break;
-			default:
-				return false;
-				break;
-			}
+      return true;
+    }
 
-			return true;
-		}
+    return false;
+  }
 
-		return false;
-	}
+  static inline bool CvrtCandleCake(const BlockStats &stBlocks,
+                                    ItemProcess::NoTagItemList &stItemsList) {
+    ENDSWITH("_cake") {
+      // è½¬æ¢ä¸ºèœ¡çƒ›+è›‹ç³•
+      stItemsList.emplace_back(MU8STR("minecraft:cake"),
+                               stBlocks.u64Counter * 1);
+      auto TmpName = *stBlocks.psBlockName;
+      TmpName.erase(TmpName.length() - target.length()); // åˆ å»_cake
+      stItemsList.emplace_back(std::move(TmpName), stBlocks.u64Counter * 1);
 
-	static inline bool CvrtCandleCake(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)
-	{
-		ENDSWITH("_cake")
-		{
-			//×ª»»ÎªÀ¯Öò+µ°¸â
-			stItemsList.emplace_back(MU8STR("minecraft:cake"), stBlocks.u64Counter * 1);
-			auto TmpName = *stBlocks.psBlockName;
-			TmpName.erase(TmpName.length() - target.length());//É¾È¥_cake
-			stItemsList.emplace_back(std::move(TmpName), stBlocks.u64Counter * 1);
+      return true;
+    }
 
-			return true;
-		}
+    return false;
+  }
 
-		return false;
-	}
+  static inline bool
+  CvrtAliasBlocks(const BlockStats &stBlocks,
+                  ItemProcess::NoTagItemList &stItemsList) // åˆ«åæ–¹å—
+  {
+    // æ˜ å°„
+    const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String>
+        mapAliasBlocks = {
+            {MU8STR("minecraft:tripwire"), MU8STR("minecraft:string")},
+            {MU8STR("minecraft:bubble_column"),
+             MU8STR("minecraft:water_bucket")},
+            //{MU8STR("minecraft:farmland"),MU8STR("minecraft:dirt")},
+            //{MU8STR("minecraft:dirt_path"),MU8STR("minecraft:dirt")},
+        };
 
-	static inline bool CvrtAliasBlocks(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)//±ğÃû·½¿é
-	{
-		//Ó³Éä
-		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapAliasBlocks =
-		{
-			{MU8STR("minecraft:tripwire"),MU8STR("minecraft:string")},
-			{MU8STR("minecraft:bubble_column"),MU8STR("minecraft:water_bucket")},
-			//{MU8STR("minecraft:farmland"),MU8STR("minecraft:dirt")},
-			//{MU8STR("minecraft:dirt_path"),MU8STR("minecraft:dirt")},
-		};
+    // æŸ¥æ‰¾
+    const auto it = mapAliasBlocks.find(*stBlocks.psBlockName);
+    if (it != mapAliasBlocks.end()) // å­˜åœ¨
+    {
+      stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1); // æ’å…¥æ˜ å°„
+      return true;
+    }
 
-		//²éÕÒ
-		const auto it = mapAliasBlocks.find(*stBlocks.psBlockName);
-		if (it != mapAliasBlocks.end())//´æÔÚ
-		{
-			stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1);//²åÈëÓ³Éä
-			return true;
-		}
+    return false;
+  }
 
-		return false;
-	}
+  static inline bool CvrtFluid(const BlockStats &stBlocks,
+                               ItemProcess::NoTagItemList &stItemsList) // æµä½“
+  {
+    if (*stBlocks.psBlockName == MU8STR("minecraft:water")) {
+      if (stBlocks.pcpdProperties == NULL) {
+        return false;
+      }
+      if (stBlocks.pcpdProperties->GetString(MU8STR("level")) ==
+          MU8STR("0")) // æ˜¯0å°±æ˜¯æ°´æº
+      {
+        stItemsList.emplace_back(MU8STR("minecraft:water_bucket"),
+                                 stBlocks.u64Counter * 1);
+      }
 
-	static inline bool CvrtFluid(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)//Á÷Ìå
-	{
-		if (*stBlocks.psBlockName == MU8STR("minecraft:water"))
-		{
-			if (stBlocks.pcpdProperties == NULL)
-			{
-				return false;
-			}
-			if (stBlocks.pcpdProperties->GetString(MU8STR("level")) == MU8STR("0"))//ÊÇ0¾ÍÊÇË®Ô´
-			{
-				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
-			}
+      return true;
+    } else if (*stBlocks.psBlockName == MU8STR("minecraft:lava")) {
+      if (stBlocks.pcpdProperties == NULL) {
+        return false;
+      }
+      if (stBlocks.pcpdProperties->GetString(MU8STR("level")) ==
+          MU8STR("0")) // æ˜¯0å°±æ˜¯å²©æµ†æº
+      {
+        stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"),
+                                 stBlocks.u64Counter * 1);
+      }
 
-			return true;
-		}
-		else if (*stBlocks.psBlockName == MU8STR("minecraft:lava"))
-		{
-			if (stBlocks.pcpdProperties == NULL)
-			{
-				return false;
-			}
-			if (stBlocks.pcpdProperties->GetString(MU8STR("level")) == MU8STR("0"))//ÊÇ0¾ÍÊÇÑÒ½¬Ô´
-			{
-				stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"), stBlocks.u64Counter * 1);
-			}
+      return true;
+    }
+    // else{}
 
-			return true;
-		}
-		//else{}
+    return false;
+  }
 
-		return false;
-	}
+  static inline bool CvrtSlabBlocks(const BlockStats &stBlocks,
+                                    ItemProcess::NoTagItemList &stItemsList) {
+    ENDSWITH("_slab") {
+      if (stBlocks.pcpdProperties == NULL) {
+        return false;
+      }
+      if (stBlocks.pcpdProperties->GetString(MU8STR("type")) ==
+          MU8STR("double")) // è½¬æ¢ä¸º2ï¼Œå¦åˆ™ä¸º1
+      {
+        stItemsList.emplace_back(*stBlocks.psBlockName,
+                                 stBlocks.u64Counter * 2);
+      } else {
+        stItemsList.emplace_back(*stBlocks.psBlockName,
+                                 stBlocks.u64Counter * 1);
+      }
 
-	static inline bool CvrtSlabBlocks(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)
-	{
-		ENDSWITH("_slab")
-		{
-			if (stBlocks.pcpdProperties == NULL)
-			{
-				return false;
-			}
-			if (stBlocks.pcpdProperties->GetString(MU8STR("type")) == MU8STR("double"))//×ª»»Îª2£¬·ñÔòÎª1
-			{
-				stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 2);
-			}
-			else
-			{
-				stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
-			}
+      return true;
+    }
 
-			return true;
-		}
+    return false;
+  }
 
-		return false;
-	}
+  static inline bool
+  CvrtClusterBlocks(const BlockStats &stBlocks,
+                    ItemProcess::NoTagItemList &stItemsList) {
+#define make_pack(data) (data)
+#define EMPLACE_CLUSTER_ITEMS(name)                                            \
+  const auto &make_pack(name) =                                                \
+      stBlocks.pcpdProperties->GetString(MU8STR(#name));                       \
+  stItemsList.emplace_back(*stBlocks.psBlockName,                              \
+                           stBlocks.u64Counter *std::stoll(make_pack(name)));
 
-	static inline bool CvrtClusterBlocks(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)
-	{
-#define EMPLACE_CLUSTER_ITEMS(name)\
-const auto &##name = stBlocks.pcpdProperties->GetString(MU8STR(#name));\
-stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll(##name));
+    // å…ˆåˆ¤æ–­å­˜ä¸å­˜åœ¨é™„åŠ çŠ¶æ€ï¼Œä¸‹é¢æ‰€æœ‰ä»£ç è·¯å¾„éƒ½ä¼šä½¿ç”¨ï¼Œæ‰€ä»¥åœ¨å¼€å¤´æ’é™¤
+    if (stBlocks.pcpdProperties == NULL) {
+      return false;
+    }
 
-		//ÏÈÅĞ¶Ï´æ²»´æÔÚ¸½¼Ó×´Ì¬£¬ÏÂÃæËùÓĞ´úÂëÂ·¾¶¶¼»áÊ¹ÓÃ£¬ËùÒÔÔÚ¿ªÍ·ÅÅ³ı
-		if (stBlocks.pcpdProperties == NULL)
-		{
-			return false;
-		}
+    // èœ¡çƒ›ä¼˜å…ˆå¤„ç†ï¼ˆå¤šé¢œè‰²æ–¹å—ï¼‰
+    ENDSWITH("candle") // èœ¡çƒ›æå…¶ç‰¹æ®Šï¼Œå­˜åœ¨æ— é¢œè‰²æ ‡ç­¾çš„ç‰ˆæœ¬ï¼ˆä¸åºŠä¹‹ç±»ä¸åŒï¼‰
+    {
+      // å› ä¸ºå‰é¢å·²ç»å¤„ç†è¿‡å¸¦èœ¡çƒ›çš„è›‹ç³•ï¼Œæ’é™¤æ˜¯å¸¦èœ¡çƒ›è›‹ç³•çš„æƒ…å†µï¼Œä¸”candleæ˜¯ç»“å°¾ï¼Œä¸å­˜åœ¨è›‹ç³•çš„æƒ…å†µ
+      EMPLACE_CLUSTER_ITEMS(candles); // è½¬æ¢åˆ°æ–¹å—ä¸ªæ•°å¹¶æ’å…¥
+      return true;
+    }
 
-		//À¯ÖòÓÅÏÈ´¦Àí£¨¶àÑÕÉ«·½¿é£©
-		ENDSWITH("candle")//À¯Öò¼«ÆäÌØÊâ£¬´æÔÚÎŞÑÕÉ«±êÇ©µÄ°æ±¾£¨Óë´²Ö®Àà²»Í¬£©
-		{
-			//ÒòÎªÇ°ÃæÒÑ¾­´¦Àí¹ı´øÀ¯ÖòµÄµ°¸â£¬ÅÅ³ıÊÇ´øÀ¯Öòµ°¸âµÄÇé¿ö£¬ÇÒcandleÊÇ½áÎ²£¬²»´æÔÚµ°¸âµÄÇé¿ö
-			EMPLACE_CLUSTER_ITEMS(candles);//×ª»»µ½·½¿é¸öÊı²¢²åÈë
-			return true;
-		}
+    enum ClusterBlock : uint64_t {
+      Snow = 0,
+      Turtle_egg,
+      Sea_pickle,
+      Pink_petals,
+    };
 
+    const static std::unordered_map<NBT_Node::NBT_String, ClusterBlock>
+        mapClusterBlocks = {
+            {MU8STR("minecraft:snow"), Snow},
+            {MU8STR("minecraft:turtle_egg"), Turtle_egg},
+            {MU8STR("minecraft:sea_pickle"), Sea_pickle},
+            {MU8STR("minecraft:pink_petals"), Pink_petals},
+        };
 
-		enum ClusterBlock :uint64_t
-		{
-			Snow = 0, 
-			Turtle_egg,
-			Sea_pickle,
-			Pink_petals,
-		};
+    const auto it = mapClusterBlocks.find(*stBlocks.psBlockName);
+    if (it != mapClusterBlocks.end()) {
 
-		const static std::unordered_map<NBT_Node::NBT_String, ClusterBlock> mapClusterBlocks =
-		{
-			{MU8STR("minecraft:snow"),Snow},
-			{MU8STR("minecraft:turtle_egg"),Turtle_egg},
-			{MU8STR("minecraft:sea_pickle"),Sea_pickle},
-			{MU8STR("minecraft:pink_petals"),Pink_petals},
-		};
+      switch (it->second) {
+      case Snow: // layers str
+      {
+        EMPLACE_CLUSTER_ITEMS(layers);
+      } break;
+      case Turtle_egg: // eggs str
+      {
+        EMPLACE_CLUSTER_ITEMS(eggs);
+      } break;
+      case Sea_pickle: // pickles str
+      {
+        EMPLACE_CLUSTER_ITEMS(pickles);
+      } break;
+      case Pink_petals: // flower_amount str
+      {
+        EMPLACE_CLUSTER_ITEMS(flower_amount);
+      } break;
+      default:
+        return false;
+        break;
+      }
 
-		const auto it = mapClusterBlocks.find(*stBlocks.psBlockName);
-		if (it != mapClusterBlocks.end())
-		{
+      return true;
+    }
 
-			switch (it->second)
-			{
-			case Snow://layers str
-				{
-					EMPLACE_CLUSTER_ITEMS(layers);
-				}
-				break;
-			case Turtle_egg://eggs str
-				{
-					EMPLACE_CLUSTER_ITEMS(eggs);
-				}
-				break;
-			case Sea_pickle://pickles str
-				{
-					EMPLACE_CLUSTER_ITEMS(pickles);
-				}
-				break;
-			case Pink_petals://flower_amount str
-				{
-					EMPLACE_CLUSTER_ITEMS(flower_amount);
-				}
-				break;
-			default:
-				return false;
-				break;
-			}
-
-			return true;
-		}
-
-		return false;
+    return false;
 #undef EMPLACE_CLUSTER_ITEMS
-	}
+  }
 
-	static inline bool CvrtPolyAttachBlocks(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)//¶àÃæ¸½×Å·½¿é
-	{
-		const static std::unordered_set<NBT_Node::NBT_String> setPolyAttachBlocks =
-		{
-			MU8STR("minecraft:vine"),
-			MU8STR("minecraft:glow_lichen"),
-			MU8STR("minecraft:sculk_vein"),
-		};
+  static inline bool
+  CvrtPolyAttachBlocks(const BlockStats &stBlocks,
+                       ItemProcess::NoTagItemList &stItemsList) // å¤šé¢é™„ç€æ–¹å—
+  {
+    const static std::unordered_set<NBT_Node::NBT_String> setPolyAttachBlocks =
+        {
+            MU8STR("minecraft:vine"),
+            MU8STR("minecraft:glow_lichen"),
+            MU8STR("minecraft:sculk_vein"),
+        };
 
-		const constexpr static char *pSurfaceNameList[] =
-		{
-			"down",
-			"east",
-			"north",
-			"south",
-			"up",
-			"west",
-		};
+    const constexpr static char *pSurfaceNameList[] = {
+        "down", "east", "north", "south", "up", "west",
+    };
 
+    if (setPolyAttachBlocks.count(*stBlocks.psBlockName) != 0) {
+      if (stBlocks.pcpdProperties == NULL) {
+        return false;
+      }
 
-		if (setPolyAttachBlocks.count(*stBlocks.psBlockName) != 0)
-		{
-			if (stBlocks.pcpdProperties == NULL)
-			{
-				return false;
-			}
+      // éå†é¢åˆ—è¡¨ï¼ŒæŸ¥è¯¢æ¯ä¸ªé¢ä¿¡æ¯ï¼Œå¦‚æœå­˜åœ¨ï¼Œåˆ¤æ–­æ˜¯ä¸æ˜¯trueï¼Œå¦‚æœæ˜¯ï¼Œè®¡æ•°+1
+      uint64_t u64Counter = 0;
+      for (const auto &it : pSurfaceNameList) {
+        const auto pSurface = stBlocks.pcpdProperties->HasString(MU8STR(it));
+        if (pSurface != NULL) {
+          if (*pSurface == MU8STR("true")) {
+            ++u64Counter;
+          }
+        }
+      }
 
-			//±éÀúÃæÁĞ±í£¬²éÑ¯Ã¿¸öÃæĞÅÏ¢£¬Èç¹û´æÔÚ£¬ÅĞ¶ÏÊÇ²»ÊÇtrue£¬Èç¹ûÊÇ£¬¼ÆÊı+1
-			uint64_t u64Counter = 0;
-			for (const auto &it : pSurfaceNameList)
-			{
-				const auto pSurface = stBlocks.pcpdProperties->HasString(MU8STR(it));
-				if (pSurface != NULL)
-				{
-					if (*pSurface == MU8STR("true"))
-					{
-						++u64Counter;
-					}
-				}
-			}
+      // æ ¹æ®è®¡æ•°æ’å…¥å¯¹åº”æ•°é‡çš„å¤šé¢é™„ç€å—ç‰©å“æ•°
+      stItemsList.emplace_back(*stBlocks.psBlockName,
+                               stBlocks.u64Counter * u64Counter);
 
-			//¸ù¾İ¼ÆÊı²åÈë¶ÔÓ¦ÊıÁ¿µÄ¶àÃæ¸½×Å¿éÎïÆ·Êı
-			stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * u64Counter);
+      return true;
+    }
 
-			return true;
-		}
+    return false;
+  }
 
-		return false;
-	}
+  // æ‰€æœ‰æ­¤ç±»è½¬æ¢å‡½æ•°éƒ½ä¸å¤„ç†æ™®é€šå•æ ¼æ¤ç‰©
+  static inline bool
+  CvrtMultiPartPlant(const BlockStats &stBlocks,
+                     ItemProcess::NoTagItemList &stItemsList) // å¤šæ ¼æ¤æ ªå¤„ç†
+  {
+    // åªè½¬æ¢æ¤æ ªå…¶ä½™éæ¤æ ªèµ°æ™®é€šæ–¹å—normalå¤„ç†
+    const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String>
+        mapMultiPartPlant = {
+            // æ´ç©´è—¤è”“ç‰¹æ®Šå¤„ç†ï¼Œè½¬æ¢åˆ°å‘å…‰æµ†æœ
+            {MU8STR("minecraft:cave_vines_plant"),
+             MU8STR("minecraft:glow_berries")},
+            {MU8STR("minecraft:cave_vines"), MU8STR("minecraft:glow_berries")},
+            // ç«¹å­ç‰¹æ®Šè½¬æ¢
+            {MU8STR("minecraft:bamboo_sapling"), MU8STR("minecraft:bamboo")},
+            // å‚æ»´å¶ç‰¹æ®Šè½¬æ¢
+            {MU8STR(" minecraft:big_dripleaf_stem"),
+             MU8STR("minecraft:big_dripleaf")},
+            // æµ·å¸¦
+            {MU8STR("minecraft:kelp"),
+             MU8STR(
+                 "minecraft:kelp")}, // æ·»åŠ æµ·å¸¦åˆ°è‡ªèº«çš„æ˜ å°„çš„ç›®çš„æ˜¯ä¸ºäº†å¤„ç†å«æ°´æƒ…å†µ
+            {MU8STR("minecraft:kelp_plant"), MU8STR("minecraft:kelp")},
+            // æµ·è‰
+            {MU8STR("minecraft:tall_seagrass"),
+             MU8STR("minecraft:seagrass")}, // é«˜æµ·è‰çš„æ¯ä¸ªéƒ¨åˆ†éƒ½æ˜ å°„åˆ°ä¸€ä¸ªæµ·è‰
+                                            // ä¸‹ç•Œè—¤è”“
+            {MU8STR("minecraft:weeping_vines_plant"),
+             MU8STR("minecraft:weeping_vines")},
+            {MU8STR("minecraft:twisting_vines_plant"),
+             MU8STR("minecraft:twisting_vines")},
+        };
 
+    const auto it = mapMultiPartPlant.find(*stBlocks.psBlockName);
+    if (it != mapMultiPartPlant.end()) {
+      stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1); // æ’å…¥æ˜ å°„
+      // æµ·å¸¦æµ·è‰å¿…å«æ°´ï¼Œå¼ºåˆ¶å¤„ç†
+      if (it->second == MU8STR("minecraft:kelp") ||
+          it->second == MU8STR("minecraft:seagrass")) {
+        stItemsList.emplace_back(MU8STR("minecraft:water_bucket"),
+                                 stBlocks.u64Counter * 1);
+      }
+      return true;
+    }
 
-	//ËùÓĞ´ËÀà×ª»»º¯Êı¶¼²»´¦ÀíÆÕÍ¨µ¥¸ñÖ²Îï
-	static inline bool CvrtMultiPartPlant(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)//¶à¸ñÖ²Öê´¦Àí
-	{
-		//Ö»×ª»»Ö²ÖêÆäÓà·ÇÖ²Öê×ßÆÕÍ¨·½¿énormal´¦Àí
-		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapMultiPartPlant =
-		{
-			//¶´Ñ¨ÌÙÂûÌØÊâ´¦Àí£¬×ª»»µ½·¢¹â½¬¹û
-			{MU8STR("minecraft:cave_vines_plant"),MU8STR("minecraft:glow_berries")},
-			{MU8STR("minecraft:cave_vines"),MU8STR("minecraft:glow_berries")},
-			//Öñ×ÓÌØÊâ×ª»»
-			{MU8STR("minecraft:bamboo_sapling"),MU8STR("minecraft:bamboo")},
-			//´¹µÎÒ¶ÌØÊâ×ª»»
-			{MU8STR(" minecraft:big_dripleaf_stem"),MU8STR("minecraft:big_dripleaf")},
-			//º£´ø
-			{MU8STR("minecraft:kelp"),MU8STR("minecraft:kelp")},//Ìí¼Óº£´øµ½×ÔÉíµÄÓ³ÉäµÄÄ¿µÄÊÇÎªÁË´¦Àíº¬Ë®Çé¿ö
-			{MU8STR("minecraft:kelp_plant"),MU8STR("minecraft:kelp")},
-			//º£²İ
-			{MU8STR("minecraft:tall_seagrass"),MU8STR("minecraft:seagrass")},//¸ßº£²İµÄÃ¿¸ö²¿·Ö¶¼Ó³Éäµ½Ò»¸öº£²İ
-			//ÏÂ½çÌÙÂû
-			{MU8STR("minecraft:weeping_vines_plant"),MU8STR("minecraft:weeping_vines")},
-			{MU8STR("minecraft:twisting_vines_plant"),MU8STR("minecraft:twisting_vines")},
-		};
+    return false;
+  }
 
-		const auto it = mapMultiPartPlant.find(*stBlocks.psBlockName);
-		if (it != mapMultiPartPlant.end())
-		{
-			stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1);//²åÈëÓ³Éä
-			//º£´øº£²İ±Øº¬Ë®£¬Ç¿ÖÆ´¦Àí
-			if (it->second == MU8STR("minecraft:kelp")||
-				it->second == MU8STR("minecraft:seagrass"))
-			{
-				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
-			}
-			return true;
-		}
-		
-		return false;
-	}
+  // æ‰€æœ‰æ­¤ç±»è½¬æ¢å‡½æ•°éƒ½ä¸å¤„ç†æ™®é€šå•æ ¼æ¤ç‰©
+  static inline bool
+  CvrtDoublePartPlant(const BlockStats &stBlocks,
+                      ItemProcess::NoTagItemList &stItemsList) // åŒæ ¼æ¤æ ªå¤„ç†
+  {
+    // åªæœ‰æ ¹éƒ¨ç ´åæ‰è½ï¼Œå¤´éƒ¨ç›´æ¥å¿½ç•¥
+    const static std::unordered_set<NBT_Node::NBT_String> setDoublePartPlant = {
+        MU8STR("minecraft:small_dripleaf"), MU8STR("minecraft:tall_grass"),
+        MU8STR("minecraft:large_fern"),     MU8STR("minecraft:sunflower"),
+        MU8STR("minecraft:lilac"),          MU8STR("minecraft:rose_bush"),
+        MU8STR("minecraft:peony"),          MU8STR("minecraft:pitcher_plant"),
+    };
 
-	//ËùÓĞ´ËÀà×ª»»º¯Êı¶¼²»´¦ÀíÆÕÍ¨µ¥¸ñÖ²Îï
-	static inline bool CvrtDoublePartPlant(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)//Ë«¸ñÖ²Öê´¦Àí
-	{
-		//Ö»ÓĞ¸ù²¿ÆÆ»µµôÂä£¬Í·²¿Ö±½ÓºöÂÔ
-		const static std::unordered_set<NBT_Node::NBT_String> setDoublePartPlant =
-		{
-			MU8STR("minecraft:small_dripleaf"),
-			MU8STR("minecraft:tall_grass"),
-			MU8STR("minecraft:large_fern"),
-			MU8STR("minecraft:sunflower"),
-			MU8STR("minecraft:lilac"),
-			MU8STR("minecraft:rose_bush"),
-			MU8STR("minecraft:peony"),
-			MU8STR("minecraft:pitcher_plant"),
-		};
+    // åˆ¤æ–­æ˜¯å¦å­˜åœ¨äºsetä¸­ï¼Œæ˜¯åˆ™å¤„ç†ä¸Šä¸‹éƒ¨åˆ†
+    if (setDoublePartPlant.count(*stBlocks.psBlockName) != 0) {
+      if (stBlocks.pcpdProperties == NULL) {
+        return false;
+      }
+      const auto &half = stBlocks.pcpdProperties->GetString("half");
+      if (half == MU8STR("lower")) {
+        stItemsList.emplace_back(*stBlocks.psBlockName,
+                                 stBlocks.u64Counter * 1);
+      }
+      // else if (half == MU8STR("upper")) {}
+      // else {}
 
-		//ÅĞ¶ÏÊÇ·ñ´æÔÚÓÚsetÖĞ£¬ÊÇÔò´¦ÀíÉÏÏÂ²¿·Ö
-		if (setDoublePartPlant.count(*stBlocks.psBlockName) != 0)
-		{
-			if (stBlocks.pcpdProperties == NULL)
-			{
-				return false;
-			}
-			const auto &half = stBlocks.pcpdProperties->GetString("half");
-			if (half == MU8STR("lower"))
-			{
-				stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
-			}
-			//else if (half == MU8STR("upper")) {}
-			//else {}
+      return true;
+    }
 
-			return true;
-		}
+    return false;
+  }
 
-		return false;
-	}
-	
-	//ËùÓĞ´ËÀà×ª»»º¯Êı¶¼²»´¦ÀíÆÕÍ¨µ¥¸ñÖ²Îï
-	static inline bool CvrtCropPlant(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)//×÷ÎïÖ²Öê´¦Àí
-	{
-		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapCropPlant =
-		{
-			{MU8STR("minecraft:pumpkin_stem"),MU8STR("minecraft:pumpkin_seeds")},
-			{MU8STR("minecraft:attached_pumpkin_stem"),MU8STR("minecraft:pumpkin_seeds")},
-			{MU8STR("minecraft:melon_stem"),MU8STR("minecraft:melon_seeds")},
-			{MU8STR("minecraft:attached_melon_stem"),MU8STR("minecraft:melon_seeds")},
-			{MU8STR("minecraft:beetroots"),MU8STR("minecraft:beetroot_seeds")},
-			{MU8STR("minecraft:wheat"),MU8STR("minecraft:wheat_seeds")},
-			{MU8STR("minecraft:carrots"),MU8STR("minecraft:carrot")},
-			{MU8STR("minecraft:potatoes"),MU8STR("minecraft:potato")},
-			{MU8STR("minecraft:torchflower_crop"),MU8STR("minecraft:torchflower_seeds")},
-			{MU8STR("minecraft:pitcher_crop"),MU8STR("minecraft:pitcher_pod")},//ĞèÒªÌØÅĞ´¦Àí
-		};
+  // æ‰€æœ‰æ­¤ç±»è½¬æ¢å‡½æ•°éƒ½ä¸å¤„ç†æ™®é€šå•æ ¼æ¤ç‰©
+  static inline bool
+  CvrtCropPlant(const BlockStats &stBlocks,
+                ItemProcess::NoTagItemList &stItemsList) // ä½œç‰©æ¤æ ªå¤„ç†
+  {
+    const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String>
+        mapCropPlant = {
+            {MU8STR("minecraft:pumpkin_stem"),
+             MU8STR("minecraft:pumpkin_seeds")},
+            {MU8STR("minecraft:attached_pumpkin_stem"),
+             MU8STR("minecraft:pumpkin_seeds")},
+            {MU8STR("minecraft:melon_stem"), MU8STR("minecraft:melon_seeds")},
+            {MU8STR("minecraft:attached_melon_stem"),
+             MU8STR("minecraft:melon_seeds")},
+            {MU8STR("minecraft:beetroots"), MU8STR("minecraft:beetroot_seeds")},
+            {MU8STR("minecraft:wheat"), MU8STR("minecraft:wheat_seeds")},
+            {MU8STR("minecraft:carrots"), MU8STR("minecraft:carrot")},
+            {MU8STR("minecraft:potatoes"), MU8STR("minecraft:potato")},
+            {MU8STR("minecraft:torchflower_crop"),
+             MU8STR("minecraft:torchflower_seeds")},
+            {MU8STR("minecraft:pitcher_crop"),
+             MU8STR("minecraft:pitcher_pod")}, // éœ€è¦ç‰¹åˆ¤å¤„ç†
+        };
 
-		const auto it = mapCropPlant.find(*stBlocks.psBlockName);
-		if (it != mapCropPlant.end())
-		{
-			if (it->second == MU8STR("minecraft:pitcher_pod"))//ĞèÒªÅĞ¶ÏÔ­·½¿éµÄhalf
-			{
-				if (stBlocks.pcpdProperties == NULL)
-				{
-					return false;
-				}
-				const auto &half = stBlocks.pcpdProperties->GetString("half");
-				if (half == MU8STR("lower"))
-				{
-					stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1);
-				}
-				//else if (half == MU8STR("upper")) {}
-				//else {}
-			}
-			else
-			{
-				//Ö±½Ó²åÈë×ª»»½á¹û
-				stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1);
-			}
+    const auto it = mapCropPlant.find(*stBlocks.psBlockName);
+    if (it != mapCropPlant.end()) {
+      if (it->second == MU8STR("minecraft:pitcher_pod")) // éœ€è¦åˆ¤æ–­åŸæ–¹å—çš„half
+      {
+        if (stBlocks.pcpdProperties == NULL) {
+          return false;
+        }
+        const auto &half = stBlocks.pcpdProperties->GetString("half");
+        if (half == MU8STR("lower")) {
+          stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1);
+        }
+        // else if (half == MU8STR("upper")) {}
+        // else {}
+      } else {
+        // ç›´æ¥æ’å…¥è½¬æ¢ç»“æœ
+        stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1);
+      }
 
-			return true;
-		}
+      return true;
+    }
 
-		return false;
-	}
+    return false;
+  }
 
-	//×¢Òâ¸Ãº¯ÊıĞèÒª±£Ö¤²»½øĞĞÈÎºÎblockµÄcompoundÅĞ¶Ï
-	static inline void CvrtNormalBlock(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)
-	{
-		stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
-	}
+  // æ³¨æ„è¯¥å‡½æ•°éœ€è¦ä¿è¯ä¸è¿›è¡Œä»»ä½•blockçš„compoundåˆ¤æ–­
+  static inline void CvrtNormalBlock(const BlockStats &stBlocks,
+                                     ItemProcess::NoTagItemList &stItemsList) {
+    stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
+  }
 
-	static inline void CvrtWaterLoggedBlock(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)
-	{
-		//ÅĞ¶ÏÊÇ²»ÊÇº¬Ë®·½¿é£¬Èç¹ûÊÇ£¬¼ÓÒ»¸öË®Í°
-		if (stBlocks.pcpdProperties == NULL)
-		{
-			return;//Èç¹ûÃ»ÓĞ¸½¼Ó±êÇ©ÔòÎŞĞèÅĞ¶Ï
-		}
-		const auto it = stBlocks.pcpdProperties->HasString("waterlogged");
-		if (it != NULL)
-		{
-			if (*it == MU8STR("true"))//º¬Ë®
-			{
-				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
-			}
-			//else {}
-		}
-	}
+  static inline void
+  CvrtWaterLoggedBlock(const BlockStats &stBlocks,
+                       ItemProcess::NoTagItemList &stItemsList) {
+    // åˆ¤æ–­æ˜¯ä¸æ˜¯å«æ°´æ–¹å—ï¼Œå¦‚æœæ˜¯ï¼ŒåŠ ä¸€ä¸ªæ°´æ¡¶
+    if (stBlocks.pcpdProperties == NULL) {
+      return; // å¦‚æœæ²¡æœ‰é™„åŠ æ ‡ç­¾åˆ™æ— éœ€åˆ¤æ–­
+    }
+    const auto it = stBlocks.pcpdProperties->HasString("waterlogged");
+    if (it != NULL) {
+      if (*it == MU8STR("true")) // å«æ°´
+      {
+        stItemsList.emplace_back(MU8STR("minecraft:water_bucket"),
+                                 stBlocks.u64Counter * 1);
+      }
+      // else {}
+    }
+  }
 
 #undef ENDSWITH
 #undef STARTSWITH
 #undef FIND
-	//class
+  // class
 };

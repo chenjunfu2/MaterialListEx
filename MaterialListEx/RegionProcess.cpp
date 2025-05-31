@@ -1,105 +1,113 @@
 #include "RegionProcess.h"
 
-RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
-{
-	RegionStatsList listRegionStats;
-	listRegionStats.reserve(cpRegions.size());//ÌáÇ°À©Èİ
-	for (const auto &[RgName, RgVal] : cpRegions)//±éÀúÑ¡Çø
-	{
-		RegionStats rgsData{ RgName };
-		auto &RgCompound = GetCompound(RgVal);
+#include "TileEntityProcess.hpp"
 
-		//·½¿éµ½ÎïÆ·´¦Àí
-		{
-			auto &current = rgsData.mslBlock;
-			auto &curBlockItem = rgsData.mslBlockItem;
-			auto listBlockStats = BlockProcess::GetBlockStats(RgCompound);//»ñÈ¡·½¿éÍ³¼ÆÁĞ±í
-			for (const auto &itBlock : listBlockStats)
-			{
-				//×ª»»·½¿é
-				auto tmpBlock = BlockProcess::BlockStatsToBlockInfo(itBlock);
-				current.map[std::move(tmpBlock)] += itBlock.u64Counter;//ÆH£¬ÕâÀïÒª¼Ó¼ÆÊıÆ÷£¬¶ø²»ÊÇ¼ÓÒ»£¬ÒòÎªÇ°Ãæ¶¼Í³¼ÆÍêÁË
+RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions) {
+  RegionStatsList listRegionStats;
+  listRegionStats.reserve(cpRegions.size());    // æå‰æ‰©å®¹
+  for (const auto &[RgName, RgVal] : cpRegions) // éå†é€‰åŒº
+  {
+    RegionStats rgsData{RgName};
+    auto &RgCompound = GetCompound(RgVal);
 
-				//Ã¿¸ö·½¿é×ª»»µ½ÎïÆ·£¬²¢Í¨¹ımap½øĞĞÍ³¼ÆÍ¬ÀàÎïÆ·
-				auto tmp = BlockProcess::BlockStatsToItemStack(itBlock);
-				for (auto &itItem : tmp)
-				{
-					curBlockItem.map[{ std::move(itItem.sItemName) }] += itItem.u64Counter;//Èç¹ûkey²»´æÔÚ£¬Ôò×Ô¶¯´´½¨£¬ÇÒ±£Ö¤valueÎª0
-				}
-			}
+    // æ–¹å—åˆ°ç‰©å“å¤„ç†
+    {
+      auto &current = rgsData.mslBlock;
+      auto &curBlockItem = rgsData.mslBlockItem;
+      auto listBlockStats =
+          BlockProcess::GetBlockStats(RgCompound); // è·å–æ–¹å—ç»Ÿè®¡åˆ—è¡¨
+      for (const auto &itBlock : listBlockStats) {
+        // è½¬æ¢æ–¹å—
+        auto tmpBlock = BlockProcess::BlockStatsToBlockInfo(itBlock);
+        current.map[std::move(tmpBlock)] +=
+            itBlock
+                .u64Counter; // è‰¸ï¼Œè¿™é‡Œè¦åŠ è®¡æ•°å™¨ï¼Œè€Œä¸æ˜¯åŠ ä¸€ï¼Œå› ä¸ºå‰é¢éƒ½ç»Ÿè®¡å®Œäº†
 
-			//Ö´ĞĞÅÅĞò
-			current.SortElement();
-			curBlockItem.SortElement();
-		}
+        // æ¯ä¸ªæ–¹å—è½¬æ¢åˆ°ç‰©å“ï¼Œå¹¶é€šè¿‡mapè¿›è¡Œç»Ÿè®¡åŒç±»ç‰©å“
+        auto tmp = BlockProcess::BlockStatsToItemStack(itBlock);
+        for (auto &itItem : tmp) {
+          curBlockItem.map[{std::move(itItem.sItemName)}] +=
+              itItem.u64Counter; // å¦‚æœkeyä¸å­˜åœ¨ï¼Œåˆ™è‡ªåŠ¨åˆ›å»ºï¼Œä¸”ä¿è¯valueä¸º0
+        }
+      }
 
-		//·½¿éÊµÌåÈİÆ÷´¦Àí
-		{
-			auto &current = rgsData.mslTileEntityContainer;
-			auto listTEContainerStats = TileEntityProcess::GetTileEntityContainerStats(RgCompound);
-			for (const auto &it : listTEContainerStats)
-			{
-				//×ª»»Ã¿¸ö·½¿éÊµÌå
-				auto tmp = TileEntityProcess::TileEntityContainerStatsToItemStack(it);
-				tmp = ItemProcess::ItemStackListUnpackContainer(std::move(tmp));//½â°üÄÚ²¿µÄÈİÆ÷
-				for (auto &itItem : tmp)
-				{
-					current.map[{ std::move(itItem.sItemName), std::move(itItem.cpdItemTag) }] += itItem.u64ItemCount;
-				}
-			}
+      // æ‰§è¡Œæ’åº
+      current.SortElement();
+      curBlockItem.SortElement();
+    }
 
-			//Ö´ĞĞÅÅĞò
-			current.SortElement();
-		}
+    // æ–¹å—å®ä½“å®¹å™¨å¤„ç†
+    {
+      auto &current = rgsData.mslTileEntityContainer;
+      auto listTEContainerStats =
+          TileEntityProcess::GetTileEntityContainerStats(RgCompound);
+      for (const auto &it : listTEContainerStats) {
+        // è½¬æ¢æ¯ä¸ªæ–¹å—å®ä½“
+        auto tmp = TileEntityProcess::TileEntityContainerStatsToItemStack(it);
+        tmp = ItemProcess::ItemStackListUnpackContainer(
+            std::move(tmp)); // è§£åŒ…å†…éƒ¨çš„å®¹å™¨
+        for (auto &itItem : tmp) {
+          current.map[{std::move(itItem.sItemName),
+                       std::move(itItem.cpdItemTag)}] += itItem.u64ItemCount;
+        }
+      }
 
-		//ÊµÌå´¦Àí
-		{
-			//ÓëÉÏÃæÓĞĞ©Çø±ğ£¬ÔÚ¶ÁÈ¡³öÀ´ºóĞèÒª×öÈı²½
-			//µÚÒ»²½ÏÈ½â³öÊµÌå±¾Éí£¬µÚ¶ş²½½â³öÈİÆ÷£¬µÚÈı²½ÔÙ½â³öÎïÆ·À¸
-			//ÒòÎªÄãÂé½«·½¿éºÍ·½¿éÊµÌå·Ö¿ª´æ·Å£¬¶øÊµÌåºÍÊµÌåtagÊÇÔÚÒ»ÆğµÄ£¬
-			//·Ö¿ª´¦Àí·´¶øºÜÂé·³£¬Ö»ÄÜÕâÑù£¨Âé½«Éñ²Ù×÷ÄÜ²»ÅçµÄ¶¼ÊÇÉñÈËÁË£©
-			//×¢ÒâÊµÌå·Ç³£ÌØÊâ£¬ºÜ¶àÊ±ºò»ñÈ¡·½Ê½²¢²»¾ÖÏŞÓÚ´ÓÎïÆ·µÃÀ´£¬
-			//Ã»°ì·¨Ö±½Ó×ª»»µ½ÎïÆ·£¬ËùÒÔµ¥¶À·ÅÒ»¸öÊµÌå±í
-			auto &current = rgsData.mslEntity;
-			auto &curContainer = rgsData.mslEntityContainer;
-			auto &curInventory = rgsData.mslEntityInventory;
+      // æ‰§è¡Œæ’åº
+      current.SortElement();
+    }
 
-			auto listEntityStats = EntityProcess::GetEntityStats(RgCompound);
-			for (const auto &it : listEntityStats)
-			{
-				//×ª»»ÊµÌå
-				auto tmpEntity = EntityProcess::EntityStatsToEntityInfo(it);
-				current.map[std::move(tmpEntity)] += 1;//Ã¿´ÎÓöµ½+1¼´¿É£¬ÒòÎªÃ¿´Î´¦ÀíµÄÊµÌåÖ»ÓĞÒ»¸ö
+    // å®ä½“å¤„ç†
+    {
+      // ä¸ä¸Šé¢æœ‰äº›åŒºåˆ«ï¼Œåœ¨è¯»å–å‡ºæ¥åéœ€è¦åšä¸‰æ­¥
+      // ç¬¬ä¸€æ­¥å…ˆè§£å‡ºå®ä½“æœ¬èº«ï¼Œç¬¬äºŒæ­¥è§£å‡ºå®¹å™¨ï¼Œç¬¬ä¸‰æ­¥å†è§£å‡ºç‰©å“æ 
+      // å› ä¸ºä½ éº»å°†æ–¹å—å’Œæ–¹å—å®ä½“åˆ†å¼€å­˜æ”¾ï¼Œè€Œå®ä½“å’Œå®ä½“tagæ˜¯åœ¨ä¸€èµ·çš„ï¼Œ
+      // åˆ†å¼€å¤„ç†åè€Œå¾ˆéº»çƒ¦ï¼Œåªèƒ½è¿™æ ·ï¼ˆéº»å°†ç¥æ“ä½œèƒ½ä¸å–·çš„éƒ½æ˜¯ç¥äººäº†ï¼‰
+      // æ³¨æ„å®ä½“éå¸¸ç‰¹æ®Šï¼Œå¾ˆå¤šæ—¶å€™è·å–æ–¹å¼å¹¶ä¸å±€é™äºä»ç‰©å“å¾—æ¥ï¼Œ
+      // æ²¡åŠæ³•ç›´æ¥è½¬æ¢åˆ°ç‰©å“ï¼Œæ‰€ä»¥å•ç‹¬æ”¾ä¸€ä¸ªå®ä½“è¡¨
+      auto &current = rgsData.mslEntity;
+      auto &curContainer = rgsData.mslEntityContainer;
+      auto &curInventory = rgsData.mslEntityInventory;
 
-				//×ª»»ÊµÌåÎïÆ·À¸ºÍÈİÆ÷
-				auto tmpSlot = EntityProcess::EntityStatsToEntitySlot(it);
+      auto listEntityStats = EntityProcess::GetEntityStats(RgCompound);
+      for (const auto &it : listEntityStats) {
+        // è½¬æ¢å®ä½“
+        auto tmpEntity = EntityProcess::EntityStatsToEntityInfo(it);
+        current.map[std::move(tmpEntity)] +=
+            1; // æ¯æ¬¡é‡åˆ°+1å³å¯ï¼Œå› ä¸ºæ¯æ¬¡å¤„ç†çš„å®ä½“åªæœ‰ä¸€ä¸ª
 
-				//¶ÔÄÚ²¿µÄÎïÆ·ÈİÆ÷½øĞĞ½â°ü
-				tmpSlot.listContainer = ItemProcess::ItemStackListUnpackContainer(std::move(tmpSlot.listContainer));
-				tmpSlot.listInventory = ItemProcess::ItemStackListUnpackContainer(std::move(tmpSlot.listInventory));
+        // è½¬æ¢å®ä½“ç‰©å“æ å’Œå®¹å™¨
+        auto tmpSlot = EntityProcess::EntityStatsToEntitySlot(it);
 
-				//±éÀú²¢ºÏ²¢ÏàÍ¬ÎïÆ·
-				for (auto &itItem : tmpSlot.listContainer)
-				{
-					curContainer.map[{std::move(itItem.sItemName), std::move(itItem.cpdItemTag)}] += itItem.u64ItemCount;
-				}
-				for (auto &itItem : tmpSlot.listInventory)
-				{
-					curInventory.map[{std::move(itItem.sItemName), std::move(itItem.cpdItemTag)}] += itItem.u64ItemCount;
-				}
-			}
+        // å¯¹å†…éƒ¨çš„ç‰©å“å®¹å™¨è¿›è¡Œè§£åŒ…
+        tmpSlot.listContainer = ItemProcess::ItemStackListUnpackContainer(
+            std::move(tmpSlot.listContainer));
+        tmpSlot.listInventory = ItemProcess::ItemStackListUnpackContainer(
+            std::move(tmpSlot.listInventory));
 
-			//Ö´ĞĞÅÅĞò
-			current.SortElement();
-			curContainer.SortElement();
-			curInventory.SortElement();
-		}
+        // éå†å¹¶åˆå¹¶ç›¸åŒç‰©å“
+        for (auto &itItem : tmpSlot.listContainer) {
+          curContainer.map[{std::move(itItem.sItemName),
+                            std::move(itItem.cpdItemTag)}] +=
+              itItem.u64ItemCount;
+        }
+        for (auto &itItem : tmpSlot.listInventory) {
+          curInventory.map[{std::move(itItem.sItemName),
+                            std::move(itItem.cpdItemTag)}] +=
+              itItem.u64ItemCount;
+        }
+      }
 
-		//ÉÏÃæ¼¸¸öÃ»ÓĞ´ø¿éÓï¾äµÄÎŞÃû¿é£¬ÓÃÓÚ¿ØÖÆ±äÁ¿×÷ÓÃÓò£¬ÌáÉı´úÂë¿É¶ÁĞÔ
+      // æ‰§è¡Œæ’åº
+      current.SortElement();
+      curContainer.SortElement();
+      curInventory.SortElement();
+    }
 
-		//´¦ÀíÍêÃ¿¸öregionºó·ÅÈëregionÁĞ±í
-		listRegionStats.emplace_back(std::move(rgsData));
-	}
+    // ä¸Šé¢å‡ ä¸ªæ²¡æœ‰å¸¦å—è¯­å¥çš„æ— åå—ï¼Œç”¨äºæ§åˆ¶å˜é‡ä½œç”¨åŸŸï¼Œæå‡ä»£ç å¯è¯»æ€§
 
-	return listRegionStats;
+    // å¤„ç†å®Œæ¯ä¸ªregionåæ”¾å…¥regionåˆ—è¡¨
+    listRegionStats.emplace_back(std::move(rgsData));
+  }
+
+  return listRegionStats;
 }

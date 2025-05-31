@@ -1,869 +1,836 @@
 #pragma once
 
-#include "NBT_Node.hpp"
 #include "MUTF8_Tool.hpp"
 #include "Windows_ANSI.hpp"
 
-#include <new>//std::bad_alloc
+#include <new> //std::bad_alloc
 
-template <typename T>
-class MyInputStream
-{
+template <typename T> class MyInputStream {
 private:
-	const T &tData;
-	size_t szIndex;
+  const T &tData;
+  size_t szIndex;
+
 public:
-	MyInputStream(const T &_tData, size_t szStartIdx = 0) :tData(_tData), szIndex(szStartIdx)
-	{}
-	~MyInputStream() = default;//Ä¬ÈÏÎö¹¹£¬×ßtDataµÄÎö¹¹¼´¿É
+  MyInputStream(const T &_tData, size_t szStartIdx = 0)
+      : tData(_tData), szIndex(szStartIdx) {}
+  ~MyInputStream() = default; // é»˜è®¤ææ„ï¼Œèµ°tDataçš„ææ„å³å¯
 
-	typename T::value_type GetNext() noexcept
-	{
-		return tData[szIndex++];
-	}
+  typename T::value_type GetNext() noexcept { return tData[szIndex++]; }
 
-	void UnGet() noexcept
-	{
-		if (szIndex != 0)
-		{
-			--szIndex;
-		}
-	}
+  void UnGet() noexcept {
+    if (szIndex != 0) {
+      --szIndex;
+    }
+  }
 
-	const typename T::value_type &operator[](size_t szIndex) const noexcept
-	{
-		return tData[szIndex];
-	}
+  const typename T::value_type &operator[](size_t szIndex) const noexcept {
+    return tData[szIndex];
+  }
 
-	T::const_iterator Current() const noexcept
-	{
-		return tData.begin() + szIndex;
-	}
+  T::const_iterator Current() const noexcept { return tData.begin() + szIndex; }
 
-	T::const_iterator Next(size_t szSize) const noexcept
-	{
-		return tData.begin() + (szIndex + szSize);
-	}
+  T::const_iterator Next(size_t szSize) const noexcept {
+    return tData.begin() + (szIndex + szSize);
+  }
 
-	size_t AddIndex(size_t szSize) noexcept
-	{
-		return szIndex += szSize;
-	}
+  size_t AddIndex(size_t szSize) noexcept { return szIndex += szSize; }
 
-	size_t SubIndex(size_t szSize) noexcept
-	{
-		return szIndex -= szSize;
-	}
+  size_t SubIndex(size_t szSize) noexcept { return szIndex -= szSize; }
 
-	bool IsEnd() const noexcept
-	{
-		return szIndex >= tData.size();
-	}
+  bool IsEnd() const noexcept { return szIndex >= tData.size(); }
 
-	size_t Size() const noexcept
-	{
-		return tData.size();
-	}
+  size_t Size() const noexcept { return tData.size(); }
 
-	bool HasAvailData(size_t szSize) const noexcept
-	{
-		return (tData.size() - szIndex) >= szSize;
-	}
+  bool HasAvailData(size_t szSize) const noexcept {
+    return (tData.size() - szIndex) >= szSize;
+  }
 
-	void Reset() noexcept
-	{
-		szIndex = 0;
-	}
+  void Reset() noexcept { szIndex = 0; }
 
-	const T &Data() const noexcept
-	{
-		return tData;
-	}
+  const T &Data() const noexcept { return tData; }
 
-	size_t Index() const noexcept
-	{
-		return szIndex;
-	}
+  size_t Index() const noexcept { return szIndex; }
 
-	size_t &Index() noexcept
-	{
-		return szIndex;
-	}
+  size_t &Index() noexcept { return szIndex; }
 };
 
-template <typename DataType = std::string>
-class NBT_Reader
-{
-	using InputStream = MyInputStream<DataType>;//Á÷ÀàĞÍ
+template <typename DataType = std::string> class NBT_Reader {
+  using InputStream = MyInputStream<DataType>; // æµç±»å‹
 private:
-	enum ErrCode : int
-	{
-		ERRCODE_END = -9,//½áÊø±ê¼Ç£¬Í³¼Æ¸ºÊı²¿·Ö´óĞ¡
+  enum ErrCode : int {
+    ERRCODE_END = -9, // ç»“æŸæ ‡è®°ï¼Œç»Ÿè®¡è´Ÿæ•°éƒ¨åˆ†å¤§å°
 
-		UnknownError,//ÆäËû´íÎó
-		StdException,//±ê×¼Òì³£
-		OutOfMemoryError,//ÄÚ´æ²»×ã´íÎó£¨NBTÎÄ¼şÎÊÌâ£©
-		ListElementTypeError,//ÁĞ±íÔªËØÀàĞÍ´íÎó£¨NBTÎÄ¼şÎÊÌâ£©
-		StackDepthExceeded,//µ÷ÓÃÕ»Éî¶È¹ıÉî£¨NBTÎÄ¼şor´úÂëÉèÖÃÎÊÌâ£©
-		NbtTypeTagError,//NBT±êÇ©ÀàĞÍ´íÎó£¨NBTÎÄ¼şÎÊÌâ£©
-		OutOfRangeError,//£¨NBTÄÚ²¿³¤¶È´íÎóÒç³ö£©£¨NBTÎÄ¼şÎÊÌâ£©
-		InternalTypeError,//±äÌåNBT½ÚµãÀàĞÍ´íÎó£¨´úÂëÎÊÌâ£©
-		AllOk,//Ã»ÓĞÎÊÌâ
-		Compound_End,//¼¯ºÏ½áÊø
-	};
+    UnknownError,         // å…¶ä»–é”™è¯¯
+    StdException,         // æ ‡å‡†å¼‚å¸¸
+    OutOfMemoryError,     // å†…å­˜ä¸è¶³é”™è¯¯ï¼ˆNBTæ–‡ä»¶é—®é¢˜ï¼‰
+    ListElementTypeError, // åˆ—è¡¨å…ƒç´ ç±»å‹é”™è¯¯ï¼ˆNBTæ–‡ä»¶é—®é¢˜ï¼‰
+    StackDepthExceeded, // è°ƒç”¨æ ˆæ·±åº¦è¿‡æ·±ï¼ˆNBTæ–‡ä»¶orä»£ç è®¾ç½®é—®é¢˜ï¼‰
+    NbtTypeTagError,    // NBTæ ‡ç­¾ç±»å‹é”™è¯¯ï¼ˆNBTæ–‡ä»¶é—®é¢˜ï¼‰
+    OutOfRangeError,   // ï¼ˆNBTå†…éƒ¨é•¿åº¦é”™è¯¯æº¢å‡ºï¼‰ï¼ˆNBTæ–‡ä»¶é—®é¢˜ï¼‰
+    InternalTypeError, // å˜ä½“NBTèŠ‚ç‚¹ç±»å‹é”™è¯¯ï¼ˆä»£ç é—®é¢˜ï¼‰
+    AllOk,             // æ²¡æœ‰é—®é¢˜
+    Compound_End,      // é›†åˆç»“æŸ
+  };
 
-	//È·±£[·Ç´íÎóÂë]ÎªÁã£¬·ÀÖ¹³öÏÖ·Ç·¨µÄ[·Ç´íÎóÂë]µ¼ÖÂÅĞ¶ÏÊ§Ğ§Êı×éÒç³ö
-	static_assert(AllOk == 0, "AllOk != 0");
+  // ç¡®ä¿[éé”™è¯¯ç ]ä¸ºé›¶ï¼Œé˜²æ­¢å‡ºç°éæ³•çš„[éé”™è¯¯ç ]å¯¼è‡´åˆ¤æ–­å¤±æ•ˆæ•°ç»„æº¢å‡º
+  static_assert(AllOk == 0, "AllOk != 0");
 
-	static inline const char *const errReason[] =//·´ÏòÊı×éÔËËã·½Ê½£º(-ERRCODE_END - 1) + ErrCode
-	{
-		"UnknownError",
-		"StdException",
-		"OutOfMemoryError",
-		"ListElementTypeError",
-		"StackDepthExceeded",
-		"NbtTypeTagError",
-		"OutOfRangeError",
-		"InternalTypeError",
+  static inline const char
+      *const errReason[] = // åå‘æ•°ç»„è¿ç®—æ–¹å¼ï¼š(-ERRCODE_END - 1) + ErrCode
+      {
+          "UnknownError",
+          "StdException",
+          "OutOfMemoryError",
+          "ListElementTypeError",
+          "StackDepthExceeded",
+          "NbtTypeTagError",
+          "OutOfRangeError",
+          "InternalTypeError",
 
-		"AllOk",
-	};
+          "AllOk",
+  };
 
-	//¼ÇµÃÍ¬²½Êı×é£¡
-	static_assert(sizeof(errReason) / sizeof(errReason[0]) == (-ERRCODE_END), "errReason array out sync");
+  // è®°å¾—åŒæ­¥æ•°ç»„ï¼
+  static_assert(sizeof(errReason) / sizeof(errReason[0]) == (-ERRCODE_END),
+                "errReason array out sync");
 
-	enum WarnCode : int
-	{
-		NoWarn = 0,
-		ElementExistsWarn,
+  enum WarnCode : int {
+    NoWarn = 0,
+    ElementExistsWarn,
 
-		WARNCODE_END,
-	};
+    WARNCODE_END,
+  };
 
-	//È·±£[·Ç¾¯¸æÂë]ÎªÁã£¬·ÀÖ¹³öÏÖ·Ç·¨µÄ[·Ç¾¯¸æÂë]µ¼ÖÂÅĞ¶ÏÊ§Ğ§Êı×éÒç³ö
-	static_assert(NoWarn == 0, "NoWarn != 0");
+  // ç¡®ä¿[éè­¦å‘Šç ]ä¸ºé›¶ï¼Œé˜²æ­¢å‡ºç°éæ³•çš„[éè­¦å‘Šç ]å¯¼è‡´åˆ¤æ–­å¤±æ•ˆæ•°ç»„æº¢å‡º
+  static_assert(NoWarn == 0, "NoWarn != 0");
 
-	static inline const char *const warnReason[] =//Õı³£Êı×é£¬Ö±½ÓÓÃWarnCode·ÃÎÊ
-	{
-		"NoWarn",
-		"ElementExistsWarn",
-	};
+  static inline const char *const warnReason[] = // æ­£å¸¸æ•°ç»„ï¼Œç›´æ¥ç”¨WarnCodeè®¿é—®
+      {
+          "NoWarn",
+          "ElementExistsWarn",
+  };
 
-	//¼ÇµÃÍ¬²½Êı×é£¡
-	static_assert(sizeof(warnReason) / sizeof(warnReason[0]) == WARNCODE_END, "warnReason array out sync");
+  // è®°å¾—åŒæ­¥æ•°ç»„ï¼
+  static_assert(sizeof(warnReason) / sizeof(warnReason[0]) == WARNCODE_END,
+                "warnReason array out sync");
 
-	//Ê¹ÓÃ±ä²ÎĞÎ²Î±í+vprintf´úÀí¸´ÔÓÊä³ö£¬¸ø³ö¸ü¶àÀ©Õ¹ĞÅÏ¢
-	template <typename T, typename std::enable_if<std::is_same<T, ErrCode>::value || std::is_same<T, WarnCode>::value, int>::type = 0>
-	static int _cdecl Error(const T &code, const InputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...) noexcept//gccÊ¹ÓÃ__attribute__((format))
-	{
-		if constexpr (std::is_same<T, ErrCode>::value)
-		{
-			if (code >= AllOk)
-			{
-				return (int)code;
-			}
-			//ÉÏ·½if±£Ö¤errcÎª¸º£¬´Ë´¦·ÃÎÊ±£Ö¤ÎŞÎÊÌâ£¨³ı·Ç´úÂë´«ÈëÒì³£´íÎóÂë£©£¬Í¨¹ı(-ERRCODE_END - 1) + codeµÃµ½·´ÏòÊı×éÏÂ±ê
-			printf("Read Err[%d]: \"%s\"\n", (int)code, errReason[(-ERRCODE_END - 1) + code]);
-		}
-		else if constexpr (std::is_same<T, WarnCode>::value)
-		{
-			if (code <= NoWarn)
-			{
-				return (int)code;
-			}
-			//Êä³öwarn¾¯¸æ
-			printf("Read Warn[%d]: \"%s\"\n", (int)code, warnReason[(int)code]);
-		}
-		else
-		{
-			static_assert(false, "Unknown [T code] Type!");
-		}
+  // ä½¿ç”¨å˜å‚å½¢å‚è¡¨+vprintfä»£ç†å¤æ‚è¾“å‡ºï¼Œç»™å‡ºæ›´å¤šæ‰©å±•ä¿¡æ¯
+  template <typename T,
+            typename std::enable_if<std::is_same<T, ErrCode>::value ||
+                                        std::is_same<T, WarnCode>::value,
+                                    int>::type = 0>
+  static int _cdecl Error(
+      const T &code, const InputStream &tData,
+      _Printf_format_string_ const char *const cpExtraInfo = NULL,
+      ...) noexcept // gccä½¿ç”¨__attribute__((format))
+  {
+    if constexpr (std::is_same<T, ErrCode>::value) {
+      if (code >= AllOk) {
+        return (int)code;
+      }
+      // ä¸Šæ–¹ifä¿è¯errcä¸ºè´Ÿï¼Œæ­¤å¤„è®¿é—®ä¿è¯æ— é—®é¢˜ï¼ˆé™¤éä»£ç ä¼ å…¥å¼‚å¸¸é”™è¯¯ç ï¼‰ï¼Œé€šè¿‡(-ERRCODE_END
+      // - 1) + codeå¾—åˆ°åå‘æ•°ç»„ä¸‹æ ‡
+      printf("Read Err[%d]: \"%s\"\n", (int)code,
+             errReason[(-ERRCODE_END - 1) + code]);
+    } else if constexpr (std::is_same<T, WarnCode>::value) {
+      if (code <= NoWarn) {
+        return (int)code;
+      }
+      // è¾“å‡ºwarnè­¦å‘Š
+      printf("Read Warn[%d]: \"%s\"\n", (int)code, warnReason[(int)code]);
+    } else {
+      static_assert(false, "Unknown [T code] Type!");
+    }
 
-		if (cpExtraInfo != NULL)
-		{
-			printf("Extra Info:\"");
-			va_list args;//±ä³¤ĞÎ²Î
-			va_start(args, cpExtraInfo);
-			vprintf(cpExtraInfo, args);
-			va_end(args);
-			printf("\"\n");
-		}
+    if (cpExtraInfo != NULL) {
+      printf("Extra Info:\"");
+      va_list args; // å˜é•¿å½¢å‚
+      va_start(args, cpExtraInfo);
+      vprintf(cpExtraInfo, args);
+      va_end(args);
+      printf("\"\n");
+    }
 
-		//Èç¹û¿ÉÒÔ£¬Ô¤ÀÀszCurrentÇ°ºón¸ö×Ö·û£¬·ñÔò²ÃÇĞµ½±ß½ç
-#define VIEW_PRE 32//ÏòÇ°
-#define VIEW_SUF (32 + 8)//Ïòºó
-		size_t rangeBeg = (tData.Index() > VIEW_PRE) ? (tData.Index() - VIEW_PRE) : 0;//ÉÏ±ß½ç²ÃÇĞ
-		size_t rangeEnd = ((tData.Index() + VIEW_SUF) < tData.Size()) ? (tData.Index() + VIEW_SUF) : tData.Size();//ÏÂ±ß½ç²ÃÇĞ
+    // å¦‚æœå¯ä»¥ï¼Œé¢„è§ˆszCurrentå‰ånä¸ªå­—ç¬¦ï¼Œå¦åˆ™è£åˆ‡åˆ°è¾¹ç•Œ
+#define VIEW_PRE 32       // å‘å‰
+#define VIEW_SUF (32 + 8) // å‘å
+    size_t rangeBeg = (tData.Index() > VIEW_PRE) ? (tData.Index() - VIEW_PRE)
+                                                 : 0; // ä¸Šè¾¹ç•Œè£åˆ‡
+    size_t rangeEnd = ((tData.Index() + VIEW_SUF) < tData.Size())
+                          ? (tData.Index() + VIEW_SUF)
+                          : tData.Size(); // ä¸‹è¾¹ç•Œè£åˆ‡
 #undef VIEW_SUF
 #undef VIEW_PRE
-		printf("Data Review:\nCurrent: 0x%02llX(%zu)\nData Size: 0x%02llX(%zu)\nData[0x%02llX(%zu)] ~ Data[0x%02llX(%zu)]:\n",
-			(uint64_t)tData.Index(), tData.Index(), (uint64_t)tData.Size(), tData.Size(), (uint64_t)rangeBeg, rangeBeg, (uint64_t)rangeEnd - 1, rangeEnd - 1);
-		
-		for (size_t i = rangeBeg; i < rangeEnd; ++i)
-		{
-			if ((i - rangeBeg) % 8 == 0)//Êä³öµØÖ·
-			{
-				if (i != rangeBeg)//³ıÈ¥µÚÒ»¸öÃ¿8¸ö»»ĞĞ
-				{
-					printf("\n");
-				}
-				printf("0x%02llX: ", (uint64_t)i);
-			}
+    printf("Data Review:\nCurrent: 0x%02llX(%zu)\nData Size: "
+           "0x%02llX(%zu)\nData[0x%02llX(%zu)] ~ Data[0x%02llX(%zu)]:\n",
+           (uint64_t)tData.Index(), tData.Index(), (uint64_t)tData.Size(),
+           tData.Size(), (uint64_t)rangeBeg, rangeBeg, (uint64_t)rangeEnd - 1,
+           rangeEnd - 1);
 
-			if (i != tData.Index())
-			{
-				printf(" %02X ", (uint8_t)tData[i]);
-			}
-			else//Èç¹ûÊÇµ±Ç°³ö´í×Ö½Ú£¬¼Ó·½À¨ºÅ¿òÆğ
-			{
-				printf("[%02X]", (uint8_t)tData[i]);
-			}
-		}
+    for (size_t i = rangeBeg; i < rangeEnd; ++i) {
+      if ((i - rangeBeg) % 8 == 0) // è¾“å‡ºåœ°å€
+      {
+        if (i != rangeBeg) // é™¤å»ç¬¬ä¸€ä¸ªæ¯8ä¸ªæ¢è¡Œ
+        {
+          printf("\n");
+        }
+        printf("0x%02llX: ", (uint64_t)i);
+      }
 
-		if constexpr (std::is_same<T, ErrCode>::value)
-		{
-			printf("\nSkip err data and return...\n\n");
-		}
-		else if constexpr (std::is_same<T, WarnCode>::value)
-		{
-			printf("\nSkip warn data and continue...\n\n");
-		}
-		else
-		{
-			static_assert(false, "Unknown [T code] Type!");
-		}
+      if (i != tData.Index()) {
+        printf(" %02X ", (uint8_t)tData[i]);
+      } else // å¦‚æœæ˜¯å½“å‰å‡ºé”™å­—èŠ‚ï¼ŒåŠ æ–¹æ‹¬å·æ¡†èµ·
+      {
+        printf("[%02X]", (uint8_t)tData[i]);
+      }
+    }
 
-		return (int)code;
-	}
+    if constexpr (std::is_same<T, ErrCode>::value) {
+      printf("\nSkip err data and return...\n\n");
+    } else if constexpr (std::is_same<T, WarnCode>::value) {
+      printf("\nSkip warn data and continue...\n\n");
+    } else {
+      static_assert(false, "Unknown [T code] Type!");
+    }
 
-#define _RP___FUNCSIG__ __FUNCSIG__//ÓÃÓÚ±àÒë¹ı³Ì¶ş´ÎÌæ»»´ïµ½º¯ÊıÄÚ²¿
+    return (int)code;
+  }
+
+#define _RP___FUNCSIG__ __FUNCSIG__ // ç”¨äºç¼–è¯‘è¿‡ç¨‹äºŒæ¬¡æ›¿æ¢è¾¾åˆ°å‡½æ•°å†…éƒ¨
 
 #define _RP___LINE__ _RP_STRLING(__LINE__)
 #define _RP_STRLING(l) STRLING(l)
 #define STRLING(l) #l
 
-#define STACK_TRACEBACK(fmt, ...) printf("In [" _RP___FUNCSIG__ "] Line:[" _RP___LINE__ "]: \n"##fmt "\n\n", ##__VA_ARGS__);
-#define CHECK_STACK_DEPTH(Depth) \
-{\
-	if((Depth) <= 0)\
-	{\
-		iRet = Error(StackDepthExceeded, tData, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
-		STACK_TRACEBACK("(Depth) <= 0");\
-		return iRet;\
-	}\
-}
+#define STACK_TRACEBACK(fmt, ...)                                              \
+  printf("In [" _RP___FUNCSIG__ "] Line:[" _RP___LINE__ "]: \n" fmt "\n\n",    \
+         __VA_ARGS__);
+#define CHECK_STACK_DEPTH(Depth)                                               \
+  {                                                                            \
+    if ((Depth) <= 0) {                                                        \
+      iRet = Error(StackDepthExceeded, tData,                                  \
+                   _RP___FUNCSIG__                                             \
+                   ": NBT nesting depth exceeded maximum call stack limit");   \
+      STACK_TRACEBACK("(Depth) <= 0");                                         \
+      return iRet;                                                             \
+    }                                                                          \
+  }
 
-#define MYTRY \
-try\
-{
+#define MYTRY try {
 
-#define MYCATCH_BADALLOC \
-}\
-catch(const std::bad_alloc &e)\
-{\
-	int iRet = Error(OutOfMemoryError, tData, _RP___FUNCSIG__ ": Info:[%s]", e.what());\
-	STACK_TRACEBACK("catch(std::bad_alloc)");\
-	return iRet;\
-}
+#define MYCATCH_BADALLOC                                                       \
+  }                                                                            \
+  catch (const std::bad_alloc &e) {                                            \
+    int iRet = Error(OutOfMemoryError, tData, _RP___FUNCSIG__ ": Info:[%s]",   \
+                     e.what());                                                \
+    STACK_TRACEBACK("catch(std::bad_alloc)");                                  \
+    return iRet;                                                               \
+  }
 
-#define MYCATCH_OTHER \
-}\
-catch(const std::exception &e)\
-{\
-	int iRet = Error(StdException, tData, _RP___FUNCSIG__ ": Info:[%s]", e.what());\
-	STACK_TRACEBACK("catch(std::exception)");\
-	return iRet;\
-}\
-catch(...)\
-{\
-	int iRet =  Error(UnknownError, tData, _RP___FUNCSIG__ ": Info:[Unknown Exception]");\
-	STACK_TRACEBACK("catch(...)");\
-	return iRet;\
-}
+#define MYCATCH_OTHER                                                          \
+  }                                                                            \
+  catch (const std::exception &e) {                                            \
+    int iRet =                                                                 \
+        Error(StdException, tData, _RP___FUNCSIG__ ": Info:[%s]", e.what());   \
+    STACK_TRACEBACK("catch(std::exception)");                                  \
+    return iRet;                                                               \
+  }                                                                            \
+  catch (...) {                                                                \
+    int iRet = Error(UnknownError, tData,                                      \
+                     _RP___FUNCSIG__ ": Info:[Unknown Exception]");            \
+    STACK_TRACEBACK("catch(...)");                                             \
+    return iRet;                                                               \
+  }
 
+  // è¯»å–å¤§ç«¯åºæ•°å€¼ï¼ŒbNoCheckä¸ºtrueåˆ™ä¸è¿›è¡Œä»»ä½•æ£€æŸ¥
+  template <bool bNoCheck = false, typename T>
+  static std::conditional_t<bNoCheck, void, int>
+  ReadBigEndian(InputStream &tData, T &tVal) noexcept {
+    if constexpr (!bNoCheck) {
+      if (!tData.HasAvailData(sizeof(T))) {
+        int iRet = Error(OutOfRangeError, tData,
+                         "tData size [%zu], current index [%zu], remaining "
+                         "data size [%zu], but try to read [%zu]",
+                         tData.Size(), tData.Index(),
+                         tData.Size() - tData.Index(), sizeof(T));
+        STACK_TRACEBACK("HasAvailData");
+        return iRet;
+      }
+    }
 
-	// ¶ÁÈ¡´ó¶ËĞòÊıÖµ£¬bNoCheckÎªtrueÔò²»½øĞĞÈÎºÎ¼ì²é
-	template<bool bNoCheck = false, typename T>
-	static std::conditional_t<bNoCheck, void, int> ReadBigEndian(InputStream &tData, T &tVal) noexcept
-	{
-		if constexpr (!bNoCheck)
-		{
-			if (!tData.HasAvailData(sizeof(T)))
-			{
-				int iRet = Error(OutOfRangeError, tData, "tData size [%zu], current index [%zu], remaining data size [%zu], but try to read [%zu]",
-					tData.Size(), tData.Index(), tData.Size() - tData.Index(), sizeof(T));
-				STACK_TRACEBACK("HasAvailData");
-				return iRet;
-			}
-		}
+    if constexpr (sizeof(T) == 1) {
+      tVal = (T)(uint8_t)tData.GetNext();
+    } else {
+      T tTmp = 0;
+      for (size_t i = 0; i < sizeof(T); ++i) {
+        tTmp <<= 8;
+        tTmp |=
+            (T)(uint8_t)tData
+                .GetNext(); // å› ä¸ºåªä¼šå·¦ç§»ï¼Œä¸å­˜åœ¨æœ‰ç¬¦å·å¯¼è‡´çš„ç®—æœ¯ä½ç§»bugï¼Œä¸ç”¨è½¬æ¢ä¸ºæ— ç¬¦å·ç±»å‹
+      }
+      tVal = tTmp;
+    }
 
-		if constexpr (sizeof(T) == 1)
-		{
-			tVal = (T)(uint8_t)tData.GetNext();
-		}
-		else
-		{
-			T tTmp = 0;
-			for (size_t i = 0; i < sizeof(T); ++i)
-			{
-				tTmp <<= 8;
-				tTmp |= (T)(uint8_t)tData.GetNext();//ÒòÎªÖ»»á×óÒÆ£¬²»´æÔÚÓĞ·ûºÅµ¼ÖÂµÄËãÊõÎ»ÒÆbug£¬²»ÓÃ×ª»»ÎªÎŞ·ûºÅÀàĞÍ
-			}
-			tVal = tTmp;
-		}
+    if constexpr (!bNoCheck) {
+      return AllOk;
+    }
+  }
 
-		if constexpr (!bNoCheck)
-		{
-			return AllOk;
-		}
-	}
+  static int GetName(InputStream &tData, NBT_Node::NBT_String &sName) {
+    int iRet = AllOk;
+    // è¯»å–2å­—èŠ‚çš„æ— ç¬¦å·åç§°é•¿åº¦
+    uint16_t wNameLength = 0; // w->word=2*byte
+    iRet = ReadBigEndian(tData, wNameLength);
+    if (iRet < AllOk) {
+      STACK_TRACEBACK("wNameLength Read");
+      return iRet;
+    }
 
-	static int GetName(InputStream &tData, NBT_Node::NBT_String &sName)
-	{
-		int iRet = AllOk;
-		//¶ÁÈ¡2×Ö½ÚµÄÎŞ·ûºÅÃû³Æ³¤¶È
-		uint16_t wNameLength = 0;//w->word=2*byte
-		iRet = ReadBigEndian(tData, wNameLength);
-		if (iRet < AllOk)
-		{
-			STACK_TRACEBACK("wNameLength Read");
-			return iRet;
-		}
+    // åˆ¤æ–­é•¿åº¦æ˜¯å¦è¶…è¿‡
+    if (!tData.HasAvailData(wNameLength)) {
+      int iRet = Error(
+          OutOfRangeError, tData,
+          __FUNCSIG__ ": (Index[%zu] + wNameLength[%zu])[%zu] > DataSize[%zu]",
+          tData.Index(), (size_t)wNameLength,
+          tData.Index() + (size_t)wNameLength, tData.Size());
+      STACK_TRACEBACK("HasAvailData");
+      return iRet;
+    }
 
-		//ÅĞ¶Ï³¤¶ÈÊÇ·ñ³¬¹ı
-		if (!tData.HasAvailData(wNameLength))
-		{
-			int iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + wNameLength[%zu])[%zu] > DataSize[%zu]",
-				tData.Index(), (size_t)wNameLength, tData.Index() + (size_t)wNameLength, tData.Size());
-			STACK_TRACEBACK("HasAvailData");
-			return iRet;
-		}
+    MYTRY
+    // è§£æå‡ºåç§°
+    sName.reserve(wNameLength); // æå‰åˆ†é…
+    sName.assign(
+        tData.Current(),
+        tData.Next(wNameLength)); // å¦‚æœé•¿åº¦ä¸º0åˆ™æ„é€ 0é•¿å­—ç¬¦ä¸²ï¼Œåˆæ³•è¡Œä¸º
+    MYCATCH_BADALLOC
+    tData.AddIndex(wNameLength); // ç§»åŠ¨ä¸‹æ ‡
+    return AllOk;
+  }
 
-		MYTRY
-		//½âÎö³öÃû³Æ
-		sName.reserve(wNameLength);//ÌáÇ°·ÖÅä
-		sName.assign(tData.Current(), tData.Next(wNameLength));//Èç¹û³¤¶ÈÎª0Ôò¹¹Ôì0³¤×Ö·û´®£¬ºÏ·¨ĞĞÎª
-		MYCATCH_BADALLOC
-		tData.AddIndex(wNameLength);//ÒÆ¶¯ÏÂ±ê
-		return AllOk;
-	}
+  template <typename T> struct BUILTIN_TYPE {
+    using Type = T;
+    static_assert(std::is_integral<T>::value,
+                  "Not a legal type!"); // æŠ›å‡ºç¼–è¯‘é”™è¯¯
+  };
 
-	template<typename T>
-	struct BUILTIN_TYPE
-	{
-		using Type = T;
-		static_assert(std::is_integral<T>::value, "Not a legal type!");//Å×³ö±àÒë´íÎó
-	};
+  template <>
+  struct BUILTIN_TYPE<NBT_Node::NBT_Float> // æµ®ç‚¹æ•°æ˜ å°„
+  {
+    using Type = uint32_t;
+    static_assert(sizeof(Type) == sizeof(NBT_Node::NBT_Float),
+                  "Type size does not match!");
+  };
 
-	template<>
-	struct BUILTIN_TYPE<NBT_Node::NBT_Float>//¸¡µãÊıÓ³Éä
-	{
-		using Type = uint32_t;
-		static_assert(sizeof(Type) == sizeof(NBT_Node::NBT_Float), "Type size does not match!");
-	};
+  template <>
+  struct BUILTIN_TYPE<NBT_Node::NBT_Double> // æµ®ç‚¹æ•°æ˜ å°„
+  {
+    using Type = uint64_t;
+    static_assert(sizeof(Type) == sizeof(NBT_Node::NBT_Double),
+                  "Type size does not match!");
+  };
 
-	template<>
-	struct BUILTIN_TYPE<NBT_Node::NBT_Double>//¸¡µãÊıÓ³Éä
-	{
-		using Type = uint64_t;
-		static_assert(sizeof(Type) == sizeof(NBT_Node::NBT_Double), "Type size does not match!");
-	};
+  template <typename T, bool bHasName = true>
+  static int GetBuiltinType(InputStream &tData, NBT_Node &nRoot) {
+    int iRet = AllOk;
+    // è·å–NBTçš„Nï¼ˆåç§°ï¼‰
+    NBT_Node::NBT_String sName{};
+    if constexpr (bHasName) // å¦‚æœæ— åç§°åˆ™stringé»˜è®¤ä¸ºç©º
+    {
+      iRet = GetName(tData, sName);
+      if (iRet < AllOk) {
+        STACK_TRACEBACK("GetName");
+        return iRet;
+      }
+    }
 
-	template<typename T, bool bHasName = true>
-	static int GetBuiltinType(InputStream &tData, NBT_Node &nRoot)
-	{
-		int iRet = AllOk;
-		//»ñÈ¡NBTµÄN£¨Ãû³Æ£©
-		NBT_Node::NBT_String sName{};
-		if constexpr (bHasName)//Èç¹ûÎŞÃû³ÆÔòstringÄ¬ÈÏÎª¿Õ
-		{
-			iRet = GetName(tData, sName);
-			if (iRet < AllOk)
-			{
-				STACK_TRACEBACK("GetName");
-				return iRet;
-			}
-		}
+    // è¯»å–æ•°æ®
+    using DATA_T = BUILTIN_TYPE<T>::Type; // ç±»å‹æ˜ å°„
 
-		//¶ÁÈ¡Êı¾İ
-		using DATA_T = BUILTIN_TYPE<T>::Type;//ÀàĞÍÓ³Éä
+    DATA_T tTmpData = 0;
+    iRet = ReadBigEndian(tData, tTmpData);
+    if (iRet < AllOk) {
+      STACK_TRACEBACK("Name: \"%s\" tTmpData Read", sName.c_str());
+      return iRet;
+    }
 
-		DATA_T tTmpData = 0;
-		iRet = ReadBigEndian(tData, tTmpData);
-		if (iRet < AllOk)
-		{
-			STACK_TRACEBACK("Name: \"%s\" tTmpData Read", sName.c_str());
-			return iRet;
-		}
+    if constexpr (bHasName) {
+      MYTRY
+      // åç§°-å†…å«æ•°æ®çš„èŠ‚ç‚¹æ’å…¥å½“å‰è°ƒç”¨æ ˆæ·±åº¦çš„æ ¹èŠ‚ç‚¹
+      auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(
+          std::move(sName), std::move((*((T *)&tTmpData)))); // æ— æŸæ•°æ®ç±»å‹è½¬æ¢
+      if (!ret.second) // æ’å…¥å¤±è´¥ï¼Œå…ƒç´ å·²å­˜åœ¨
+      {
+        Error(ElementExistsWarn, tData,
+              __FUNCSIG__ ": the \"%s\"[%s] tData already exist!",
+              U16ANSI(U16STR(sName)).c_str(), typeid(T).name());
+      }
+      MYCATCH_BADALLOC
+    } else {
+      // æ— åï¼Œä¸ºåˆ—è¡¨å…ƒç´ ï¼Œç›´æ¥ä¿®æ”¹nRoot
+      nRoot.emplace<T>(std::move((*((T *)&tTmpData))));
+    }
 
-		if constexpr (bHasName)
-		{
-			MYTRY
-			//Ãû³Æ-ÄÚº¬Êı¾İµÄ½Úµã²åÈëµ±Ç°µ÷ÓÃÕ»Éî¶ÈµÄ¸ù½Úµã
-			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move((*((T *)&tTmpData))));//ÎŞËğÊı¾İÀàĞÍ×ª»»
-			if (!ret.second)//²åÈëÊ§°Ü£¬ÔªËØÒÑ´æÔÚ
-			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(T).name());
-			}
-			MYCATCH_BADALLOC
-		}
-		else
-		{
-			//ÎŞÃû£¬ÎªÁĞ±íÔªËØ£¬Ö±½ÓĞŞ¸ÄnRoot
-			nRoot.emplace<T>(std::move((*((T *)&tTmpData))));
-		}
+    return iRet;
+  }
 
-		return iRet;
-	}
+  template <typename T, bool bHasName = true>
+  static int GetArrayType(InputStream &tData, NBT_Node &nRoot) {
+    int iRet = AllOk;
+    // è·å–NBTçš„Nï¼ˆåç§°ï¼‰
+    NBT_Node::NBT_String sName{};
+    if constexpr (bHasName) // å¦‚æœæ— åç§°åˆ™stringé»˜è®¤ä¸ºç©º
+    {
+      iRet = GetName(tData, sName);
+      if (iRet < AllOk) {
+        STACK_TRACEBACK("GetName");
+        return iRet;
+      }
+    }
 
-	template<typename T, bool bHasName = true>
-	static int GetArrayType(InputStream &tData, NBT_Node &nRoot)
-	{
-		int iRet = AllOk;
-		//»ñÈ¡NBTµÄN£¨Ãû³Æ£©
-		NBT_Node::NBT_String sName{};
-		if constexpr (bHasName)//Èç¹ûÎŞÃû³ÆÔòstringÄ¬ÈÏÎª¿Õ
-		{
-			iRet = GetName(tData, sName);
-			if (iRet < AllOk)
-			{
-				STACK_TRACEBACK("GetName");
-				return iRet;
-			}
-		}
+    // è·å–4å­—èŠ‚æœ‰ç¬¦å·æ•°ï¼Œä»£è¡¨æ•°ç»„å…ƒç´ ä¸ªæ•°
+    int32_t dwElementCount = 0; // dw->double-word=4*byte
+    iRet = ReadBigEndian(tData, dwElementCount);
+    if (iRet < AllOk) {
+      STACK_TRACEBACK("Name: \"%s\" dwElementCount Read", sName.c_str());
+      return iRet;
+    }
 
-		//»ñÈ¡4×Ö½ÚÓĞ·ûºÅÊı£¬´ú±íÊı×éÔªËØ¸öÊı
-		int32_t dwElementCount = 0;//dw->double-word=4*byte
-		iRet = ReadBigEndian(tData, dwElementCount);
-		if (iRet < AllOk)
-		{
-			STACK_TRACEBACK("Name: \"%s\" dwElementCount Read", sName.c_str());
-			return iRet;
-		}
+    // åˆ¤æ–­é•¿åº¦æ˜¯å¦è¶…è¿‡
+    if (!tData.HasAvailData(dwElementCount *
+                            sizeof(T::value_type))) // ä¿è¯ä¸‹æ–¹è°ƒç”¨å®‰å…¨
+    {
+      iRet =
+          Error(OutOfRangeError, tData,
+                __FUNCSIG__ ": (Index[%zu] + dwElementCount[%zu] * "
+                            "sizeof(T::value_type)[%zu])[%zu] > DataSize[%zu]",
+                tData.Index(), (size_t)dwElementCount, sizeof(T::value_type),
+                tData.Index() + (size_t)dwElementCount * sizeof(T::value_type),
+                tData.Size());
+      STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+      return iRet;
+    }
 
-		//ÅĞ¶Ï³¤¶ÈÊÇ·ñ³¬¹ı
-		if (!tData.HasAvailData(dwElementCount * sizeof(T::value_type)))//±£Ö¤ÏÂ·½µ÷ÓÃ°²È«
-		{
-			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + dwElementCount[%zu] * sizeof(T::value_type)[%zu])[%zu] > DataSize[%zu]", 
-				tData.Index(), (size_t)dwElementCount, sizeof(T::value_type), tData.Index() + (size_t)dwElementCount * sizeof(T::value_type), tData.Size());
-			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
-			return iRet;
-		}
-		
-		//Êı×é±£´æ
-		T tArray{};
-		MYTRY
-		tArray.reserve(dwElementCount);//ÌáÇ°À©Èİ
-		//¶ÁÈ¡dElementCount¸öÔªËØ
-		for (int32_t i = 0; i < dwElementCount; ++i)
-		{
-			typename T::value_type tTmpData;
-			ReadBigEndian<true>(tData, tTmpData);//µ÷ÓÃĞèÒªÈ·±£·¶Î§°²È«
-			tArray.emplace_back(std::move(tTmpData));//¶ÁÈ¡Ò»¸ö²åÈëÒ»¸ö
-		}
-		MYCATCH_BADALLOC
-		
-		if constexpr (bHasName)
-		{
-			MYTRY
-			//Íê³Éºó²åÈë
-			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move(tArray));
-			if (!ret.second)//²åÈëÊ§°Ü£¬ÔªËØÒÑ´æÔÚ
-			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(tArray).name());
-			}
-			MYCATCH_BADALLOC
-		}
-		else//ÎŞÃû³Æ£¬ÎªÁĞ±íÔªËØ
-		{
-			nRoot.emplace<T>(std::move(tArray));
-		}
+    // æ•°ç»„ä¿å­˜
+    T tArray{};
+    MYTRY
+    tArray.reserve(dwElementCount); // æå‰æ‰©å®¹
+    // è¯»å–dElementCountä¸ªå…ƒç´ 
+    for (int32_t i = 0; i < dwElementCount; ++i) {
+      typename T::value_type tTmpData;
+      ReadBigEndian<true>(tData, tTmpData); // è°ƒç”¨éœ€è¦ç¡®ä¿èŒƒå›´å®‰å…¨
+      tArray.emplace_back(std::move(tTmpData)); // è¯»å–ä¸€ä¸ªæ’å…¥ä¸€ä¸ª
+    }
+    MYCATCH_BADALLOC
 
-		return iRet;
-	}
+    if constexpr (bHasName) {
+      MYTRY
+      // å®Œæˆåæ’å…¥
+      auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(
+          std::move(sName), std::move(tArray));
+      if (!ret.second) // æ’å…¥å¤±è´¥ï¼Œå…ƒç´ å·²å­˜åœ¨
+      {
+        Error(ElementExistsWarn, tData,
+              __FUNCSIG__ ": the \"%s\"[%s] tData already exist!",
+              U16ANSI(U16STR(sName)).c_str(), typeid(tArray).name());
+      }
+      MYCATCH_BADALLOC
+    } else // æ— åç§°ï¼Œä¸ºåˆ—è¡¨å…ƒç´ 
+    {
+      nRoot.emplace<T>(std::move(tArray));
+    }
 
-	template<bool bHasName = true>
-	static int GetCompoundType(InputStream &tData, NBT_Node &nRoot, size_t szStackDepth)//´Ëµİ¹éº¯ÊıĞèÒª±£Ö¤´«µİ·µ»ØÖµ
-	{
-		int iRet = AllOk;
-		CHECK_STACK_DEPTH(szStackDepth);
-		//»ñÈ¡NBTµÄN£¨Ãû³Æ£©
-		NBT_Node::NBT_String sName{};
-		if constexpr (bHasName)//Èç¹ûÎŞÃû³ÆÔòstringÄ¬ÈÏÎª¿Õ
-		{
-			iRet = GetName(tData, sName);
-			if (iRet < AllOk)
-			{
-				STACK_TRACEBACK("GetName");
-				return iRet;
-			}
-		}
+    return iRet;
+  }
 
-		//¿ªÊ¼µİ¹é
-		NBT_Node nodeTemp{ NBT_Node::NBT_Compound{} };
-		//´Ë´¦ÎŞĞè²¶»ñÒì³££¬ÒòÎªGetNBTÄÚ²¿µ÷ÓÃµÄswitchNBT²»»áÅ×³öÒì³£
-		iRet = GetNBT(tData, nodeTemp, szStackDepth);//´Ë´¦Ö±½Ó´«µİ£¬ÒòÎªGetNBTÄÚ²¿»á½øĞĞµİ¼õ
-		if (iRet < AllOk)
-		{
-			STACK_TRACEBACK("Name: \"%s\" GetNBT", sName.c_str());
-			//return iRet;//²»Ìø¹ı£¬½øĞĞ²åÈë£¬ÒÔ±ã·ÖÎö´íÎóÖ®Ç°µÄÕıÈ·Êı¾İ
-		}
+  template <bool bHasName = true>
+  static int
+  GetCompoundType(InputStream &tData, NBT_Node &nRoot,
+                  size_t szStackDepth) // æ­¤é€’å½’å‡½æ•°éœ€è¦ä¿è¯ä¼ é€’è¿”å›å€¼
+  {
+    int iRet = AllOk;
+    CHECK_STACK_DEPTH(szStackDepth);
+    // è·å–NBTçš„Nï¼ˆåç§°ï¼‰
+    NBT_Node::NBT_String sName{};
+    if constexpr (bHasName) // å¦‚æœæ— åç§°åˆ™stringé»˜è®¤ä¸ºç©º
+    {
+      iRet = GetName(tData, sName);
+      if (iRet < AllOk) {
+        STACK_TRACEBACK("GetName");
+        return iRet;
+      }
+    }
 
-		if constexpr (bHasName)
-		{
-			MYTRY
-			//µİ¹éÍê³É£¬ËùÓĞ×Ó½ÚµãÒÑµ½Î»
-			//È¡³öNBT_Compound¹Òµ½×Ô¼º¸ù²¿£¨ÒÆ¶¯£©
-			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move(nodeTemp));
-			if (!ret.second)//²åÈëÊ§°Ü£¬ÔªËØÒÑ´æÔÚ
-			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_Compound).name());
-			}
-			MYCATCH_BADALLOC
-		}
-		else//ÎŞÃû³Æ£¬ÎªÁĞ±íÔªËØ
-		{
-			nRoot = std::move(nodeTemp);
-		}
+    // å¼€å§‹é€’å½’
+    NBT_Node nodeTemp{NBT_Node::NBT_Compound{}};
+    // æ­¤å¤„æ— éœ€æ•è·å¼‚å¸¸ï¼Œå› ä¸ºGetNBTå†…éƒ¨è°ƒç”¨çš„switchNBTä¸ä¼šæŠ›å‡ºå¼‚å¸¸
+    iRet = GetNBT(tData, nodeTemp,
+                  szStackDepth); // æ­¤å¤„ç›´æ¥ä¼ é€’ï¼Œå› ä¸ºGetNBTå†…éƒ¨ä¼šè¿›è¡Œé€’å‡
+    if (iRet < AllOk) {
+      STACK_TRACEBACK("Name: \"%s\" GetNBT", sName.c_str());
+      // return iRet;//ä¸è·³è¿‡ï¼Œè¿›è¡Œæ’å…¥ï¼Œä»¥ä¾¿åˆ†æé”™è¯¯ä¹‹å‰çš„æ­£ç¡®æ•°æ®
+    }
 
-		return iRet >= AllOk ? AllOk : iRet;//>=AllOkÇ¿ÖÆ·µ»ØAllOkÒÔ·ÀÖ¹Compound_End
-	}
+    if constexpr (bHasName) {
+      MYTRY
+      // é€’å½’å®Œæˆï¼Œæ‰€æœ‰å­èŠ‚ç‚¹å·²åˆ°ä½
+      // å–å‡ºNBT_CompoundæŒ‚åˆ°è‡ªå·±æ ¹éƒ¨ï¼ˆç§»åŠ¨ï¼‰
+      auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(
+          std::move(sName), std::move(nodeTemp));
+      if (!ret.second) // æ’å…¥å¤±è´¥ï¼Œå…ƒç´ å·²å­˜åœ¨
+      {
+        Error(ElementExistsWarn, tData,
+              __FUNCSIG__ ": the \"%s\"[%s] tData already exist!",
+              U16ANSI(U16STR(sName)).c_str(),
+              typeid(NBT_Node::NBT_Compound).name());
+      }
+      MYCATCH_BADALLOC
+    } else // æ— åç§°ï¼Œä¸ºåˆ—è¡¨å…ƒç´ 
+    {
+      nRoot = std::move(nodeTemp);
+    }
 
-	template<bool bHasName = true>
-	static int GetStringType(InputStream &tData, NBT_Node &nRoot)
-	{
-		int iRet = AllOk;
-		//»ñÈ¡NBTµÄN£¨Ãû³Æ£©
-		NBT_Node::NBT_String sName{};
-		if constexpr (bHasName)//Èç¹ûÎŞÃû³ÆÔòstringÄ¬ÈÏÎª¿Õ
-		{
-			iRet = GetName(tData, sName);
-			if (iRet < AllOk)
-			{
-				STACK_TRACEBACK("GetName");
-				return iRet;
-			}
-		}
+    return iRet >= AllOk ? AllOk
+                         : iRet; //>=AllOkå¼ºåˆ¶è¿”å›AllOkä»¥é˜²æ­¢Compound_End
+  }
 
-		//¶ÁÈ¡2×Ö½ÚµÄÎŞ·ûºÅÃû³Æ³¤¶È
-		uint16_t wStrLength = 0;//w->word=2*byte
-		iRet = ReadBigEndian(tData, wStrLength);
-		if (iRet < AllOk)
-		{
-			STACK_TRACEBACK("Name: \"%s\" wStrLength Read", sName.c_str());
-			return iRet;
-		}
+  template <bool bHasName = true>
+  static int GetStringType(InputStream &tData, NBT_Node &nRoot) {
+    int iRet = AllOk;
+    // è·å–NBTçš„Nï¼ˆåç§°ï¼‰
+    NBT_Node::NBT_String sName{};
+    if constexpr (bHasName) // å¦‚æœæ— åç§°åˆ™stringé»˜è®¤ä¸ºç©º
+    {
+      iRet = GetName(tData, sName);
+      if (iRet < AllOk) {
+        STACK_TRACEBACK("GetName");
+        return iRet;
+      }
+    }
 
-		//ÅĞ¶Ï³¤¶ÈÊÇ·ñ³¬¹ı
-		if (!tData.HasAvailData(wStrLength))
-		{
-			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + wStrLength[%zu])[%zu] > DataSize[%zu]",
-				tData.Index(), (size_t)wStrLength, tData.Index() + (size_t)wStrLength, tData.Size());
-			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
-			return iRet;
-		}
+    // è¯»å–2å­—èŠ‚çš„æ— ç¬¦å·åç§°é•¿åº¦
+    uint16_t wStrLength = 0; // w->word=2*byte
+    iRet = ReadBigEndian(tData, wStrLength);
+    if (iRet < AllOk) {
+      STACK_TRACEBACK("Name: \"%s\" wStrLength Read", sName.c_str());
+      return iRet;
+    }
 
-		//¶ÁÈ¡×Ö·û´®
-		NBT_Node::NBT_String sString{};
-		MYTRY
-		sString.reserve(wStrLength);//Ô¤·ÖÅä
-		sString.assign(tData.Current(), tData.Next(wStrLength));//·¶Î§¸³Öµ
-		MYCATCH_BADALLOC
-		tData.AddIndex(wStrLength);//ÒÆ¶¯ÏÂ±ê
+    // åˆ¤æ–­é•¿åº¦æ˜¯å¦è¶…è¿‡
+    if (!tData.HasAvailData(wStrLength)) {
+      iRet = Error(
+          OutOfRangeError, tData,
+          __FUNCSIG__ ": (Index[%zu] + wStrLength[%zu])[%zu] > DataSize[%zu]",
+          tData.Index(), (size_t)wStrLength, tData.Index() + (size_t)wStrLength,
+          tData.Size());
+      STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+      return iRet;
+    }
 
-		if constexpr (bHasName)
-		{
-			MYTRY
-			//Ô­Î»¹¹Ôì
-			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move(sString));
-			if (!ret.second)//²åÈëÊ§°Ü£¬ÔªËØÒÑ´æÔÚ
-			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(NBT_Node::NBT_String).name());
-			}
-			MYCATCH_BADALLOC
-		}
-		else//ÁĞ±íÔªËØÖ±½Ó¸³Öµ
-		{
-			nRoot.emplace<NBT_Node::NBT_String>(std::move(sString));
-		}
-		
-		return iRet;
-	}
+    // è¯»å–å­—ç¬¦ä¸²
+    NBT_Node::NBT_String sString{};
+    MYTRY
+    sString.reserve(wStrLength);                             // é¢„åˆ†é…
+    sString.assign(tData.Current(), tData.Next(wStrLength)); // èŒƒå›´èµ‹å€¼
+    MYCATCH_BADALLOC
+    tData.AddIndex(wStrLength); // ç§»åŠ¨ä¸‹æ ‡
 
-	template<bool bHasName = true>
-	static int GetListType(InputStream &tData, NBT_Node &nRoot, size_t szStackDepth)
-	{
-		int iRet = AllOk;
-		CHECK_STACK_DEPTH(szStackDepth);
-		//»ñÈ¡NBTµÄN£¨Ãû³Æ£©
-		NBT_Node::NBT_String sName{};
-		if constexpr (bHasName)//Èç¹ûÎŞÃû³ÆÔòstringÄ¬ÈÏÎª¿Õ
-		{
-			iRet = GetName(tData, sName);
-			if (iRet < AllOk)
-			{
-				STACK_TRACEBACK("GetName");
-				return iRet;
-			}
-		}
+    if constexpr (bHasName) {
+      MYTRY
+      // åŸä½æ„é€ 
+      auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(
+          std::move(sName), std::move(sString));
+      if (!ret.second) // æ’å…¥å¤±è´¥ï¼Œå…ƒç´ å·²å­˜åœ¨
+      {
+        Error(ElementExistsWarn, tData,
+              __FUNCSIG__ ": the \"%s\"[%s] tData already exist!",
+              U16ANSI(U16STR(sName)).c_str(),
+              typeid(NBT_Node::NBT_String).name());
+      }
+      MYCATCH_BADALLOC
+    } else // åˆ—è¡¨å…ƒç´ ç›´æ¥èµ‹å€¼
+    {
+      nRoot.emplace<NBT_Node::NBT_String>(std::move(sString));
+    }
 
-		//¶ÁÈ¡1×Ö½ÚµÄÁĞ±íÔªËØÀàĞÍ
-		uint8_t bListElementType = 0;//b=byte
-		iRet = ReadBigEndian(tData, bListElementType);
-		if (iRet < AllOk)
-		{
-			STACK_TRACEBACK("Name: \"%s\" bListElementType Read", sName.c_str());
-			return iRet;
-		}
+    return iRet;
+  }
 
-		//´íÎóµÄÁĞ±íÔªËØÀàĞÍ
-		if (bListElementType >= NBT_Node::NBT_TAG::ENUM_END)
-		{
-			iRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": List NBT Type:Unknown Type Tag[%02X(%d)]", bListElementType, bListElementType);
-			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
-			return iRet;
-		}
+  template <bool bHasName = true>
+  static int GetListType(InputStream &tData, NBT_Node &nRoot,
+                         size_t szStackDepth) {
+    int iRet = AllOk;
+    CHECK_STACK_DEPTH(szStackDepth);
+    // è·å–NBTçš„Nï¼ˆåç§°ï¼‰
+    NBT_Node::NBT_String sName{};
+    if constexpr (bHasName) // å¦‚æœæ— åç§°åˆ™stringé»˜è®¤ä¸ºç©º
+    {
+      iRet = GetName(tData, sName);
+      if (iRet < AllOk) {
+        STACK_TRACEBACK("GetName");
+        return iRet;
+      }
+    }
 
-		//¶ÁÈ¡4×Ö½ÚµÄÓĞ·ûºÅÁĞ±í³¤¶È
-		int32_t dwListLength = 0;//dw=double-world=4*byte
-		iRet = ReadBigEndian(tData, dwListLength);
-		if (iRet < AllOk)
-		{
-			STACK_TRACEBACK("Name: \"%s\" dwListLength Read", sName.c_str());
-			return iRet;
-		}
+    // è¯»å–1å­—èŠ‚çš„åˆ—è¡¨å…ƒç´ ç±»å‹
+    uint8_t bListElementType = 0; // b=byte
+    iRet = ReadBigEndian(tData, bListElementType);
+    if (iRet < AllOk) {
+      STACK_TRACEBACK("Name: \"%s\" bListElementType Read", sName.c_str());
+      return iRet;
+    }
 
-		//¼ì²éÓĞ·ûºÅÊı´óĞ¡·¶Î§
-		if (dwListLength < 0)
-		{
-			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": dwListLength[%d] < 0", dwListLength);
-			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
-			return iRet;
-		}
+    // é”™è¯¯çš„åˆ—è¡¨å…ƒç´ ç±»å‹
+    if (bListElementType >= NBT_Node::NBT_TAG::ENUM_END) {
+      iRet = Error(NbtTypeTagError, tData,
+                   __FUNCSIG__ ": List NBT Type:Unknown Type Tag[%02X(%d)]",
+                   bListElementType, bListElementType);
+      STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+      return iRet;
+    }
 
-		//¸ù¾İÔªËØÀàĞÍ£¬¶ÁÈ¡n´ÎÁĞ±í
-		NBT_Node::NBT_List tmpList{};
-		MYTRY
-		tmpList.reserve(dwListLength);//ÒÑÖª´óĞ¡ÌáÇ°·ÖÅä¼õÉÙ¿ªÏú
+    // è¯»å–4å­—èŠ‚çš„æœ‰ç¬¦å·åˆ—è¡¨é•¿åº¦
+    int32_t dwListLength = 0; // dw=double-world=4*byte
+    iRet = ReadBigEndian(tData, dwListLength);
+    if (iRet < AllOk) {
+      STACK_TRACEBACK("Name: \"%s\" dwListLength Read", sName.c_str());
+      return iRet;
+    }
 
-		for (int32_t i = 0; i < dwListLength; ++i)
-		{
-			NBT_Node tmpNode{};//ÁĞ±íÔªËØ»áÖ±½Ó¸³ÖµĞŞ¸Ä
-			iRet = SwitchNBT<false>(tData, tmpNode, (NBT_Node::NBT_TAG)bListElementType, szStackDepth - 1);
-			if (iRet < AllOk)//´íÎó´¦Àí
-			{
-				STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), dwListLength, i);
-				break;//Ìø³öÑ­»·ÒÔ±£Áô´íÎóÊı¾İÖ®Ç°µÄÕıÈ·Êı¾İ
-			}
+    // æ£€æŸ¥æœ‰ç¬¦å·æ•°å¤§å°èŒƒå›´
+    if (dwListLength < 0) {
+      iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": dwListLength[%d] < 0",
+                   dwListLength);
+      STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+      return iRet;
+    }
 
-			if (bListElementType == NBT_Node::NBT_TAG::TAG_End)//¿ÕÔªËØÌØÅĞ
-			{
-				//¶ÁÈ¡1×Ö½ÚµÄbCompoundEndTag
-				uint8_t bCompoundEndTag = 0;//b=byte
-				iRet = ReadBigEndian(tData, bCompoundEndTag);
-				if (iRet < AllOk)
-				{
-					STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d] bCompoundEndTag Read", sName.c_str(), dwListLength, i);
-					break;//Ìø³öÑ­»·ÒÔ±£Áô´íÎóÊı¾İÖ®Ç°µÄÕıÈ·Êı¾İ
-				}
+    // æ ¹æ®å…ƒç´ ç±»å‹ï¼Œè¯»å–næ¬¡åˆ—è¡¨
+    NBT_Node::NBT_List tmpList{};
+    MYTRY
+    tmpList.reserve(dwListLength); // å·²çŸ¥å¤§å°æå‰åˆ†é…å‡å°‘å¼€é”€
 
-				//ÅĞ¶ÏtagÊÇ·ñ·ûºÏ
-				if (bCompoundEndTag != NBT_Node::TAG_End)
-				{
-					iRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": require Compound End Tag [0x00], but read Unknown Tag [0x%02X]!", bCompoundEndTag);
-					STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), dwListLength, i);
-					break;//Ìø³öÑ­»·ÒÔ±£Áô´íÎóÊı¾İÖ®Ç°µÄÕıÈ·Êı¾İ
-				}
-			}
+    for (int32_t i = 0; i < dwListLength; ++i) {
+      NBT_Node tmpNode{}; // åˆ—è¡¨å…ƒç´ ä¼šç›´æ¥èµ‹å€¼ä¿®æ”¹
+      iRet =
+          SwitchNBT<false>(tData, tmpNode, (NBT_Node::NBT_TAG)bListElementType,
+                           szStackDepth - 1);
+      if (iRet < AllOk) // é”™è¯¯å¤„ç†
+      {
+        STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(),
+                        dwListLength, i);
+        break; // è·³å‡ºå¾ªç¯ä»¥ä¿ç•™é”™è¯¯æ•°æ®ä¹‹å‰çš„æ­£ç¡®æ•°æ®
+      }
 
-			//Ã¿¶ÁÈ¡Ò»¸öÍùºó²åÈëÒ»¸ö
-			tmpList.emplace_back(std::move(tmpNode));
-		}
-		MYCATCH_BADALLOC
+      if (bListElementType == NBT_Node::NBT_TAG::TAG_End) // ç©ºå…ƒç´ ç‰¹åˆ¤
+      {
+        // è¯»å–1å­—èŠ‚çš„bCompoundEndTag
+        uint8_t bCompoundEndTag = 0; // b=byte
+        iRet = ReadBigEndian(tData, bCompoundEndTag);
+        if (iRet < AllOk) {
+          STACK_TRACEBACK(
+              "Name: \"%s\" Size: [%d] Index: [%d] bCompoundEndTag Read",
+              sName.c_str(), dwListLength, i);
+          break; // è·³å‡ºå¾ªç¯ä»¥ä¿ç•™é”™è¯¯æ•°æ®ä¹‹å‰çš„æ­£ç¡®æ•°æ®
+        }
 
-		//ÁĞ±í¿ÉÇ¶Ì×£¬ËùÒÔ´¦Àí±¾ÉíÇ¶Ì×ÎŞÃûÇé¿ö
-		if constexpr (bHasName)
-		{
-			MYTRY
-			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move(tmpList));
-			if (!ret.second)//²åÈëÊ§°Ü£¬ÔªËØÒÑ´æÔÚ
-			{
-				//´Ë´¦ÊµÎª¾¯¸æ¶ø·Ç´íÎó£¬ÎŞĞèreturn
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(tmpList).name());
-			}
-			MYCATCH_BADALLOC
-		}
-		else//ÁĞ±íÖĞµÄÁĞ±í£¬Ö±½Ó¸³Öµ£¬¶ø²»½øĞĞ²åÈë
-		{
-			nRoot.emplace<NBT_Node::NBT_List>(std::move(tmpList));
-		}
+        // åˆ¤æ–­tagæ˜¯å¦ç¬¦åˆ
+        if (bCompoundEndTag != NBT_Node::TAG_End) {
+          iRet = Error(ListElementTypeError, tData,
+                       __FUNCSIG__ ": require Compound End Tag [0x00], but "
+                                   "read Unknown Tag [0x%02X]!",
+                       bCompoundEndTag);
+          STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(),
+                          dwListLength, i);
+          break; // è·³å‡ºå¾ªç¯ä»¥ä¿ç•™é”™è¯¯æ•°æ®ä¹‹å‰çš„æ­£ç¡®æ•°æ®
+        }
+      }
 
-		//Èç¹û´íÎó£¬Ôò´«µİ£¬·ñÔò·µ»ØOk
-		return iRet >= AllOk ? AllOk : iRet;//ÁĞ±íÍ¬Ê±×÷ÎªÔªËØ£¬³É¹¦Ó¦¸Ã·µ»ØOk£¬¶ø²»ÊÇ´«µİ·µ»ØÖµ
-	}
+      // æ¯è¯»å–ä¸€ä¸ªå¾€åæ’å…¥ä¸€ä¸ª
+      tmpList.emplace_back(std::move(tmpNode));
+    }
+    MYCATCH_BADALLOC
 
-	//Õâ¸öº¯ÊıÀ¹½ØËùÓĞÄÚ²¿µ÷ÓÃ²úÉúµÄÒì³£²¢´¦Àí·µ»Ø£¬ËùÒÔ´Ëº¯Êı¾ø¶Ô²»Å×³öÒì³££¬ÓÉ´Ëµ÷ÓÃ´Ëº¯ÊıµÄº¯ÊıÒ²¿ÉÎŞĞècatchÒì³£
-	template<bool bHasName = true>
-	static int SwitchNBT(InputStream &tData, NBT_Node &nRoot, NBT_Node::NBT_TAG tag, size_t szStackDepth) noexcept//Ñ¡Ôñº¯Êı²»¼ì²éµİ¹é²ã£¬ÓÉº¯Êıµ÷ÓÃµÄº¯Êı¼ì²é
-	{
-		int iRet = AllOk;
+    // åˆ—è¡¨å¯åµŒå¥—ï¼Œæ‰€ä»¥å¤„ç†æœ¬èº«åµŒå¥—æ— åæƒ…å†µ
+    if constexpr (bHasName) {
+      MYTRY
+      auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(
+          std::move(sName), std::move(tmpList));
+      if (!ret.second) // æ’å…¥å¤±è´¥ï¼Œå…ƒç´ å·²å­˜åœ¨
+      {
+        // æ­¤å¤„å®ä¸ºè­¦å‘Šè€Œéé”™è¯¯ï¼Œæ— éœ€return
+        Error(ElementExistsWarn, tData,
+              __FUNCSIG__ ": the \"%s\"[%s] tData already exist!",
+              U16ANSI(U16STR(sName)).c_str(), typeid(tmpList).name());
+      }
+      MYCATCH_BADALLOC
+    } else // åˆ—è¡¨ä¸­çš„åˆ—è¡¨ï¼Œç›´æ¥èµ‹å€¼ï¼Œè€Œä¸è¿›è¡Œæ’å…¥
+    {
+      nRoot.emplace<NBT_Node::NBT_List>(std::move(tmpList));
+    }
 
-		MYTRY
-		switch (tag)
-		{
-		case NBT_Node::TAG_End:
-			{
-				iRet = Compound_End;//·µ»Ø½áÎ²
-			}
-			break;
-		case NBT_Node::TAG_Byte:
-			{
-				iRet = GetBuiltinType<NBT_Node::NBT_Byte, bHasName>(tData, nRoot);
-			}
-			break;
-		case NBT_Node::TAG_Short:
-			{
-				iRet = GetBuiltinType<NBT_Node::NBT_Short, bHasName>(tData, nRoot);
-			}
-			break;
-		case NBT_Node::TAG_Int:
-			{
-				iRet = GetBuiltinType<NBT_Node::NBT_Int, bHasName>(tData, nRoot);
-			}
-			break;
-		case NBT_Node::TAG_Long:
-			{
-				iRet = GetBuiltinType<NBT_Node::NBT_Long, bHasName>(tData, nRoot);
-			}
-			break;
-		case NBT_Node::TAG_Float:
-			{
-				iRet = GetBuiltinType<NBT_Node::NBT_Float, bHasName>(tData, nRoot);
-			}
-			break;
-		case NBT_Node::TAG_Double:
-			{
-				iRet = GetBuiltinType<NBT_Node::NBT_Double, bHasName>(tData, nRoot);
-			}
-			break;
-		case NBT_Node::TAG_Byte_Array:
-			{
-				iRet = GetArrayType<NBT_Node::NBT_ByteArray, bHasName>(tData, nRoot);
-			}
-			break;
-		case NBT_Node::TAG_String:
-			{
-				iRet = GetStringType<bHasName>(tData, nRoot);
-			}
-			break;
-		case NBT_Node::TAG_List://ĞèÒªµİ¹éµ÷ÓÃ£¬ÁĞ±í¿ªÍ·¸ø³ö±êÇ©IDºÍ³¤¶È£¬ºóĞø¶¼ÎªÒ»ÏµÁĞÍ¬ÀàĞÍ±êÇ©µÄÓĞĞ§¸ºÔØ£¨ÎŞ±êÇ© ID »òÃû³Æ£©
-			{//×î¸´ÔÓ
-				iRet = GetListType<bHasName>(tData, nRoot, szStackDepth);//Ñ¡Ôñº¯Êı²»¼õÉÙµİ¹é²ã
-			}
-			break;
-		case NBT_Node::TAG_Compound://ĞèÒªµİ¹éµ÷ÓÃ
-			{
-				iRet = GetCompoundType<bHasName>(tData, nRoot, szStackDepth);//Ñ¡Ôñº¯Êı²»¼õÉÙµİ¹é²ã
-			}
-			break;
-		case NBT_Node::TAG_Int_Array:
-			{
-				iRet = GetArrayType<NBT_Node::NBT_IntArray, bHasName>(tData, nRoot);
-			}
-			break;
-		case NBT_Node::TAG_Long_Array:
-			{
-				iRet = GetArrayType<NBT_Node::NBT_LongArray, bHasName>(tData, nRoot);
-			}
-			break;
-		default://NBTÄÚ±êÊı¾İÇ©´íÎó
-			{
-				iRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch default: Unknown Type Tag[%02X(%d)]", tag, tag);//´Ë´¦²»½øĞĞÌáÇ°·µ»Ø£¬ÍùºóÄ¬ÈÏ·µ»Ø´¦Àí
-			}
-			break;
-		}
-		MYCATCH_OTHER//ÕâÀï²¶»ñËùÓĞÆäËüÎ´²¶»ñµÄÒì³£
+    // å¦‚æœé”™è¯¯ï¼Œåˆ™ä¼ é€’ï¼Œå¦åˆ™è¿”å›Ok
+    return iRet >= AllOk
+               ? AllOk
+               : iRet; // åˆ—è¡¨åŒæ—¶ä½œä¸ºå…ƒç´ ï¼ŒæˆåŠŸåº”è¯¥è¿”å›Okï¼Œè€Œä¸æ˜¯ä¼ é€’è¿”å›å€¼
+  }
 
-		if (iRet < AllOk)
-		{
-			STACK_TRACEBACK("iRet < AllOk");
-		}
+  // è¿™ä¸ªå‡½æ•°æ‹¦æˆªæ‰€æœ‰å†…éƒ¨è°ƒç”¨äº§ç”Ÿçš„å¼‚å¸¸å¹¶å¤„ç†è¿”å›ï¼Œæ‰€ä»¥æ­¤å‡½æ•°ç»å¯¹ä¸æŠ›å‡ºå¼‚å¸¸ï¼Œç”±æ­¤è°ƒç”¨æ­¤å‡½æ•°çš„å‡½æ•°ä¹Ÿå¯æ— éœ€catchå¼‚å¸¸
+  template <bool bHasName = true>
+  static int SwitchNBT(
+      InputStream &tData, NBT_Node &nRoot, NBT_Node::NBT_TAG tag,
+      size_t
+          szStackDepth) noexcept // é€‰æ‹©å‡½æ•°ä¸æ£€æŸ¥é€’å½’å±‚ï¼Œç”±å‡½æ•°è°ƒç”¨çš„å‡½æ•°æ£€æŸ¥
+  {
+    int iRet = AllOk;
 
-		return iRet;//´«µİ·µ»ØÖµ
-	}
+    MYTRY
+    switch (tag) {
+    case NBT_Node::TAG_End: {
+      iRet = Compound_End; // è¿”å›ç»“å°¾
+    } break;
+    case NBT_Node::TAG_Byte: {
+      iRet = GetBuiltinType<NBT_Node::NBT_Byte, bHasName>(tData, nRoot);
+    } break;
+    case NBT_Node::TAG_Short: {
+      iRet = GetBuiltinType<NBT_Node::NBT_Short, bHasName>(tData, nRoot);
+    } break;
+    case NBT_Node::TAG_Int: {
+      iRet = GetBuiltinType<NBT_Node::NBT_Int, bHasName>(tData, nRoot);
+    } break;
+    case NBT_Node::TAG_Long: {
+      iRet = GetBuiltinType<NBT_Node::NBT_Long, bHasName>(tData, nRoot);
+    } break;
+    case NBT_Node::TAG_Float: {
+      iRet = GetBuiltinType<NBT_Node::NBT_Float, bHasName>(tData, nRoot);
+    } break;
+    case NBT_Node::TAG_Double: {
+      iRet = GetBuiltinType<NBT_Node::NBT_Double, bHasName>(tData, nRoot);
+    } break;
+    case NBT_Node::TAG_Byte_Array: {
+      iRet = GetArrayType<NBT_Node::NBT_ByteArray, bHasName>(tData, nRoot);
+    } break;
+    case NBT_Node::TAG_String: {
+      iRet = GetStringType<bHasName>(tData, nRoot);
+    } break;
+    case NBT_Node::
+        TAG_List: // éœ€è¦é€’å½’è°ƒç”¨ï¼Œåˆ—è¡¨å¼€å¤´ç»™å‡ºæ ‡ç­¾IDå’Œé•¿åº¦ï¼Œåç»­éƒ½ä¸ºä¸€ç³»åˆ—åŒç±»å‹æ ‡ç­¾çš„æœ‰æ•ˆè´Ÿè½½ï¼ˆæ— æ ‡ç­¾
+                  // ID æˆ–åç§°ï¼‰
+    {             // æœ€å¤æ‚
+      iRet = GetListType<bHasName>(tData, nRoot,
+                                   szStackDepth); // é€‰æ‹©å‡½æ•°ä¸å‡å°‘é€’å½’å±‚
+    } break;
+    case NBT_Node::TAG_Compound: // éœ€è¦é€’å½’è°ƒç”¨
+    {
+      iRet = GetCompoundType<bHasName>(tData, nRoot,
+                                       szStackDepth); // é€‰æ‹©å‡½æ•°ä¸å‡å°‘é€’å½’å±‚
+    } break;
+    case NBT_Node::TAG_Int_Array: {
+      iRet = GetArrayType<NBT_Node::NBT_IntArray, bHasName>(tData, nRoot);
+    } break;
+    case NBT_Node::TAG_Long_Array: {
+      iRet = GetArrayType<NBT_Node::NBT_LongArray, bHasName>(tData, nRoot);
+    } break;
+    default: // NBTå†…æ ‡æ•°æ®ç­¾é”™è¯¯
+    {
+      iRet = Error(
+          NbtTypeTagError, tData,
+          __FUNCSIG__ ": NBT Tag switch default: Unknown Type Tag[%02X(%d)]",
+          tag, tag); // æ­¤å¤„ä¸è¿›è¡Œæå‰è¿”å›ï¼Œå¾€åé»˜è®¤è¿”å›å¤„ç†
+    } break;
+    }
+    MYCATCH_OTHER // è¿™é‡Œæ•è·æ‰€æœ‰å…¶å®ƒæœªæ•è·çš„å¼‚å¸¸
 
-	//²»Å×³öÒì³£
-	template<bool bRoot = false>//¸ù²¿ÌØ»¯°æ±¾£¬ÓÃÓÚ´¦ÀíÄ©Î²
-	static int GetNBT(InputStream &tData, NBT_Node &nRoot, size_t szStackDepth) noexcept//µİ¹éµ÷ÓÃ¶ÁÈ¡²¢Ìí¼Ó½Úµã
-	{
-		int iRet = AllOk;//Ä¬ÈÏÖµ
-		CHECK_STACK_DEPTH(szStackDepth);
-		//½ÚµãÀàĞÍ¼ì²é£º±£Ö¤µ±Ç°nRootÊÇNBT_Node::NBT_CompoundÀàĞÍ£¬·ñÔòÊ§°Ü
-		if (!nRoot.TypeHolds<NBT_Node::NBT_Compound>())//ÀàĞÍ´íÎó
-		{
-			iRet = Error(InternalTypeError, tData, __FUNCSIG__ ": nRoot is not type: [%s]", typeid(NBT_Node::NBT_Compound).name());
-			STACK_TRACEBACK("TypeHolds");
-			return iRet;
-		}
-		
-		do
-		{
-			if (!tData.HasAvailData(sizeof(uint8_t)))//´¦ÀíÄ©Î²Çé¿ö
-			{
-				if constexpr (!bRoot)//·Ç¸ù²¿Çé¿öÓöµ½Ä©Î²£¬Ôò±¨´í
-				{
-					iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": Index[%zu] >= DataSize()[%zu]", tData.Index(), tData.Size());
-					break;
-				}
-				else
-				{
-					iRet = AllOk;
-					break;//·ñÔò¸ù²¿Ö±½ÓÌø³ö
-				}
-			}
+        if (iRet < AllOk) {
+      STACK_TRACEBACK("iRet < AllOk");
+    }
 
-			//´¦ÀíÕı³£Çé¿ö
-			iRet = SwitchNBT(tData, nRoot, (NBT_Node::NBT_TAG)(uint8_t)tData.GetNext(), szStackDepth - 1);//ÒÑ²¶»ñËùÓĞÒì³£
-		} while (iRet == AllOk);//iRet<AllOk¼´Îª´íÎó£¬Ìø³öÑ­»·£¬>AllOkÔòÎªÆäËü¶¯×÷£¬Ìø³öÑ­»·
+    return iRet; // ä¼ é€’è¿”å›å€¼
+  }
 
-		if constexpr (bRoot)//¸ù²¿Çé¿öÓöµ½Compound_EndÔò×ªÎªAllOk·µ»Ø
-		{
-			if (iRet >= AllOk)
-			{
-				iRet = AllOk;
-			}
-		}
+  // ä¸æŠ›å‡ºå¼‚å¸¸
+  template <bool bRoot = false> // æ ¹éƒ¨ç‰¹åŒ–ç‰ˆæœ¬ï¼Œç”¨äºå¤„ç†æœ«å°¾
+  static int GetNBT(InputStream &tData, NBT_Node &nRoot,
+                    size_t szStackDepth) noexcept // é€’å½’è°ƒç”¨è¯»å–å¹¶æ·»åŠ èŠ‚ç‚¹
+  {
+    int iRet = AllOk; // é»˜è®¤å€¼
+    CHECK_STACK_DEPTH(szStackDepth);
+    // èŠ‚ç‚¹ç±»å‹æ£€æŸ¥ï¼šä¿è¯å½“å‰nRootæ˜¯NBT_Node::NBT_Compoundç±»å‹ï¼Œå¦åˆ™å¤±è´¥
+    if (!nRoot.TypeHolds<NBT_Node::NBT_Compound>()) // ç±»å‹é”™è¯¯
+    {
+      iRet = Error(InternalTypeError, tData,
+                   __FUNCSIG__ ": nRoot is not type: [%s]",
+                   typeid(NBT_Node::NBT_Compound).name());
+      STACK_TRACEBACK("TypeHolds");
+      return iRet;
+    }
 
-		if (iRet < AllOk)
-		{
-			STACK_TRACEBACK("Compound Size: [%zu]", nRoot.GetData<NBT_Node::NBT_Compound>().size());
-		}
-		
-		return iRet;//´«µİ·µ»ØÖµ
-	}
+    do {
+      if (!tData.HasAvailData(sizeof(uint8_t))) // å¤„ç†æœ«å°¾æƒ…å†µ
+      {
+        if constexpr (!bRoot) // éæ ¹éƒ¨æƒ…å†µé‡åˆ°æœ«å°¾ï¼Œåˆ™æŠ¥é”™
+        {
+          iRet = Error(OutOfRangeError, tData,
+                       __FUNCSIG__ ": Index[%zu] >= DataSize()[%zu]",
+                       tData.Index(), tData.Size());
+          break;
+        } else {
+          iRet = AllOk;
+          break; // å¦åˆ™æ ¹éƒ¨ç›´æ¥è·³å‡º
+        }
+      }
+
+      // å¤„ç†æ­£å¸¸æƒ…å†µ
+      iRet =
+          SwitchNBT(tData, nRoot, (NBT_Node::NBT_TAG)(uint8_t)tData.GetNext(),
+                    szStackDepth - 1); // å·²æ•è·æ‰€æœ‰å¼‚å¸¸
+    } while (
+        iRet ==
+        AllOk); // iRet<AllOkå³ä¸ºé”™è¯¯ï¼Œè·³å‡ºå¾ªç¯ï¼Œ>AllOkåˆ™ä¸ºå…¶å®ƒåŠ¨ä½œï¼Œè·³å‡ºå¾ªç¯
+
+    if constexpr (bRoot) // æ ¹éƒ¨æƒ…å†µé‡åˆ°Compound_Endåˆ™è½¬ä¸ºAllOkè¿”å›
+    {
+      if (iRet >= AllOk) {
+        iRet = AllOk;
+      }
+    }
+
+    if (iRet < AllOk) {
+      STACK_TRACEBACK("Compound Size: [%zu]",
+                      nRoot.GetData<NBT_Node::NBT_Compound>().size());
+    }
+
+    return iRet; // ä¼ é€’è¿”å›å€¼
+  }
+
 public:
-	NBT_Reader(void) = delete;
-	~NBT_Reader(void) = delete;
+  NBT_Reader(void) = delete;
+  ~NBT_Reader(void) = delete;
 
-	//szStackDepth ¿ØÖÆÕ»Éî¶È£¬µİ¹é²ã¼ì²é½öÓÉ¿ÉÇ¶Ì×µÄ¿ÉÄÜ½øĞĞµİ¹éµÄº¯Êı½øĞĞ£¬Õ»Éî¶Èµİ¼õ½öÓÉ¶ÔÑ¡Ôñº¯ÊıµÄµ÷ÓÃ½øĞĞ
-	static bool ReadNBT(NBT_Node &nRoot, const DataType &tData, size_t szDataStartIndex = 0, size_t szStackDepth = 512) noexcept//´ÓdataÖĞ¶ÁÈ¡nbt
-	{
-		MYTRY
-		//³õÊ¼»¯NBT¸ù¶ÔÏó
-		nRoot.Clear();//ÇåµôÔ­À´µÄÊı¾İ£¨×¢ÒâÈç¹ûnbt½Ï´óµÄÇé¿öÏÂ£¬ÕâÊÇÒ»¸ö½ÏÉîµÄµİ¹éÇåÀí¹ı³Ì£¬²»ÅÅ³ıÕ»¿Õ¼ä²»×ãµ¼ÖÂÇåÀíÊ§°Ü£©£¬¿ÉÄÜÅ×³öÒì³£Ö®ÀàµÄ£¬ĞèÒªtry catch
-		nRoot.emplace<NBT_Node::NBT_Compound>();//ÉèÖÃÎªcompound
+  // szStackDepth
+  // æ§åˆ¶æ ˆæ·±åº¦ï¼Œé€’å½’å±‚æ£€æŸ¥ä»…ç”±å¯åµŒå¥—çš„å¯èƒ½è¿›è¡Œé€’å½’çš„å‡½æ•°è¿›è¡Œï¼Œæ ˆæ·±åº¦é€’å‡ä»…ç”±å¯¹é€‰æ‹©å‡½æ•°çš„è°ƒç”¨è¿›è¡Œ
+  static bool ReadNBT(NBT_Node &nRoot, const DataType &tData,
+                      size_t szDataStartIndex = 0,
+                      size_t szStackDepth = 512) noexcept // ä»dataä¸­è¯»å–nbt
+  {
+    MYTRY
+    // åˆå§‹åŒ–NBTæ ¹å¯¹è±¡
+    nRoot
+        .Clear(); // æ¸…æ‰åŸæ¥çš„æ•°æ®ï¼ˆæ³¨æ„å¦‚æœnbtè¾ƒå¤§çš„æƒ…å†µä¸‹ï¼Œè¿™æ˜¯ä¸€ä¸ªè¾ƒæ·±çš„é€’å½’æ¸…ç†è¿‡ç¨‹ï¼Œä¸æ’é™¤æ ˆç©ºé—´ä¸è¶³å¯¼è‡´æ¸…ç†å¤±è´¥ï¼‰ï¼Œå¯èƒ½æŠ›å‡ºå¼‚å¸¸ä¹‹ç±»çš„ï¼Œéœ€è¦try
+                  // catch
+    nRoot.emplace<NBT_Node::NBT_Compound>(); // è®¾ç½®ä¸ºcompound
 
-		//³õÊ¼»¯Êı¾İÁ÷¶ÔÏó
-		InputStream IptStream{ tData,szDataStartIndex };
+    // åˆå§‹åŒ–æ•°æ®æµå¯¹è±¡
+    InputStream IptStream{tData, szDataStartIndex};
 
-		//Êä³ö×î´óÕ»Éî¶È
-		printf("Max Stack Depth [%zu]\n", szStackDepth);
+    // è¾“å‡ºæœ€å¤§æ ˆæ·±åº¦
+    printf("Max Stack Depth [%zu]\n", szStackDepth);
 
-		//¿ªÊ¼µİ¹é¶ÁÈ¡
-		return GetNBT<true>(IptStream, nRoot, szStackDepth) == AllOk;//´ÓdataÖĞ»ñÈ¡nbtÊı¾İµ½nRootÖĞ£¬Ö»ÓĞ´Ëµ÷ÓÃÎª¸ù²¿µ÷ÓÃ£¨Ä£°åtrue£©£¬ÓÃÓÚ´¦ÀíÌØÊâÇé¿ö
-		MYCATCH_OTHER//²¶»ñÆäËûÒì³£
-	}
-
+    // å¼€å§‹é€’å½’è¯»å–
+    return GetNBT<true>(IptStream, nRoot, szStackDepth) ==
+           AllOk; // ä»dataä¸­è·å–nbtæ•°æ®åˆ°nRootä¸­ï¼Œåªæœ‰æ­¤è°ƒç”¨ä¸ºæ ¹éƒ¨è°ƒç”¨ï¼ˆæ¨¡æ¿trueï¼‰ï¼Œç”¨äºå¤„ç†ç‰¹æ®Šæƒ…å†µ
+    MYCATCH_OTHER // æ•è·å…¶ä»–å¼‚å¸¸
+  }
 
 #undef MYTRY
 #undef MYCATCH_BADALLOC
