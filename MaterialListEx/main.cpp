@@ -1,4 +1,5 @@
 ﻿//#include "MemoryLeakCheck.hpp"
+#include "Windows_ANSI.hpp"
 
 #include "MUTF8_Tool.hpp"
 #include "NBT_Node.hpp"
@@ -11,8 +12,9 @@
 #include "RegionProcess.h"
 #include "CodeTimer.hpp"
 
-#include "Windows_ANSI.hpp"
 #include "Language.hpp"
+#include "CSV_Tool.hpp"
+#include "CountFormatter.hpp"
 
 /*Compress*/
 #include "Compression_Utils.hpp"
@@ -21,34 +23,84 @@
 #include <stdio.h>
 #include <string>
 #include <functional>
+#include <format>
 
 //NBT一般使用GZIP压缩，也有部分使用ZLIB压缩
 
-template<Language::KeyType enKeyType, typename T>
+std::string CountFormat(int64_t u64Count)
+{
+	return CountFormatter::Level2String(CountFormatter::CalculateLevels(u64Count));
+}
+
+
+template<Language::KeyType enKeyType, bool bHasTag, typename T>
 void PrintInfo(const T &info, const Language &lang)
 {
 	for (const auto &itItem : info)
 	{
 		const auto &refItem = itItem.get();
-		printf("%s[%s]%s:%lld\n",
-			U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)).c_str(),
-			refItem.first.sName.c_str(),
-			U16ANSI(U16STR(NBT_Helper::Serialize(refItem.first.cpdTag))).c_str(),
-			refItem.second);
+		if constexpr (bHasTag)
+		{
+			printf("%s[%s]%s:%lld = %s\n",
+				U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)).c_str(),
+				refItem.first.sName.c_str(),
+				U16ANSI(U16STR(NBT_Helper::Serialize(refItem.first.cpdTag))).c_str(),
+				refItem.second,
+				CountFormat(refItem.second).c_str());
+		}
+		else
+		{
+			printf("%s[%s]:%lld = %s\n",
+				U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)).c_str(),
+				refItem.first.sName.c_str(),
+				refItem.second,
+				CountFormat(refItem.second).c_str());
+		}
 	}
 }
 
-template<Language::KeyType enKeyType, typename T>
-void PrintNoTagInfo(const T &info, const Language &lang)
+template<Language::KeyType enKeyType, bool bHasTag, typename T>
+void PrintInfo(const T &info, const Language &lang, CSV_Tool &csv)
 {
+	if (!csv)//非就绪状态不输出
+	{
+		return;
+	}
+
 	for (const auto &itItem : info)
 	{
 		const auto &refItem = itItem.get();
-		printf("%s[%s]:%lld\n",
-			U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)).c_str(),
-			refItem.first.sName.c_str(),
-			refItem.second);
+
+		csv.WriteOnce<true>(U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)));
+		csv.WriteOnce<true>(U8ANSI(refItem.first.sName));
+		if constexpr (bHasTag)
+		{
+			csv.WriteOnce<true>(U16ANSI(U16STR(NBT_Helper::Serialize(refItem.first.cpdTag))));
+		}
+		else
+		{
+			csv.WriteEmpty();
+		}
+		csv.WriteOnce<true>(std::format("{} = {}", refItem.second, CountFormat(refItem.second)));
+		csv.NewLine();
 	}
+}
+
+template<bool bEscape = true>
+void PrintLine(const std::string &s, CSV_Tool &csv, size_t szSlot = 0)
+{
+	if (!csv)//非就绪状态不输出
+	{
+		return;
+	}
+
+	while (szSlot-- > 0)
+	{
+		csv.WriteEmpty();
+	}
+
+	csv.WriteOnce<bEscape>(s);
+	csv.NewLine();
 }
 
 int main(int argc, char *argv[])
@@ -173,24 +225,62 @@ int main(int argc, char *argv[])
 	timer.Stop();
 	timer.PrintElapsed("Language file read time:[", "]\n");
 
+	CSV_Tool csv;
+	csv.OpenFile("opt.csv", CSV_Tool::Write);
+	if (!csv)
+	{
+		printf("CSV file open fail\n");
+	}
+	else
+	{
+		csv.WriteOnce("名称(Name)");
+		csv.WriteOnce("键名(Key)");
+		csv.WriteOnce("标签(Tag)");
+		csv.WriteOnce("数量(Count)");
+		csv.WriteOnce("类型(Type)");
+		csv.WriteOnce("区域(Region)");
+		csv.NewLine();
+	}
+
+	timer.Start();
 	for (const auto &it : vtRegionStats)
 	{
 		printf("==============Region:[%s]==============\n", U16ANSI(U16STR(it.sRegionName)).c_str());
+		PrintLine('[' + U16ANSI(U16STR(it.sRegionName)) + ']', csv, 5);
 		
 		printf("\n================[block]================\n");
-		PrintInfo<Language::Item>(it.mslBlock.listSort, lang);//方块
+		PrintLine("[block]", csv, 4);
+		PrintInfo<Language::Item, true>(it.mslBlock.listSort, lang);//方块
+		PrintInfo<Language::Item, true>(it.mslBlock.listSort, lang, csv);//方块
+
 		printf("\n==============[block item]==============\n");
-		PrintNoTagInfo<Language::Item>(it.mslBlockItem.listSort, lang);//方块转物品
+		PrintLine("[block item]", csv, 4);
+		PrintInfo<Language::Item, false>(it.mslBlockItem.listSort, lang);//方块转物品
+		PrintInfo<Language::Item, false>(it.mslBlockItem.listSort, lang, csv);//方块转物品
+
 		printf("\n========[tile entity container]========\n");
-		PrintInfo<Language::Item>(it.mslTileEntityContainer.listSort, lang);//方块实体容器
+		PrintLine("[tile entity container]", csv, 4);
+		PrintInfo<Language::Item, true>(it.mslTileEntityContainer.listSort, lang);//方块实体容器
+		PrintInfo<Language::Item, true>(it.mslTileEntityContainer.listSort, lang, csv);//方块实体容器
+
 		printf("\n=============[entity info]=============\n");
-		PrintNoTagInfo<Language::Entity>(it.mslEntity.listSort, lang);//实体
+		PrintLine("[entity info]", csv, 4);
+		PrintInfo<Language::Entity, false>(it.mslEntity.listSort, lang);//实体
+		PrintInfo<Language::Entity, false>(it.mslEntity.listSort, lang, csv);//实体
+
 		printf("\n===========[entity container]===========\n");
-		PrintInfo<Language::Item>(it.mslEntityContainer.listSort, lang);//实体容器
+		PrintLine("[entity container]", csv, 4);
+		PrintInfo<Language::Item, true>(it.mslEntityContainer.listSort, lang);//实体容器
+		PrintInfo<Language::Item, true>(it.mslEntityContainer.listSort, lang, csv);//实体容器
+
 		printf("\n===========[entity inventory]===========\n");
-		PrintInfo<Language::Item>(it.mslEntityInventory.listSort, lang);//实体物品栏
+		PrintLine("[entity inventory]", csv, 4);
+		PrintInfo<Language::Item, true>(it.mslEntityInventory.listSort, lang);//实体物品栏
+		PrintInfo<Language::Item, true>(it.mslEntityInventory.listSort, lang, csv);//实体物品栏
 	}
-	//TODO:使用CSV格式输出
+	timer.Stop();
+	timer.PrintElapsed("\n\nOutput time:[", "]\n");
+
 	return 0;
 }
 

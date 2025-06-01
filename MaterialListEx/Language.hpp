@@ -98,6 +98,11 @@ public:
 			MU8STR("item."),
 		};
 
+		if (enKeyType >= ENUM_END || enKeyType < None)
+		{
+			enKeyType = None;
+		}
+
 		static const std::string EmptyStr{ "" };
 
 		static_assert(sizeof(sKeyTypePrefix) / sizeof(sKeyTypePrefix[0]) == ENUM_END);

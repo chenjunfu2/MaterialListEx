@@ -195,7 +195,10 @@
   <ItemGroup>
     <ClInclude Include="BlockProcess.hpp" />
     <ClInclude Include="Calc_Tool.hpp" />
+    <ClInclude Include="CodeTimer.hpp" />
     <ClInclude Include="Compression_Utils.hpp" />
+    <ClInclude Include="CountFormatter.hpp" />
+    <ClInclude Include="CSV_Tool.hpp" />
     <ClInclude Include="EntityProcess.hpp" />
     <ClInclude Include="File_Tool.hpp" />
     <ClInclude Include="gzip\compress.hpp" />
@@ -204,6 +207,7 @@
     <ClInclude Include="gzip\utils.hpp" />
     <ClInclude Include="gzip\version.hpp" />
     <ClInclude Include="ItemProcess.hpp" />
+    <ClInclude Include="Language.hpp" />
     <ClInclude Include="MemoryLeakCheck.hpp" />
     <ClInclude Include="MUTF8_Tool.hpp" />
     <ClInclude Include="NBT_Helper.hpp" />

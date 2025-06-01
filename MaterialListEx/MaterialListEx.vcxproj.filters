@@ -332,5 +332,17 @@
     <ClInclude Include="ItemProcess.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="CodeTimer.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Language.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CSV_Tool.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CountFormatter.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
