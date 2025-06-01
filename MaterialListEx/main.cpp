@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 		printf("\n===========[entity inventory]===========\n");
 		PrintInfo<Language::Item>(it.mslEntityInventory.listSort, lang);//实体物品栏
 	}
-	
+	//TODO:使用CSV格式输出
 	return 0;
 }
 

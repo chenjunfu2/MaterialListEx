@@ -29,6 +29,7 @@ public:
 		}
 		
 		//从语言文件创建json对象
+		bool bRet = true;
 		try
 		{
 			data = Json::parse(pFile);
@@ -37,13 +38,11 @@ public:
 		{
 			// 输出异常详细信息
 			printf("JSON parse error: %s\nError Pos: [%zu]\n", e.what(), e.byte);
-
-			fclose(pFile);
-			return false;
+			bRet = false;
 		}
 
 		fclose(pFile);
-		return true;
+		return bRet;
 	}
 
 	void PrintPrefixes(void) const//此函数代码由AI编写
@@ -109,24 +108,22 @@ public:
 		NBT_Node::NBT_String sJsonKey = sKeyName;//拷贝一份
 		std::replace(sJsonKey.begin(), sJsonKey.end(), ':', '.');
 
-		while (true)
+	re_find:
+		auto itFind = data.find(sKeyTypePrefix[enKeyType] + sJsonKey);
+		if (itFind == data.end())
 		{
-			auto itFind = data.find(sKeyTypePrefix[enKeyType] + sJsonKey);
-			if (itFind == data.end())
+			//是空的情况下判断是不是item，是的话需要再查一次block
+			if (enKeyType == Item)//因为方块物品在block内
 			{
-				//是空的情况下判断是不是item，是的话需要再查一次block
-				if (enKeyType == Item)//因为方块物品在block内
-				{
-					enKeyType = Block;//改成方块（下次不会再命中此if）
-					continue;
-				}
-
-				return EmptyStr;
+				enKeyType = Block;//改成方块（下次不会再命中此if）
+				goto re_find;//重新尝试
 			}
 
-			//返回查找结果
-			return itFind.value().get_ref<const std::string &>();
+			return EmptyStr;
 		}
+
+		//返回查找结果
+		return itFind.value().get_ref<const std::string &>();
 	}
 
 };
