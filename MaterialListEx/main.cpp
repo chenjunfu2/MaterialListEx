@@ -24,6 +24,7 @@
 #include <string>
 #include <functional>
 #include <format>
+#include <stdexcept>
 
 //NBT一般使用GZIP压缩，也有部分使用ZLIB压缩
 
@@ -214,11 +215,19 @@ void Convert(const char *const pFileName)
 	printf("root:\"%s\"\n", U16ANSI(U16STR(root.first)).c_str());
 #endif
 
-	//获取regions，也就是区域，一个投影可能有多个区域（选区）
-	const auto &cpdRegions = GetCompound(root.second).GetCompound(MU8STR("Regions"));
-
 	timer.Start();
-	auto vtRegionStats = RegionProcess(cpdRegions);
+	RegionStatsList listRegionStats{};
+	try
+	{
+		//获取regions，也就是区域，一个投影可能有多个区域（选区）
+		const auto &cpdRegions = GetCompound(root.second).GetCompound(MU8STR("Regions"));
+		listRegionStats = RegionProcess(cpdRegions);
+	}
+	catch (const std::out_of_range &e)//map的at查不到
+	{
+		printf("RegionProcess error: %s\n", e.what());
+		return;
+	}
 	timer.Stop();
 	timer.PrintElapsed("RegionProcess time:[", "]\n");
 
@@ -280,7 +289,7 @@ void Convert(const char *const pFileName)
 	}
 
 	timer.Start();
-	for (const auto &it : vtRegionStats)
+	for (const auto &it : listRegionStats)
 	{
 		PrintLine('[' + U16ANSI(U16STR(it.sRegionName)) + ']', csv, 5);
 	
@@ -314,11 +323,11 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	printf("[%d] file(s)\n\n", argc - 1);
+	printf("[%d] file(s)\n", argc - 1);
 
 	for (int i = 1; i < argc; ++i)
 	{
-		printf("[%d] ", i);
+		printf("\n[%d] ", i);
 		Convert(argv[i]);
 	}
 
