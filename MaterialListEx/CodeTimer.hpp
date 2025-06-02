@@ -27,4 +27,9 @@ public:
 		auto tmp = std::chrono::duration_cast<std::chrono::nanoseconds>(tpStop - tpStart);
 		printf("%s%lfms%s", cpBegInfo, (long double)tmp.count() * 1E-6, cpEndInfo);
 	}
+
+	static uint64_t GetNowTime(void)
+	{
+		return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+	}
 };

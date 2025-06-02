@@ -81,7 +81,7 @@ public:
 		}
 	}
 
-	bool IsFileExist(const char *const pcFileName)
+	static bool IsFileExist(const char *const pcFileName)
 	{	
 		FILE *pTmp = fopen(pcFileName, "rb");
 		bool bExist = pTmp != NULL;
