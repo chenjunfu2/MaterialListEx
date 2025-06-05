@@ -146,15 +146,7 @@ void Convert(const char *const pFileName)
 		 printf("Output file:\"%s\" ", sPath.c_str());
 
 		 //判断文件存在性
-		 FILE *pTest = fopen(sPath.c_str(), "rb");
-		 if (pTest != NULL)
-		 {
-			 //文件已存在，不进行覆盖输出，跳过
-			 printf("is already exist, skipped\n");
-			 fclose(pTest);
-			 pTest = NULL;
-		 }
-		 else
+		 if (!IsFileExist(sPath))
 		 {
 			 //输出一个解压过的文件，用于在报错发生后供分析
 			 FILE *pFile = fopen(sPath.c_str(), "wb");
@@ -175,6 +167,11 @@ void Convert(const char *const pFileName)
 
 			 printf("is maked successfuly\n");
 			 timer.PrintElapsed("Write file time:[", "]\n");
+		 }
+		 else
+		 {
+			 //文件已存在，不进行覆盖输出，跳过
+			 printf("is already exist, skipped\n");
 		 }
 	 }
 	 else
@@ -261,14 +258,14 @@ void Convert(const char *const pFileName)
 		auto tmpCurTime = std::to_string(CodeTimer::GetNowTime());//获取当前系统时间
 		sCsvPath.replace(szPos, std::string::npos, tmpCurTime);//放入尾部
 		sCsvPath.append(".csv");//后缀名改成csv
-	} while (CSV_Tool::IsFileExist(sCsvPath.c_str()) && i32Count-- > 0);//如果文件已经存在，重试
+	} while (IsFileExist(sCsvPath) && i32Count-- > 0);//如果文件已经存在，重试
 
 	if (i32Count > 0)//如果没次数了就别打开了，直接让它失败
 	{
 		csv.OpenFile(sCsvPath.c_str(), CSV_Tool::Write);
 		printf("Output file:[%s]", sCsvPath.c_str());
 	}
-#elif
+#else
 	csv.OpenFile("opt.csv", CSV_Tool::Write);
 	printf("Output file:[opt.csv]");
 #endif // !_DEBUG

@@ -81,18 +81,6 @@ public:
 		}
 	}
 
-	static bool IsFileExist(const char *const pcFileName)
-	{	
-		FILE *pTmp = fopen(pcFileName, "rb");
-		bool bExist = pTmp != NULL;
-		if (bExist)
-		{
-			fclose(pTmp);
-		}
-
-		return bExist;
-	}
-
 	bool IsEof(void)
 	{
 		return feof(pFile);

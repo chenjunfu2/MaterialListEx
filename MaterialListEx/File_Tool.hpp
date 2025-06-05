@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string>
+#include <filesystem>
 
 bool ReadFile(const char *const _FileName, std::string &_Data)
 {
@@ -28,4 +29,12 @@ bool ReadFile(const char *const _FileName, std::string &_Data)
 	pFile = NULL;
 
 	return true;
+}
+
+bool IsFileExist(const std::string &sFileName)
+{
+	std::error_code ec;//判断这东西是不是true确定有没有error
+	bool bExists = std::filesystem::exists(sFileName, ec);
+
+	return !ec && bExists;//没有错误并且存在
 }
