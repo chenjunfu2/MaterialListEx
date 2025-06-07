@@ -32,7 +32,7 @@ RegionStats MergeRegionStatsList(const RegionStatsList &listRegionStats)
 RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 {
 	RegionStatsList listRegionStats;
-	listRegionStats.reserve(cpRegions.size());//提前扩容（给所有选区统计预留1个位置）
+	listRegionStats.reserve(cpRegions.size());//提前扩容
 	for (const auto &[RgName, RgVal] : cpRegions)//遍历选区
 	{
 		RegionStats rgsData{ RgName };
