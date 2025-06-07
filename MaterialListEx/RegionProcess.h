@@ -22,6 +22,19 @@ struct MapSortList
 	//通过vector创建map的元素排序（存储pair引用）std::reference_wrapper<>
 	std::vector<std::reference_wrapper<MapPair>> listSort{};
 
+	//因为内部互为引用关系，禁止拷贝
+	MapSortList(const MapSortList &) = delete;
+	MapSortList &operator=(const MapSortList &) = delete;
+
+	//必须提供此noexcept移动构造，否则vector在扩容过程会进行拷贝
+	//导致MapSortList存储的map迭代器的vector成员失效，从而引发异常
+	MapSortList(MapSortList &&) = default;
+	MapSortList &operator=(MapSortList &&) = default;
+
+	MapSortList(void) = default;
+	MapSortList(Map _map) :map(std::move(_map))
+	{}
+
 	static bool SortCmp(MapPair &l, MapPair &r)
 	{
 		if (l.second == r.second)//数量相等情况下按key排序
@@ -32,6 +45,11 @@ struct MapSortList
 		{
 			return l.second > r.second;//降序
 		}
+	}
+
+	const auto &GetlistSort(void) const
+	{
+		return listSort;
 	}
 	
 	void SortElement(void)
@@ -56,22 +74,9 @@ struct RegionStats
 {
 	NBT_Node::NBT_String sRegionName{};
 
-	RegionStats(void) = default;
-	RegionStats(NBT_Node::NBT_String _sRegionName) :sRegionName(_sRegionName)
-	{}
-	
-	RegionStats &operator=(const RegionStats &) = default;
-	RegionStats &operator=(RegionStats &&) noexcept = default;
-	
-	//必须提供此noexcept移动构造，否则vector在扩容过程会进行拷贝
-	//（神奇的是居然MapSortList不用提供而同为聚合类型的RegionStats需要提供）
-	//导致MapSortList存储的map迭代器的vector成员失效，从而引发异常
-	RegionStats(RegionStats && _Right) noexcept = default;
-	RegionStats(const RegionStats & _Right) = default;
-
 	//简化声明
 #define MAPSORTLIST(key,val,size,name) \
-MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Equal)>> name{ .map{size, &key::Hash, &key::Equal} }
+MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Equal)>> name{ {size, &key::Hash, &key::Equal} }
 
 	//方块（原本形式）
 	MAPSORTLIST(BlockInfo, uint64_t, 128, mslBlock);
