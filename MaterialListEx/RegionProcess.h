@@ -42,11 +42,32 @@ struct MapSortList
 		//对物品按数量进行排序
 		std::sort(listSort.begin(), listSort.end(), SortCmp);
 	}
+
+	void Merge(const MapSortList<Map> &src)//合并
+	{
+		for (const auto &[srcKey, srcVal] : src.map)
+		{
+			map[srcKey] += srcVal;
+		}
+	}
 };
 
 struct RegionStats
 {
 	NBT_Node::NBT_String sRegionName{};
+
+	RegionStats(void) = default;
+	RegionStats(NBT_Node::NBT_String _sRegionName) :sRegionName(_sRegionName)
+	{}
+	
+	RegionStats &operator=(const RegionStats &) = default;
+	RegionStats &operator=(RegionStats &&) noexcept = default;
+	
+	//必须提供此noexcept移动构造，否则vector在扩容过程会进行拷贝
+	//（神奇的是居然MapSortList不用提供而同为聚合类型的RegionStats需要提供）
+	//导致MapSortList存储的map迭代器的vector成员失效，从而引发异常
+	RegionStats(RegionStats && _Right) noexcept = default;
+	RegionStats(const RegionStats & _Right) = default;
 
 	//简化声明
 #define MAPSORTLIST(key,val,size,name) \
@@ -83,3 +104,6 @@ MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Eq
 using RegionStatsList = std::vector<RegionStats>;
 
 RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions);
+
+//合并所有选区
+RegionStats MergeRegionStatsList(const RegionStatsList &listRegionStats);

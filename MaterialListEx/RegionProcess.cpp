@@ -1,9 +1,38 @@
 #include "RegionProcess.h"
 
+//合并所有选区
+RegionStats MergeRegionStatsList(const RegionStatsList &listRegionStats)
+{
+	RegionStats allRegionStats{};
+	for (const auto &it : listRegionStats)//遍历所有选区合并到allRegionStats内
+	{
+		allRegionStats.mslBlock				 .Merge(it.mslBlock);
+		allRegionStats.mslBlockItem			 .Merge(it.mslBlockItem);
+		//allRegionStats.mslTileEntity		 .Merge(it.mslTileEntity);
+		allRegionStats.mslTileEntityContainer.Merge(it.mslTileEntityContainer);
+		allRegionStats.mslEntity			 .Merge(it.mslEntity);
+		//allRegionStats.mslEntityItem		 .Merge(it.mslEntityItem);
+		allRegionStats.mslEntityContainer	 .Merge(it.mslEntityContainer);
+		allRegionStats.mslEntityInventory	 .Merge(it.mslEntityInventory);
+	}
+
+	//全部排序
+	allRegionStats.mslBlock					.SortElement();
+	allRegionStats.mslBlockItem				.SortElement();
+	//allRegionStats.mslTileEntity			.SortElement();		
+	allRegionStats.mslTileEntityContainer	.SortElement();
+	allRegionStats.mslEntity				.SortElement();
+	//allRegionStats.mslEntityItem			.SortElement();		
+	allRegionStats.mslEntityContainer		.SortElement();
+	allRegionStats.mslEntityInventory		.SortElement();
+	
+	return allRegionStats;
+}
+
 RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 {
 	RegionStatsList listRegionStats;
-	listRegionStats.reserve(cpRegions.size());//提前扩容
+	listRegionStats.reserve(cpRegions.size());//提前扩容（给所有选区统计预留1个位置）
 	for (const auto &[RgName, RgVal] : cpRegions)//遍历选区
 	{
 		RegionStats rgsData{ RgName };

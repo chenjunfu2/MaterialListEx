@@ -285,7 +285,16 @@ void Convert(const char *const pFileName)
 		csv.NewLine();
 	}
 
+
 	timer.Start();
+	//处理是否要合并选区（如果区域只有1个那无需合并，否则合并）
+	if (listRegionStats.size() > 1)
+	{
+		auto tmpMerge = MergeRegionStatsList(listRegionStats);
+		tmpMerge.sRegionName = MU8STR("[All Region]");
+		listRegionStats.push_back(std::move(tmpMerge));//合并后插入尾部
+	}
+	//处理所有区域
 	for (const auto &it : listRegionStats)
 	{
 		PrintLine('[' + U16ANSI(U16STR(it.sRegionName)) + ']', csv, 5);
