@@ -39,7 +39,7 @@ int main()
 	char arrTest[] =
 	{
 		0xE6,0xB5,0x8B,0xE8,0xAF,0x95,
-	};
+	};;
 
 	std::string sTest{ arrTest,sizeof(arrTest) / sizeof(arrTest[0]) };
 	auto ansiString = ConvertUtf16ToAnsi(MUTF8_Tool<char, wchar_t>::MU8ToU16(sTest));
