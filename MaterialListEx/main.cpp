@@ -81,32 +81,63 @@ void PrintInfo(const T &info, const Language &lang, CSV_Tool &csv)
 		{
 			csv.WriteOnce<true>(U16ANSI(U16STR(NBT_Helper::Serialize(refItem.first.cpdTag))));
 		}
-		else
-		{
-			csv.WriteEmpty();
-		}
-		csv.WriteOnce<true>(std::format("{} = {}", refItem.second, CountFormat(refItem.second)));
+		//else
+		//{
+		//	csv.WriteEmpty();
+		//}
+		csv.WriteOnce<true>(std::format("{}个 = {}", refItem.second, CountFormat(refItem.second)));
 		csv.NewLine();
 	}
 }
 
-template<bool bEscape = true>
-void PrintLine(const std::string &s, CSV_Tool &csv, size_t szSlot = 0)
+//template<bool bEscape = true>
+//void PrintLine(const std::string &s, CSV_Tool &csv, size_t szSlot = 0)
+//{
+//	if (!csv)//非就绪状态重定向输出到控制台
+//	{
+//		printf("==============%s==============\n", s.c_str());
+//		return;
+//	}
+//
+//	while (szSlot-- > 0)
+//	{
+//		csv.WriteEmpty();
+//	}
+//
+//	csv.WriteOnce<bEscape>(s);
+//	csv.NewLine();
+//}
+
+void PrintConsole(const std::string &s)
+{
+	printf("|%s", s.c_str());
+}
+
+
+template<bool bEscape = true, typename... Args>
+void PrintLine(CSV_Tool &csv, Args&&... args)
 {
 	if (!csv)//非就绪状态重定向输出到控制台
 	{
-		printf("==============%s==============\n", s.c_str());
+		(PrintConsole(std::forward<Args>(args)), ...);
+		printf("|\n");
 		return;
 	}
 
-	while (szSlot-- > 0)
+	csv.WriteLine(std::forward<Args>(args)...);
+}
+
+void PrintLine(CSV_Tool &csv)
+{
+	if (!csv)//非就绪状态重定向输出到控制台
 	{
-		csv.WriteEmpty();
+		printf("\n");
+		return;
 	}
 
-	csv.WriteOnce<bEscape>(s);
 	csv.NewLine();
 }
+
 
 void Convert(const char *const pFileName)
 {
@@ -259,8 +290,8 @@ void Convert(const char *const pFileName)
 	int32_t i32Count = 10;//最多重试10次
 	do
 	{
-		//时间前加一个-
-		auto tmpCurTime = std::string{'-'} + std::to_string(CodeTimer::GetNowTime());//获取当前系统时间
+		//时间用[]包围
+		auto tmpCurTime = std::string{ '[' } + std::to_string(CodeTimer::GetNowTime()) + std::string{ ']' };//获取当前系统时间
 		sCsvPath.replace(szPos, std::string::npos, tmpCurTime);//放入尾部
 		sCsvPath.append(".csv");//后缀名改成csv
 	} while (IsFileExist(sCsvPath) && i32Count-- > 0);//如果文件已经存在，重试
@@ -279,16 +310,17 @@ void Convert(const char *const pFileName)
 	{
 		printf("CSV file open fail\n");
 	}
-	else
-	{
-		csv.WriteOnce("名称(Name)");
-		csv.WriteOnce("键名(Key)");
-		csv.WriteOnce("标签(Tag)");
-		csv.WriteOnce("数量(Count)");
-		csv.WriteOnce("类型(Type)");
-		csv.WriteOnce("区域(Region)");
-		csv.NewLine();
-	}
+	//else
+	//{
+	//	csv.WriteOnce("名称(Name)");
+	//	csv.WriteOnce("键名(Key)");
+	//	csv.WriteOnce("标签(Tag)");
+	//	csv.WriteOnce("数量(Count)");
+	//	csv.WriteOnce("类型(Type)");
+	//	csv.WriteOnce("区域(Region)");
+	//	csv.WriteOnce("来源");
+	//	csv.NewLine();
+	//}
 
 
 	timer.Start();
@@ -302,25 +334,39 @@ void Convert(const char *const pFileName)
 	//处理所有区域
 	for (const auto &it : listRegionStats)
 	{
-		PrintLine('[' + U16ANSI(U16STR(it.sRegionName)) + ']', csv, 5);
+		PrintLine(csv, "区域(Region)", '[' + U16ANSI(U16STR(it.sRegionName)) + ']');
 	
-		//PrintLine("[block]", csv, 4);
+		//PrintLine(csv);
+		//PrintLine(csv, "类型(Type)", "[block]");
+		//PrintLine(csv, "名称(Name)", "键名(Key)", "标签(Tag)", "数量(Count)");
 		//PrintInfo<Language::Item, true>(it.mslBlock.listSort, lang, csv);//方块
 
-		PrintLine("[block item]", csv, 4);
+		PrintLine(csv);
+		PrintLine(csv, "类型(Type)", "[block item]");
+		PrintLine(csv, "名称(Name)", "键名(Key)", "数量(Count)");
 		PrintInfo<Language::Item, false>(it.mslBlockItem.listSort, lang, csv);//方块转物品
 
-		PrintLine("[tile entity container]", csv, 4);
+		PrintLine(csv);
+		PrintLine(csv, "类型(Type)", "[tile entity container]");
+		PrintLine(csv, "名称(Name)", "键名(Key)", "标签(Tag)", "数量(Count)");
 		PrintInfo<Language::Item, true>(it.mslTileEntityContainer.listSort, lang, csv);//方块实体容器
 
-		PrintLine("[entity info]", csv, 4);
+		PrintLine(csv);
+		PrintLine(csv, "类型(Type)", "[entity info]");
+		PrintLine(csv, "名称(Name)", "键名(Key)", "数量(Count)");
 		PrintInfo<Language::Entity, false>(it.mslEntity.listSort, lang, csv);//实体
 
-		PrintLine("[entity container]", csv, 4);
+		PrintLine(csv);
+		PrintLine(csv, "类型(Type)", "[entity container]");
+		PrintLine(csv, "名称(Name)", "键名(Key)", "标签(Tag)", "数量(Count)");
 		PrintInfo<Language::Item, true>(it.mslEntityContainer.listSort, lang, csv);//实体容器
 
-		PrintLine("[entity inventory]", csv, 4);
+		PrintLine(csv);
+		PrintLine(csv, "类型(Type)", "[entity inventory]");
+		PrintLine(csv, "名称(Name)", "键名(Key)", "标签(Tag)", "数量(Count)");
 		PrintInfo<Language::Item, true>(it.mslEntityInventory.listSort, lang, csv);//实体物品栏
+
+		PrintLine(csv);
 	}
 	timer.Stop();
 	timer.PrintElapsed("\nOutput time:[", "]\n");

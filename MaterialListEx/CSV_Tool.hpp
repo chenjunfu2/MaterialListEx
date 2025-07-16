@@ -113,6 +113,37 @@ public:
 		
 	}
 
+	template <bool bEscape = true, typename... Args>
+	void WriteMulti(Args&&... args)
+	{
+		(WriteOnce<bEscape>(std::forward<Args>(args)), ...);
+	}
+
+	template <bool bEscape = true, typename... Args>
+	void WriteLine(Args&&... args)
+	{
+		WriteMulti(std::forward<Args>(args)...);
+		NewLine();
+	}
+
+	template <bool bEscape = true>
+	void WriteLine(const std::string &str, size_t szSlot = 0)
+	{
+		while (szSlot-- > 0)
+		{
+			WriteEmpty();
+		}
+
+		WriteOnce<bEscape>(str);
+		NewLine();
+	}
+
+
+	void WriteRaw(const std::string &str)
+	{
+		fwrite(str.c_str(), str.size(), 1, pFile);
+	}
+
 	void WriteEmpty(void)
 	{
 		if (!bNewLine)//不是新行开头，输出一个逗号
