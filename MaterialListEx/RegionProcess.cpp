@@ -89,6 +89,7 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 			//分开处理反而很麻烦，只能这样（麻将神操作能不喷的都是神人了）
 			//注意实体非常特殊，很多时候获取方式并不局限于从物品得来，
 			//没办法直接转换到物品，所以单独放一个实体表
+			//实体转换物品还是有必要的，比如船，是什么材质由实体nbt决定，而实体名都叫boat
 			auto &current = rgsData.mslEntity;
 			auto &curContainer = rgsData.mslEntityContainer;
 			auto &curInventory = rgsData.mslEntityInventory;

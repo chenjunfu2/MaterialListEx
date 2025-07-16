@@ -259,7 +259,8 @@ void Convert(const char *const pFileName)
 	int32_t i32Count = 10;//最多重试10次
 	do
 	{
-		auto tmpCurTime = std::to_string(CodeTimer::GetNowTime());//获取当前系统时间
+		//时间前加一个-
+		auto tmpCurTime = std::string{'-'} + std::to_string(CodeTimer::GetNowTime());//获取当前系统时间
 		sCsvPath.replace(szPos, std::string::npos, tmpCurTime);//放入尾部
 		sCsvPath.append(".csv");//后缀名改成csv
 	} while (IsFileExist(sCsvPath) && i32Count-- > 0);//如果文件已经存在，重试
