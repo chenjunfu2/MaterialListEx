@@ -234,7 +234,7 @@ if (stBlocks.psBlockName->ends_with(target))
 			MU8STR("minecraft:end_gateway"),
 			//火类
 			MU8STR("minecraft:fire"),
-			MU8STR("minecraft:minecraft:soul_fire"),
+			MU8STR("minecraft:soul_fire"),
 			//移动中的活塞
 			MU8STR("minecraft:moving_piston"),
 		};
@@ -455,6 +455,7 @@ if (stBlocks.psBlockName->ends_with(target))
 		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapAliasBlocks =
 		{
 			{MU8STR("minecraft:tripwire"),MU8STR("minecraft:string")},
+			{MU8STR("minecraft:redstone_wire"),MU8STR("minecraft:redstone")},
 			{MU8STR("minecraft:bubble_column"),MU8STR("minecraft:water_bucket")},
 			//{MU8STR("minecraft:farmland"),MU8STR("minecraft:dirt")},
 			//{MU8STR("minecraft:dirt_path"),MU8STR("minecraft:dirt")},
