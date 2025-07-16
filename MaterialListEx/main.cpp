@@ -15,6 +15,7 @@
 #include "Language.hpp"
 #include "CSV_Tool.hpp"
 #include "CountFormatter.hpp"
+#include "Windows_FileSystem.hpp"
 
 /*Compress*/
 #include "Compression_Utils.hpp"
@@ -25,6 +26,7 @@
 #include <functional>
 #include <format>
 #include <stdexcept>
+#include <filesystem>
 
 //NBT一般使用GZIP压缩，也有部分使用ZLIB压缩
 
@@ -229,8 +231,10 @@ void Convert(const char *const pFileName)
 	timer.PrintElapsed("RegionProcess time:[", "]\n");
 
 	Language lang;
+	auto pathModule = GetCurrentModulePath();//使用程序当前路径查找语言文件，而非工作目录
+	pathModule.append("zh_cn.json");
 	timer.Start();
-	bool bLangRead = lang.ReadLanguageFile("zh_cn.json");
+	bool bLangRead = lang.ReadLanguageFile(pathModule.string().c_str());
 	timer.Stop();
 	if (bLangRead)
 	{

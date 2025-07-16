@@ -344,6 +344,9 @@
     <ClInclude Include="CountFormatter.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Windows_FileSystem.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="TODO.txt">
