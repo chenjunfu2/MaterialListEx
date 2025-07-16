@@ -79,7 +79,7 @@ struct RegionStats
 MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Equal)>> name{ {size, &key::Hash, &key::Equal} }
 
 	//方块（原本形式）
-	MAPSORTLIST(BlockInfo, uint64_t, 128, mslBlock);
+	//MAPSORTLIST(BlockInfo, uint64_t, 128, mslBlock);
 
 	//方块（转换到物品形式）
 	MAPSORTLIST(NoTagItemInfo, uint64_t, 128, mslBlockItem);

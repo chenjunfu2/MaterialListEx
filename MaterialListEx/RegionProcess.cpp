@@ -6,7 +6,7 @@ RegionStats MergeRegionStatsList(const RegionStatsList &listRegionStats)
 	RegionStats allRegionStats{};
 	for (const auto &it : listRegionStats)//遍历所有选区合并到allRegionStats内
 	{
-		allRegionStats.mslBlock				 .Merge(it.mslBlock);
+		//allRegionStats.mslBlock				 .Merge(it.mslBlock);
 		allRegionStats.mslBlockItem			 .Merge(it.mslBlockItem);
 		//allRegionStats.mslTileEntity		 .Merge(it.mslTileEntity);
 		allRegionStats.mslTileEntityContainer.Merge(it.mslTileEntityContainer);
@@ -17,7 +17,7 @@ RegionStats MergeRegionStatsList(const RegionStatsList &listRegionStats)
 	}
 
 	//全部排序
-	allRegionStats.mslBlock					.SortElement();
+	//allRegionStats.mslBlock					.SortElement();
 	allRegionStats.mslBlockItem				.SortElement();
 	//allRegionStats.mslTileEntity			.SortElement();		
 	allRegionStats.mslTileEntityContainer	.SortElement();
@@ -40,14 +40,14 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 
 		//方块到物品处理
 		{
-			auto &current = rgsData.mslBlock;
+			//auto &current = rgsData.mslBlock;
 			auto &curBlockItem = rgsData.mslBlockItem;
 			auto listBlockStats = BlockProcess::GetBlockStats(RgCompound);//获取方块统计列表
 			for (const auto &itBlock : listBlockStats)
 			{
 				//转换方块
-				auto tmpBlock = BlockProcess::BlockStatsToBlockInfo(itBlock);
-				current.map[std::move(tmpBlock)] += itBlock.u64Counter;//艸，这里要加计数器，而不是加一，因为前面都统计完了
+				//auto tmpBlock = BlockProcess::BlockStatsToBlockInfo(itBlock);
+				//current.map[std::move(tmpBlock)] += itBlock.u64Counter;//艸，这里要加计数器，而不是加一，因为前面都统计完了
 
 				//每个方块转换到物品，并通过map进行统计同类物品
 				auto tmp = BlockProcess::BlockStatsToItemStack(itBlock);
@@ -58,7 +58,7 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 			}
 
 			//执行排序
-			current.SortElement();
+			//current.SortElement();
 			curBlockItem.SortElement();
 		}
 

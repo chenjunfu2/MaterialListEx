@@ -303,8 +303,8 @@ void Convert(const char *const pFileName)
 	{
 		PrintLine('[' + U16ANSI(U16STR(it.sRegionName)) + ']', csv, 5);
 	
-		PrintLine("[block]", csv, 4);
-		PrintInfo<Language::Item, true>(it.mslBlock.listSort, lang, csv);//方块
+		//PrintLine("[block]", csv, 4);
+		//PrintInfo<Language::Item, true>(it.mslBlock.listSort, lang, csv);//方块
 
 		PrintLine("[block item]", csv, 4);
 		PrintInfo<Language::Item, false>(it.mslBlockItem.listSort, lang, csv);//方块转物品
