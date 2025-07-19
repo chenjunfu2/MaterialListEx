@@ -95,18 +95,29 @@ public:
 	void WriteOnce(const std::string &str)//带分隔符写入
 	{
 		WriteEmpty();//写入分隔符
+		//写入一个单元格
+		WriteStart();
 		WriteContinue<bEscape>(str);
+		WriteStop();
 	}
 
-	template<bool bEscape = true>
-	void WriteContinue(const std::string &str)//与上一个写入合并
+	void WriteStart()//连续写入开始
 	{
 		if (bNewLine)
 		{
 			bNewLine = false;//下一次写入就不是新行了
 		}
-
 		fputc('\"', pFile);
+	}
+
+	void WriteStop()//连续写入结束
+	{
+		fputc('\"', pFile);
+	}
+
+	template<bool bEscape = true>
+	void WriteContinue(const std::string &str)//与上一个写入合并
+	{
 		for (const auto &it : str)
 		{
 			if constexpr (bEscape)
@@ -119,7 +130,6 @@ public:
 
 			fputc(it, pFile);
 		}
-		fputc('\"', pFile);
 	}
 
 	template <bool bEscape = true, typename... Args>

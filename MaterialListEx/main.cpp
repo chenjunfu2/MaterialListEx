@@ -136,10 +136,14 @@ void PrintInfo(const MapMSL<T> &info, const Language &lang, CSV_Tool &csv)
 		}
 
 		csv.WriteEmpty(5);//从第五个空格开始写入
-		csv.WriteOnce<true>(U8ANSI(lang.KeyTranslate(enParentKeyType, itParent.first)));
+		csv.WriteStart();//连续写入开始
+		csv.WriteContinue<true>(U8ANSI(lang.KeyTranslate(enParentKeyType, itParent.first)));
 		csv.WriteContinue<false>("(");
 		csv.WriteContinue<true>(itParent.first);
 		csv.WriteContinue<false>(")");
+		csv.WriteStop();//连续写入结束
+		csv.NewLine();//换行
+
 		PrintInfo<enKeyType>(itParent.second.listSort, lang, csv);
 	}
 }
