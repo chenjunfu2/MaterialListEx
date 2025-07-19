@@ -92,9 +92,19 @@ public:
 	}
 
 	template<bool bEscape = true>
-	void WriteOnce(const std::string &str)
+	void WriteOnce(const std::string &str)//带分隔符写入
 	{
-		WriteEmpty();
+		WriteEmpty();//写入分隔符
+		WriteContinue<bEscape>(str);
+	}
+
+	template<bool bEscape = true>
+	void WriteContinue(const std::string &str)//与上一个写入合并
+	{
+		if (bNewLine)
+		{
+			bNewLine = false;//下一次写入就不是新行了
+		}
 
 		fputc('\"', pFile);
 		for (const auto &it : str)
@@ -106,11 +116,10 @@ public:
 					fputc('\"', pFile);
 				}
 			}
-			
+
 			fputc(it, pFile);
 		}
 		fputc('\"', pFile);
-		
 	}
 
 	template <bool bEscape = true, typename... Args>
@@ -126,24 +135,19 @@ public:
 		NewLine();
 	}
 
-	template <bool bEscape = true>
-	void WriteLine(const std::string &str, size_t szSlot = 0)
-	{
-		while (szSlot-- > 0)
-		{
-			WriteEmpty();
-		}
-
-		WriteOnce<bEscape>(str);
-		NewLine();
-	}
-
-
 	void WriteRaw(const std::string &str)
 	{
 		fwrite(str.c_str(), str.size(), 1, pFile);
 	}
 
+	void WriteEmpty(size_t szSlot)
+	{
+		while (szSlot-- > 0)
+		{
+			WriteEmpty();
+		}
+	}
+	
 	void WriteEmpty(void)
 	{
 		if (!bNewLine)//不是新行开头，输出一个逗号
