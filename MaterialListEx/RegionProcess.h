@@ -16,6 +16,7 @@ template<typename Map>
 struct MapSortList
 {
 	using MapPair = Map::value_type;
+	using MyMap = Map;
 
 	//map用于查重统计，不需要真的用key来查找，所以key是什么无所谓
 	Map map{};//创建方块状态到物品映射map
@@ -70,13 +71,62 @@ struct MapSortList
 	}
 };
 
+template <typename Map>
+struct MapMSL : public Map
+{
+public:
+	using MapVal = typename Map::mapped_type::MyMap;
+
+	size_t s{};
+	typename MapVal::hasher h{};
+	typename MapVal::key_equal e{};
+public:
+	//继承基类构造
+	using Map::Map;
+	//自定义构造
+	MapMSL(size_t _s, typename MapVal::hasher _h, typename MapVal::key_equal _e) : s(_s), h(_h), e(_e)
+	{}
+
+	typename Map::mapped_type &operator[](typename Map::key_type &&_Keyval)
+	{
+		return (Map::try_emplace(std::move(_Keyval), MapVal{ s, h, e }).first->second);
+	}
+
+	typename Map::mapped_type &operator[](const typename Map::key_type &_Keyval)
+	{
+		return (Map::try_emplace(_Keyval, MapVal{ s, h, e }).first->second);
+	}
+
+	void SortElement(void)
+	{
+		for (auto &[key, val] : *this)//遍历基类并调用每个元素的SortElement
+		{
+			val.SortElement();
+		}
+	}
+
+	void Merge(const MapMSL<Map> &src)
+	{
+		for (const auto &[srcKey, srcVal] : src)//把另一个map合并进来
+		{
+			this->operator[](srcKey).Merge(srcVal);
+		}
+	}
+};
+
 struct RegionStats
 {
 	NBT_Node::NBT_String sRegionName{};
 
-	//简化声明
+//简化声明
+#define MAPSORTLIST_TYPE(key,val) \
+MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Equal)>>
+
 #define MAPSORTLIST(key,val,size,name) \
-MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Equal)>> name{ {size, &key::Hash, &key::Equal} }
+MAPSORTLIST_TYPE(key,val) name{ {size, &key::Hash, &key::Equal} }
+
+#define MAPMAPSORTLIST(key,val,size,name) \
+MapMSL<std::map<NBT_Node::NBT_String, MAPSORTLIST_TYPE(key, val)>> name{size, &key::Hash, &key::Equal}
 
 	//方块（原本形式）
 	//MAPSORTLIST(BlockInfo, uint64_t, 128, mslBlock);
@@ -89,6 +139,7 @@ MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Eq
 
 	//方块实体容器
 	MAPSORTLIST(ItemInfo, uint64_t, 128, mslTileEntityContainer);
+	MAPMAPSORTLIST(ItemInfo, uint64_t, 128, mmslParentInfoTEC);
 
 	//实体（原本形式）
 	MAPSORTLIST(EntityInfo, uint64_t, 128, mslEntity);
@@ -99,11 +150,43 @@ MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Eq
 
 	//实体容器
 	MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityContainer);
+	MAPMAPSORTLIST(ItemInfo, uint64_t, 128, mmslParentInfoEC);
 
 	//实体物品栏
 	MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityInventory);
+	MAPMAPSORTLIST(ItemInfo, uint64_t, 128, mmslParentInfoEI);
 
 #undef MAPSORTLIST
+
+	void Merge(const RegionStats &src)
+	{
+		//mslBlock.Merge(src.mslBlock);
+		mslBlockItem.Merge(src.mslBlockItem);
+		//TileEntityInfo.Merge(src.TileEntityInfo);
+		mslTileEntityContainer.Merge(src.mslTileEntityContainer);
+		mmslParentInfoTEC.Merge(src.mmslParentInfoTEC);
+		mslEntity.Merge(src.mslEntity);
+		//mslEntityItem.Merge(src.mslEntityItem);
+		mslEntityContainer.Merge(src.mslEntityContainer);
+		mmslParentInfoEC.Merge(src.mmslParentInfoEC);
+		mslEntityInventory.Merge(src.mslEntityInventory);
+		mmslParentInfoEI.Merge(src.mmslParentInfoEI);
+	}
+
+	void SortElement(void)
+	{
+		//mslBlock.SortElement();
+		mslBlockItem.SortElement();
+		//mslTileEntity.SortElement();		
+		mslTileEntityContainer.SortElement();
+		mmslParentInfoTEC.SortElement();
+		mslEntity.SortElement();
+		//mslEntityItem.SortElement();		
+		mslEntityContainer.SortElement();
+		mmslParentInfoEC.SortElement();
+		mslEntityInventory.SortElement();
+		mmslParentInfoEI.SortElement();
+	}
 };
 
 using RegionStatsList = std::vector<RegionStats>;

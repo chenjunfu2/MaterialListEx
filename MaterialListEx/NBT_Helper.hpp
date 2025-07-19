@@ -55,8 +55,8 @@ public:
 		return hashNBT;
 
 		using DefaultFuncArg = std::decay_t<decltype(pHashState)>;
-		static_assert(std::is_invocable_v<TS, DefaultFuncArg>,"TS is not a callable object or parameter type mismatch.");
-		static_assert(std::is_invocable_v<TE, DefaultFuncArg>,"TE is not a callable object or parameter type mismatch.");
+		static_assert(std::is_invocable_v<TS, DefaultFuncArg>, "TS is not a callable object or parameter type mismatch.");
+		static_assert(std::is_invocable_v<TE, DefaultFuncArg>, "TE is not a callable object or parameter type mismatch.");
 	}
 private:
 	constexpr const static inline char *const LevelPadding = "    ";

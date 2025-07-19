@@ -6,25 +6,11 @@ RegionStats MergeRegionStatsList(const RegionStatsList &listRegionStats)
 	RegionStats allRegionStats{};
 	for (const auto &it : listRegionStats)//遍历所有选区合并到allRegionStats内
 	{
-		//allRegionStats.mslBlock				 .Merge(it.mslBlock);
-		allRegionStats.mslBlockItem			 .Merge(it.mslBlockItem);
-		//allRegionStats.mslTileEntity		 .Merge(it.mslTileEntity);
-		allRegionStats.mslTileEntityContainer.Merge(it.mslTileEntityContainer);
-		allRegionStats.mslEntity			 .Merge(it.mslEntity);
-		//allRegionStats.mslEntityItem		 .Merge(it.mslEntityItem);
-		allRegionStats.mslEntityContainer	 .Merge(it.mslEntityContainer);
-		allRegionStats.mslEntityInventory	 .Merge(it.mslEntityInventory);
+		allRegionStats.Merge(it);
 	}
 
 	//全部排序
-	//allRegionStats.mslBlock					.SortElement();
-	allRegionStats.mslBlockItem				.SortElement();
-	//allRegionStats.mslTileEntity			.SortElement();		
-	allRegionStats.mslTileEntityContainer	.SortElement();
-	allRegionStats.mslEntity				.SortElement();
-	//allRegionStats.mslEntityItem			.SortElement();		
-	allRegionStats.mslEntityContainer		.SortElement();
-	allRegionStats.mslEntityInventory		.SortElement();
+	allRegionStats.SortElement();
 	
 	return allRegionStats;
 }
@@ -65,20 +51,30 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 		//方块实体容器处理
 		{
 			auto &current = rgsData.mslTileEntityContainer;
+			auto &curInfoTEC = rgsData.mmslParentInfoTEC;
+
 			auto listTEContainerStats = TileEntityProcess::GetTileEntityContainerStats(RgCompound);
-			for (const auto &it : listTEContainerStats)
+			for (const auto &it : listTEContainerStats)//处理每个方块实体
 			{
-				//转换每个方块实体
+				//转换方块实体
 				auto tmp = TileEntityProcess::TileEntityContainerStatsToItemStack(it);
-				tmp = ItemProcess::ItemStackListUnpackContainer(std::move(tmp));//解包内部的容器
+				tmp = ItemProcess::ItemStackListUnpackContainer(std::move(tmp));//解包物品内部的容器
+
+				//获取容器名称
+				auto sParentName = it.psTileEntityName == NULL ? NBT_Node::NBT_String{} : *it.psTileEntityName;
+				auto &mpInfoTEC = curInfoTEC[sParentName];
+
+				//遍历所有转换后的物品并合并相同
 				for (auto &itItem : tmp)
 				{
+					mpInfoTEC.map[{ std::move(itItem.sItemName), std::move(itItem.cpdItemTag) }] += itItem.u64ItemCount;
 					current.map[{ std::move(itItem.sItemName), std::move(itItem.cpdItemTag) }] += itItem.u64ItemCount;
 				}
 			}
 
 			//执行排序
 			current.SortElement();
+			curInfoTEC.SortElement();
 		}
 
 		//实体处理
@@ -93,6 +89,8 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 			auto &current = rgsData.mslEntity;
 			auto &curContainer = rgsData.mslEntityContainer;
 			auto &curInventory = rgsData.mslEntityInventory;
+			auto &curInfoEC = rgsData.mmslParentInfoEC;
+			auto &curInfoEI = rgsData.mmslParentInfoEI;
 
 			auto listEntityStats = EntityProcess::GetEntityStats(RgCompound);
 			for (const auto &it : listEntityStats)
@@ -108,13 +106,20 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 				tmpSlot.listContainer = ItemProcess::ItemStackListUnpackContainer(std::move(tmpSlot.listContainer));
 				tmpSlot.listInventory = ItemProcess::ItemStackListUnpackContainer(std::move(tmpSlot.listInventory));
 
+				//获取实体名称并获取带容器名物品信息映射
+				auto sParentName = it.psEntityName == NULL ? NBT_Node::NBT_String{} : *it.psEntityName;
+				auto &mpInfoEC = curInfoEC[sParentName];
+				auto &mpInfoEI = curInfoEI[sParentName];
+
 				//遍历并合并相同物品
 				for (auto &itItem : tmpSlot.listContainer)
 				{
+					mpInfoEC.map[{std::move(itItem.sItemName), std::move(itItem.cpdItemTag)}] += itItem.u64ItemCount;
 					curContainer.map[{std::move(itItem.sItemName), std::move(itItem.cpdItemTag)}] += itItem.u64ItemCount;
 				}
 				for (auto &itItem : tmpSlot.listInventory)
 				{
+					mpInfoEI.map[{std::move(itItem.sItemName), std::move(itItem.cpdItemTag)}] += itItem.u64ItemCount;
 					curInventory.map[{std::move(itItem.sItemName), std::move(itItem.cpdItemTag)}] += itItem.u64ItemCount;
 				}
 			}
@@ -123,6 +128,8 @@ RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions)
 			current.SortElement();
 			curContainer.SortElement();
 			curInventory.SortElement();
+			curInfoEC.SortElement();
+			curInfoEI.SortElement();
 		}
 
 		//上面几个没有带块语句的无名块，用于控制变量作用域，提升代码可读性

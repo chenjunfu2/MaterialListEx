@@ -34,17 +34,19 @@ public:
 	}
 
 public:
-	static size_t Hash(const ItemInfo &self)
+	static size_t Hash(const ItemInfo &self) noexcept
 	{
 		return self.u64Hash;
 	}
 
-	static bool Equal(const ItemInfo &_l, const ItemInfo &_r)
+	static bool Equal(const ItemInfo &_l, const ItemInfo &_r) noexcept
 	{
-		return _l.u64Hash == _r.u64Hash && _l.sName == _r.sName && _l.cpdTag == _r.cpdTag;
+		return	_l.u64Hash	==	_r.u64Hash	&&
+				_l.sName	==	_r.sName	&&
+				_l.cpdTag	==	_r.cpdTag;//开销最大放最后
 	}
 
-	inline std::partial_ordering operator<=>(const ItemInfo &_r) const
+	inline std::partial_ordering operator<=>(const ItemInfo &_r) const noexcept
 	{
 		//先按照哈希序
 		if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
@@ -59,7 +61,7 @@ public:
 		}
 
 		//都相同最后按照Tag序
-		return cpdTag <=> _r.cpdTag;
+		return cpdTag <=> _r.cpdTag;//开销最大放最后
 	}
 };
 
@@ -79,17 +81,17 @@ public:
 	}
 
 public:
-	static size_t Hash(const NoTagItemInfo &self)
+	static size_t Hash(const NoTagItemInfo &self) noexcept
 	{
 		return self.u64Hash;
 	}
 
-	static bool Equal(const NoTagItemInfo &_l, const NoTagItemInfo &_r)
+	static bool Equal(const NoTagItemInfo &_l, const NoTagItemInfo &_r) noexcept
 	{
 		return _l.u64Hash == _r.u64Hash && _l.sName == _r.sName;
 	}
 
-	inline std::strong_ordering operator<=>(const NoTagItemInfo &_r) const
+	inline std::strong_ordering operator<=>(const NoTagItemInfo &_r) const noexcept
 	{
 		//先按照哈希序
 		if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)

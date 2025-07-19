@@ -45,9 +45,8 @@ private:
 			{MU8STR("minecraft:brushable_block"),MU8STR("item")},
 		};
 
-		if (teStats.psTileEntityName == NULL)
+		if (teStats.psTileEntityName == NULL)//如果名称为空，则跳过
 		{
-			//TODO:如果没有方块实体id，则通过方块->方块实体映射表查找，而不是返回失败
 			return false;
 		}
 
@@ -82,6 +81,10 @@ public:
 		{
 			const auto &cur = GetCompound(it);
 
+			//TODO:如果cur.HasString(MU8STR("id"))没有方块实体id，
+			//则通过方块->方块实体映射表查找，找不到则为NULL
+			//查找成功或失败后再创建teStats
+			//特别的，只查找可以存放物品的方块实体容器，其余丢弃
 			TileEntityContainerStats teStats{ cur.HasString(MU8STR("id")) };
 			if (MapTileEntityContainerStats(cur, teStats))
 			{
