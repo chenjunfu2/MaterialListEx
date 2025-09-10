@@ -1,7 +1,6 @@
 #pragma once
 
 #include "NBT_Node.hpp"
-#include "MUTF8_Tool.hpp"
 #include "ItemProcess.hpp"
 
 #include <compare>
@@ -193,7 +192,7 @@ public:
 
 			//获取tag后根据实际类型进行解析
 			const auto tag = it.pItems->GetTag();
-			if (tag == NBT_Node::TAG_Compound)
+			if (tag == NBT_TAG::TAG_Compound)
 			{
 				if (it.pItems->GetCompound().empty())
 				{
@@ -201,7 +200,7 @@ public:
 				}
 				pCurList->push_back(ItemProcess::ItemCompoundToItemStack(it.pItems->GetCompound()));
 			}
-			else if (tag == NBT_Node::TAG_List)
+			else if (tag == NBT_TAG::TAG_List)
 			{
 				const auto &tmp = it.pItems->GetList();
 				for (const auto &cur : tmp)

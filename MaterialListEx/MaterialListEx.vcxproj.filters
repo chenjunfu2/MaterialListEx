@@ -31,6 +31,9 @@
     <Filter Include="头文件\xxhash">
       <UniqueIdentifier>{0dbf17c4-3b67-49f0-928a-aacd2f74024a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\nbt">
+      <UniqueIdentifier>{62819415-0b29-4375-9d53-d4c304c04636}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -81,9 +84,6 @@
     <ClCompile Include="zlib\deflate.c">
       <Filter>源文件\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="Windows_ANSI.hpp">
-      <Filter>头文件</Filter>
-    </ClCompile>
     <ClCompile Include="RegionProcess.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -93,14 +93,11 @@
     <ClCompile Include="xxhash\xxh_x86dispatch.c">
       <Filter>源文件\xxhash</Filter>
     </ClCompile>
+    <ClCompile Include="Windows_ANSI.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="NBT_Reader.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="NBT_Node.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="MemoryLeakCheck.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -153,15 +150,6 @@
       <Filter>头文件\gzip</Filter>
     </ClInclude>
     <ClInclude Include="Calc_Tool.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="NBT_Writer.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="NBT_Helper.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MUTF8_Tool.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="BlockProcess.hpp">
@@ -308,12 +296,6 @@
     <ClInclude Include="TileEntityProcess.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="File_Tool.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Compression_Utils.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="RegionProcess.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -343,6 +325,45 @@
     </ClInclude>
     <ClInclude Include="CountFormatter.hpp">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_Array.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="MUTF8_Tool.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_Compound.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_Helper.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_List.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_Node.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_Node_View.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_Reader.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_String.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_TAG.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_Writer.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="File_Tool.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="Compression_Utils.hpp">
+      <Filter>头文件\nbt</Filter>
     </ClInclude>
     <ClInclude Include="Windows_FileSystem.hpp">
       <Filter>头文件</Filter>

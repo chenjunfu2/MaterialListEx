@@ -1,7 +1,6 @@
 #pragma once
 
 #include "NBT_Node.hpp"
-#include "MUTF8_Tool.hpp"
 #include "ItemProcess.hpp"
 
 #include <unordered_map>
@@ -100,7 +99,7 @@ public:
 		ItemProcess::ItemStackList listItemStack{};
 
 		auto tag = stContainerStats.pItems->GetTag();
-		if (tag == NBT_Node::TAG_Compound)//只有一格物品
+		if (tag == NBT_TAG::TAG_Compound)//只有一格物品
 		{
 			if (stContainerStats.pItems->GetCompound().empty())
 			{
@@ -108,7 +107,7 @@ public:
 			}
 			listItemStack.push_back(ItemProcess::ItemCompoundToItemStack(stContainerStats.pItems->GetCompound()));
 		}
-		else if (tag == NBT_Node::TAG_List)//多格物品列表
+		else if (tag == NBT_TAG::TAG_List)//多格物品列表
 		{
 			const auto &tmp = stContainerStats.pItems->GetList();
 			for (const auto &it : tmp)

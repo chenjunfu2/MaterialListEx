@@ -240,7 +240,7 @@ private:
 
 		//ÅĞ¶ÏÀàĞÍ
 		auto tag = pItems->GetTag();
-		if (tag == NBT_Node::TAG_Compound)
+		if (tag == NBT_TAG::TAG_Compound)
 		{
 			auto &tmp = pItems->GetCompound();
 			ItemStack tmpItem = ItemCompoundToItemStack(std::move(tmp));
@@ -250,7 +250,7 @@ private:
 			tmpItem.u64ItemCount *= u64Scale;
 			ItemStackUnpackContainer(std::move(tmpItem), listItemStack, szStackDepth - 1);//µİ¹é - 1
 		}
-		else if (tag == NBT_Node::TAG_List)
+		else if (tag == NBT_TAG::TAG_List)
 		{
 			auto &tmp = pItems->GetList();
 			for (auto &it : tmp)//±éÀúlist

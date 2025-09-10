@@ -21,6 +21,12 @@
 //	return {};
 //}
 
+void PrintBool(bool b)
+{
+	printf("%s", b ? "true" : "false");
+}
+
+
 int main(int argc, char *argv[])
 {
 	//auto c = std::source_location::current();
@@ -31,6 +37,36 @@ int main(int argc, char *argv[])
 	//func<std::vector<int>>({});
 
 	//*(long *)NULL = NULL;
+
+
+	NBT_Node::NBT_Compound test;
+	test.Put("test", 1LL);
+	test.PutByte("test2", 1LL);
+	test.PutInt("test3", 1LL);
+
+	NBT_Node::NBT_List list;
+	list.push_back(NBT_Node{ (NBT_Node::NBT_Int)1 });
+	list.push_back(NBT_Node{ (NBT_Node::NBT_Int)2 });
+	list.push_back(NBT_Node{ (NBT_Node::NBT_Int)3 });
+
+	for (auto &it : list)
+	{
+		printf("%d ", it.GetInt());
+	}
+	putchar('\n');
+	PrintBool(test.Contains("test"));
+	putchar('\n');
+	PrintBool(test.Contains("test1"));
+	putchar('\n');
+	PrintBool(test.Contains("test", NBT_TAG::TAG_Int));
+	putchar('\n');
+	PrintBool(test.Contains("test2", NBT_TAG::TAG_Byte));
+	putchar('\n');
+
+	NBT_Helper::Print(test);
+
+	return 0;
+
 
 
 	using mp = std::pair<const NBT_Node::NBT_String, NBT_Node>;
@@ -84,6 +120,9 @@ int main(int argc, char *argv[])
 			}}
 		}
 	};
+
+	NBT_Helper::Print(a);
+	NBT_Helper::Print(b);
 
 	//std::partial_ordering tmp = a <=> b;
 

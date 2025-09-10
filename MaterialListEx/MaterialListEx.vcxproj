@@ -210,9 +210,15 @@
     <ClInclude Include="Language.hpp" />
     <ClInclude Include="MemoryLeakCheck.hpp" />
     <ClInclude Include="MUTF8_Tool.hpp" />
+    <ClInclude Include="NBT_Array.hpp" />
+    <ClInclude Include="NBT_Compound.hpp" />
     <ClInclude Include="NBT_Helper.hpp" />
+    <ClInclude Include="NBT_List.hpp" />
     <ClInclude Include="NBT_Node.hpp" />
+    <ClInclude Include="NBT_Node_View.hpp" />
     <ClInclude Include="NBT_Reader.hpp" />
+    <ClInclude Include="NBT_String.hpp" />
+    <ClInclude Include="NBT_TAG.hpp" />
     <ClInclude Include="NBT_Writer.hpp" />
     <ClInclude Include="nlohmann\adl_serializer.hpp" />
     <ClInclude Include="nlohmann\byte_container_with_subtype.hpp" />

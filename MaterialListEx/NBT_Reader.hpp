@@ -1,10 +1,9 @@
 #pragma once
 
 #include "NBT_Node.hpp"
-#include "MUTF8_Tool.hpp"
-#include "Windows_ANSI.hpp"
 
 #include <new>//std::bad_alloc
+#include <typeinfo>//typeid
 
 template <typename T>
 class MyInputStream
@@ -617,7 +616,7 @@ catch(...)\
 		}
 
 		//错误的列表元素类型
-		if (bListElementType >= NBT_Node::NBT_TAG::ENUM_END)
+		if (bListElementType >= NBT_TAG::ENUM_END)
 		{
 			iRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": List NBT Type:Unknown Type Tag[%02X(%d)]", bListElementType, bListElementType);
 			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
@@ -649,14 +648,14 @@ catch(...)\
 		for (int32_t i = 0; i < dwListLength; ++i)
 		{
 			NBT_Node tmpNode{};//列表元素会直接赋值修改
-			iRet = SwitchNBT<false>(tData, tmpNode, (NBT_Node::NBT_TAG)bListElementType, szStackDepth - 1);
+			iRet = SwitchNBT<false>(tData, tmpNode, (NBT_TAG)bListElementType, szStackDepth - 1);
 			if (iRet < AllOk)//错误处理
 			{
 				STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), dwListLength, i);
 				break;//跳出循环以保留错误数据之前的正确数据
 			}
 
-			if (bListElementType == NBT_Node::NBT_TAG::TAG_End)//空元素特判
+			if (bListElementType == NBT_TAG::TAG_End)//空元素特判
 			{
 				//读取1字节的bCompoundEndTag
 				uint8_t bCompoundEndTag = 0;//b=byte
@@ -668,7 +667,7 @@ catch(...)\
 				}
 
 				//判断tag是否符合
-				if (bCompoundEndTag != NBT_Node::TAG_End)
+				if (bCompoundEndTag != NBT_TAG::TAG_End)
 				{
 					iRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": require Compound End Tag [0x00], but read Unknown Tag [0x%02X]!", bCompoundEndTag);
 					STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), dwListLength, i);
@@ -704,74 +703,74 @@ catch(...)\
 
 	//这个函数拦截所有内部调用产生的异常并处理返回，所以此函数绝对不抛出异常，由此调用此函数的函数也可无需catch异常
 	template<bool bHasName = true>
-	static int SwitchNBT(InputStream &tData, NBT_Node &nRoot, NBT_Node::NBT_TAG tag, size_t szStackDepth) noexcept//选择函数不检查递归层，由函数调用的函数检查
+	static int SwitchNBT(InputStream &tData, NBT_Node &nRoot, NBT_TAG tag, size_t szStackDepth) noexcept//选择函数不检查递归层，由函数调用的函数检查
 	{
 		int iRet = AllOk;
 
 		MYTRY
 		switch (tag)
 		{
-		case NBT_Node::TAG_End:
+		case NBT_TAG::TAG_End:
 			{
 				iRet = Compound_End;//返回结尾
 			}
 			break;
-		case NBT_Node::TAG_Byte:
+		case NBT_TAG::TAG_Byte:
 			{
 				iRet = GetBuiltinType<NBT_Node::NBT_Byte, bHasName>(tData, nRoot);
 			}
 			break;
-		case NBT_Node::TAG_Short:
+		case NBT_TAG::TAG_Short:
 			{
 				iRet = GetBuiltinType<NBT_Node::NBT_Short, bHasName>(tData, nRoot);
 			}
 			break;
-		case NBT_Node::TAG_Int:
+		case NBT_TAG::TAG_Int:
 			{
 				iRet = GetBuiltinType<NBT_Node::NBT_Int, bHasName>(tData, nRoot);
 			}
 			break;
-		case NBT_Node::TAG_Long:
+		case NBT_TAG::TAG_Long:
 			{
 				iRet = GetBuiltinType<NBT_Node::NBT_Long, bHasName>(tData, nRoot);
 			}
 			break;
-		case NBT_Node::TAG_Float:
+		case NBT_TAG::TAG_Float:
 			{
 				iRet = GetBuiltinType<NBT_Node::NBT_Float, bHasName>(tData, nRoot);
 			}
 			break;
-		case NBT_Node::TAG_Double:
+		case NBT_TAG::TAG_Double:
 			{
 				iRet = GetBuiltinType<NBT_Node::NBT_Double, bHasName>(tData, nRoot);
 			}
 			break;
-		case NBT_Node::TAG_Byte_Array:
+		case NBT_TAG::TAG_Byte_Array:
 			{
 				iRet = GetArrayType<NBT_Node::NBT_ByteArray, bHasName>(tData, nRoot);
 			}
 			break;
-		case NBT_Node::TAG_String:
+		case NBT_TAG::TAG_String:
 			{
 				iRet = GetStringType<bHasName>(tData, nRoot);
 			}
 			break;
-		case NBT_Node::TAG_List://需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签 ID 或名称）
+		case NBT_TAG::TAG_List://需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签 ID 或名称）
 			{//最复杂
 				iRet = GetListType<bHasName>(tData, nRoot, szStackDepth);//选择函数不减少递归层
 			}
 			break;
-		case NBT_Node::TAG_Compound://需要递归调用
+		case NBT_TAG::TAG_Compound://需要递归调用
 			{
 				iRet = GetCompoundType<bHasName>(tData, nRoot, szStackDepth);//选择函数不减少递归层
 			}
 			break;
-		case NBT_Node::TAG_Int_Array:
+		case NBT_TAG::TAG_Int_Array:
 			{
 				iRet = GetArrayType<NBT_Node::NBT_IntArray, bHasName>(tData, nRoot);
 			}
 			break;
-		case NBT_Node::TAG_Long_Array:
+		case NBT_TAG::TAG_Long_Array:
 			{
 				iRet = GetArrayType<NBT_Node::NBT_LongArray, bHasName>(tData, nRoot);
 			}
@@ -823,7 +822,7 @@ catch(...)\
 			}
 
 			//处理正常情况
-			iRet = SwitchNBT(tData, nRoot, (NBT_Node::NBT_TAG)(uint8_t)tData.GetNext(), szStackDepth - 1);//已捕获所有异常
+			iRet = SwitchNBT(tData, nRoot, (NBT_TAG)(uint8_t)tData.GetNext(), szStackDepth - 1);//已捕获所有异常
 		} while (iRet == AllOk);//iRet<AllOk即为错误，跳出循环，>AllOk则为其它动作，跳出循环
 
 		if constexpr (bRoot)//根部情况遇到Compound_End则转为AllOk返回

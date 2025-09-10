@@ -1,7 +1,5 @@
 ﻿//#include "MemoryLeakCheck.hpp"
-#include "Windows_ANSI.hpp"
 
-#include "MUTF8_Tool.hpp"
 #include "NBT_Node.hpp"
 #include "NBT_Helper.hpp"
 #include "NBT_Reader.hpp"
