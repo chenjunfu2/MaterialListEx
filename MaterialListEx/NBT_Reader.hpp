@@ -649,7 +649,7 @@ catch(...)\
 		}
 
 		//根据元素类型，读取n次列表
-		NBT_Node::NBT_List tmpList{};
+		NBT_Node::NBT_List tmpList{ (NBT_TAG)bListElementType };
 		MYTRY
 		tmpList.reserve(dwListLength);//已知大小提前分配减少开销
 
