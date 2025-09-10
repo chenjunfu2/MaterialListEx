@@ -11,43 +11,48 @@ class MyList :public List
 {
 private:
 	//列表元素类型（只能一种元素）
-	NBT_TAG tagValue = NBT_TAG::TAG_End;
+	NBT_TAG enValueTag = NBT_TAG::TAG_End;
 	//此变量仅用于规约列表元素类型，无需参与比较与hash，但是需要参与构造与移动
 private:
-	bool TestAndSetType(NBT_TAG targetTag)
+	bool TestAndSetType(NBT_TAG enTargetTag)
 	{
-		if (tagValue == NBT_TAG::TAG_End)
+		if (enTargetTag == NBT_TAG::TAG_End)
 		{
-			tagValue = targetTag;
+			return false;//不能插入空值，拒掉
+		}
+
+		if (enValueTag == NBT_TAG::TAG_End)
+		{
+			enValueTag = enTargetTag;
 			return true;
 		}
 
-		return targetTag == tagValue;
+		return enTargetTag == enValueTag;
 	}
 public:
 	//继承基类构造
 	using List::List;
 
 	MyList(void) = default;
-	MyList(NBT_TAG _tagValType) :List({}), tagValue(_tagValType)
+	MyList(NBT_TAG _tagValType) :List({}), enValueTag(_tagValType)
 	{}
 	MyList(MyList &&_Move) noexcept
 		:List(std::move(_Move)),
-		 tagValue(std::move(_Move.tagValue))
+		 enValueTag(std::move(_Move.enValueTag))
 	{
-		_Move.tagValue = NBT_TAG::TAG_End;
+		_Move.enValueTag = NBT_TAG::TAG_End;
 	}
 	MyList(const MyList &_Other)
 		:List(_Other),
-		tagValue(_Other.tagValue)
+		enValueTag(_Other.enValueTag)
 	{}
 
 	MyList &operator=(MyList &&_Move) noexcept
 	{
 		List::operator=(std::move(_Move));
-		tagValue = std::move(_Move.tagValue);
+		enValueTag = std::move(_Move.enValueTag);
 
-		_Move.tagValue = NBT_TAG::TAG_End;
+		_Move.enValueTag = NBT_TAG::TAG_End;
 
 		return *this;
 	}
@@ -55,7 +60,7 @@ public:
 	MyList &operator=(const MyList &_Other)
 	{
 		List::operator=(_Other);
-		tagValue = _Other.tagValue;
+		enValueTag = _Other.enValueTag;
 
 		return *this;
 	}
@@ -67,13 +72,13 @@ public:
 			return false;
 		}
 
-		tagValue = tagNewValue;
+		enValueTag = tagNewValue;
 		return true;
 	}
 
 	NBT_TAG GetTag(void)
 	{
-		return tagValue;
+		return enValueTag;
 	}
 
 	//简化list查询
@@ -99,47 +104,46 @@ public:
 
 	//简化list插入
 	template <class V>
-	inline bool Add(size_t szPos, V &&vTagVal)
+	inline std::pair<typename List::iterator, bool> Add(size_t szPos, V &&vTagVal)
 	{
 		if (szPos > List::size())
 		{
-			return false;
+			return std::pair{ List::end(),false };
 		}
 		if (!TestAndSetType(vTagVal.GetTag()))
 		{
-			return false;
+			return std::pair{ List::end(),false };
 		}
 
-		List::emplace(List::begin() + szPos, std::forward<V>(vTagVal));
-		return true;
+		return std::pair{ List::emplace(List::begin() + szPos, std::forward<V>(vTagVal)),true };
 	}
 
 	template <class V>
-	inline bool AddBack(V &&vTagVal)
+	inline std::pair<typename List::iterator, bool> AddBack(V &&vTagVal)
 	{
 		if (!TestAndSetType(vTagVal.GetTag()))
 		{
-			return false;
+			return std::pair{ List::end(),false };
 		}
 
 		List::emplace_back(std::forward<V>(vTagVal));
-		return true;
+		return std::pair{ List::end() - 1,true };
 	}
 
 	template <class V>
-	inline bool Set(size_t szPos, V &&vTagVal)
+	inline std::pair<typename List::iterator, bool> Set(size_t szPos, V &&vTagVal)
 	{
 		if (szPos > List::size())
 		{
-			return false;
+			return std::pair{ List::end(),false };
 		}
 		if (!TestAndSetType(vTagVal.GetTag()))
 		{
-			return false;
+			return std::pair{ List::end(),false };
 		}
 
 		List::operator[](szPos) = std::forward<V>(vTagVal);
-		return true;
+		return std::pair{ List::begin() + szPos,true };
 	}
 
 	//简化删除
@@ -150,7 +154,7 @@ public:
 			return false;
 		}
 
-		List::erase(List::begin() + szPos);
+		List::erase(List::begin() + szPos);//这个没必要返回结果，直接丢弃
 		return true;
 	}
 
@@ -218,32 +222,32 @@ inline typename List::value_type::NBT_##type &Back##type(void)\
 #undef TYPE_GET_FUNC
 
 #define TYPE_PUT_FUNC(type)\
-inline bool Add##type(size_t szPos, const typename List::value_type::NBT_##type &vTagVal)\
+inline std::pair<typename List::iterator, bool> Add##type(size_t szPos, const typename List::value_type::NBT_##type &vTagVal)\
 {\
 	return Add(szPos, vTagVal);\
 }\
 \
-inline bool Add##type(size_t szPos, typename List::value_type::NBT_##type &&vTagVal)\
+inline std::pair<typename List::iterator, bool> Add##type(size_t szPos, typename List::value_type::NBT_##type &&vTagVal)\
 {\
 	return Add(szPos, vTagVal);\
 }\
 \
-inline bool AddBack##type(const typename List::value_type::NBT_##type &vTagVal)\
+inline std::pair<typename List::iterator, bool> AddBack##type(const typename List::value_type::NBT_##type &vTagVal)\
 {\
 	return AddBack(vTagVal);\
 }\
 \
-inline bool AddBack##type(typename List::value_type::NBT_##type &&vTagVal)\
+inline std::pair<typename List::iterator, bool> AddBack##type(typename List::value_type::NBT_##type &&vTagVal)\
 {\
 	return AddBack(vTagVal);\
 }\
 \
-inline bool Set##type(size_t szPos, const typename List::value_type::NBT_##type &vTagVal)\
+inline std::pair<typename List::iterator, bool> Set##type(size_t szPos, const typename List::value_type::NBT_##type &vTagVal)\
 {\
 	return Set(szPos, vTagVal);\
 }\
 \
-inline bool Set##type(size_t szPos, typename List::value_type::NBT_##type &&vTagVal)\
+inline std::pair<typename List::iterator, bool> Set##type(size_t szPos, typename List::value_type::NBT_##type &&vTagVal)\
 {\
 	return Set(szPos, vTagVal);\
 }

@@ -128,14 +128,14 @@ template <class K>\
 inline std::pair<typename Map::iterator, bool> Put##type(K &&sTagName, const typename Map::mapped_type::NBT_##type &vTagVal)\
 	requires std::constructible_from<typename Map::key_type, K &&>\
 {\
-	return Map::try_emplace(std::forward<K>(sTagName), vTagVal);\
+	return Put(std::forward<K>(sTagName), vTagVal);\
 }\
 \
 template <class K>\
 inline std::pair<typename Map::iterator, bool> Put##type(K &&sTagName, typename Map::mapped_type::NBT_##type &&vTagVal)\
 	requires std::constructible_from<typename Map::key_type, K &&>\
 {\
-	return Map::try_emplace(std::forward<K>(sTagName), vTagVal);\
+	return Put(std::forward<K>(sTagName), vTagVal);\
 }
 
 	TYPE_PUT_FUNC(End);
