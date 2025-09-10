@@ -640,6 +640,14 @@ catch(...)\
 			return iRet;
 		}
 
+		//防止重复N个结束标签，带有结束标签的必须是空列表
+		if (bListElementType == NBT_TAG::TAG_End && dwListLength != 0)
+		{
+			iRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": The list with TAG_End[0x00] tag must be empty, but [%d] elements were found", dwListLength);
+			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+			return iRet;
+		}
+
 		//根据元素类型，读取n次列表
 		NBT_Node::NBT_List tmpList{};
 		MYTRY
