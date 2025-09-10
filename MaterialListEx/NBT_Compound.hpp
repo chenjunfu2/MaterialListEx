@@ -9,6 +9,12 @@
 template<typename Map>
 class MyCompound :public Map
 {
+private:
+	bool TestType(NBT_TAG enTargetTag)
+	{
+		return enTargetTag != NBT_TAG::TAG_End;
+	}
+
 public:
 	//继承基类构造
 	using Map::Map;
@@ -42,16 +48,31 @@ public:
 	inline std::pair<typename Map::iterator, bool> Put(K &&sTagName, V &&vTagVal)
 		requires std::constructible_from<typename Map::key_type, K &&> && std::constructible_from<typename Map::mapped_type, V &&>
 	{
+		if (!TestType(vTagVal.GetTag()))
+		{
+			return std::pair{ Map::end(),false };
+		}
+
 		return Map::try_emplace(std::forward<K>(sTagName), std::forward<V>(vTagVal));
 	}
 
 	inline std::pair<typename Map::iterator, bool> Put(const typename Map::value_type &mapValue)
 	{
+		if (!TestType(mapValue.second.GetTag()))
+		{
+			return std::pair{ Map::end(),false };
+		}
+
 		return Map::insert(mapValue);
 	}
 
 	inline std::pair<typename Map::iterator, bool> Put(typename Map::value_type &&mapValue)
 	{
+		if (!TestType(mapValue.second.GetTag()))
+		{
+			return std::pair{ Map::end(),false };
+		}
+
 		return Map::insert(std::move(mapValue));
 	}
 

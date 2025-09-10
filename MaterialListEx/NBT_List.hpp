@@ -161,6 +161,7 @@ public:
 	inline void Clear(void)
 	{
 		List::clear();
+		enValueTag = NBT_TAG::TAG_End;
 	}
 
 	//¹¦ÄÜº¯Êý
