@@ -155,6 +155,12 @@ public:
 		}
 
 		List::erase(List::begin() + szPos);//这个没必要返回结果，直接丢弃
+
+		if (Empty())
+		{
+			enValueTag = NBT_TAG::TAG_End;//清除类型
+		}
+
 		return true;
 	}
 
