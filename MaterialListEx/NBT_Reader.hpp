@@ -90,7 +90,7 @@ public:
 	}
 };
 
-template <typename DataType = std::string>
+template <typename DataType = std::basic_string<uint8_t>>
 class NBT_Reader
 {
 	using InputStream = MyInputStream<DataType>;//Á÷ÀàĞÍ

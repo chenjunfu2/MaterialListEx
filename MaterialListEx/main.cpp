@@ -201,7 +201,7 @@ void Convert(const char *const pFileName)
 	CodeTimer timer;
 	printf("Current file:[%s]\n", pFileName);
 
-	std::string sNbtData;
+	std::basic_string<uint8_t> sNbtData;
 	timer.Start();
 	if (!ReadFile(pFileName, sNbtData))
 	{
@@ -213,11 +213,13 @@ void Convert(const char *const pFileName)
 	 printf("File read size:[%zu]\n", sNbtData.size());
 	 timer.PrintElapsed("File read time:[", "]\n");
 
-	 if (gzip::is_compressed(sNbtData.data(), sNbtData.size()))//如果nbt已压缩，解压，否则保持原样
+	 if (gzip::is_compressed((char*)sNbtData.data(), sNbtData.size()))//如果nbt已压缩，解压，否则保持原样
 	 {
+		 std::basic_string<uint8_t> tmp;
 		 timer.Start();
-		 sNbtData = gzip::decompress(sNbtData.data(), sNbtData.size());
+		 gzip::Decompressor{}.decompress(tmp, (char *)sNbtData.data(), sNbtData.size());
 		 timer.Stop();
+		 sNbtData = std::move(tmp);
 
 		 printf("File decompressed size:[%lld]\n", (uint64_t)sNbtData.size());
 		 timer.PrintElapsed("Decompress time:[", "]\n");
@@ -276,7 +278,7 @@ void Convert(const char *const pFileName)
 	//以下使用nbt
 	NBT_Node nRoot;
 	timer.Start();
-	if (!NBT_Reader<std::string>::ReadNBT(nRoot, sNbtData))
+	if (!NBT_Reader<std::basic_string<uint8_t>>::ReadNBT(nRoot, sNbtData))
 	{
 		printf("\nData before the error was encountered:");
 		NBT_Helper::Print(nRoot);

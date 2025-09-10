@@ -5,7 +5,7 @@
 #include <string>
 #include <filesystem>
 
-bool ReadFile(const char *const _FileName, std::string &_Data)
+bool ReadFile(const char *const _FileName, std::basic_string<uint8_t> &_Data)
 {
 	FILE *pFile = fopen(_FileName, "rb");
 	if (pFile == NULL)
