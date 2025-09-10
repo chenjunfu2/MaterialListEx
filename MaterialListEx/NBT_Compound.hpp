@@ -55,6 +55,23 @@ public:
 		return Map::insert(std::move(mapValue));
 	}
 
+	//简化删除
+	inline bool Remove(const typename Map::key_type &sTagName)
+	{
+		return Map::erase(sTagName) != 0;//返回1即为成功，否则为0，标准库：返回值为删除的元素数（0 或 1）。
+	}
+
+	//功能函数
+	inline bool Empty(void) const noexcept
+	{
+		return Map::empty();
+	}
+
+	inline size_t Size(void) const noexcept
+	{
+		return Map::size();
+	}
+
 	//简化判断
 	inline bool Contains(const typename Map::key_type &sTagName) const noexcept
 	{

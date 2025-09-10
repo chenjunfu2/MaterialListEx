@@ -45,9 +45,9 @@ int main(int argc, char *argv[])
 	test.PutInt("test3", 1LL);
 
 	NBT_Node::NBT_List list;
-	list.push_back(NBT_Node{ (NBT_Node::NBT_Int)1 });
-	list.push_back(NBT_Node{ (NBT_Node::NBT_Int)2 });
-	list.push_back(NBT_Node{ (NBT_Node::NBT_Int)3 });
+	list.AddBack(NBT_Node{ (NBT_Node::NBT_Int)1 });
+	list.AddBack(NBT_Node{ (NBT_Node::NBT_Int)2 });
+	list.AddBack(NBT_Node{ (NBT_Node::NBT_Int)3 });
 
 	for (auto &it : list)
 	{
