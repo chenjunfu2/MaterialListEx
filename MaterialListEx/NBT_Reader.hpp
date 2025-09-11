@@ -4,6 +4,7 @@
 
 #include <new>//std::bad_alloc
 #include <typeinfo>//typeid
+#include <bit>//std::bit_cast
 
 template <typename T>
 class MyInputStream
@@ -399,7 +400,7 @@ catch(...)\
 		{
 			MYTRY
 			//名称-内含数据的节点插入当前调用栈深度的根节点
-			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move((*((T *)&tTmpData))));//无损数据类型转换
+			auto ret = nRoot.GetData<NBT_Node::NBT_Compound>().try_emplace(std::move(sName), std::move(std::bit_cast<T>(tTmpData)));//无损数据类型转换
 			if (!ret.second)//插入失败，元素已存在
 			{
 				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(T).name());
@@ -409,7 +410,7 @@ catch(...)\
 		else
 		{
 			//无名，为列表元素，直接修改nRoot
-			nRoot.emplace<T>(std::move((*((T *)&tTmpData))));
+			nRoot.emplace<T>(std::move(std::bit_cast<T>(tTmpData)));
 		}
 
 		return iRet;
