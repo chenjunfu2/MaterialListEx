@@ -61,7 +61,7 @@ public:
 
 		//获取调色板（方块种类）
 		const auto &BlockStatePalette = RgCompound.GetList(MU8STR("BlockStatePalette"));
-		const uint32_t bitsPerBitMapElement = Max(2U, (uint32_t)sizeof(uint32_t) * 8 - numberOfLeadingZeros(BlockStatePalette.size() - 1));//计算位图中一个元素占用的bit大小
+		const uint32_t bitsPerBitMapElement = Max(2U, (uint32_t)sizeof(uint32_t) * 8 - numberOfLeadingZeros(BlockStatePalette.Size() - 1));//计算位图中一个元素占用的bit大小
 		const uint32_t bitMaskOfElement = (1 << bitsPerBitMapElement) - 1;//获取遮罩位，用于取bitmap内部内容
 		//printf("BlockStatePaletteSize: [%zu]\nbitsPerBitMapElement: [%d]\n", BlockStatePalette.size(), bitsPerBitMapElement);
 		/*------------------------------------------------*/
@@ -69,7 +69,7 @@ public:
 		/*----------------根据方块位图访问调色板，获取不同状态方块的计数----------------*/
 		//创建方块统计vector
 		BlockStatsList listBlockStats;
-		listBlockStats.reserve(BlockStatePalette.size());//提前分配
+		listBlockStats.reserve(BlockStatePalette.Size());//提前分配
 
 		//遍历BlockStatePalette方块调色板，并从中创建等效下标的方块统计vector
 		for (const auto &it : BlockStatePalette)

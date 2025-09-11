@@ -291,7 +291,7 @@ void Convert(const char *const pFileName)
 	//return 0;
 
 	const auto &tmp = nRoot.GetCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
-	if (tmp.size() != 1)
+	if (tmp.Size() != 1)
 	{
 		printf("Error root size");
 		return;

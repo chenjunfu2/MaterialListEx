@@ -3,12 +3,18 @@
 #include <map>
 #include <compare>
 #include <type_traits>
+#include <initializer_list>
 
 #include "NBT_TAG.hpp"
 
+template <typename DataType>
+class NBT_Reader;
+
 template<typename Map>
-class MyCompound :public Map
+class MyCompound :protected Map
 {
+	template <typename DataType>
+	friend class NBT_Reader;
 private:
 	bool TestType(NBT_TAG enTargetTag)
 	{
@@ -16,8 +22,41 @@ private:
 	}
 
 public:
-	//继承基类构造
-	using Map::Map;
+	template<typename... Args>
+	MyCompound(Args&&... args) : Map(std::forward<Args>(args)...)
+	{}
+
+	MyCompound(std::initializer_list<typename Map::value_type> init) : Map(init)
+	{}
+
+	~MyCompound(void) = default;
+
+	//运算符重载
+	bool operator==(const MyCompound &_Right) const noexcept
+	{
+		return (const Map &)*this == (const Map &)_Right;
+	}
+
+	bool operator!=(const MyCompound &_Right) const noexcept
+	{
+		return (const Map &)*this != (const Map &)_Right;
+	}
+
+	std::partial_ordering operator<=>(const MyCompound &_Right) const noexcept
+	{
+		return (const Map &)*this <=> (const Map &)_Right;
+	}
+
+	//暴露父类接口
+	using Map::begin;
+	using Map::end;
+	using Map::cbegin;
+	using Map::cend;
+	using Map::rbegin;
+	using Map::rend;
+	using Map::crbegin;
+	using Map::crend;
+	using Map::operator[];
 
 	//简化map查询
 	inline typename Map::mapped_type &Get(const typename Map::key_type &sTagName)
@@ -80,6 +119,11 @@ public:
 	inline bool Remove(const typename Map::key_type &sTagName)
 	{
 		return Map::erase(sTagName) != 0;//返回1即为成功，否则为0，标准库：返回值为删除的元素数（0 或 1）。
+	}
+
+	inline void Clear(void)
+	{
+		Map::clear();
 	}
 
 	//功能函数

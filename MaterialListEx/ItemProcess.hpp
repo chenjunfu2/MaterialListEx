@@ -19,7 +19,7 @@ public:
 
 		constexpr static XXH64_hash_t HASH_SEED = 0xDE35'B92A'7F41'806C;
 
-		if (cpdTag.empty())//tag为空只计算名称
+		if (cpdTag.Empty())//tag为空只计算名称
 		{
 			return XXH64(sName.data(), sName.size(), HASH_SEED);
 		}
@@ -195,7 +195,7 @@ private:
 			return;//栈深度超了，直接返回
 		}
 
-		if (stItemStack.cpdItemTag.empty())//根本没有tag，下面不用判断了
+		if (stItemStack.cpdItemTag.Empty())//根本没有tag，下面不用判断了
 		{
 			goto push_return;
 		}
@@ -244,7 +244,7 @@ private:
 		{
 			auto &tmp = pItems->GetCompound();
 			ItemStack tmpItem = ItemCompoundToItemStack(std::move(tmp));
-			pItems->GetCompound().clear();//清空（内部数据已经转移所有权，不应该再使用）
+			pItems->GetCompound().Clear();//清空（内部数据已经转移所有权，不应该再使用）
 
 			//对内部的物品乘以倍率缩放
 			tmpItem.u64ItemCount *= u64Scale;
@@ -262,7 +262,7 @@ private:
 				ItemStackUnpackContainer(std::move(tmpItem), listItemStack, szStackDepth - 1);//递归 - 1
 			}
 			//最后统一清空
-			tmp.clear();//清空（内部数据已经转移所有权，不应该再使用）
+			tmp.Clear();//清空（内部数据已经转移所有权，不应该再使用）
 		}
 		//else {}//忽略
 

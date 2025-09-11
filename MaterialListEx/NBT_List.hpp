@@ -3,12 +3,19 @@
 #include <vector>
 #include <compare>
 #include <type_traits>
+#include <initializer_list>
+#include <stdexcept>
 
 #include "NBT_TAG.hpp"
 
-template<typename List>
-class MyList :public List
+template <typename DataType>
+class NBT_Reader;
+
+template <typename List>
+class MyList :protected List
 {
+	template <typename DataType>
+	friend class NBT_Reader;
 private:
 	//列表元素类型（只能一种元素）
 	NBT_TAG enValueTag = NBT_TAG::TAG_End;
@@ -29,13 +36,57 @@ private:
 
 		return enTargetTag == enValueTag;
 	}
+
+	void TestInit(void)
+	{
+		if (enValueTag == NBT_TAG::TAG_End && !List::empty())
+		{
+			Clear();
+			throw std::invalid_argument("Tag is end but the list is not empty");
+		}
+
+		if (enValueTag != NBT_TAG::TAG_End)
+		{
+			for (const auto &it : (List)*this)
+			{
+				if (it.GetTag() != enValueTag)
+				{
+					Clear();
+					throw std::invalid_argument("List contains elements of different types");
+				}
+			}
+		}
+	}
 public:
-	//继承基类构造
-	using List::List;
+	template<typename... Args>
+	MyList(NBT_TAG _enValueTag, Args&&... args) :List(std::forward<Args>(args)...), enValueTag(_enValueTag)
+	{
+		TestInit();
+	}
+
+	template<typename... Args>
+	MyList(Args&&... args) : List(std::forward<Args>(args)...), enValueTag(List::empty() ? NBT_TAG::TAG_End : List::front().GetTag())
+	{
+		TestInit();
+	}
+
+	MyList(NBT_TAG _enValueTag, std::initializer_list<typename List::value_type> init) : List(init), enValueTag(_enValueTag)
+	{
+		TestInit();
+	}
+
+	MyList(std::initializer_list<typename List::value_type> init) : List(init), enValueTag(List::empty() ? NBT_TAG::TAG_End : List::front().GetTag())
+	{
+		TestInit();
+	}
 
 	MyList(void) = default;
-	MyList(NBT_TAG _tagValType) :List({}), enValueTag(_tagValType)
-	{}
+
+	~MyList(void)
+	{
+		Clear();
+	}
+
 	MyList(MyList &&_Move) noexcept
 		:List(std::move(_Move)),
 		 enValueTag(std::move(_Move.enValueTag))
@@ -65,6 +116,41 @@ public:
 		return *this;
 	}
 
+	//运算符重载
+	bool operator==(const MyList &_Right) const noexcept
+	{
+		return enValueTag == _Right.enValueTag &&
+			(const List &)*this == (const List &)_Right;
+	}
+
+	bool operator!=(const MyList &_Right) const noexcept
+	{
+		return enValueTag != _Right.enValueTag ||
+			(const List &)*this != (const List &)_Right;
+	}
+
+	std::partial_ordering operator<=>(const MyList &_Right) const noexcept
+	{
+		if (auto cmp = enValueTag <=> _Right.enValueTag; cmp != 0)
+		{
+			return cmp;
+		}
+
+		return (const List &)*this <=> (const List &)_Right;
+	}
+
+	//暴露父类接口
+	using List::begin;
+	using List::end;
+	using List::cbegin;
+	using List::cend;
+	using List::rbegin;
+	using List::rend;
+	using List::crbegin;
+	using List::crend;
+	using List::operator[];//所有使用返回引用的api并修改list内部variant类型的操作都是未定义行为
+
+	//自定义操作
 	bool SetTag(NBT_TAG tagNewValue)
 	{
 		if (!List::empty())
@@ -82,6 +168,7 @@ public:
 	}
 
 	//简化list查询
+	//所有使用返回引用的api并修改list内部variant类型的操作都是未定义行为
 	inline typename List::value_type &Get(const typename List::size_type &szPos)
 	{
 		return List::at(szPos);
@@ -90,6 +177,16 @@ public:
 	inline const typename List::value_type &Get(const typename List::size_type &szPos) const
 	{
 		return List::at(szPos);
+	}
+
+	inline typename List::value_type &Front(void) noexcept
+	{
+		return List::front();
+	}
+
+	inline const typename List::value_type &Front(void) const noexcept
+	{
+		return List::front();
 	}
 
 	inline typename List::value_type &Back(void) noexcept

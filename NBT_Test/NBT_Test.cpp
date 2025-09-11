@@ -38,6 +38,9 @@ int main(int argc, char *argv[])
 
 	//*(long *)NULL = NULL;
 
+	using v = std::variant<int, long, std::list<int>>;
+	v vt(std::in_place_type<std::list<int>>,{1,2,3,4});
+
 
 	NBT_Node::NBT_Compound test;
 	test.Put("test", 1LL);

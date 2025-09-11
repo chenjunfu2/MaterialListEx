@@ -78,34 +78,54 @@ public:
 		static constexpr bool value = (std::is_same_v<T, Ts> || ...);
 	};
 
-	// 显式构造（通过标签）
+	//显式构造（通过in_place_type_t）
 	template <typename T, typename... Args>
-	explicit NBT_Node(std::in_place_type_t<T>, Args&&... args) : data(std::in_place_type<T>, std::forward<Args>(args)...)
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
+	NBT_Node(std::in_place_type_t<T>, Args&&... args) : data(std::in_place_type<T>, std::forward<Args>(args)...)
 	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
+		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT_Node");
+		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
 	}
 
-	// 显式构造（通过标签）
-	template <typename T, typename... Args>
-	explicit NBT_Node(Args&&... args) : data(std::forward<Args>(args)...)
+	//显式列表构造（通过in_place_type_t）
+	template <typename T, typename U, typename... Args>
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
+		NBT_Node(std::in_place_type_t<T>, std::initializer_list<U> init) : data(std::in_place_type<T>, init)
 	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
+		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT_Node");
+		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
 	}
 
-	// 通用构造函数
-	// 使用SFINAE排除NBT_Node类型
-	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, NBT_Node>>>
-	explicit NBT_Node(T &&value) : data(std::forward<T>(value))
+	//通用构造
+	template <typename T>
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
+	NBT_Node(T &&value) : data(std::move(value))
 	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
+		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT_Node");
+		static_assert(std::is_constructible_v<VariantData, T &&>, "Invalid constructor arguments for NBT_Node");
 	}
 
-	// 通用原位构造接口
+	//原位放置
 	template <typename T, typename... Args>
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
 	T &emplace(Args&&... args)
 	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT node");
+		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT_Node");
+		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
+
 		return data.emplace<T>(std::forward<Args>(args)...);
+	}
+
+	//赋值
+	template<typename T>
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
+	NBT_Node &operator=(T &&t) noexcept
+	{
+		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT_Node");
+		static_assert(std::is_constructible_v<VariantData, T &&>, "Invalid constructor arguments for NBT_Node");
+
+		data = std::move(t);
+		return *this;
 	}
 
 	// 默认构造（TAG_End）
@@ -151,7 +171,7 @@ public:
 	//清除所有数据
 	void Clear(void)
 	{
-		data.emplace<NBT_End>();
+		data.emplace<NBT_End>(NBT_End{});
 	}
 
 	//获取标签类型

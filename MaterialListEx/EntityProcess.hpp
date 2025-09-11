@@ -91,7 +91,7 @@ private:
 		}
 
 		//有拴绳信息并且信息非空（只要非空即可，是什么（比如坐标或者牵拉对象uuid）都不重要），加一个
-		if (pLeash != NULL && pLeash->size() != 0)//因为拴绳只在目标对象存储，拉拴绳的主体不存储，不会重复计算
+		if (pLeash != NULL && pLeash->Size() != 0)//因为拴绳只在目标对象存储，拉拴绳的主体不存储，不会重复计算
 		{
 			listSlot.emplace_back(2, &slotLeadItem);//因为拴绳不属于任何一个实体物品栏类型，所以简单归属到物品栏（2）
 		}
@@ -106,7 +106,7 @@ public:
 		
 		//遍历，并在每个实体compound下查询所有关键字进行分类
 		EntityStatsList listEntityStatsList{};
-		listEntityStatsList.reserve(listEntity.size());//提前扩容
+		listEntityStatsList.reserve(listEntity.Size());//提前扩容
 		//遍历实体
 		for (const auto &it : listEntity)
 		{
@@ -194,7 +194,7 @@ public:
 			const auto tag = it.pItems->GetTag();
 			if (tag == NBT_TAG::TAG_Compound)
 			{
-				if (it.pItems->GetCompound().empty())
+				if (it.pItems->GetCompound().Empty())
 				{
 					continue;//空tag，跳过
 				}
@@ -205,7 +205,7 @@ public:
 				const auto &tmp = it.pItems->GetList();
 				for (const auto &cur : tmp)
 				{
-					if (cur.GetCompound().empty())
+					if (cur.GetCompound().Empty())
 					{
 						continue;//空tag，跳过
 					}

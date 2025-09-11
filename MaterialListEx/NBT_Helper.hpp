@@ -189,7 +189,7 @@ private:
 					printf(",");
 				}
 
-				if (list.size() != 0)
+				if (list.Size() != 0)
 				{
 					printf("\b \b");//清除最后一个逗号
 					PrintPadding(szLevel, false, true);//空列表无需换行以及对齐
@@ -211,7 +211,7 @@ private:
 					printf(",");
 				}
 
-				if (cpd.size() != 0)
+				if (cpd.Size() != 0)
 				{
 					printf("\b \b");//清除最后一个逗号
 					PrintPadding(szLevel, false, true);//空集合无需换行以及对齐
@@ -369,7 +369,7 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 				sRet += ',';
 			}
 
-			if (list.size() != 0)
+			if (list.Size() != 0)
 			{
 				sRet.pop_back();//删掉最后一个逗号
 			}
@@ -390,7 +390,7 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 				sRet += ',';
 			}
 
-			if (cpd.size() != 0)
+			if (cpd.Size() != 0)
 			{
 				sRet.pop_back();//删掉最后一个逗号
 			}

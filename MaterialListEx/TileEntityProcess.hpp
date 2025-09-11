@@ -74,7 +74,7 @@ public:
 		//获取方块实体列表
 		const auto &listTileEntity = RgCompound.GetList(MU8STR("TileEntities"));
 		TileEntityContainerStatsList listTileEntityStats{};
-		listTileEntityStats.reserve(listTileEntity.size());//提前扩容
+		listTileEntityStats.reserve(listTileEntity.Size());//提前扩容
 
 		for (const auto &it : listTileEntity)
 		{
@@ -101,7 +101,7 @@ public:
 		auto tag = stContainerStats.pItems->GetTag();
 		if (tag == NBT_TAG::TAG_Compound)//只有一格物品
 		{
-			if (stContainerStats.pItems->GetCompound().empty())
+			if (stContainerStats.pItems->GetCompound().Empty())
 			{
 				return listItemStack;//空，直接返回
 			}
@@ -112,7 +112,7 @@ public:
 			const auto &tmp = stContainerStats.pItems->GetList();
 			for (const auto &it : tmp)
 			{
-				if (it.GetCompound().empty())
+				if (it.GetCompound().Empty())
 				{
 					continue;//空，处理下一个
 				}
