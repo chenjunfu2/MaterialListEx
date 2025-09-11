@@ -8,8 +8,8 @@
 
 struct ItemInfo
 {
-	NBT_Node::NBT_String sName{};
-	NBT_Node::NBT_Compound cpdTag{};
+	NBT_Type::String sName{};
+	NBT_Type::Compound cpdTag{};
 	uint64_t u64Hash{ DataHash() };//初始化顺序严格按照声明顺序，此处无问题
 
 public:
@@ -67,7 +67,7 @@ public:
 
 struct NoTagItemInfo
 {
-	NBT_Node::NBT_String sName{};
+	NBT_Type::String sName{};
 	uint64_t u64Hash{ DataHash() };
 
 public:
@@ -120,8 +120,8 @@ public:
 
 	struct ItemStack
 	{
-		NBT_Node::NBT_String sItemName{};//物品名
-		NBT_Node::NBT_Compound cpdItemTag{};//物品标签
+		NBT_Type::String sItemName{};//物品名
+		NBT_Type::Compound cpdItemTag{};//物品标签
 		uint64_t u64ItemCount = 0;//物品计数器
 	};
 
@@ -129,7 +129,7 @@ public:
 
 	struct NoTagItem
 	{
-		NBT_Node::NBT_String sItemName{};//物品名
+		NBT_Type::String sItemName{};//物品名
 		uint64_t u64Counter = 0;//物品计数器
 	};
 
@@ -151,28 +151,28 @@ public:
 		return ret;
 	}
 
-	static ItemStack ItemCompoundToItemStack(const NBT_Node::NBT_Compound &cpdItem)
+	static ItemStack ItemCompoundToItemStack(const NBT_Type::Compound &cpdItem)
 	{
 		auto sName = cpdItem.HasString(MU8STR("id"));
 		auto cpdTag = cpdItem.HasCompound(MU8STR("tag"));
 		auto byteCount = cpdItem.HasByte(MU8STR("Count"));
 		return ItemStack
 		{
-			sName == NULL ? NBT_Node::NBT_String{} : *sName,
-			cpdTag == NULL ? NBT_Node::NBT_Compound{} : *cpdTag,
+			sName == NULL ? NBT_Type::String{} : *sName,
+			cpdTag == NULL ? NBT_Type::Compound{} : *cpdTag,
 			byteCount == NULL ? uint64_t{} : (uint64_t)(uint8_t)*byteCount
 		};
 	}
 
-	static ItemStack ItemCompoundToItemStack(NBT_Node::NBT_Compound &&cpdItem)
+	static ItemStack ItemCompoundToItemStack(NBT_Type::Compound &&cpdItem)
 	{
 		auto sName = cpdItem.HasString(MU8STR("id"));
 		auto cpdTag = cpdItem.HasCompound(MU8STR("tag"));
 		auto byteCount = cpdItem.HasByte(MU8STR("Count"));
 		return ItemStack
 		{
-			sName == NULL ? NBT_Node::NBT_String{} : std::move(*sName),
-			cpdTag == NULL ? NBT_Node::NBT_Compound{} : std::move(*cpdTag),
+			sName == NULL ? NBT_Type::String{} : std::move(*sName),
+			cpdTag == NULL ? NBT_Type::Compound{} : std::move(*cpdTag),
 			byteCount == NULL ? uint64_t{} : (uint64_t)(uint8_t)*byteCount//内置类型直接拷贝，移动个P
 		};
 	}
@@ -240,7 +240,7 @@ private:
 
 		//判断类型
 		auto tag = pItems->GetTag();
-		if (tag == NBT_TAG::TAG_Compound)
+		if (tag == NBT_TAG::Compound)
 		{
 			auto &tmp = pItems->GetCompound();
 			ItemStack tmpItem = ItemCompoundToItemStack(std::move(tmp));
@@ -250,7 +250,7 @@ private:
 			tmpItem.u64ItemCount *= u64Scale;
 			ItemStackUnpackContainer(std::move(tmpItem), listItemStack, szStackDepth - 1);//递归 - 1
 		}
-		else if (tag == NBT_TAG::TAG_List)
+		else if (tag == NBT_TAG::List)
 		{
 			auto &tmp = pItems->GetList();
 			for (auto &it : tmp)//遍历list

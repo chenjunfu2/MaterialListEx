@@ -1,15 +1,11 @@
 #pragma once
 
-#include <variant>
-#include <stdint.h>
 #include <compare>
-#include <type_traits>
 
-#include "NBT_TAG.hpp"
-
+#include "NBT_Type.hpp"
 #include "NBT_Array.hpp"
-#include "NBT_List.hpp"
 #include "NBT_String.hpp"
+#include "NBT_List.hpp"
 #include "NBT_Compound.hpp"
 
 template <bool bIsConst>
@@ -19,80 +15,35 @@ class NBT_Node
 {
 	template <bool bIsConst>
 	friend class NBT_Node_View;
-public:
-	using NBT_End			= std::monostate;//无状态
-	using NBT_Byte			= int8_t;
-	using NBT_Short			= int16_t;
-	using NBT_Int			= int32_t;
-	using NBT_Long			= int64_t;
-	using NBT_Float			= std::conditional_t<(sizeof(float) == sizeof(uint32_t)), float, uint32_t>;//通过编译期确认类型大小来选择正确的类型，优先浮点类型，如果失败则替换为对应的可用类型
-	using NBT_Double		= std::conditional_t<(sizeof(double) == sizeof(uint64_t)), double, uint64_t>;
-	using NBT_ByteArray		= MyArray<std::vector<NBT_Byte>>;
-	using NBT_IntArray		= MyArray<std::vector<NBT_Int>>;
-	using NBT_LongArray		= MyArray<std::vector<NBT_Long>>;
-	using NBT_String		= MyString<std::string>;//mu8-string
-	using NBT_List			= MyList<std::vector<NBT_Node>>;//存储一系列同类型标签的有效负载（无标签 ID 或名称）//原先为list，因为mc内list也通过下标访问，改为vector模拟
-	using NBT_Compound		= MyCompound<std::map<NBT_Node::NBT_String, NBT_Node>>;//挂在序列下的内容都通过map绑定名称
-
-	template<typename... Ts> struct TypeList{};
-	using NBT_TypeList = TypeList
-	<
-		NBT_End,
-		NBT_Byte,
-		NBT_Short,
-		NBT_Int,
-		NBT_Long,
-		NBT_Float,
-		NBT_Double,
-		NBT_ByteArray,
-		NBT_String,
-		NBT_List,
-		NBT_Compound,
-		NBT_IntArray,
-		NBT_LongArray
-	>;
 private:
 	template <typename T>
 	struct TypeListToVariant;
 
 	template <typename... Ts>
-	struct TypeListToVariant<TypeList<Ts...>>
+	struct TypeListToVariant<NBT_Type::_TypeList<Ts...>>
 	{
 		using type = std::variant<Ts...>;
 	};
 
-	using VariantData = TypeListToVariant<NBT_TypeList>::type;
+	using VariantData = TypeListToVariant<NBT_Type::TypeList>::type;
 
 	VariantData data;
-
-	//enum与索引大小检查
-	static_assert((std::variant_size_v<VariantData>) == NBT_TAG::ENUM_END, "Enumeration does not match the number of types in the mutator");
 public:
-	// 类型存在检查
-	template <typename T, typename List>
-	struct IsValidType;
-
-	template <typename T, typename... Ts>
-	struct IsValidType<T, TypeList<Ts...>>
-	{
-		static constexpr bool value = (std::is_same_v<T, Ts> || ...);
-	};
-
 	//显式构造（通过in_place_type_t）
 	template <typename T, typename... Args>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
 	NBT_Node(std::in_place_type_t<T>, Args&&... args) : data(std::in_place_type<T>, std::forward<Args>(args)...)
 	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT_Node");
+		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
 		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
 	}
 
 	//显式列表构造（通过in_place_type_t）
 	template <typename T, typename U, typename... Args>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
-		NBT_Node(std::in_place_type_t<T>, std::initializer_list<U> init) : data(std::in_place_type<T>, init)
+	NBT_Node(std::in_place_type_t<T>, std::initializer_list<U> init) : data(std::in_place_type<T>, init)
 	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT_Node");
+		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
 		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
 	}
 
@@ -101,7 +52,7 @@ public:
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
 	NBT_Node(T &&value) : data(std::move(value))
 	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT_Node");
+		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
 		static_assert(std::is_constructible_v<VariantData, T &&>, "Invalid constructor arguments for NBT_Node");
 	}
 
@@ -110,7 +61,7 @@ public:
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
 	T &emplace(Args&&... args)
 	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT_Node");
+		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
 		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
 
 		return data.emplace<T>(std::forward<Args>(args)...);
@@ -121,7 +72,7 @@ public:
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
 	NBT_Node &operator=(T &&t) noexcept
 	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_TypeList>::value, "Invalid type for NBT_Node");
+		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
 		static_assert(std::is_constructible_v<VariantData, T &&>, "Invalid constructor arguments for NBT_Node");
 
 		data = std::move(t);
@@ -129,7 +80,7 @@ public:
 	}
 
 	// 默认构造（TAG_End）
-	NBT_Node() : data(NBT_End{})
+	NBT_Node() : data(NBT_Type::End{})
 	{}
 
 	// 自动析构由variant处理
@@ -171,7 +122,7 @@ public:
 	//清除所有数据
 	void Clear(void)
 	{
-		data.emplace<NBT_End>(NBT_End{});
+		data.emplace<NBT_Type::End>(NBT_Type::End{});
 	}
 
 	//获取标签类型
@@ -209,27 +160,27 @@ public:
 		Has开头的类型名函数带参数版本：查找当前Compound是否有特定Name的Tag，并返回此Name的Tag（转换到指定类型）的指针
 	*/
 #define TYPE_GET_FUNC(type)\
-inline const NBT_##type &Get##type() const\
+inline const NBT_Type::##type &Get##type() const\
 {\
-	return std::get<NBT_##type>(data);\
+	return std::get<NBT_Type::##type>(data);\
 }\
 \
-inline NBT_##type &Get##type()\
+inline NBT_Type::##type &Get##type()\
 {\
-	return std::get<NBT_##type>(data);\
+	return std::get<NBT_Type::##type>(data);\
 }\
 \
 inline bool Is##type() const\
 {\
-	return std::holds_alternative<NBT_##type>(data);\
+	return std::holds_alternative<NBT_Type::##type>(data);\
 }\
 \
-friend inline NBT_##type &Get##type(NBT_Node & node)\
+friend inline NBT_Type::##type &Get##type(NBT_Node & node)\
 {\
 	return node.Get##type();\
 }\
 \
-friend inline const NBT_##type &Get##type(const NBT_Node & node)\
+friend inline const NBT_Type::##type &Get##type(const NBT_Node & node)\
 {\
 	return node.Get##type();\
 }

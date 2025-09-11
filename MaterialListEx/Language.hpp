@@ -87,9 +87,9 @@ public:
 		ENUM_END,
 	};
 
-	const std::string &KeyTranslate(KeyType enKeyType, const NBT_Node::NBT_String &sKeyName) const
+	const std::string &KeyTranslate(KeyType enKeyType, const NBT_Type::String &sKeyName) const
 	{
-		static const NBT_Node::NBT_String sKeyTypePrefix[] =
+		static const NBT_Type::String sKeyTypePrefix[] =
 		{
 			MU8STR(""),//未知留空
 			MU8STR("block."),
@@ -109,7 +109,7 @@ public:
 		//拆解sKeyName并与sKeyTypePrefix[enKeyType]组合
 
 		//把名称空间的:转换成.
-		NBT_Node::NBT_String sJsonKey = sKeyName;//拷贝一份
+		NBT_Type::String sJsonKey = sKeyName;//拷贝一份
 		std::replace(sJsonKey.begin(), sJsonKey.end(), ':', '.');
 
 	re_find:

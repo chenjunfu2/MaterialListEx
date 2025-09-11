@@ -13,7 +13,7 @@ public:
 
 	struct TileEntityContainerStats
 	{
-		const NBT_Node::NBT_String *psTileEntityName{};
+		const NBT_Type::String *psTileEntityName{};
 		const NBT_Node *pItems{};
 	};
 
@@ -21,7 +21,7 @@ public:
 	
 private:
 	//处理多种集合数据情况并映射到TileEntityContainerStats
-	static bool MapTileEntityContainerStats(const NBT_Node::NBT_Compound &teCompound, TileEntityContainerStats &teStats)
+	static bool MapTileEntityContainerStats(const NBT_Type::Compound &teCompound, TileEntityContainerStats &teStats)
 	{
 		/*
 			有好几种情况：item-Compound、Items-List、特殊名称-Compound
@@ -37,7 +37,7 @@ private:
 
 		//尝试处理特殊方块
 		//用于映射特殊的方块实体容器里物品的名字
-		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapContainerTagName =
+		const static std::unordered_map<NBT_Type::String, NBT_Type::String> mapContainerTagName =
 		{
 			{MU8STR("minecraft:jukebox"),MU8STR("RecordItem")},
 			{MU8STR("minecraft:lectern"),MU8STR("Book")},
@@ -69,7 +69,7 @@ private:
 	}
 
 public:
-	static TileEntityContainerStatsList GetTileEntityContainerStats(const NBT_Node::NBT_Compound &RgCompound)
+	static TileEntityContainerStatsList GetTileEntityContainerStats(const NBT_Type::Compound &RgCompound)
 	{
 		//获取方块实体列表
 		const auto &listTileEntity = RgCompound.GetList(MU8STR("TileEntities"));
@@ -99,7 +99,7 @@ public:
 		ItemProcess::ItemStackList listItemStack{};
 
 		auto tag = stContainerStats.pItems->GetTag();
-		if (tag == NBT_TAG::TAG_Compound)//只有一格物品
+		if (tag == NBT_TAG::Compound)//只有一格物品
 		{
 			if (stContainerStats.pItems->GetCompound().Empty())
 			{
@@ -107,7 +107,7 @@ public:
 			}
 			listItemStack.push_back(ItemProcess::ItemCompoundToItemStack(stContainerStats.pItems->GetCompound()));
 		}
-		else if (tag == NBT_TAG::TAG_List)//多格物品列表
+		else if (tag == NBT_TAG::List)//多格物品列表
 		{
 			const auto &tmp = stContainerStats.pItems->GetList();
 			for (const auto &it : tmp)

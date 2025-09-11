@@ -16,7 +16,7 @@ public:
 
 	//5~6为容器，剩下的为物品栏
 	static constexpr size_t szContainerIndexBeg = 5;
-	static inline const NBT_Node::NBT_String sSlotTagName[] =
+	static inline const NBT_Type::String sSlotTagName[] =
 	{
 		MU8STR("ArmorItems"),//0
 		MU8STR("HandItems"),
@@ -39,7 +39,7 @@ public:
 
 	struct EntityStats
 	{
-		const NBT_Node::NBT_String *psEntityName{};
+		const NBT_Type::String *psEntityName{};
 		std::vector<EntityItemSlot> listSlot;
 	};
 
@@ -59,28 +59,28 @@ private:
 	如果实体有带拴绳，则存在Leash这个compound标签，内部有拴绳坐标或者是拉着他的实体的uuid，总之不为空，这种情况下转换为拴绳
 	*/
 	//查找并转换那些特殊的数据值到物品
-	static void ExtractSpecial(std::vector<EntityItemSlot> &listSlot, const NBT_Node::NBT_Compound& cpdEntity)
+	static void ExtractSpecial(std::vector<EntityItemSlot> &listSlot, const NBT_Type::Compound& cpdEntity)
 	{
 		//先对两个进行查找，然后判断
 		const auto pSaddle = cpdEntity.HasByte(MU8STR("Saddle"));
 		const auto pLeash = cpdEntity.HasCompound(MU8STR("Leash"));
 
 		//声明两个静态的成员，让EntityStats的指针指向它，伪装成正常读取的数据（不会被改写）
-		using CP = std::pair<const NBT_Node::NBT_String, NBT_Node>;
+		using CP = std::pair<const NBT_Type::String, NBT_Node>;
 		static const NBT_Node slotSaddleItem
 		{
-			NBT_Node::NBT_Compound
+			NBT_Type::Compound
 			{
-				CP{NBT_Node::NBT_String{MU8STR("id")},NBT_Node::NBT_String{MU8STR("minecraft:saddle")}},
-				CP{NBT_Node::NBT_String{MU8STR("Count")},NBT_Node::NBT_Byte{1}},
+				CP{NBT_Type::String{MU8STR("id")},NBT_Type::String{MU8STR("minecraft:saddle")}},
+				CP{NBT_Type::String{MU8STR("Count")},NBT_Type::Byte{1}},
 			}
 		};
 		static const NBT_Node slotLeadItem
 		{
-			NBT_Node::NBT_Compound
+			NBT_Type::Compound
 			{
-				CP{NBT_Node::NBT_String{MU8STR("id")},NBT_Node::NBT_String{MU8STR("minecraft:lead")}},
-				CP{NBT_Node::NBT_String{MU8STR("Count")},NBT_Node::NBT_Byte{1}},
+				CP{NBT_Type::String{MU8STR("id")},NBT_Type::String{MU8STR("minecraft:lead")}},
+				CP{NBT_Type::String{MU8STR("Count")},NBT_Type::Byte{1}},
 			}
 		};
 
@@ -99,7 +99,7 @@ private:
 	}
 
 public:
-	static EntityStatsList GetEntityStats(const NBT_Node::NBT_Compound &RgCompound)
+	static EntityStatsList GetEntityStats(const NBT_Type::Compound &RgCompound)
 	{
 		//获取实体列表
 		const auto &listEntity = RgCompound.GetList(MU8STR("Entities"));
@@ -144,7 +144,7 @@ public:
 	{
 		return EntityInfo
 		{
-			stEntityStats.psEntityName == NULL ? NBT_Node::NBT_String{} : *stEntityStats.psEntityName
+			stEntityStats.psEntityName == NULL ? NBT_Type::String{} : *stEntityStats.psEntityName
 		};
 	}
 
@@ -192,7 +192,7 @@ public:
 
 			//获取tag后根据实际类型进行解析
 			const auto tag = it.pItems->GetTag();
-			if (tag == NBT_TAG::TAG_Compound)
+			if (tag == NBT_TAG::Compound)
 			{
 				if (it.pItems->GetCompound().Empty())
 				{
@@ -200,7 +200,7 @@ public:
 				}
 				pCurList->push_back(ItemProcess::ItemCompoundToItemStack(it.pItems->GetCompound()));
 			}
-			else if (tag == NBT_TAG::TAG_List)
+			else if (tag == NBT_TAG::List)
 			{
 				const auto &tmp = it.pItems->GetList();
 				for (const auto &cur : tmp)

@@ -18,7 +18,7 @@ const T &Min(const T &l, const T &r)
 
 struct BlockPos
 {
-	NBT_Node::NBT_Int x{ 0 }, y{ 0 }, z{ 0 };
+	NBT_Type::Int x{ 0 }, y{ 0 }, z{ 0 };
 	//类相关函数由编译器代理生成
 
 	BlockPos add(const BlockPos &r) const

@@ -223,6 +223,7 @@
     <ClInclude Include="NBT_Reader.hpp" />
     <ClInclude Include="NBT_String.hpp" />
     <ClInclude Include="NBT_TAG.hpp" />
+    <ClInclude Include="NBT_Type.hpp" />
     <ClInclude Include="NBT_Writer.hpp" />
     <ClInclude Include="nlohmann\adl_serializer.hpp" />
     <ClInclude Include="nlohmann\byte_container_with_subtype.hpp" />

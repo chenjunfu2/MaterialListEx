@@ -116,7 +116,7 @@ public:
 
 struct RegionStats
 {
-	NBT_Node::NBT_String sRegionName{};
+	NBT_Type::String sRegionName{};
 
 //简化声明
 #define MAPSORTLIST_TYPE(key,val) \
@@ -126,7 +126,7 @@ MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Eq
 MAPSORTLIST_TYPE(key,val) name{ {size, &key::Hash, &key::Equal} }
 
 #define MAPMAPSORTLIST(key,val,size,name) \
-MapMSL<std::map<NBT_Node::NBT_String, MAPSORTLIST_TYPE(key, val)>> name{size, &key::Hash, &key::Equal}
+MapMSL<std::map<NBT_Type::String, MAPSORTLIST_TYPE(key, val)>> name{size, &key::Hash, &key::Equal}
 
 	//方块（原本形式）
 	//MAPSORTLIST(BlockInfo, uint64_t, 128, mslBlock);
@@ -191,7 +191,7 @@ MapMSL<std::map<NBT_Node::NBT_String, MAPSORTLIST_TYPE(key, val)>> name{size, &k
 
 using RegionStatsList = std::vector<RegionStats>;
 
-RegionStatsList RegionProcess(const NBT_Node::NBT_Compound &cpRegions);
+RegionStatsList RegionProcess(const NBT_Type::Compound &cpRegions);
 
 //合并所有选区
 RegionStats MergeRegionStatsList(const RegionStatsList &listRegionStats);

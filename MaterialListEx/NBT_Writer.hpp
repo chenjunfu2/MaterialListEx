@@ -207,7 +207,7 @@ private:
 	}
 
 	//PutName
-	static int PutName(OutputStream &tData, const NBT_Node::NBT_String &sName)
+	static int PutName(OutputStream &tData, const NBT_Type::String &sName)
 	{
 		int iRet = AllOk;
 		//检查大小是否符合上限

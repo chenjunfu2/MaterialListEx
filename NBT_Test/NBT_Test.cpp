@@ -40,19 +40,19 @@ int main(int argc, char *argv[])
 	v vt(std::in_place_type<std::list<int>>,{1,2,3,4});
 
 
-	NBT_Node nn0{ NBT_Node::NBT_Compound{} }, nn1{ NBT_Node::NBT_List{} };
+	NBT_Node nn0{ NBT_Type::Compound{} }, nn1{ NBT_Type::List{} };
 
-	//NBT_Node::NBT_Compound &test = nn0.GetCompound();
-	NBT_Node::NBT_Compound &test = GetCompound(nn0);
+	NBT_Type::Compound &test = nn0.GetCompound();
+	//NBT_Type::Compound &test = GetCompound(nn0);
 	test.Put("test", 1LL);
 	test.PutByte("test2", 1LL);
 	test.PutInt("test3", 1LL);
 
-	//NBT_Node::NBT_List &list = nn1.GetList();
-	NBT_Node::NBT_List &list = GetList(nn1);
-	list.AddBack(NBT_Node{ (NBT_Node::NBT_Int)1 });
-	list.AddBack(NBT_Node{ (NBT_Node::NBT_Int)2 });
-	list.AddBack(NBT_Node{ (NBT_Node::NBT_Int)3 });
+	//NBT_Type::List &list = nn1.GetList();
+	NBT_Type::List &list = GetList(nn1);
+	list.AddBack((NBT_Type::Int)1);
+	list.AddBack((NBT_Type::Int)2);
+	list.AddBack((NBT_Type::Int)3);
 
 	for (auto &it : list)
 	{
@@ -63,9 +63,9 @@ int main(int argc, char *argv[])
 	putchar('\n');
 	PrintBool(test.Contains("test1"));
 	putchar('\n');
-	PrintBool(test.Contains("test", NBT_TAG::TAG_Int));
+	PrintBool(test.Contains("test", NBT_TAG::Int));
 	putchar('\n');
-	PrintBool(test.Contains("test2", NBT_TAG::TAG_Byte));
+	PrintBool(test.Contains("test2", NBT_TAG::Byte));
 	putchar('\n');
 
 	NBT_Helper::Print(test);
@@ -74,53 +74,53 @@ int main(int argc, char *argv[])
 
 
 
-	using mp = std::pair<const NBT_Node::NBT_String, NBT_Node>;
+	using mp = std::pair<const NBT_Type::String, NBT_Node>;
 
 	NBT_Node 
 	a
 	{
-		NBT_Node::NBT_Compound
+		NBT_Type::Compound
 		{
 			mp{"2",NBT_Node{}},
-			mp{"test0",NBT_Node{NBT_Node::NBT_String{"test1"}}},
+			mp{"test0",NBT_Node{NBT_Type::String{"test1"}}},
 			mp{"test1",NBT_Node{1}},
 			mp{"test3",NBT_Node{}},
 			mp{"test2",NBT_Node{66.6}},
-			mp{"test4",NBT_Node{NBT_Node::NBT_List{NBT_Node(0),NBT_Node(1)}}},
+			mp{"test4",NBT_Node{NBT_Type::List{NBT_Node(0),NBT_Node(1)}}},
 			mp{"test5",NBT_Node
 			{
-				NBT_Node::NBT_Compound
+				NBT_Type::Compound
 				{
 					mp{"1",NBT_Node{}},
-					mp{"test0",NBT_Node{NBT_Node::NBT_String{"test2"}}},
+					mp{"test0",NBT_Node{NBT_Type::String{"test2"}}},
 					mp{"test1",NBT_Node{1}},
 					mp{"test3",NBT_Node{1}},
 					mp{"test2",NBT_Node{66.6}},
-					mp{"test4",NBT_Node{NBT_Node::NBT_List{NBT_Node(0),NBT_Node(1)}}},
+					mp{"test4",NBT_Node{NBT_Type::List{NBT_Node(0),NBT_Node(1)}}},
 				}
 			}}
 		}
 	},
 	b
 	{
-		NBT_Node::NBT_Compound
+		NBT_Type::Compound
 		{
 			mp{"2",NBT_Node{}},
-			mp{"test0",NBT_Node{NBT_Node::NBT_String{"test1"}}},
+			mp{"test0",NBT_Node{NBT_Type::String{"test1"}}},
 			mp{"test1",NBT_Node{1}},
 			mp{"test3",NBT_Node{}},
 			mp{"test2",NBT_Node{66.6}},
-			mp{"test4",NBT_Node{NBT_Node::NBT_List{NBT_Node(0),NBT_Node(1)}}},
+			mp{"test4",NBT_Node{NBT_Type::List{NBT_Node(0),NBT_Node(1)}}},
 			mp{"test5",NBT_Node
 			{
-				NBT_Node::NBT_Compound
+				NBT_Type::Compound
 				{
 					mp{"1",NBT_Node{}},
-					mp{"test0",NBT_Node{NBT_Node::NBT_String{"test2"}}},
+					mp{"test0",NBT_Node{NBT_Type::String{"test2"}}},
 					mp{"test1",NBT_Node{1}},
 					mp{"test3",NBT_Node{2}},
 					mp{"test2",NBT_Node{66.6}},
-					mp{"test4",NBT_Node{NBT_Node::NBT_List{NBT_Node(0),NBT_Node(1)}}},
+					mp{"test4",NBT_Node{NBT_Type::List{NBT_Node(0),NBT_Node(1)}}},
 				}
 			}}
 		}
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 
 	//std::partial_ordering tmp = a <=> b;
 
-	NBT_Node_View<true> n0{ NBT_Node::NBT_Byte{0} }, n1{ NBT_Node::NBT_Byte{0} };
+	NBT_Node_View<true> n0{ NBT_Type::Byte{0} }, n1{ NBT_Type::Byte{0} };
 
 	auto tmp = n0 <=> n1;
 
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
 		const auto &listTileEntity = GetCompound(RgCompound).GetList(MU8STR("TileEntities"));
 
 		//创建map，同名方块实体只保留第一个
-		NBT_Node::NBT_Compound cpdTileEntity{};
+		NBT_Type::Compound cpdTileEntity{};
 
 		for (const auto &it : listTileEntity)
 		{

@@ -25,43 +25,36 @@ private:
 	struct TypeListPointerToVariant;
 
 	template <typename... Ts>
-	struct TypeListPointerToVariant<NBT_Node::TypeList<Ts...>>
+	struct TypeListPointerToVariant<NBT_Type::_TypeList<Ts...>>
 	{
 		using type = std::variant<PtrType<Ts>...>;//展开成指针类型
 	};
 
-	using VariantData = TypeListPointerToVariant<NBT_Node::NBT_TypeList>::type;
+	using VariantData = TypeListPointerToVariant<NBT_Type::TypeList>::type;
 
 	VariantData data;
 public:
 	static inline constexpr bool is_const = bIsConst;
 
-	// 类型存在检查
-	template <typename T, typename List>
-	struct IsValidType;
-
-	template <typename T, typename... Ts>
-	struct IsValidType<T, NBT_Node::TypeList<Ts...>>
-	{
-		static constexpr bool value = (std::is_same_v<T, Ts> || ...);
-	};
-
 	// 通用构造函数（必须非const情况）
-	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, NBT_Node> && !bIsConst >>
+	template <typename T>
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && !bIsConst)
 	NBT_Node_View(T &value) : data(&value)
 	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_Node::NBT_TypeList>::value, "Invalid type for NBT node view");
+		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT node view");
 	}
 
 	// 通用构造函数
-	template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, NBT_Node>>>
+	template <typename T>
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
 	NBT_Node_View(const T &value) : data(&value)
 	{
-		static_assert(IsValidType<std::decay_t<T>, NBT_Node::NBT_TypeList>::value, "Invalid type for NBT node view");
+		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT node view");
 	}
 
 	//从NBT_Node构造（必须非const情况）
-	template<typename = std::enable_if_t<!bIsConst>>
+	template <typename = void>//requires占位模板
+	requires(!bIsConst)
 	NBT_Node_View(NBT_Node &node)
 	{
 		std::visit([this](auto &arg)
@@ -80,7 +73,8 @@ public:
 	}
 
 	// 允许从非 const 视图隐式转换到 const 视图
-	template<typename = std::enable_if_t<bIsConst>>
+	template <typename = void>//requires占位模板
+	requires(bIsConst)
 	NBT_Node_View(const NBT_Node_View<false> &other)
 	{
 		std::visit([this](auto &arg)
@@ -173,7 +167,8 @@ public:
 		return *std::get<PtrType<T>>(data);
 	}
 
-	template<typename T, typename = std::enable_if_t<!bIsConst>>
+	template<typename T>
+	requires(!bIsConst)
 	T &GetData()
 	{
 		return *std::get<PtrType<T>>(data);
@@ -194,27 +189,28 @@ public:
 		Has开头的类型名函数带参数版本：查找当前Compound是否有特定Name的Tag，并返回此Name的Tag（转换到指定类型）的指针
 	*/
 #define TYPE_GET_FUNC(type)\
-inline const NBT_Node::NBT_##type &Get##type() const\
+inline const NBT_Type::##type &Get##type() const\
 {\
-	return *std::get<PtrType<NBT_Node::NBT_##type>>(data);\
+	return *std::get<PtrType<NBT_Type::##type>>(data);\
 }\
 \
-template<typename = std::enable_if_t<!bIsConst>>\
-inline NBT_Node::NBT_##type &Get##type()\
+template <typename = void>\
+requires(!bIsConst)\
+inline NBT_Type::##type &Get##type()\
 {\
-	return *std::get<PtrType<NBT_Node::NBT_##type>>(data);\
+	return *std::get<PtrType<NBT_Type::##type>>(data);\
 }\
 \
 inline bool Is##type() const\
 {\
-	return std::holds_alternative<PtrType<NBT_Node::NBT_##type>>(data);\
+	return std::holds_alternative<PtrType<NBT_Type::##type>>(data);\
 }\
-friend inline std::conditional_t<bIsConst, const NBT_Node::NBT_##type &, NBT_Node::NBT_##type &> Get##type(NBT_Node_View & node)\
+friend inline std::conditional_t<bIsConst, const NBT_Type::##type &, NBT_Type::##type &> Get##type(NBT_Node_View & node)\
 {\
 	return node.Get##type();\
 }\
 \
-friend inline const NBT_Node::NBT_##type &Get##type(const NBT_Node_View & node)\
+friend inline const NBT_Type::##type &Get##type(const NBT_Node_View & node)\
 {\
 	return node.Get##type();\
 }

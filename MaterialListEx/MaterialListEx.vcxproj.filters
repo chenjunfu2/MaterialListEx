@@ -368,6 +368,9 @@
     <ClInclude Include="Windows_FileSystem.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="NBT_Type.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="TODO.txt">

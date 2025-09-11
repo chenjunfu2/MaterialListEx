@@ -89,44 +89,44 @@ private:
 		auto tag = nRoot.GetTag();
 		switch (tag)
 		{
-		case NBT_TAG::TAG_End:
+		case NBT_TAG::End:
 			{
 				printf("[Compound End]");
 			}
 			break;
-		case NBT_TAG::TAG_Byte:
+		case NBT_TAG::Byte:
 			{
-				printf("%dB", nRoot.GetData<NBT_Node::NBT_Byte>());
+				printf("%dB", nRoot.GetData<NBT_Type::Byte>());
 			}
 			break;
-		case NBT_TAG::TAG_Short:
+		case NBT_TAG::Short:
 			{
-				printf("%dS", nRoot.GetData<NBT_Node::NBT_Short>());
+				printf("%dS", nRoot.GetData<NBT_Type::Short>());
 			}
 			break;
-		case NBT_TAG::TAG_Int:
+		case NBT_TAG::Int:
 			{
-				printf("%dI", nRoot.GetData<NBT_Node::NBT_Int>());
+				printf("%dI", nRoot.GetData<NBT_Type::Int>());
 			}
 			break;
-		case NBT_TAG::TAG_Long:
+		case NBT_TAG::Long:
 			{
-				printf("%lldL", nRoot.GetData<NBT_Node::NBT_Long>());
+				printf("%lldL", nRoot.GetData<NBT_Type::Long>());
 			}
 			break;
-		case NBT_TAG::TAG_Float:
+		case NBT_TAG::Float:
 			{
-				printf("%gF", nRoot.GetData<NBT_Node::NBT_Float>());
+				printf("%gF", nRoot.GetData<NBT_Type::Float>());
 			}
 			break;
-		case NBT_TAG::TAG_Double:
+		case NBT_TAG::Double:
 			{
-				printf("%gD", nRoot.GetData<NBT_Node::NBT_Double>());
+				printf("%gD", nRoot.GetData<NBT_Type::Double>());
 			}
 			break;
-		case NBT_TAG::TAG_Byte_Array:
+		case NBT_TAG::Byte_Array:
 			{
-				const auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
+				const auto &arr = nRoot.GetData<NBT_Type::ByteArray>();
 				printf("[B;");
 				for (const auto &it : arr)
 				{
@@ -140,9 +140,9 @@ private:
 				printf("]");
 			}
 			break;
-		case NBT_TAG::TAG_Int_Array:
+		case NBT_TAG::Int_Array:
 			{
-				const auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
+				const auto &arr = nRoot.GetData<NBT_Type::IntArray>();
 				printf("[I;");
 				for (const auto &it : arr)
 				{
@@ -156,9 +156,9 @@ private:
 				printf("]");
 			}
 			break;
-		case NBT_TAG::TAG_Long_Array:
+		case NBT_TAG::Long_Array:
 			{
-				const auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
+				const auto &arr = nRoot.GetData<NBT_Type::LongArray>();
 				printf("[L;");
 				for (const auto &it : arr)
 				{
@@ -172,19 +172,19 @@ private:
 				printf("]");
 			}
 			break;
-		case NBT_TAG::TAG_String:
+		case NBT_TAG::String:
 			{
-				printf("\"%s\"", U16ANSI(U16STR(nRoot.GetData<NBT_Node::NBT_String>())).c_str());
+				printf("\"%s\"", U16ANSI(U16STR(nRoot.GetData<NBT_Type::String>())).c_str());
 			}
 			break;
-		case NBT_TAG::TAG_List://需要打印缩进的地方
+		case NBT_TAG::List://需要打印缩进的地方
 			{
-				const auto &list = nRoot.GetData<NBT_Node::NBT_List>();
+				const auto &list = nRoot.GetData<NBT_Type::List>();
 				PrintPadding(szLevel, false, true);
 				printf("[");
 				for (const auto &it : list)
 				{
-					PrintPadding(szLevel, true, it.GetTag() != NBT_TAG::TAG_Compound && it.GetTag() != NBT_TAG::TAG_List);
+					PrintPadding(szLevel, true, it.GetTag() != NBT_TAG::Compound && it.GetTag() != NBT_TAG::List);
 					PrintSwitch(it, szLevel + 1);
 					printf(",");
 				}
@@ -197,9 +197,9 @@ private:
 				printf("]");
 			}
 			break;
-		case NBT_TAG::TAG_Compound://需要打印缩进的地方
+		case NBT_TAG::Compound://需要打印缩进的地方
 			{
-				const auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
+				const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
 				PrintPadding(szLevel, false, true);
 				printf("{");
 
@@ -260,50 +260,50 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 	auto tag = nRoot.GetTag();
 	switch (tag)
 	{
-	case NBT_TAG::TAG_End:
+	case NBT_TAG::End:
 		{
 			sRet += "[Compound End]";
 		}
 		break;
-	case NBT_TAG::TAG_Byte:
+	case NBT_TAG::Byte:
 		{
-			ToHexString(nRoot.GetData<NBT_Node::NBT_Byte>(), sRet);
+			ToHexString(nRoot.GetData<NBT_Type::Byte>(), sRet);
 			sRet += 'B';
 		}
 		break;
-	case NBT_TAG::TAG_Short:
+	case NBT_TAG::Short:
 		{
-			ToHexString(nRoot.GetData<NBT_Node::NBT_Short>(), sRet);
+			ToHexString(nRoot.GetData<NBT_Type::Short>(), sRet);
 			sRet += 'S';
 		}
 		break;
-	case NBT_TAG::TAG_Int:
+	case NBT_TAG::Int:
 		{
-			ToHexString(nRoot.GetData<NBT_Node::NBT_Int>(), sRet);
+			ToHexString(nRoot.GetData<NBT_Type::Int>(), sRet);
 			sRet += 'I';
 		}
 		break;
-	case NBT_TAG::TAG_Long:
+	case NBT_TAG::Long:
 		{
-			ToHexString(nRoot.GetData<NBT_Node::NBT_Long>(), sRet);
+			ToHexString(nRoot.GetData<NBT_Type::Long>(), sRet);
 			sRet += 'L';
 		}
 		break;
-	case NBT_TAG::TAG_Float:
+	case NBT_TAG::Float:
 		{
-			ToHexString(nRoot.GetData<NBT_Node::NBT_Float>(), sRet);
+			ToHexString(nRoot.GetData<NBT_Type::Float>(), sRet);
 			sRet += 'F';
 		}
 		break;
-	case NBT_TAG::TAG_Double:
+	case NBT_TAG::Double:
 		{
-			ToHexString(nRoot.GetData<NBT_Node::NBT_Double>(), sRet);
+			ToHexString(nRoot.GetData<NBT_Type::Double>(), sRet);
 			sRet += 'D';
 		}
 		break;
-	case NBT_TAG::TAG_Byte_Array:
+	case NBT_TAG::Byte_Array:
 		{
-			const auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
+			const auto &arr = nRoot.GetData<NBT_Type::ByteArray>();
 			sRet += "[B;";
 			for (const auto &it : arr)
 			{
@@ -318,9 +318,9 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 			sRet += ']';
 		}
 		break;
-	case NBT_TAG::TAG_Int_Array:
+	case NBT_TAG::Int_Array:
 		{
-			const auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
+			const auto &arr = nRoot.GetData<NBT_Type::IntArray>();
 			sRet += "[I;";
 			for (const auto &it : arr)
 			{
@@ -335,9 +335,9 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 			sRet += ']';
 		}
 		break;
-	case NBT_TAG::TAG_Long_Array:
+	case NBT_TAG::Long_Array:
 		{
-			const auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
+			const auto &arr = nRoot.GetData<NBT_Type::LongArray>();
 			sRet += "[L;";
 			for (const auto &it : arr)
 			{
@@ -352,16 +352,16 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 			sRet += ']';
 		}
 		break;
-	case NBT_TAG::TAG_String:
+	case NBT_TAG::String:
 		{
 			sRet += '\"';
-			sRet += nRoot.GetData<NBT_Node::NBT_String>();
+			sRet += nRoot.GetData<NBT_Type::String>();
 			sRet += '\"';
 		}
 		break;
-	case NBT_TAG::TAG_List:
+	case NBT_TAG::List:
 		{
-			const auto &list = nRoot.GetData<NBT_Node::NBT_List>();
+			const auto &list = nRoot.GetData<NBT_Type::List>();
 			sRet += '[';
 			for (const auto &it : list)
 			{
@@ -376,9 +376,9 @@ static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> 
 			sRet += ']';
 		}
 		break;
-	case NBT_TAG::TAG_Compound://需要打印缩进的地方
+	case NBT_TAG::Compound://需要打印缩进的地方
 		{
-			const auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
+			const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
 			sRet += '{';
 
 			for (const auto &it : cpd)
@@ -422,48 +422,48 @@ private:
 		//再读出实际内容作为数据
 		switch (tag)
 		{
-		case NBT_TAG::TAG_End:
+		case NBT_TAG::End:
 			{}
 			break;
-		case NBT_TAG::TAG_Byte:
+		case NBT_TAG::Byte:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Byte>();
+				const auto &tmp = nRoot.GetData<NBT_Type::Byte>();
 				XXH64_update(pHashState, &tmp, sizeof(tmp));
 			}
 			break;
-		case NBT_TAG::TAG_Short:
+		case NBT_TAG::Short:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Short>();
+				const auto &tmp = nRoot.GetData<NBT_Type::Short>();
 				XXH64_update(pHashState, &tmp, sizeof(tmp));
 			}
 			break;
-		case NBT_TAG::TAG_Int:
+		case NBT_TAG::Int:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Int>();
+				const auto &tmp = nRoot.GetData<NBT_Type::Int>();
 				XXH64_update(pHashState, &tmp, sizeof(tmp));
 			}
 			break;
-		case NBT_TAG::TAG_Long:
+		case NBT_TAG::Long:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Long>();
+				const auto &tmp = nRoot.GetData<NBT_Type::Long>();
 				XXH64_update(pHashState, &tmp, sizeof(tmp));
 			}
 			break;
-		case NBT_TAG::TAG_Float:
+		case NBT_TAG::Float:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Float>();
+				const auto &tmp = nRoot.GetData<NBT_Type::Float>();
 				XXH64_update(pHashState, &tmp, sizeof(tmp));
 			}
 			break;
-		case NBT_TAG::TAG_Double:
+		case NBT_TAG::Double:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_Double>();
+				const auto &tmp = nRoot.GetData<NBT_Type::Double>();
 				XXH64_update(pHashState, &tmp, sizeof(tmp));
 			}
 			break;
-		case NBT_TAG::TAG_Byte_Array:
+		case NBT_TAG::Byte_Array:
 			{
-				const auto &arr = nRoot.GetData<NBT_Node::NBT_ByteArray>();
+				const auto &arr = nRoot.GetData<NBT_Type::ByteArray>();
 				for (const auto &it : arr)
 				{
 					const auto &tmp = it;
@@ -471,9 +471,9 @@ private:
 				}
 			}
 			break;
-		case NBT_TAG::TAG_Int_Array:
+		case NBT_TAG::Int_Array:
 			{
-				const auto &arr = nRoot.GetData<NBT_Node::NBT_IntArray>();
+				const auto &arr = nRoot.GetData<NBT_Type::IntArray>();
 				for (const auto &it : arr)
 				{
 					const auto &tmp = it;
@@ -481,9 +481,9 @@ private:
 				}
 			}
 			break;
-		case NBT_TAG::TAG_Long_Array:
+		case NBT_TAG::Long_Array:
 			{
-				const auto &arr = nRoot.GetData<NBT_Node::NBT_LongArray>();
+				const auto &arr = nRoot.GetData<NBT_Type::LongArray>();
 				for (const auto &it : arr)
 				{
 					const auto &tmp = it;
@@ -491,24 +491,24 @@ private:
 				}
 			}
 			break;
-		case NBT_TAG::TAG_String:
+		case NBT_TAG::String:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Node::NBT_String>();
+				const auto &tmp = nRoot.GetData<NBT_Type::String>();
 				XXH64_update(pHashState, tmp.data(), tmp.size());
 			}
 			break;
-		case NBT_TAG::TAG_List:
+		case NBT_TAG::List:
 			{
-				const auto &list = nRoot.GetData<NBT_Node::NBT_List>();
+				const auto &list = nRoot.GetData<NBT_Type::List>();
 				for (const auto &it : list)
 				{
 					HashSwitch(it, pHashState);
 				}
 			}
 			break;
-		case NBT_TAG::TAG_Compound://需要打印缩进的地方
+		case NBT_TAG::Compound://需要打印缩进的地方
 			{
-				const auto &cpd = nRoot.GetData<NBT_Node::NBT_Compound>();
+				const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
 				for (const auto &it : cpd)
 				{
 					const auto &tmp = it.first;

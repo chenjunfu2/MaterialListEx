@@ -23,8 +23,8 @@ public:
 	//(应对花盆、含水方块、炼药锅、蜡烛蛋糕等组合物品)
 	struct BlockStats
 	{
-		const NBT_Node::NBT_String *psBlockName{};
-		const NBT_Node::NBT_Compound *pcpdProperties{};
+		const NBT_Type::String *psBlockName{};
+		const NBT_Type::Compound *pcpdProperties{};
 		uint64_t u64Counter = 0;//方块计数器
 	};
 
@@ -32,7 +32,7 @@ public:
 
 public:
 	//使用指针指向nRoot内节点，请不要在使用nRoot作为参数调用此函数获取返回值的情况下，销毁nRoot
-	static BlockStatsList GetBlockStats(const NBT_Node::NBT_Compound &RgCompound)//block list
+	static BlockStatsList GetBlockStats(const NBT_Type::Compound &RgCompound)//block list
 	{
 		/*----------------区域大小计算、调色板获取----------------*/
 		//获取区域偏移
@@ -194,8 +194,8 @@ public:
 	{
 		return BlockInfo
 		{
-			stBlocks.psBlockName == NULL ? NBT_Node::NBT_String{} : *stBlocks.psBlockName,
-			stBlocks.pcpdProperties == NULL ? NBT_Node::NBT_Compound{} : *stBlocks.pcpdProperties
+			stBlocks.psBlockName == NULL ? NBT_Type::String{} : *stBlocks.psBlockName,
+			stBlocks.pcpdProperties == NULL ? NBT_Type::Compound{} : *stBlocks.pcpdProperties
 		};
 	}
 private:
@@ -220,7 +220,7 @@ if (stBlocks.psBlockName->ends_with(target))
 	{
 		//直接匹配所有不可获取的方块并返回空，注意是mc中所有无物品形式的，而非生存不可获取的
 		//注意不匹配门、床、活塞等多格方块的另一半，而由他们对应的函数自行处理
-		const static std::unordered_set<NBT_Node::NBT_String> setUnItemedBlocks =
+		const static std::unordered_set<NBT_Type::String> setUnItemedBlocks =
 		{
 			//空气类
 			MU8STR("minecraft:air"),
@@ -364,7 +364,7 @@ if (stBlocks.psBlockName->ends_with(target))
 			Powder_snow_cauldron,
 		};
 
-		const static std::unordered_map<NBT_Node::NBT_String, CauldronType> mapCauldron =
+		const static std::unordered_map<NBT_Type::String, CauldronType> mapCauldron =
 		{
 			{MU8STR("minecraft:cauldron"),Cauldron},
 			{MU8STR("minecraft:water_cauldron"),Water_cauldron},
@@ -450,7 +450,7 @@ if (stBlocks.psBlockName->ends_with(target))
 	static inline bool CvrtAliasBlocks(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)//别名方块
 	{
 		//映射
-		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapAliasBlocks =
+		const static std::unordered_map<NBT_Type::String, NBT_Type::String> mapAliasBlocks =
 		{
 			{MU8STR("minecraft:tripwire"),MU8STR("minecraft:string")},
 			{MU8STR("minecraft:redstone_wire"),MU8STR("minecraft:redstone")},
@@ -555,7 +555,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 			Pink_petals,
 		};
 
-		const static std::unordered_map<NBT_Node::NBT_String, ClusterBlock> mapClusterBlocks =
+		const static std::unordered_map<NBT_Type::String, ClusterBlock> mapClusterBlocks =
 		{
 			{MU8STR("minecraft:snow"),Snow},
 			{MU8STR("minecraft:turtle_egg"),Turtle_egg},
@@ -603,7 +603,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 
 	static inline bool CvrtPolyAttachBlocks(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)//多面附着方块
 	{
-		const static std::unordered_set<NBT_Node::NBT_String> setPolyAttachBlocks =
+		const static std::unordered_set<NBT_Type::String> setPolyAttachBlocks =
 		{
 			MU8STR("minecraft:vine"),
 			MU8STR("minecraft:glow_lichen"),
@@ -656,7 +656,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 	static inline bool CvrtMultiPartPlant(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)//多格植株处理
 	{
 		//只转换植株其余非植株走普通方块normal处理
-		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapMultiPartPlant =
+		const static std::unordered_map<NBT_Type::String, NBT_Type::String> mapMultiPartPlant =
 		{
 			//洞穴藤蔓特殊处理，转换到发光浆果
 			{MU8STR("minecraft:cave_vines_plant"),MU8STR("minecraft:glow_berries")},
@@ -695,7 +695,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 	static inline bool CvrtDoublePartPlant(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)//双格植株处理
 	{
 		//只有根部破坏掉落，头部直接忽略
-		const static std::unordered_set<NBT_Node::NBT_String> setDoublePartPlant =
+		const static std::unordered_set<NBT_Type::String> setDoublePartPlant =
 		{
 			MU8STR("minecraft:small_dripleaf"),
 			MU8STR("minecraft:tall_grass"),
@@ -731,7 +731,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 	//所有此类转换函数都不处理普通单格植物
 	static inline bool CvrtCropPlant(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)//作物植株处理
 	{
-		const static std::unordered_map<NBT_Node::NBT_String, NBT_Node::NBT_String> mapCropPlant =
+		const static std::unordered_map<NBT_Type::String, NBT_Type::String> mapCropPlant =
 		{
 			{MU8STR("minecraft:pumpkin_stem"),MU8STR("minecraft:pumpkin_seeds")},
 			{MU8STR("minecraft:attached_pumpkin_stem"),MU8STR("minecraft:pumpkin_seeds")},
