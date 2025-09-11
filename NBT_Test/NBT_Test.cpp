@@ -2,8 +2,6 @@
 #include "..\MaterialListEx\NBT_Reader.hpp"
 #include "..\MaterialListEx\NBT_Writer.hpp"
 #include "..\MaterialListEx\NBT_Helper.hpp"
-#include "..\MaterialListEx\MUTF8_Tool.hpp"
-#include "..\MaterialListEx\Windows_ANSI.hpp"
 #include "..\MaterialListEx\File_Tool.hpp"
 #include "..\MaterialListEx\Compression_Utils.hpp"
 
