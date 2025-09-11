@@ -1,7 +1,10 @@
 #pragma once
 
-#include "NBT_Node.hpp"
 #include <new>//bad alloc
+#include <string>
+#include <stdint.h>
+
+#include "NBT_Node.hpp"
 
 template <typename T>
 class MyOutputStream
@@ -108,7 +111,7 @@ public:
 };
 
 
-template <typename DataType = std::string>
+template <typename DataType = std::basic_string<uint8_t>>
 class NBT_Writer
 {
 	using OutputStream = MyOutputStream<DataType>;//Á÷ÀàÐÍ

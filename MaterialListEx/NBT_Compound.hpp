@@ -10,11 +10,17 @@
 template <typename DataType>
 class NBT_Reader;
 
+template <typename DataType>
+class NBT_Writer;
+
 template<typename Map>
 class MyCompound :protected Map
 {
 	template <typename DataType>
 	friend class NBT_Reader;
+
+	template <typename DataType>
+	class NBT_Writer;
 private:
 	bool TestType(NBT_TAG enTargetTag)
 	{

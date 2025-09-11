@@ -1,12 +1,24 @@
 #pragma once
 
 #include <string>
+
 #include "MUTF8_Tool.hpp"
 #include "Windows_ANSI.hpp"
+
+template <typename DataType>
+class NBT_Reader;
+
+template <typename DataType>
+class NBT_Writer;
 
 template<typename String>
 class MyString :public String
 {
+	template <typename DataType>
+	friend class NBT_Reader;
+
+	template <typename DataType>
+	friend class NBT_Writer;
 public:
 	//继承基类构造
 	using String::String;

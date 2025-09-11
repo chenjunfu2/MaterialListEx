@@ -11,11 +11,17 @@
 template <typename DataType>
 class NBT_Reader;
 
+template <typename DataType>
+class NBT_Writer;
+
 template <typename List>
 class MyList :protected List
 {
 	template <typename DataType>
 	friend class NBT_Reader;
+
+	template <typename DataType>
+	class NBT_Writer;
 private:
 	//列表元素类型（只能一种元素）
 	NBT_TAG enValueTag = NBT_TAG::TAG_End;

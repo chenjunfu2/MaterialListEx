@@ -42,12 +42,16 @@ int main(int argc, char *argv[])
 	v vt(std::in_place_type<std::list<int>>,{1,2,3,4});
 
 
-	NBT_Node::NBT_Compound test;
+	NBT_Node nn0{ NBT_Node::NBT_Compound{} }, nn1{ NBT_Node::NBT_List{} };
+
+	//NBT_Node::NBT_Compound &test = nn0.GetCompound();
+	NBT_Node::NBT_Compound &test = GetCompound(nn0);
 	test.Put("test", 1LL);
 	test.PutByte("test2", 1LL);
 	test.PutInt("test3", 1LL);
 
-	NBT_Node::NBT_List list;
+	//NBT_Node::NBT_List &list = nn1.GetList();
+	NBT_Node::NBT_List &list = GetList(nn1);
 	list.AddBack(NBT_Node{ (NBT_Node::NBT_Int)1 });
 	list.AddBack(NBT_Node{ (NBT_Node::NBT_Int)2 });
 	list.AddBack(NBT_Node{ (NBT_Node::NBT_Int)3 });
