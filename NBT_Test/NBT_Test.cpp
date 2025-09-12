@@ -26,8 +26,22 @@ void PrintBool(bool b)
 
 class MyTestValue
 {
-public:
+private:
 	int32_t i = 0;
+
+public:
+	MyTestValue(int32_t _i) : i(_i)
+	{}
+
+	~MyTestValue(void) = default;
+
+	MyTestValue(MyTestValue &&_Move) noexcept :i(_Move.i)
+	{
+		_Move.i = INT32_MIN;
+	}
+
+	MyTestValue(const MyTestValue &_Copy) :i(_Copy.i)
+	{}
 
 	void Print(void) const noexcept
 	{
@@ -35,11 +49,53 @@ public:
 	}
 };
 
+class MyCpdValue
+{
+private:
+	MyTestValue v;
+
+public:
+	/*
+	//错误的做法，会导致意外移动
+	template <typename T>
+	MyCpdValue(T &&value) noexcept : v(std::move(value))
+	{}
+	
+	template <typename T>
+	MyCpdValue(const T &value) noexcept : v(value)
+	{}
+	*/
+
+	//正确的做法，完美转发
+	template <typename T>
+	MyCpdValue(T &&value) noexcept : v(std::forward<T>(value))
+	{}
+
+	MyCpdValue(MyCpdValue &&_Move) noexcept : v(std::move(_Move.v))
+	{}
+
+	MyCpdValue(const MyCpdValue &_Copy) : v(_Copy.v)
+	{}
+
+	MyCpdValue(void) = default;
+	~MyCpdValue(void) = default;
+
+	MyTestValue &Get(void)
+	{
+		return v;
+	}
+
+	const MyTestValue &Get(void) const
+	{
+		return v;
+	}
+};
+
 
 class MyTestClass
 {
 private:
-	std::vector<MyTestValue> v;
+	std::vector<MyCpdValue> v;
 
 public:
 	MyTestClass(void) = default;
@@ -48,15 +104,17 @@ public:
 	MyTestClass(MyTestClass &&) = default;
 	MyTestClass(const MyTestClass &) = default;
 
-	template<
-	void Add()
-
+	template<typename T>
+	void AddBack(T &&tVal)
+	{
+		v.emplace_back(std::forward<T>(tVal));
+	}
 
 	void Print(void) const noexcept
 	{
-		for (const auto it : v)
+		for (const auto &it : v)
 		{
-			it.Print();
+			it.Get().Print();
 		}
 	}
 };
@@ -68,6 +126,30 @@ public:
 
 int main(int argc, char *argv[])
 {
+	MyTestValue t0(0), t1(1), t2(2), t3(3), t4(4);
+	MyTestValue &t3_ = t3;
+
+	MyTestClass c0;
+
+	c0.AddBack(std::move(t0));
+	c0.AddBack(t1);
+	c0.AddBack((const MyTestValue &)t2);
+	c0.AddBack(t3_);
+
+	t0.Print();
+	t1.Print();
+	t2.Print();
+	t3.Print();
+	t4.Print();
+
+	putchar('\n');
+	c0.Print();
+
+	putchar('\n');
+	//return 90;
+
+
+
 	//auto c = std::source_location::current();
 	//
 	//printf("%s %s [%d:%d]\n", c.file_name(), c.function_name(), c.line(), c.column());
@@ -88,22 +170,25 @@ int main(int argc, char *argv[])
 
 
 	//NBT_Type::List &list = nn1.GetList();
-	NBT_Type::List &list = GetList(nn1);
+	//NBT_Type::List &list = GetList(nn1);
+	NBT_Type::List list;
+	list.AddBack(NBT_Type::End{});
 	list.AddBack((NBT_Type::Int)1);
 	list.AddBack((NBT_Type::Int)2);
 	list.AddBack((NBT_Type::Int)3);
 	list.AddBack(NBT_Type::End{});
 
 	test.Put("list", list);
-
-	NBT_Type::List l2(NBT_TAG::Compound);
-	l2.AddBack(test);
-
-
-	NBT_Helper::Print(l2);
-
-
 	NBT_Helper::Print(list);
+
+	//NBT_Type::List l2(NBT_TAG::Compound);
+	//l2.AddBack(nn0);
+	//
+	//
+	//NBT_Helper::Print(l2);
+
+
+	
 	putchar('\n');
 	PrintBool(test.Contains("test"));
 	putchar('\n');

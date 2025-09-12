@@ -32,7 +32,7 @@ public:
 	//显式构造（通过in_place_type_t）
 	template <typename T, typename... Args>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
-	NBT_Node(std::in_place_type_t<T>, Args&&... args) : data(std::in_place_type<T>, std::forward<Args>(args)...)
+	explicit NBT_Node(std::in_place_type_t<T>, Args&&... args) : data(std::in_place_type<T>, std::forward<Args>(args)...)
 	{
 		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
 		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
@@ -41,7 +41,7 @@ public:
 	//显式列表构造（通过in_place_type_t）
 	template <typename T, typename U, typename... Args>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
-	NBT_Node(std::in_place_type_t<T>, std::initializer_list<U> init) : data(std::in_place_type<T>, init)
+	explicit NBT_Node(std::in_place_type_t<T>, std::initializer_list<U> init) : data(std::in_place_type<T>, init)
 	{
 		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
 		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
@@ -50,7 +50,7 @@ public:
 	//通用构造
 	template <typename T>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
-	NBT_Node(T &&value) : data(std::move(value))
+	NBT_Node(T &&value) noexcept : data(std::forward<T>(value))
 	{
 		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
 		static_assert(std::is_constructible_v<VariantData, T &&>, "Invalid constructor arguments for NBT_Node");
@@ -75,7 +75,19 @@ public:
 		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
 		static_assert(std::is_constructible_v<VariantData, T &&>, "Invalid constructor arguments for NBT_Node");
 
-		data = std::move(t);
+		data = std::forward<T>(t);
+		return *this;
+	}
+
+	//赋值
+	template<typename T>
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
+	NBT_Node &operator=(const T &t)
+	{
+		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
+		static_assert(std::is_constructible_v<VariantData, T &&>, "Invalid constructor arguments for NBT_Node");
+
+		data = t;
 		return *this;
 	}
 
