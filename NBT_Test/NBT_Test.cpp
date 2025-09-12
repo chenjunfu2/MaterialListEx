@@ -36,10 +36,6 @@ int main(int argc, char *argv[])
 
 	//*(long *)NULL = NULL;
 
-	using v = std::variant<int, long, std::list<int>>;
-	v vt(std::in_place_type<std::list<int>>,{1,2,3,4});
-
-
 	NBT_Node nn0{ NBT_Type::Compound{} }, nn1{ NBT_Type::List{} };
 
 	NBT_Type::Compound &test = nn0.GetCompound();
@@ -54,10 +50,7 @@ int main(int argc, char *argv[])
 	list.AddBack((NBT_Type::Int)2);
 	list.AddBack((NBT_Type::Int)3);
 
-	for (auto &it : list)
-	{
-		printf("%d ", it.GetInt());
-	}
+	NBT_Helper::Print(list);
 	putchar('\n');
 	PrintBool(test.Contains("test"));
 	putchar('\n');

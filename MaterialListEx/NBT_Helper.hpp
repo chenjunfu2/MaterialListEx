@@ -18,7 +18,7 @@ public:
 	{
 		size_t szLevelStart = bPadding ? 0 : (size_t)-1;//跳过打印
 
-		PrintSwitch<true>(nRoot, 0);
+		PrintSwitch(nRoot, 0);
 		if (bNewLine)
 		{
 			printf("\n");
@@ -28,7 +28,7 @@ public:
 	static std::string Serialize(const NBT_Node_View<true> nRoot)
 	{
 		std::string sRet{};
-		SerializeSwitch<true>(nRoot, sRet);
+		SerializeSwitch(nRoot, sRet);
 		return sRet;
 	}
 
@@ -83,7 +83,8 @@ private:
 		}
 	}
 
-	template<bool bRoot = false>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+	//首次调用默认为true，二次调用开始内部主动变为false
+	template<bool bRoot = true>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
 	static void PrintSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, size_t szLevel)
 	{
 		auto tag = nRoot.GetTag();
@@ -180,12 +181,12 @@ private:
 		case NBT_TAG::List://需要打印缩进的地方
 			{
 				const auto &list = nRoot.GetData<NBT_Type::List>();
-				PrintPadding(szLevel, false, true);
+				PrintPadding(szLevel, false, !bRoot);//不是根部则打印开头换行
 				printf("[");
 				for (const auto &it : list)
 				{
 					PrintPadding(szLevel, true, it.GetTag() != NBT_TAG::Compound && it.GetTag() != NBT_TAG::List);
-					PrintSwitch(it, szLevel + 1);
+					PrintSwitch<false>(it, szLevel + 1);
 					printf(",");
 				}
 
@@ -200,14 +201,14 @@ private:
 		case NBT_TAG::Compound://需要打印缩进的地方
 			{
 				const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
-				PrintPadding(szLevel, false, true);
+				PrintPadding(szLevel, false, !bRoot);//不是根部则打印开头换行
 				printf("{");
 
 				for (const auto &it : cpd)
 				{
 					PrintPadding(szLevel, true, true);
 					printf("\"%s\":", U16ANSI(U16STR(it.first)).c_str());
-					PrintSwitch(it.second, szLevel + 1);
+					PrintSwitch<false>(it.second, szLevel + 1);
 					printf(",");
 				}
 
@@ -254,158 +255,159 @@ private:
 		}
 	}
 
-template<bool bRoot = false>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
-static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, std::string &sRet)
-{
-	auto tag = nRoot.GetTag();
-	switch (tag)
+	//首次调用默认为true，二次调用开始内部主动变为false
+	template<bool bRoot = true>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+	static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, std::string &sRet)
 	{
-	case NBT_TAG::End:
+		auto tag = nRoot.GetTag();
+		switch (tag)
 		{
-			sRet += "[Compound End]";
-		}
-		break;
-	case NBT_TAG::Byte:
-		{
-			ToHexString(nRoot.GetData<NBT_Type::Byte>(), sRet);
-			sRet += 'B';
-		}
-		break;
-	case NBT_TAG::Short:
-		{
-			ToHexString(nRoot.GetData<NBT_Type::Short>(), sRet);
-			sRet += 'S';
-		}
-		break;
-	case NBT_TAG::Int:
-		{
-			ToHexString(nRoot.GetData<NBT_Type::Int>(), sRet);
-			sRet += 'I';
-		}
-		break;
-	case NBT_TAG::Long:
-		{
-			ToHexString(nRoot.GetData<NBT_Type::Long>(), sRet);
-			sRet += 'L';
-		}
-		break;
-	case NBT_TAG::Float:
-		{
-			ToHexString(nRoot.GetData<NBT_Type::Float>(), sRet);
-			sRet += 'F';
-		}
-		break;
-	case NBT_TAG::Double:
-		{
-			ToHexString(nRoot.GetData<NBT_Type::Double>(), sRet);
-			sRet += 'D';
-		}
-		break;
-	case NBT_TAG::Byte_Array:
-		{
-			const auto &arr = nRoot.GetData<NBT_Type::ByteArray>();
-			sRet += "[B;";
-			for (const auto &it : arr)
+		case NBT_TAG::End:
 			{
-				ToHexString(it, sRet);
-				sRet += ',';
+				sRet += "[Compound End]";
 			}
-			if (arr.size() != 0)
+			break;
+		case NBT_TAG::Byte:
 			{
-				sRet.pop_back();//删掉最后一个逗号
+				ToHexString(nRoot.GetData<NBT_Type::Byte>(), sRet);
+				sRet += 'B';
 			}
-
-			sRet += ']';
-		}
-		break;
-	case NBT_TAG::Int_Array:
-		{
-			const auto &arr = nRoot.GetData<NBT_Type::IntArray>();
-			sRet += "[I;";
-			for (const auto &it : arr)
+			break;
+		case NBT_TAG::Short:
 			{
-				ToHexString(it, sRet);
-				sRet += ',';
+				ToHexString(nRoot.GetData<NBT_Type::Short>(), sRet);
+				sRet += 'S';
 			}
-			if (arr.size() != 0)
+			break;
+		case NBT_TAG::Int:
 			{
-				sRet.pop_back();//删掉最后一个逗号
+				ToHexString(nRoot.GetData<NBT_Type::Int>(), sRet);
+				sRet += 'I';
 			}
-
-			sRet += ']';
-		}
-		break;
-	case NBT_TAG::Long_Array:
-		{
-			const auto &arr = nRoot.GetData<NBT_Type::LongArray>();
-			sRet += "[L;";
-			for (const auto &it : arr)
+			break;
+		case NBT_TAG::Long:
 			{
-				ToHexString(it, sRet);
-				sRet += ',';
+				ToHexString(nRoot.GetData<NBT_Type::Long>(), sRet);
+				sRet += 'L';
 			}
-			if (arr.size() != 0)
+			break;
+		case NBT_TAG::Float:
 			{
-				sRet.pop_back();//删掉最后一个逗号
+				ToHexString(nRoot.GetData<NBT_Type::Float>(), sRet);
+				sRet += 'F';
 			}
-
-			sRet += ']';
-		}
-		break;
-	case NBT_TAG::String:
-		{
-			sRet += '\"';
-			sRet += nRoot.GetData<NBT_Type::String>();
-			sRet += '\"';
-		}
-		break;
-	case NBT_TAG::List:
-		{
-			const auto &list = nRoot.GetData<NBT_Type::List>();
-			sRet += '[';
-			for (const auto &it : list)
+			break;
+		case NBT_TAG::Double:
 			{
-				SerializeSwitch(it, sRet);
-				sRet += ',';
+				ToHexString(nRoot.GetData<NBT_Type::Double>(), sRet);
+				sRet += 'D';
 			}
-
-			if (list.Size() != 0)
+			break;
+		case NBT_TAG::Byte_Array:
 			{
-				sRet.pop_back();//删掉最后一个逗号
+				const auto &arr = nRoot.GetData<NBT_Type::ByteArray>();
+				sRet += "[B;";
+				for (const auto &it : arr)
+				{
+					ToHexString(it, sRet);
+					sRet += ',';
+				}
+				if (arr.size() != 0)
+				{
+					sRet.pop_back();//删掉最后一个逗号
+				}
+	
+				sRet += ']';
 			}
-			sRet += ']';
-		}
-		break;
-	case NBT_TAG::Compound://需要打印缩进的地方
-		{
-			const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
-			sRet += '{';
-
-			for (const auto &it : cpd)
+			break;
+		case NBT_TAG::Int_Array:
+			{
+				const auto &arr = nRoot.GetData<NBT_Type::IntArray>();
+				sRet += "[I;";
+				for (const auto &it : arr)
+				{
+					ToHexString(it, sRet);
+					sRet += ',';
+				}
+				if (arr.size() != 0)
+				{
+					sRet.pop_back();//删掉最后一个逗号
+				}
+	
+				sRet += ']';
+			}
+			break;
+		case NBT_TAG::Long_Array:
+			{
+				const auto &arr = nRoot.GetData<NBT_Type::LongArray>();
+				sRet += "[L;";
+				for (const auto &it : arr)
+				{
+					ToHexString(it, sRet);
+					sRet += ',';
+				}
+				if (arr.size() != 0)
+				{
+					sRet.pop_back();//删掉最后一个逗号
+				}
+	
+				sRet += ']';
+			}
+			break;
+		case NBT_TAG::String:
 			{
 				sRet += '\"';
-				sRet += it.first;
-				sRet += "\":";
-				SerializeSwitch(it.second, sRet);
-				sRet += ',';
+				sRet += nRoot.GetData<NBT_Type::String>();
+				sRet += '\"';
 			}
-
-			if (cpd.Size() != 0)
+			break;
+		case NBT_TAG::List:
 			{
-				sRet.pop_back();//删掉最后一个逗号
+				const auto &list = nRoot.GetData<NBT_Type::List>();
+				sRet += '[';
+				for (const auto &it : list)
+				{
+					SerializeSwitch<false>(it, sRet);
+					sRet += ',';
+				}
+	
+				if (list.Size() != 0)
+				{
+					sRet.pop_back();//删掉最后一个逗号
+				}
+				sRet += ']';
 			}
-			sRet += '}';
+			break;
+		case NBT_TAG::Compound://需要打印缩进的地方
+			{
+				const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
+				sRet += '{';
+	
+				for (const auto &it : cpd)
+				{
+					sRet += '\"';
+					sRet += it.first;
+					sRet += "\":";
+					SerializeSwitch<false>(it.second, sRet);
+					sRet += ',';
+				}
+	
+				if (cpd.Size() != 0)
+				{
+					sRet.pop_back();//删掉最后一个逗号
+				}
+				sRet += '}';
+			}
+			break;
+		default:
+			{
+				sRet += "[Unknown NBT Tag Type [";
+				ToHexString((NBT_TAG_RAW_TYPE)tag, sRet);
+				sRet += "]]";
+			}
+			break;
 		}
-		break;
-	default:
-		{
-			sRet += "[Unknown NBT Tag Type [";
-			ToHexString((NBT_TAG_RAW_TYPE)tag, sRet);
-			sRet += "]]";
-		}
-		break;
 	}
-}
 
 private:
 	template<bool bRoot = false>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
