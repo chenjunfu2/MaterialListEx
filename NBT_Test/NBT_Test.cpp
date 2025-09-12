@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
 	list.AddBack((NBT_Type::Int)1);
 	list.AddBack((NBT_Type::Int)2);
 	list.AddBack((NBT_Type::Int)3);
+	list.AddBack((NBT_Type::Long)3);
 
 	NBT_Helper::Print(list);
 	putchar('\n');

@@ -21,7 +21,7 @@ public:
 		PrintSwitch(nRoot, 0);
 		if (bNewLine)
 		{
-			printf("\n");
+			putchar('\n');
 		}
 	}
 
@@ -74,12 +74,12 @@ private:
 		
 		for (size_t i = 0; i < szLevel; ++i)
 		{
-			printf(LevelPadding);
+			printf("%s", LevelPadding);
 		}
 
 		if (bSubLevel)
 		{
-			printf(LevelPadding);
+			printf("%s", LevelPadding);
 		}
 	}
 
