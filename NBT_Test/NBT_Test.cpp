@@ -43,13 +43,15 @@ int main(int argc, char *argv[])
 	test.Put("test", 1LL);
 	test.PutByte("test2", 1LL);
 	test.PutInt("test3", 1LL);
+	test.PutEnd("testend", {});
+
 
 	//NBT_Type::List &list = nn1.GetList();
 	NBT_Type::List &list = GetList(nn1);
 	list.AddBack((NBT_Type::Int)1);
 	list.AddBack((NBT_Type::Int)2);
 	list.AddBack((NBT_Type::Int)3);
-	list.AddBack((NBT_Type::Long)3);
+	list.AddBack(NBT_Type::End{});
 
 	NBT_Helper::Print(list);
 	putchar('\n');

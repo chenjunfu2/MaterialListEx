@@ -22,19 +22,19 @@ class MyCompound :protected Map
 	template <typename DataType>
 	class NBT_Writer;
 private:
-	template<typename V>
-	bool TestType(V vTagVal)
-	{
-		if constexpr (std::is_same_v<std::decay_t<V>, Map::mapped_type>)
-		{
-			return vTagVal.GetTag() != NBT_TAG::End;
-		}
-		else
-		{
-			return NBT_Type::TypeTag_V<std::decay_t<V>> != NBT_TAG::End;
-		}
-	}
-
+	//总是允许插入nbt end，但是在写出文件时会忽略end类型
+	//template<typename V>
+	//bool TestType(V vTagVal)
+	//{
+	//	if constexpr (std::is_same_v<std::decay_t<V>, Map::mapped_type>)
+	//	{
+	//		return vTagVal.GetTag() != NBT_TAG::End;
+	//	}
+	//	else
+	//	{
+	//		return NBT_Type::TypeTag_V<std::decay_t<V>> != NBT_TAG::End;
+	//	}
+	//}
 public:
 	template<typename... Args>
 	MyCompound(Args&&... args) : Map(std::forward<Args>(args)...)
@@ -101,30 +101,33 @@ public:
 	inline std::pair<typename Map::iterator, bool> Put(K &&sTagName, V &&vTagVal)
 		requires std::constructible_from<typename Map::key_type, K &&> && std::constructible_from<typename Map::mapped_type, V &&>
 	{
-		if (!TestType(vTagVal))
-		{
-			return std::pair{ Map::end(),false };
-		}
+		//总是允许插入nbt end，但是在写出文件时会忽略end类型
+		//if (!TestType(vTagVal))
+		//{
+		//	return std::pair{ Map::end(),false };
+		//}
 
 		return Map::try_emplace(std::forward<K>(sTagName), std::forward<V>(vTagVal));
 	}
 
 	inline std::pair<typename Map::iterator, bool> Put(const typename Map::value_type &mapValue)
 	{
-		if (!TestType(mapValue.second.GetTag()))
-		{
-			return std::pair{ Map::end(),false };
-		}
+		//总是允许插入nbt end，但是在写出文件时会忽略end类型
+		//if (!TestType(mapValue.second.GetTag()))
+		//{
+		//	return std::pair{ Map::end(),false };
+		//}
 
 		return Map::insert(mapValue);
 	}
 
 	inline std::pair<typename Map::iterator, bool> Put(typename Map::value_type &&mapValue)
 	{
-		if (!TestType(mapValue.second.GetTag()))
-		{
-			return std::pair{ Map::end(),false };
-		}
+		//总是允许插入nbt end，但是在写出文件时会忽略end类型
+		//if (!TestType(mapValue.second.GetTag()))
+		//{
+		//	return std::pair{ Map::end(),false };
+		//}
 
 		return Map::insert(std::move(mapValue));
 	}

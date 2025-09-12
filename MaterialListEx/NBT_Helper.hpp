@@ -92,7 +92,7 @@ private:
 		{
 		case NBT_TAG::End:
 			{
-				printf("[Compound End]");
+				printf("[End]");
 			}
 			break;
 		case NBT_TAG::Byte:
@@ -264,7 +264,7 @@ private:
 		{
 		case NBT_TAG::End:
 			{
-				sRet += "[Compound End]";
+				sRet += "[End]";
 			}
 			break;
 		case NBT_TAG::Byte:
@@ -425,7 +425,9 @@ private:
 		switch (tag)
 		{
 		case NBT_TAG::End:
-			{}
+			{
+				//end类型无负载，所以什么也不做
+			}
 			break;
 		case NBT_TAG::Byte:
 			{
