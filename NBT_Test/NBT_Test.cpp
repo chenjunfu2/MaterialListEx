@@ -170,8 +170,7 @@ int main(int argc, char *argv[])
 
 
 	//NBT_Type::List &list = nn1.GetList();
-	//NBT_Type::List &list = GetList(nn1);
-	NBT_Type::List list;
+	NBT_Type::List &list = GetList(nn1);
 	list.AddBack(NBT_Type::End{});
 	list.AddBack((NBT_Type::Int)1);
 	list.AddBack((NBT_Type::Int)2);
@@ -181,11 +180,11 @@ int main(int argc, char *argv[])
 	test.Put("list", list);
 	NBT_Helper::Print(list);
 
-	//NBT_Type::List l2(NBT_TAG::Compound);
-	//l2.AddBack(nn0);
-	//
-	//
-	//NBT_Helper::Print(l2);
+	NBT_Type::List l2(NBT_TAG::Compound);
+	l2.AddBack(nn0);
+	
+	
+	NBT_Helper::Print(l2);
 
 
 	
