@@ -67,7 +67,7 @@ public:
 		return data.emplace<T>(std::forward<Args>(args)...);
 	}
 
-	//赋值
+	//通用赋值
 	template<typename T>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
 	NBT_Node &operator=(T &&t) noexcept
@@ -76,18 +76,6 @@ public:
 		static_assert(std::is_constructible_v<VariantData, T &&>, "Invalid constructor arguments for NBT_Node");
 
 		data = std::forward<T>(t);
-		return *this;
-	}
-
-	//赋值
-	template<typename T>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
-	NBT_Node &operator=(const T &t)
-	{
-		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
-		static_assert(std::is_constructible_v<VariantData, T &&>, "Invalid constructor arguments for NBT_Node");
-
-		data = t;
 		return *this;
 	}
 
