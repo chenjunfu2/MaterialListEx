@@ -97,7 +97,7 @@ public:
 
 	//简化map插入
 	//使用完美转发，不丢失引用、右值信息
-	template <class K, class V>
+	template <typename K, typename V>
 	inline std::pair<typename Map::iterator, bool> Put(K &&sTagName, V &&vTagVal)
 		requires std::constructible_from<typename Map::key_type, K &&> && std::constructible_from<typename Map::mapped_type, V &&>
 	{
@@ -206,14 +206,14 @@ inline typename NBT_Type::##type *Has##type(const typename Map::key_type & sTagN
 #undef TYPE_GET_FUNC
 
 #define TYPE_PUT_FUNC(type)\
-template <class K>\
+template <typename K>\
 inline std::pair<typename Map::iterator, bool> Put##type(K &&sTagName, const typename NBT_Type::##type &vTagVal)\
 	requires std::constructible_from<typename Map::key_type, K &&>\
 {\
 	return Put(std::forward<K>(sTagName), vTagVal);\
 }\
 \
-template <class K>\
+template <typename K>\
 inline std::pair<typename Map::iterator, bool> Put##type(K &&sTagName, typename NBT_Type::##type &&vTagVal)\
 	requires std::constructible_from<typename Map::key_type, K &&>\
 {\

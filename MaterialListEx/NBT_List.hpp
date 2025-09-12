@@ -219,7 +219,7 @@ public:
 	}
 
 	//ºÚªØlist≤Â»Î
-	template <class V>
+	template <typename V>
 	inline std::pair<typename List::iterator, bool> Add(size_t szPos, V &&vTagVal)
 	{
 		if (szPos > List::size())
@@ -235,7 +235,7 @@ public:
 		return std::pair{ List::emplace(List::begin() + szPos, std::forward<V>(vTagVal)),true };
 	}
 
-	template <class V>
+	template <typename V>
 	inline std::pair<typename List::iterator, bool> AddBack(V &&vTagVal)
 	{
 		if (!TestAndSetType(vTagVal))
@@ -247,7 +247,7 @@ public:
 		return std::pair{ List::end() - 1,true };
 	}
 
-	template <class V>
+	template <typename V>
 	inline std::pair<typename List::iterator, bool> Set(size_t szPos, V &&vTagVal)
 	{
 		if (szPos > List::size())

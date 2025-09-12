@@ -24,6 +24,47 @@ void PrintBool(bool b)
 	printf("%s", b ? "true" : "false");
 }
 
+class MyTestValue
+{
+public:
+	int32_t i = 0;
+
+	void Print(void) const noexcept
+	{
+		printf("%d ", i);
+	}
+};
+
+
+class MyTestClass
+{
+private:
+	std::vector<MyTestValue> v;
+
+public:
+	MyTestClass(void) = default;
+	~MyTestClass(void) = default;
+
+	MyTestClass(MyTestClass &&) = default;
+	MyTestClass(const MyTestClass &) = default;
+
+	template<
+	void Add()
+
+
+	void Print(void) const noexcept
+	{
+		for (const auto it : v)
+		{
+			it.Print();
+		}
+	}
+};
+
+
+
+
+
 
 int main(int argc, char *argv[])
 {
@@ -52,6 +93,15 @@ int main(int argc, char *argv[])
 	list.AddBack((NBT_Type::Int)2);
 	list.AddBack((NBT_Type::Int)3);
 	list.AddBack(NBT_Type::End{});
+
+	test.Put("list", list);
+
+	NBT_Type::List l2(NBT_TAG::Compound);
+	l2.AddBack(test);
+
+
+	NBT_Helper::Print(l2);
+
 
 	NBT_Helper::Print(list);
 	putchar('\n');
