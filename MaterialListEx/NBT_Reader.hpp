@@ -348,27 +348,6 @@ catch(...)\
 		return AllOk;
 	}
 
-	template<typename T>
-	struct BUILTIN_TYPE
-	{
-		using Type = T;
-		static_assert(std::is_integral<T>::value, "Not a legal type!");//抛出编译错误
-	};
-
-	template<>
-	struct BUILTIN_TYPE<NBT_Type::Float>//浮点数映射
-	{
-		using Type = uint32_t;
-		static_assert(sizeof(Type) == sizeof(NBT_Type::Float), "Type size does not match!");
-	};
-
-	template<>
-	struct BUILTIN_TYPE<NBT_Type::Double>//浮点数映射
-	{
-		using Type = uint64_t;
-		static_assert(sizeof(Type) == sizeof(NBT_Type::Double), "Type size does not match!");
-	};
-
 	template<typename T, bool bHasName = true>
 	static int GetBuiltinType(InputStream &tData, NBT_Node &nRoot)
 	{
@@ -386,7 +365,7 @@ catch(...)\
 		}
 
 		//读取数据
-		using DATA_T = BUILTIN_TYPE<T>::Type;//类型映射
+		using DATA_T = NBT_Type::BuiltinRawType_T<T>;//类型映射
 
 		DATA_T tTmpData = 0;
 		iRet = ReadBigEndian(tData, tTmpData);

@@ -22,13 +22,16 @@ class MyCompound;
 class NBT_Type
 {
 public:
+	using Float_Raw = uint32_t;
+	using Double_Raw = uint64_t;
+
 	using End			= std::monostate;//无状态
 	using Byte			= int8_t;
 	using Short			= int16_t;
 	using Int			= int32_t;
 	using Long			= int64_t;
-	using Float			= std::conditional_t<(sizeof(float) == sizeof(uint32_t)), float, uint32_t>;//通过编译期确认类型大小来选择正确的类型，优先浮点类型，如果失败则替换为对应的可用类型
-	using Double		= std::conditional_t<(sizeof(double) == sizeof(uint64_t)), double, uint64_t>;
+	using Float			= std::conditional_t<(sizeof(float) == sizeof(Float_Raw)), float, Float_Raw>;//通过编译期确认类型大小来选择正确的类型，优先浮点类型，如果失败则替换为对应的可用类型
+	using Double		= std::conditional_t<(sizeof(double) == sizeof(Double_Raw)), double, Double_Raw>;
 	using ByteArray		= MyArray<std::vector<Byte>>;
 	using IntArray		= MyArray<std::vector<Int>>;
 	using LongArray		= MyArray<std::vector<Long>>;
@@ -124,4 +127,29 @@ public:
 
 	template <NBT_TAG Tag>
 	using TagToType_T = typename TagToType<Tag>::type;
+
+	//映射浮点数到方便读写的raw类型
+	template<typename T>
+	struct BuiltinRawType
+	{
+		using Type = T;
+		static_assert(IsValidType_V<T> && std::is_integral_v<T>, "Not a legal type!");//抛出编译错误
+	};
+
+	template<>
+	struct BuiltinRawType<Float>//浮点数映射
+	{
+		using Type = Float_Raw;
+		static_assert(sizeof(Type) == sizeof(Float), "Type size does not match!");
+	};
+
+	template<>
+	struct BuiltinRawType<Double>//浮点数映射
+	{
+		using Type = Double_Raw;
+		static_assert(sizeof(Type) == sizeof(Double), "Type size does not match!");
+	};
+
+	template<typename T>
+	using BuiltinRawType_T = typename BuiltinRawType<T>::Type;
 };
