@@ -230,7 +230,6 @@ public:
 		{
 			return std::pair{ List::end(),false };
 		}
-		
 
 		return std::pair{ List::emplace(List::begin() + szPos, std::forward<V>(vTagVal)),true };
 	}

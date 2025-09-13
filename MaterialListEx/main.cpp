@@ -6,7 +6,7 @@
 #include "NBT_Writer.hpp"
 #include "BlockProcess.hpp"
 #include "TileEntityProcess.hpp"
-#include "File_Tool.hpp"
+#include "NBT_IO.hpp"
 #include "RegionProcess.h"
 #include "CodeTimer.hpp"
 
@@ -14,10 +14,6 @@
 #include "CSV_Tool.hpp"
 #include "CountFormatter.hpp"
 #include "Windows_FileSystem.hpp"
-
-/*Compress*/
-#include "Compression_Utils.hpp"
-/*Compress*/
 
 #include <stdio.h>
 #include <string>
@@ -203,7 +199,7 @@ void Convert(const char *const pFileName)
 
 	std::basic_string<uint8_t> sNbtData;
 	timer.Start();
-	if (!ReadFile(pFileName, sNbtData))
+	if (!NBT_IO::ReadFile(pFileName, sNbtData))
 	{
 		printf("Nbt File read fail\n");
 		return;
@@ -237,7 +233,7 @@ void Convert(const char *const pFileName)
 		 printf("Output file:\"%s\" ", sPath.c_str());
 
 		 //判断文件存在性
-		 if (!IsFileExist(sPath))
+		 if (!NBT_IO::IsFileExist(sPath))
 		 {
 			 //输出一个解压过的文件，用于在报错发生后供分析
 			 FILE *pFile = fopen(sPath.c_str(), "wb");

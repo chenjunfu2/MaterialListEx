@@ -101,4 +101,27 @@ public:
 
 	//enum与索引大小检查
 	static_assert(TypeListSize_V == NBT_TAG::ENUM_END, "Enumeration does not match the number of types in the mutator");
+
+
+	//从NBT_TAG到类型的映射
+	template <NBT_TAG Tag>
+	struct TagToType;
+
+	template <NBT_TAG_RAW_TYPE I, typename List> struct TypeAt;
+
+	template <NBT_TAG_RAW_TYPE I, typename... Ts>
+	struct TypeAt<I, _TypeList<Ts...>>
+	{
+		using type = std::tuple_element_t<I, std::tuple<Ts...>>;
+	};
+
+	template <NBT_TAG Tag>
+	struct TagToType
+	{
+		static_assert((NBT_TAG_RAW_TYPE)Tag < TypeListSize_V, "Invalid NBT_TAG");
+		using type = typename TypeAt<(NBT_TAG_RAW_TYPE)Tag, TypeList>::type;
+	};
+
+	template <NBT_TAG Tag>
+	using TagToType_T = typename TagToType<Tag>::type;
 };

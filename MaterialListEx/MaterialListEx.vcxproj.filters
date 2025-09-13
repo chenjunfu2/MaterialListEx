@@ -359,16 +359,16 @@
     <ClInclude Include="NBT_Writer.hpp">
       <Filter>头文件\nbt</Filter>
     </ClInclude>
-    <ClInclude Include="File_Tool.hpp">
-      <Filter>头文件\nbt</Filter>
-    </ClInclude>
-    <ClInclude Include="Compression_Utils.hpp">
-      <Filter>头文件\nbt</Filter>
-    </ClInclude>
     <ClInclude Include="Windows_FileSystem.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="NBT_Type.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_Hash.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_IO.hpp">
       <Filter>头文件\nbt</Filter>
     </ClInclude>
   </ItemGroup>

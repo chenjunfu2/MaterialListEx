@@ -2,11 +2,12 @@
 
 #include "NBT_Node.hpp"
 #include "NBT_Node_View.hpp"
+#include "NBT_Hash.hpp"
 
 #include <concepts>
 
 #include <bit>
-#include <xxhash.h>
+//#include <xxhash.h>
 
 class NBT_Helper
 {
@@ -32,33 +33,28 @@ public:
 		return sRet;
 	}
 
-	static void DefaultFunc(XXH64_state_t *)
+	static void DefaultFunc(NBT_Hash &)
 	{
 		return;
 	}
 
 	using DefaultFuncType = std::decay_t<decltype(DefaultFunc)>;
 
-	template<typename TS = DefaultFuncType, typename TE = DefaultFuncType>//两个函数，分别在前后调用，可以用于插入哈希数据
-	static XXH64_hash_t Hash(const NBT_Node_View<true> nRoot, XXH64_hash_t u64Seed, TS funS = DefaultFunc, TE funE = DefaultFunc)
+	template<typename TB = DefaultFuncType, typename TA = DefaultFuncType>//两个函数，分别在前后调用，可以用于插入哈希数据
+	static NBT_Hash::HASH_T Hash(const NBT_Node_View<true> nRoot, NBT_Hash nbtHash, TB funBefore = DefaultFunc, TA funAfter = DefaultFunc)
 	{
-		XXH64_state_t * pHashState = XXH64_createState();
-		XXH64_reset(pHashState, u64Seed);
+		funBefore(nbtHash);
+		HashSwitch(nRoot, nbtHash);
+		funAfter(nbtHash);
 
-		funS(pHashState);
-		HashSwitch<true>(nRoot, pHashState);
-		funE(pHashState);
+		return nbtHash.Digest();
 
-		XXH64_hash_t hashNBT = XXH64_digest(pHashState);
-		XXH64_freeState(pHashState);
-		return hashNBT;
-
-		using DefaultFuncArg = std::decay_t<decltype(pHashState)>;
-		static_assert(std::is_invocable_v<TS, DefaultFuncArg>, "TS is not a callable object or parameter type mismatch.");
-		static_assert(std::is_invocable_v<TE, DefaultFuncArg>, "TE is not a callable object or parameter type mismatch.");
+		//调用可行性检测
+		static_assert(std::is_invocable_v<TB, decltype(nbtHash)&>, "TB is not a callable object or parameter type mismatch.");
+		static_assert(std::is_invocable_v<TA, decltype(nbtHash)&>, "TA is not a callable object or parameter type mismatch.");
 	}
 private:
-	constexpr const static inline char *const LevelPadding = "    ";
+	constexpr const static inline char *const LevelPadding = "    ";//默认对齐
 
 	static void PrintPadding(size_t szLevel, bool bSubLevel, bool bNewLine)//bSubLevel会让缩进多一层
 	{
@@ -410,15 +406,15 @@ private:
 	}
 
 private:
-	template<bool bRoot = false>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
-	static void HashSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, XXH64_state_t *pHashState)
+	template<bool bRoot = true>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+	static void HashSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, NBT_Hash &nbtHash)
 	{
 		auto tag = nRoot.GetTag();
 
 		//把tag本身作为数据
 		{
 			const auto &tmp = tag;
-			XXH64_update(pHashState, &tmp, sizeof(tmp));
+			nbtHash.Update(tmp);
 		}
 
 		//再读出实际内容作为数据
@@ -432,37 +428,37 @@ private:
 		case NBT_TAG::Byte:
 			{
 				const auto &tmp = nRoot.GetData<NBT_Type::Byte>();
-				XXH64_update(pHashState, &tmp, sizeof(tmp));
+				nbtHash.Update(tmp);
 			}
 			break;
 		case NBT_TAG::Short:
 			{
 				const auto &tmp = nRoot.GetData<NBT_Type::Short>();
-				XXH64_update(pHashState, &tmp, sizeof(tmp));
+				nbtHash.Update(tmp);
 			}
 			break;
 		case NBT_TAG::Int:
 			{
 				const auto &tmp = nRoot.GetData<NBT_Type::Int>();
-				XXH64_update(pHashState, &tmp, sizeof(tmp));
+				nbtHash.Update(tmp);
 			}
 			break;
 		case NBT_TAG::Long:
 			{
 				const auto &tmp = nRoot.GetData<NBT_Type::Long>();
-				XXH64_update(pHashState, &tmp, sizeof(tmp));
+				nbtHash.Update(tmp);
 			}
 			break;
 		case NBT_TAG::Float:
 			{
 				const auto &tmp = nRoot.GetData<NBT_Type::Float>();
-				XXH64_update(pHashState, &tmp, sizeof(tmp));
+				nbtHash.Update(tmp);
 			}
 			break;
 		case NBT_TAG::Double:
 			{
 				const auto &tmp = nRoot.GetData<NBT_Type::Double>();
-				XXH64_update(pHashState, &tmp, sizeof(tmp));
+				nbtHash.Update(tmp);
 			}
 			break;
 		case NBT_TAG::Byte_Array:
@@ -471,7 +467,7 @@ private:
 				for (const auto &it : arr)
 				{
 					const auto &tmp = it;
-					XXH64_update(pHashState, &tmp, sizeof(tmp));
+					nbtHash.Update(tmp);
 				}
 			}
 			break;
@@ -481,7 +477,7 @@ private:
 				for (const auto &it : arr)
 				{
 					const auto &tmp = it;
-					XXH64_update(pHashState, &tmp, sizeof(tmp));
+					nbtHash.Update(tmp);
 				}
 			}
 			break;
@@ -491,14 +487,14 @@ private:
 				for (const auto &it : arr)
 				{
 					const auto &tmp = it;
-					XXH64_update(pHashState, &tmp, sizeof(tmp));
+					nbtHash.Update(tmp);
 				}
 			}
 			break;
 		case NBT_TAG::String:
 			{
 				const auto &tmp = nRoot.GetData<NBT_Type::String>();
-				XXH64_update(pHashState, tmp.data(), tmp.size());
+				nbtHash.Update(tmp.data(), tmp.size());
 			}
 			break;
 		case NBT_TAG::List:
@@ -506,7 +502,7 @@ private:
 				const auto &list = nRoot.GetData<NBT_Type::List>();
 				for (const auto &it : list)
 				{
-					HashSwitch(it, pHashState);
+					HashSwitch<false>(it, nbtHash);
 				}
 			}
 			break;
@@ -516,8 +512,8 @@ private:
 				for (const auto &it : cpd)
 				{
 					const auto &tmp = it.first;
-					XXH64_update(pHashState, tmp.data(), tmp.size());
-					HashSwitch(it.second, pHashState);
+					nbtHash.Update(tmp.data(), tmp.size());
+					HashSwitch<false>(it.second, nbtHash);
 				}
 			}
 			break;

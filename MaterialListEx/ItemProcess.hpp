@@ -15,20 +15,18 @@ struct ItemInfo
 public:
 	uint64_t DataHash(void)
 	{
-		static_assert(std::is_same_v<XXH64_hash_t, uint64_t>, "Hash type does not match the required type.");
-
-		constexpr static XXH64_hash_t HASH_SEED = 0xDE35'B92A'7F41'806C;
+		constexpr static NBT_Hash::HASH_T HASH_SEED = 0xDE35'B92A'7F41'806C;
 
 		if (cpdTag.Empty())//tag为空只计算名称
 		{
-			return XXH64(sName.data(), sName.size(), HASH_SEED);
+			return NBT_Hash::Hash(sName.data(), sName.size(), HASH_SEED);
 		}
 		else//不为空则计算tag
 		{
 			return NBT_Helper::Hash(cpdTag, HASH_SEED,
-				[this](XXH64_state_t *pHashState) -> void//在tag之前加入名称
+				[this](NBT_Hash &nbtHash) -> void//在tag之前加入名称
 				{
-					XXH64_update(pHashState, this->sName.data(), this->sName.size());
+					nbtHash.Update(this->sName.data(), this->sName.size());
 				});
 		}
 	}
@@ -73,11 +71,9 @@ struct NoTagItemInfo
 public:
 	uint64_t DataHash(void)
 	{
-		static_assert(std::is_same_v<XXH64_hash_t, uint64_t>, "Hash type does not match the required type.");
+		constexpr static NBT_Hash::HASH_T HASH_SEED = 0x83B0'1A83'062C'4F5D;
 
-		constexpr static XXH64_hash_t HASH_SEED = 0x83B0'1A83'062C'4F5D;
-
-		return XXH64(sName.data(), sName.size(), HASH_SEED);
+		return NBT_Hash::Hash(sName.data(), sName.size(), HASH_SEED);
 	}
 
 public:

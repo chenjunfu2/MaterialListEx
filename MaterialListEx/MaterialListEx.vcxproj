@@ -200,11 +200,9 @@
     <ClInclude Include="BlockProcess.hpp" />
     <ClInclude Include="Calc_Tool.hpp" />
     <ClInclude Include="CodeTimer.hpp" />
-    <ClInclude Include="Compression_Utils.hpp" />
     <ClInclude Include="CountFormatter.hpp" />
     <ClInclude Include="CSV_Tool.hpp" />
     <ClInclude Include="EntityProcess.hpp" />
-    <ClInclude Include="File_Tool.hpp" />
     <ClInclude Include="gzip\compress.hpp" />
     <ClInclude Include="gzip\config.hpp" />
     <ClInclude Include="gzip\decompress.hpp" />
@@ -216,7 +214,9 @@
     <ClInclude Include="MUTF8_Tool.hpp" />
     <ClInclude Include="NBT_Array.hpp" />
     <ClInclude Include="NBT_Compound.hpp" />
+    <ClInclude Include="NBT_Hash.hpp" />
     <ClInclude Include="NBT_Helper.hpp" />
+    <ClInclude Include="NBT_IO.hpp" />
     <ClInclude Include="NBT_List.hpp" />
     <ClInclude Include="NBT_Node.hpp" />
     <ClInclude Include="NBT_Node_View.hpp" />
