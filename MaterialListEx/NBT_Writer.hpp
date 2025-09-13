@@ -3,25 +3,13 @@
 #include <new>//bad alloc
 #include <string>
 #include <stdint.h>
+#include <type_traits>
 
 #include "NBT_Node.hpp"
 
 template <typename T>
 class MyOutputStream
 {
-	template<typename T>
-	struct has_emplace_back
-	{
-	private:
-		template<typename U>
-		static auto test(int) -> decltype(std::declval<U>().emplace_back(std::declval<typename U::value_type>()), std::true_type{});
-
-		template<typename>
-		static std::false_type test(...);
-
-	public:
-		static constexpr bool value = std::true_type::value;
-	};
 private:
 	T &tData;
 public:
@@ -29,26 +17,15 @@ public:
 	{
 		tData.resize(szStartIdx);
 	}
-	~MyOutputStream() = default;
+	~MyOutputStream(void) = default;
 
-	bool PutOnce(const typename T::value_type &c) noexcept
+	template<typename V>
+	requires(std::is_constructible_v<T::value_type, V &&>)
+	bool PutOnce(V &&c) noexcept
 	{
 		try
 		{
-			tData.push_back(c);
-			return true;
-		}
-		catch (const std::bad_alloc&)
-		{
-			return false;
-		}
-	}
-
-	bool PutOnce(typename T::value_type &&c) noexcept
-	{
-		try
-		{
-			tData.push_back(std::move(c));
+			tData.push_back(std::forward<V>(c));
 			return true;
 		}
 		catch (const std::bad_alloc &)
@@ -70,41 +47,27 @@ public:
 		}
 	}
 
-	template<typename... Args, typename = std::enable_if_t<has_emplace_back<T>::value>>
-	bool EmplaceOnce(Args&&... args) noexcept
-	{
-		try
-		{
-			tData.emplace_back(std::forward<Args>(args)...);
-			return true;
-		}
-		catch (const std::bad_alloc &)
-		{
-			return false;
-		}
-	}
-
-	void UnPut() noexcept
+	void UnPut(void) noexcept
 	{
 		tData.pop_back();
 	}
 
-	size_t GetSize() const noexcept
+	size_t GetSize(void) const noexcept
 	{
 		return tData.size();
 	}
 
-	void Reset() noexcept
+	void Reset(void) noexcept
 	{
 		tData.clear();
 	}
 
-	const T &Data() const noexcept
+	const T &Data(void) const noexcept
 	{
 		return tData;
 	}
 
-	T &Data() noexcept
+	T &Data(void) noexcept
 	{
 		return tData;
 	}

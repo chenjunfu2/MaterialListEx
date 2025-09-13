@@ -31,37 +31,33 @@ private:
 public:
 	//显式构造（通过in_place_type_t）
 	template <typename T, typename... Args>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
 	explicit NBT_Node(std::in_place_type_t<T>, Args&&... args) : data(std::in_place_type<T>, std::forward<Args>(args)...)
 	{
-		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
 		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
 	}
 
 	//显式列表构造（通过in_place_type_t）
 	template <typename T, typename U, typename... Args>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
 	explicit NBT_Node(std::in_place_type_t<T>, std::initializer_list<U> init) : data(std::in_place_type<T>, init)
 	{
-		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
 		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
 	}
 
 	//通用构造
 	template <typename T>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
 	NBT_Node(T &&value) noexcept : data(std::forward<T>(value))
 	{
-		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
-		static_assert(std::is_constructible_v<VariantData, T &&>, "Invalid constructor arguments for NBT_Node");
+		static_assert(std::is_constructible_v<VariantData, decltype(value)>, "Invalid constructor arguments for NBT_Node");
 	}
 
 	//原位放置
 	template <typename T, typename... Args>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
 	T &emplace(Args&&... args)
 	{
-		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
 		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
 
 		return data.emplace<T>(std::forward<Args>(args)...);
@@ -69,13 +65,12 @@ public:
 
 	//通用赋值
 	template<typename T>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
-	NBT_Node &operator=(T &&t) noexcept
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V <std::decay_t<T>>)
+	NBT_Node &operator=(T &&value) noexcept
 	{
-		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT_Node");
-		static_assert(std::is_constructible_v<VariantData, T &&>, "Invalid constructor arguments for NBT_Node");
+		static_assert(std::is_constructible_v<VariantData, decltype(value)>, "Invalid constructor arguments for NBT_Node");
 
-		data = std::forward<T>(t);
+		data = std::forward<T>(value);
 		return *this;
 	}
 
