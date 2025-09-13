@@ -21,30 +21,14 @@ public:
 
 	template<typename V>
 	requires(std::is_constructible_v<T::value_type, V &&>)
-	bool PutOnce(V &&c) noexcept
+	void PutOnce(V &&c)
 	{
-		try
-		{
-			tData.push_back(std::forward<V>(c));
-			return true;
-		}
-		catch (const std::bad_alloc &)
-		{
-			return false;
-		}
+		tData.push_back(std::forward<V>(c));
 	}
 
-	bool PutRange(typename T::const_iterator itBeg, typename T::const_iterator itEnd) noexcept
+	void PutRange(typename T::const_iterator itBeg, typename T::const_iterator itEnd)
 	{
-		try
-		{
-			tData.append(itBeg, itEnd);
-			return true;
-		}
-		catch (const std::bad_alloc &)
-		{
-			return false;
-		}
+		tData.append(itBeg, itEnd);
 	}
 
 	void UnPut(void) noexcept
@@ -81,8 +65,10 @@ class NBT_Writer
 private:
 	enum ErrCode : int
 	{
-		ERRCODE_END = -2,
+		ERRCODE_END = -4,//结束标记，统计负数部分大小
 
+		UnknownError,//其他错误
+		StdException,//标准异常
 		OutOfMemoryError,//内存不足错误
 		StringTooLongError,
 		AllOk,
@@ -93,7 +79,11 @@ private:
 
 	static inline const char *const errReason[] =//反向数组运算方式：(-ERRCODE_END - 1) + ErrCode
 	{
+		"UnknownError",
+		"StdException",
+		"OutOfMemoryError",
 		"StringTooLongError",
+
 		"AllOk",
 	};
 
@@ -131,6 +121,52 @@ private:
 		return code;
 	}
 
+#define _RP___FUNCSIG__ __FUNCSIG__//用于编译过程二次替换达到函数内部
+
+#define _RP___LINE__ _RP_STRLING(__LINE__)
+#define _RP_STRLING(l) STRLING(l)
+#define STRLING(l) #l
+
+#define STACK_TRACEBACK(fmt, ...) printf("In [" _RP___FUNCSIG__ "] Line:[" _RP___LINE__ "]: \n"##fmt "\n\n", ##__VA_ARGS__);
+#define CHECK_STACK_DEPTH(Depth) \
+{\
+	if((Depth) <= 0)\
+	{\
+		iRet = Error(StackDepthExceeded, tData, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
+		STACK_TRACEBACK("(Depth) <= 0");\
+		return iRet;\
+	}\
+}
+
+
+#define MYTRY \
+try\
+{
+
+#define MYCATCH_BADALLOC \
+}\
+catch(const std::bad_alloc &e)\
+{\
+	int iRet = Error(OutOfMemoryError, tData, _RP___FUNCSIG__ ": Info:[%s]", e.what());\
+	STACK_TRACEBACK("catch(std::bad_alloc)");\
+	return iRet;\
+}
+
+#define MYCATCH_OTHER \
+}\
+catch(const std::exception &e)\
+{\
+	int iRet = Error(StdException, tData, _RP___FUNCSIG__ ": Info:[%s]", e.what());\
+	STACK_TRACEBACK("catch(std::exception)");\
+	return iRet;\
+}\
+catch(...)\
+{\
+	int iRet =  Error(UnknownError, tData, _RP___FUNCSIG__ ": Info:[Unknown Exception]");\
+	STACK_TRACEBACK("catch(...)");\
+	return iRet;\
+}
+
 	//大小端转换
 	template<typename T>
 	static inline int WriteBigEndian(OutputStream &tData, const T &tVal)
@@ -138,14 +174,9 @@ private:
 		int iRet = AllOk;
 		if constexpr (sizeof(T) == 1)
 		{
-			if (!tData.PutOnce((uint8_t)tVal))
-			{
-				iRet = OutOfMemoryError;
-				//iRet = Error(xxx);
-				//STACK_TRACEBACK
-				//return iRet;
-				return iRet;
-			}
+			MYTRY
+			tData.PutOnce((uint8_t)tVal);
+			MYCATCH_BADALLOC
 		}
 		else
 		{
@@ -154,14 +185,9 @@ private:
 			UT tTmp = (UT)tVal;
 			for (size_t i = 0; i < sizeof(T); ++i)
 			{
-				if (!tData.PutOnce((uint8_t)tTmp))
-				{	
-					iRet = OutOfMemoryError;
-					//iRet = Error(xxx);
-					//STACK_TRACEBACK
-					//return iRet;
-					return iRet;
-				}
+				MYTRY
+				tData.PutOnce((uint8_t)tTmp);
+				MYCATCH_BADALLOC
 				tTmp >>= 8;
 			}
 		}
@@ -186,21 +212,25 @@ private:
 		iRet = WriteBigEndian(tData, wNameLength);
 		if (iRet < AllOk)
 		{
-
-			
-
+			STACK_TRACEBACK("wNameLength Write");
+			return iRet;
 		}
 		//输出名称
-		if (!tData.PutRange(sName.begin(), sName.end()))
-		{
-
-
-		}
+		MYTRY
+		tData.PutRange(sName.begin(), sName.end());
+		MYCATCH_BADALLOC
 
 		return AllOk;
 	}
 
-	//PutbuiltInType
+	template<typename T, bool bHasName = true>
+	static int PutbuiltInType(OutputStream &tData, const NBT_Node &nRoot)
+	{
+
+
+
+
+	}
 
 	//PutArrayType
 
@@ -222,4 +252,15 @@ public:
 	{
 
 	}
+
+
+#undef MYTRY
+#undef MYCATCH_BADALLOC
+#undef MYCATCH_OTHER
+#undef CHECK_STACK_DEPTH
+#undef STACK_TRACEBACK
+#undef STRLING
+#undef _RP_STRLING
+#undef _RP___LINE__
+#undef _RP___FUNCSIG__
 };
