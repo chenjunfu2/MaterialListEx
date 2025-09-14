@@ -671,6 +671,13 @@ catch(...)\
 	{
 		int iRet = AllOk;
 
+		/*
+		改为函数指针而不是switch
+		函数指针列表constexpr
+		将不同类型的调用中的getname移出，push back方法移出
+		*/
+
+
 		MYTRY
 		switch (tag)
 		{

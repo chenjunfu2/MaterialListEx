@@ -326,7 +326,6 @@ catch(...)\
 			return iRet;
 		}
 
-
 		return iRet;
 	}
 
