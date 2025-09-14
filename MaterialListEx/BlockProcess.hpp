@@ -194,8 +194,8 @@ public:
 	{
 		return BlockInfo
 		{
-			stBlocks.psBlockName == NULL ? NBT_Type::String{} : *stBlocks.psBlockName,
-			stBlocks.pcpdProperties == NULL ? NBT_Type::Compound{} : *stBlocks.pcpdProperties
+			stBlocks.psBlockName == NULL ? NBT_Type::String() : *stBlocks.psBlockName,
+			stBlocks.pcpdProperties == NULL ? NBT_Type::Compound() : *stBlocks.pcpdProperties
 		};
 	}
 private:
