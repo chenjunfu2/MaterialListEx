@@ -147,7 +147,8 @@ int main(int argc, char *argv[])
 	putchar('\n');
 	//return 90;
 
-
+	std::basic_string<uint8_t> s;
+	NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(s, {});
 
 	//auto c = std::source_location::current();
 	//

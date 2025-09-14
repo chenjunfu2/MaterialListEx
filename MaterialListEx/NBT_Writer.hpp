@@ -65,7 +65,7 @@ class NBT_Writer
 private:
 	enum ErrCode : int
 	{
-		ERRCODE_END = -4,//结束标记，统计负数部分大小
+		ERRCODE_END = -5,//结束标记，统计负数部分大小
 
 		UnknownError,//其他错误
 		StdException,//标准异常
@@ -215,6 +215,7 @@ catch(...)\
 			STACK_TRACEBACK("wNameLength Write");
 			return iRet;
 		}
+
 		//输出名称
 		MYTRY
 		tData.PutRange(sName.begin(), sName.end());
@@ -223,13 +224,24 @@ catch(...)\
 		return AllOk;
 	}
 
-	template<typename T, bool bHasName = true>
+	template<typename T>
 	static int PutbuiltInType(OutputStream &tData, const NBT_Node &nRoot)
 	{
+		int iRet = AllOk;
 
+		using RAW_DATA_T = NBT_Type::BuiltinRawType_T<T>;//原始类型映射
 
+		//获取原始类型，然后转换到raw类型准备写出
+		RAW_DATA_T tTmpRawData = std::bit_cast<RAW_DATA_T>(nRoot.GetData<T>());
 
+		iRet = WriteBigEndian(tData, tTmpRawData);
+		if (iRet < AllOk)
+		{
+			STACK_TRACEBACK("Name: \"%s\" tTmpRawData Write");
+			return iRet;
+		}
 
+		return iRet;
 	}
 
 	//PutArrayType

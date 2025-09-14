@@ -365,13 +365,13 @@ catch(...)\
 		}
 
 		//读取数据
-		using DATA_T = NBT_Type::BuiltinRawType_T<T>;//类型映射
+		using RAW_DATA_T = NBT_Type::BuiltinRawType_T<T>;//类型映射
 
-		DATA_T tTmpData = 0;
-		iRet = ReadBigEndian(tData, tTmpData);
+		RAW_DATA_T tTmpRawData = 0;
+		iRet = ReadBigEndian(tData, tTmpRawData);
 		if (iRet < AllOk)
 		{
-			STACK_TRACEBACK("Name: \"%s\" tTmpData Read", sName.c_str());
+			STACK_TRACEBACK("Name: \"%s\" tTmpRawData Read", sName.c_str());
 			return iRet;
 		}
 
@@ -379,7 +379,7 @@ catch(...)\
 		{
 			MYTRY
 			//名称-内含数据的节点插入当前调用栈深度的根节点
-			auto ret = nRoot.GetData<NBT_Type::Compound>().try_emplace(std::move(sName), std::move(std::bit_cast<T>(tTmpData)));//无损数据类型转换
+			auto ret = nRoot.GetData<NBT_Type::Compound>().try_emplace(std::move(sName), std::move(std::bit_cast<T>(tTmpRawData)));//无损数据类型转换
 			if (!ret.second)//插入失败，元素已存在
 			{
 				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(T).name());
@@ -389,7 +389,7 @@ catch(...)\
 		else
 		{
 			//无名，为列表元素，直接修改nRoot
-			nRoot.emplace<T>(std::move(std::bit_cast<T>(tTmpData)));
+			nRoot.emplace<T>(std::move(std::bit_cast<T>(tTmpRawData)));
 		}
 
 		return iRet;
