@@ -363,6 +363,7 @@ MigrationBackup/
 FodyWeavers.xsd
 
 #My
+*.diagsession
 *.dgml
 git代理.txt
 MaterialListEx/other/

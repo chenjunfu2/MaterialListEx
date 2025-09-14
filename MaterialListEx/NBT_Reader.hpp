@@ -1,10 +1,9 @@
 #pragma once
 
-#include "NBT_Node.hpp"
-
 #include <new>//std::bad_alloc
-#include <typeinfo>//typeid
 #include <bit>//std::bit_cast
+
+#include "NBT_Node.hpp"
 
 template <typename T>
 class MyInputStream
@@ -541,7 +540,7 @@ catch(...)\
 		int iRet = AllOk;
 		
 		//获取NBT的N（名称）
-		NBT_Type::String sName{};//如果bHasName是false，这个变量未使用，编译器会优化，无需担心
+		NBT_Type::String sName{};
 		if constexpr (bHasName)//有名字（非列表元素）则读取
 		{
 			if (tag != NBT_TAG::End && tag < NBT_TAG::ENUM_END)//确保tag不是空，且在范围内
@@ -648,7 +647,7 @@ catch(...)\
 			auto ret = nRoot.GetData<NBT_Type::Compound>().try_emplace(std::move(sName), std::move(tmpNode));
 			if (!ret.second)//插入失败，元素已存在
 			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[NBT_Type::%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tmpNode.GetTag()));
+				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[NBT_Type::%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tag));
 			}
 			MYCATCH_BADALLOC;
 		}
@@ -669,8 +668,8 @@ catch(...)\
 		//节点类型检查：保证当前nRoot是NBT_Type::Compound类型，否则失败
 		if (!nRoot.TypeHolds<NBT_Type::Compound>())//类型错误
 		{
-			iRet = Error(InternalTypeError, tData, __FUNCSIG__ ": nRoot is not type: [%s]", typeid(NBT_Type::Compound).name());
-			STACK_TRACEBACK("TypeHolds");
+			iRet = Error(InternalTypeError, tData, __FUNCSIG__ ": nRoot is not type: [NBT_Type::%s]", NBT_Type::GetTypeName(NBT_TAG::Compound));
+			STACK_TRACEBACK("TypeHolds Test");
 			return iRet;
 		}
 		
