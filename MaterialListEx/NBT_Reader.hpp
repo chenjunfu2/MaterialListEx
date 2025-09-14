@@ -531,158 +531,125 @@ catch(...)\
 	{
 		int iRet = AllOk;
 		
-#define GETNAME\
-		/*获取NBT的N（名称）*/\
-		NBT_Type::String sName{};\
-		if constexpr (bHasName)/*有名字（非列表元素）则读取*/\
-		{\
-			iRet = GetName(tData, sName);\
-			if (iRet < AllOk)\
-			{\
-				STACK_TRACEBACK("GetName");\
-				return iRet;\
-			}\
+		/*获取NBT的N（名称）*/
+		NBT_Type::String sName{};
+		if constexpr (bHasName)/*有名字（非列表元素）则读取*/
+		{
+			if (tag != NBT_TAG::End && tag < NBT_TAG::ENUM_END)//确认在范围内
+			{
+				iRet = GetName(tData, sName);
+				if (iRet < AllOk)
+				{
+					STACK_TRACEBACK("GetName");
+					return iRet;
+				}
+			}
 		}
 
-#define ADDROOT\
-		if constexpr (bHasName)/*有名，当前是集合Compound节点，往nRoot插入数据*/\
-		{\
-			MYTRY;\
-			/*名称 - 内含数据的节点插入当前调用栈深度的根节点*/\
-			auto ret = nRoot.try_emplace(std::move(sName), std::move(tmpNode));\
-			if (!ret.second)/*插入失败，元素已存在，注意警告不返回error值*/\
-			{\
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[NBT_Type::%s] tData already exist!",\
-				U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tag));\
-			}\
-			MYCATCH_BADALLOC;\
-		}\
-		else/*无名，当前是列表元素，直接修改nRoot，然后返回给列表*/\
-		{\
-			if constexpr(std::is_same_v<CurType, NBT_Node>)/*如果是NBT_Node直接赋值*/\
-			{\
-				nRoot = std::move(tmpNode);\
-			}\
-			else/*否则构造到node中*/\
-			{\
-				nRoot.emplace<CurType>(tmpNode); \
-			}\
-		}
-
+		NBT_Node tmpNode{};
 		MYTRY;
 		switch (tag)
 		{
 		case NBT_TAG::End:
 			{
 				iRet = Compound_End;//end五名称无负载，直接设置返回值
+				return iRet;//提前返回
 			}
 			break;
 		case NBT_TAG::Byte:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Byte>;
-				GETNAME;
-				CurType tmpNode{};
-				iRet = GetBuiltInType<CurType>(tData, tmpNode);
-				ADDROOT;
+				CurType tmpGet{};
+				iRet = GetBuiltInType<CurType>(tData, tmpGet);
+				tmpNode.emplace<CurType>(tmpGet);
 			}
 			break;
 		case NBT_TAG::Short:
 			{
-				GETNAME;
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Short>;
-				CurType tmpNode{};
-				iRet = GetBuiltInType<CurType>(tData, tmpNode);
-				ADDROOT;
+				CurType tmpGet{};
+				iRet = GetBuiltInType<CurType>(tData, tmpGet);
+				tmpNode.emplace<CurType>(tmpGet);
 			}
 			break;
 		case NBT_TAG::Int:
 			{
-				GETNAME;
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Int>;
-				CurType tmpNode{};
-				iRet = GetBuiltInType<CurType>(tData, tmpNode);
-				ADDROOT;
+				CurType tmpGet{};
+				iRet = GetBuiltInType<CurType>(tData, tmpGet);
+				tmpNode.emplace<CurType>(tmpGet);
 			}
 			break;
 		case NBT_TAG::Long:
 			{
-				GETNAME;
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Long>;
-				CurType tmpNode{};
-				iRet = GetBuiltInType<CurType>(tData, tmpNode);
-				ADDROOT;
+				CurType tmpGet{};
+				iRet = GetBuiltInType<CurType>(tData, tmpGet);
+				tmpNode.emplace<CurType>(tmpGet);
 			}
 			break;
 		case NBT_TAG::Float:
 			{
-				GETNAME;
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Float>;
-				CurType tmpNode{};
-				iRet = GetBuiltInType<CurType>(tData, tmpNode);
-				ADDROOT;
+				CurType tmpGet{};
+				iRet = GetBuiltInType<CurType>(tData, tmpGet);
+				tmpNode.emplace<CurType>(tmpGet);
 			}
 			break;
 		case NBT_TAG::Double:
 			{
-				GETNAME;
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Double>;
-				CurType tmpNode{};
-				iRet = GetBuiltInType<CurType>(tData, tmpNode);
-				ADDROOT;
+				CurType tmpGet{};
+				iRet = GetBuiltInType<CurType>(tData, tmpGet);
+				tmpNode.emplace<CurType>(tmpGet);
 			}
 			break;
 		case NBT_TAG::Byte_Array:
 			{
-				GETNAME;
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Byte_Array>;
-				CurType tmpNode{};
-				iRet = GetArrayType<CurType>(tData, tmpNode);
-				ADDROOT;
+				CurType tmpGet{};
+				iRet = GetArrayType<CurType>(tData, tmpGet);
+				tmpNode.emplace<CurType>(tmpGet);
 			}
 			break;
 		case NBT_TAG::String:
 			{
-				GETNAME;
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::String>;
-				CurType tmpNode{};
-				iRet = GetStringType(tData, tmpNode);
-				ADDROOT;
+				CurType tmpGet{};
+				iRet = GetStringType(tData, tmpGet);
+				tmpNode.emplace<CurType>(tmpGet);
 			}
 			break;
 		case NBT_TAG::List://需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签 ID 或名称）
 			{
-				GETNAME;
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::List>;
-				CurType tmpNode{};
-				iRet = GetListType(tData, tmpNode, szStackDepth);//选择函数不减少递归层
-				ADDROOT;
+				CurType tmpGet{};
+				iRet = GetListType(tData, tmpGet, szStackDepth);//选择函数不减少递归层
+				tmpNode.emplace<CurType>(tmpGet);
 			}
 			break;
 		case NBT_TAG::Compound://需要递归调用
 			{
-				GETNAME;
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Compound>;
-				CurType tmpNode{};
-				iRet = GetCompoundType(tData, tmpNode, szStackDepth);//选择函数不减少递归层
-				ADDROOT;
+				CurType tmpGet{};
+				iRet = GetCompoundType(tData, tmpGet, szStackDepth);//选择函数不减少递归层
+				tmpNode.emplace<CurType>(tmpGet);
 			}
 			break;
 		case NBT_TAG::Int_Array:
 			{
-				GETNAME;
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Int_Array>;
-				CurType tmpNode{};
-				iRet = GetArrayType<CurType>(tData, tmpNode);
-				ADDROOT;
+				CurType tmpGet{};
+				iRet = GetArrayType<CurType>(tData, tmpGet);
+				tmpNode.emplace<CurType>(tmpGet);
 			}
 			break;
 		case NBT_TAG::Long_Array:
 			{
-				GETNAME;
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Long_Array>;
-				CurType tmpNode{};
-				iRet = GetArrayType<CurType>(tData, tmpNode);
-				ADDROOT;
+				CurType tmpGet{};
+				iRet = GetArrayType<CurType>(tData, tmpGet);
+				tmpNode.emplace<CurType>(tmpGet);
 			}
 			break;
 		default://NBT内标数据签错误
@@ -697,10 +664,25 @@ catch(...)\
 		if (iRet < AllOk)
 		{
 			STACK_TRACEBACK("Tag read error!");
+			return iRet;//提前返回
 		}
 
-#undef ADDROOT
-#undef GETNAME
+		if constexpr (bHasName)/*有名，当前是集合Compound节点，往nRoot插入数据*/
+		{
+			MYTRY;
+			/*名称 - 内含数据的节点插入当前调用栈深度的根节点*/
+			auto ret = nRoot.try_emplace(std::move(sName), std::move(tmpNode));
+			if (!ret.second)/*插入失败，元素已存在，注意警告不返回error值*/
+			{
+				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[NBT_Type::%s] tData already exist!",
+					U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tag));
+			}
+			MYCATCH_BADALLOC;
+		}
+		else/*无名，当前是列表元素，直接修改nRoot，然后返回给列表*/
+		{
+			nRoot = std::move(tmpNode);
+		}
 
 		return iRet;//传递返回值
 	}
