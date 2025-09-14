@@ -561,7 +561,7 @@ catch(...)\
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Byte>;
 				CurType tmpGet{};
 				iRet = GetBuiltInType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(tmpGet);
+				tmpNode.emplace<CurType>(std::move(tmpGet));
 			}
 			break;
 		case NBT_TAG::Short:
@@ -569,7 +569,7 @@ catch(...)\
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Short>;
 				CurType tmpGet{};
 				iRet = GetBuiltInType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(tmpGet);
+				tmpNode.emplace<CurType>(std::move(tmpGet));
 			}
 			break;
 		case NBT_TAG::Int:
@@ -577,7 +577,7 @@ catch(...)\
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Int>;
 				CurType tmpGet{};
 				iRet = GetBuiltInType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(tmpGet);
+				tmpNode.emplace<CurType>(std::move(tmpGet));
 			}
 			break;
 		case NBT_TAG::Long:
@@ -585,7 +585,7 @@ catch(...)\
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Long>;
 				CurType tmpGet{};
 				iRet = GetBuiltInType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(tmpGet);
+				tmpNode.emplace<CurType>(std::move(tmpGet));
 			}
 			break;
 		case NBT_TAG::Float:
@@ -593,7 +593,7 @@ catch(...)\
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Float>;
 				CurType tmpGet{};
 				iRet = GetBuiltInType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(tmpGet);
+				tmpNode.emplace<CurType>(std::move(tmpGet));
 			}
 			break;
 		case NBT_TAG::Double:
@@ -601,7 +601,7 @@ catch(...)\
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Double>;
 				CurType tmpGet{};
 				iRet = GetBuiltInType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(tmpGet);
+				tmpNode.emplace<CurType>(std::move(tmpGet));
 			}
 			break;
 		case NBT_TAG::Byte_Array:
@@ -609,7 +609,7 @@ catch(...)\
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Byte_Array>;
 				CurType tmpGet{};
 				iRet = GetArrayType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(tmpGet);
+				tmpNode.emplace<CurType>(std::move(tmpGet));
 			}
 			break;
 		case NBT_TAG::String:
@@ -617,7 +617,7 @@ catch(...)\
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::String>;
 				CurType tmpGet{};
 				iRet = GetStringType(tData, tmpGet);
-				tmpNode.emplace<CurType>(tmpGet);
+				tmpNode.emplace<CurType>(std::move(tmpGet));
 			}
 			break;
 		case NBT_TAG::List://需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签 ID 或名称）
@@ -625,7 +625,7 @@ catch(...)\
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::List>;
 				CurType tmpGet{};
 				iRet = GetListType(tData, tmpGet, szStackDepth);//选择函数不减少递归层
-				tmpNode.emplace<CurType>(tmpGet);
+				tmpNode.emplace<CurType>(std::move(tmpGet));
 			}
 			break;
 		case NBT_TAG::Compound://需要递归调用
@@ -633,7 +633,7 @@ catch(...)\
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Compound>;
 				CurType tmpGet{};
 				iRet = GetCompoundType(tData, tmpGet, szStackDepth);//选择函数不减少递归层
-				tmpNode.emplace<CurType>(tmpGet);
+				tmpNode.emplace<CurType>(std::move(tmpGet));
 			}
 			break;
 		case NBT_TAG::Int_Array:
@@ -641,7 +641,7 @@ catch(...)\
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Int_Array>;
 				CurType tmpGet{};
 				iRet = GetArrayType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(tmpGet);
+				tmpNode.emplace<CurType>(std::move(tmpGet));
 			}
 			break;
 		case NBT_TAG::Long_Array:
@@ -649,7 +649,7 @@ catch(...)\
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Long_Array>;
 				CurType tmpGet{};
 				iRet = GetArrayType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(tmpGet);
+				tmpNode.emplace<CurType>(std::move(tmpGet));
 			}
 			break;
 		default://NBT内标数据签错误
