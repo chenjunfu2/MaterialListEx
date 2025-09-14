@@ -324,7 +324,7 @@ catch(...)\
 		}
 	}
 
-	static int GetName(InputStream &tData, NBT_Type::String &sName)
+	static inline int GetName(InputStream &tData, NBT_Type::String &sName)
 	{
 		int iRet = AllOk;
 		//读取2字节的无符号名称长度
@@ -355,7 +355,7 @@ catch(...)\
 	}
 
 	template<typename T>
-	static int GetBuiltInType(InputStream &tData, NBT_Node &nodeRet)
+	static inline int GetBuiltInType(InputStream &tData, NBT_Node &nodeRet)
 	{
 		int iRet = AllOk;
 
@@ -376,7 +376,7 @@ catch(...)\
 	}
 
 	template<typename T>
-	static int GetArrayType(InputStream &tData, NBT_Node &nodeRet)
+	static inline int GetArrayType(InputStream &tData, NBT_Node &nodeRet)
 	{
 		int iRet = AllOk;
 
@@ -437,7 +437,7 @@ catch(...)\
 		return iRet >= AllOk ? AllOk : iRet;
 	}
 
-	static int GetStringType(InputStream &tData, NBT_Node &nodeRet)
+	static inline int GetStringType(InputStream &tData, NBT_Node &nodeRet)
 	{
 		int iRet = AllOk;
 
