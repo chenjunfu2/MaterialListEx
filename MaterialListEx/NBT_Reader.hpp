@@ -324,7 +324,7 @@ catch(...)\
 		}
 	}
 
-	static inline int GetName(InputStream &tData, NBT_Type::String &sName)
+	static inline int GetName(InputStream &tData, NBT_Type::String &tNameRet)
 	{
 		int iRet = AllOk;
 		//读取2字节的无符号名称长度
@@ -347,21 +347,23 @@ catch(...)\
 
 		MYTRY;
 		//解析出名称
-		sName.reserve(wStringLength);//提前分配
-		sName.assign(tData.Current(), tData.Next(wStringLength));//如果长度为0则构造0长字符串，合法行为
+		tNameRet.reserve(wStringLength);//提前分配
+		tNameRet.assign(tData.Current(), tData.Next(wStringLength));//如果长度为0则构造0长字符串，合法行为
 		MYCATCH_BADALLOC;
+
 		tData.AddIndex(wStringLength);//移动下标
 		return AllOk;
 	}
 
 	template<typename T>
-	static inline int GetBuiltInType(InputStream &tData, NBT_Node &nodeRet)
+	static inline int GetBuiltInType(InputStream &tData, T &tBuiltInRet)
 	{
 		int iRet = AllOk;
 
 		//读取数据
 		using RAW_DATA_T = NBT_Type::BuiltinRawType_T<T>;//类型映射
 
+		//临时存储，因为可能存在跨类型转换
 		RAW_DATA_T tTmpRawData = 0;
 		iRet = ReadBigEndian(tData, tTmpRawData);
 		if (iRet < AllOk)
@@ -370,13 +372,13 @@ catch(...)\
 			return iRet;
 		}
 
-		//返回
-		nodeRet.emplace<T>(std::move(std::bit_cast<T>(tTmpRawData)));
+		//转换并返回
+		tBuiltInRet = std::move(std::bit_cast<T>(tTmpRawData));
 		return iRet;
 	}
 
 	template<typename T>
-	static inline int GetArrayType(InputStream &tData, NBT_Node &nodeRet)
+	static inline int GetArrayType(InputStream &tData, T &tArrayRet)
 	{
 		int iRet = AllOk;
 
@@ -399,62 +401,54 @@ catch(...)\
 		}
 		
 		//数组保存
-		T tArray{};
 		MYTRY;
-		tArray.reserve(iElementCount);//提前扩容
+		tArrayRet.reserve(iElementCount);//提前扩容
 		//读取dElementCount个元素
 		for (NBT_Type::ArrayLength i = 0; i < iElementCount; ++i)
 		{
 			typename T::value_type tTmpData;
 			ReadBigEndian<true>(tData, tTmpData);//调用需要确保范围安全
-			tArray.emplace_back(std::move(tTmpData));//读取一个插入一个
+			tArrayRet.emplace_back(std::move(tTmpData));//读取一个插入一个
 		}
 		MYCATCH_BADALLOC;
 
-		//返回
-		nodeRet.emplace<T>(std::move(tArray));
 		return iRet;
 	}
 
-	static int GetCompoundType(InputStream &tData, NBT_Node &nRoot, size_t szStackDepth)//此递归函数需要保证传递返回值
+	static int GetCompoundType(InputStream &tData, NBT_Type::Compound &tCompoundRet, size_t szStackDepth)//此递归函数需要保证传递返回值
 	{
 		int iRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
 
 		//开始递归
-		NBT_Node nodeTemp{ NBT_Type::Compound{} };
 		//此处无需捕获异常，因为GetNBT内部调用的switchNBT不会抛出异常
-		iRet = GetNBT(tData, nodeTemp, szStackDepth);//此处直接传递，因为GetNBT内部会进行递减
+		iRet = GetNBT(tData, tCompoundRet, szStackDepth);//此处直接传递，因为GetNBT内部会进行递减
 		if (iRet < AllOk)
 		{
 			STACK_TRACEBACK("GetNBT");
 			//return iRet;//不跳过，进行插入，以便分析错误之前的正确数据
 		}
 
-		//返回（这里直接赋值，而不是emplace<type>）
-		nRoot = std::move(nodeTemp);
 		//>=AllOk强制返回AllOk以防止Compound_End
 		return iRet >= AllOk ? AllOk : iRet;
 	}
 
-	static inline int GetStringType(InputStream &tData, NBT_Node &nodeRet)
+	static inline int GetStringType(InputStream &tData, NBT_Type::String &tStringRet)
 	{
 		int iRet = AllOk;
 
 		//读取字符串
-		NBT_Type::String tString{};
-		iRet = GetName(tData, tString);//因为string与name读取原理一致，直接借用实现
+		iRet = GetName(tData, tStringRet);//因为string与name读取原理一致，直接借用实现
 		if (iRet < AllOk)
 		{
 			STACK_TRACEBACK("GetName");
 			return iRet;
 		}
 
-		nodeRet.emplace<NBT_Type::String>(std::move(tString));
 		return iRet;
 	}
 
-	static int GetListType(InputStream &tData, NBT_Node &nodeRet, size_t szStackDepth)
+	static int GetListType(InputStream &tData, NBT_Type::List &tListRet, size_t szStackDepth)
 	{
 		int iRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
@@ -508,9 +502,9 @@ catch(...)\
 		}
 
 		//根据元素类型，读取n次列表
-		NBT_Type::List tList((NBT_TAG)bListElementType);
+		tListRet.enElementTag = (NBT_TAG)bListElementType;//先设置类型
 		MYTRY;
-		tList.reserve(iListLength);//已知大小提前分配减少开销
+		tListRet.reserve(iListLength);//已知大小提前分配减少开销
 
 		for (NBT_Type::ListLength i = 0; i < iListLength; ++i)
 		{
@@ -523,106 +517,172 @@ catch(...)\
 			}
 
 			//每读取一个往后插入一个
-			tList.emplace_back(std::move(tmpNode));
+			tListRet.emplace_back(std::move(tmpNode));
 		}
 		MYCATCH_BADALLOC;
 		
-		//返回
-		nodeRet.emplace<NBT_Type::List>(std::move(tList));
 		//如果错误，则传递，否则返回Ok
 		return iRet >= AllOk ? AllOk : iRet;//列表同时作为元素，成功应该返回Ok，而不是传递返回值
 	}
 
 	//这个函数拦截所有内部调用产生的异常并处理返回，所以此函数绝对不抛出异常，由此调用此函数的函数也可无需catch异常
-	template<bool bHasName = true>//此项仅针对列表，列表元素无名称
-	static int SwitchNBT(InputStream &tData, NBT_Node &nRoot, NBT_TAG tag, size_t szStackDepth) noexcept//选择函数不检查递归层，由函数调用的函数检查
+	template<bool bHasName>//此项仅针对列表，列表元素无名称，且函数参数改变
+	static int SwitchNBT(InputStream &tData, std::conditional_t<bHasName, NBT_Type::Compound, NBT_Node> &nRoot, NBT_TAG tag, size_t szStackDepth) noexcept//选择函数不检查递归层，由函数调用的函数检查
 	{
 		int iRet = AllOk;
 		
-		//获取NBT的N（名称）
-		NBT_Type::String sName{};
-		if constexpr (bHasName)//有名字（非列表元素）则读取
-		{
-			if (tag != NBT_TAG::End && tag < NBT_TAG::ENUM_END)//确保tag不是空，且在范围内
-			{
-				iRet = GetName(tData, sName);
-				if (iRet < AllOk)
-				{
-					STACK_TRACEBACK("GetName");
-					return iRet;
-				}
-			}
+#define GETNAME\
+		/*获取NBT的N（名称）*/\
+		NBT_Type::String sName{};\
+		if constexpr (bHasName)/*有名字（非列表元素）则读取*/\
+		{\
+			iRet = GetName(tData, sName);\
+			if (iRet < AllOk)\
+			{\
+				STACK_TRACEBACK("GetName");\
+				return iRet;\
+			}\
 		}
 
-		//创建临时node对象，读取数据到此处
-		NBT_Node tmpNode{};
+#define ADDROOT\
+		if constexpr (bHasName)/*有名，当前是集合Compound节点，往nRoot插入数据*/\
+		{\
+			MYTRY;\
+			/*名称 - 内含数据的节点插入当前调用栈深度的根节点*/\
+			auto ret = nRoot.try_emplace(std::move(sName), std::move(tmpNode));\
+			if (!ret.second)/*插入失败，元素已存在，注意警告不返回error值*/\
+			{\
+				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[NBT_Type::%s] tData already exist!",\
+				U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tag));\
+			}\
+			MYCATCH_BADALLOC;\
+		}\
+		else/*无名，当前是列表元素，直接修改nRoot，然后返回给列表*/\
+		{\
+			if constexpr(std::is_same_v<CurType, NBT_Node>)/*如果是NBT_Node直接赋值*/\
+			{\
+				nRoot = std::move(tmpNode);\
+			}\
+			else/*否则构造到node中*/\
+			{\
+				nRoot.emplace<CurType>(tmpNode); \
+			}\
+		}
+
 		MYTRY;
 		switch (tag)
 		{
 		case NBT_TAG::End:
 			{
-				iRet = Compound_End;
-				return iRet;//提前返回结尾
+				iRet = Compound_End;//end五名称无负载，直接设置返回值
 			}
 			break;
 		case NBT_TAG::Byte:
 			{
-				iRet = GetBuiltInType<NBT_Type::Byte>(tData, tmpNode);
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Byte>;
+				GETNAME;
+				CurType tmpNode{};
+				iRet = GetBuiltInType<CurType>(tData, tmpNode);
+				ADDROOT;
 			}
 			break;
 		case NBT_TAG::Short:
 			{
-				iRet = GetBuiltInType<NBT_Type::Short>(tData, tmpNode);
+				GETNAME;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Short>;
+				CurType tmpNode{};
+				iRet = GetBuiltInType<CurType>(tData, tmpNode);
+				ADDROOT;
 			}
 			break;
 		case NBT_TAG::Int:
 			{
-				iRet = GetBuiltInType<NBT_Type::Int>(tData, tmpNode);
+				GETNAME;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Int>;
+				CurType tmpNode{};
+				iRet = GetBuiltInType<CurType>(tData, tmpNode);
+				ADDROOT;
 			}
 			break;
 		case NBT_TAG::Long:
 			{
-				iRet = GetBuiltInType<NBT_Type::Long>(tData, tmpNode);
+				GETNAME;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Long>;
+				CurType tmpNode{};
+				iRet = GetBuiltInType<CurType>(tData, tmpNode);
+				ADDROOT;
 			}
 			break;
 		case NBT_TAG::Float:
 			{
-				iRet = GetBuiltInType<NBT_Type::Float>(tData, tmpNode);
+				GETNAME;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Float>;
+				CurType tmpNode{};
+				iRet = GetBuiltInType<CurType>(tData, tmpNode);
+				ADDROOT;
 			}
 			break;
 		case NBT_TAG::Double:
 			{
-				iRet = GetBuiltInType<NBT_Type::Double>(tData, tmpNode);
+				GETNAME;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Double>;
+				CurType tmpNode{};
+				iRet = GetBuiltInType<CurType>(tData, tmpNode);
+				ADDROOT;
 			}
 			break;
 		case NBT_TAG::Byte_Array:
 			{
-				iRet = GetArrayType<NBT_Type::ByteArray>(tData, tmpNode);
+				GETNAME;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Byte_Array>;
+				CurType tmpNode{};
+				iRet = GetArrayType<CurType>(tData, tmpNode);
+				ADDROOT;
 			}
 			break;
 		case NBT_TAG::String:
 			{
+				GETNAME;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::String>;
+				CurType tmpNode{};
 				iRet = GetStringType(tData, tmpNode);
+				ADDROOT;
 			}
 			break;
 		case NBT_TAG::List://需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签 ID 或名称）
-			{//最复杂
+			{
+				GETNAME;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::List>;
+				CurType tmpNode{};
 				iRet = GetListType(tData, tmpNode, szStackDepth);//选择函数不减少递归层
+				ADDROOT;
 			}
 			break;
 		case NBT_TAG::Compound://需要递归调用
 			{
+				GETNAME;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Compound>;
+				CurType tmpNode{};
 				iRet = GetCompoundType(tData, tmpNode, szStackDepth);//选择函数不减少递归层
+				ADDROOT;
 			}
 			break;
 		case NBT_TAG::Int_Array:
 			{
-				iRet = GetArrayType<NBT_Type::IntArray>(tData, tmpNode);
+				GETNAME;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Int_Array>;
+				CurType tmpNode{};
+				iRet = GetArrayType<CurType>(tData, tmpNode);
+				ADDROOT;
 			}
 			break;
 		case NBT_TAG::Long_Array:
 			{
-				iRet = GetArrayType<NBT_Type::LongArray>(tData, tmpNode);
+				GETNAME;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Long_Array>;
+				CurType tmpNode{};
+				iRet = GetArrayType<CurType>(tData, tmpNode);
+				ADDROOT;
 			}
 			break;
 		default://NBT内标数据签错误
@@ -636,43 +696,23 @@ catch(...)\
 		//如果已经出现异常，直接返回，否则走下面
 		if (iRet < AllOk)
 		{
-			STACK_TRACEBACK("Name:\"%s\" Tag read error!", sName.c_str());
-			return iRet;
+			STACK_TRACEBACK("Tag read error!");
 		}
-		
-		if constexpr (bHasName)//有名，当前是集合Compound节点，往nRoot插入数据
-		{
-			MYTRY;
-			//名称-内含数据的节点插入当前调用栈深度的根节点
-			auto ret = nRoot.GetData<NBT_Type::Compound>().try_emplace(std::move(sName), std::move(tmpNode));
-			if (!ret.second)//插入失败，元素已存在
-			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[NBT_Type::%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tag));
-			}
-			MYCATCH_BADALLOC;
-		}
-		else//无名，当前是列表元素，直接修改nRoot，然后返回给列表
-		{
-			nRoot = std::move(tmpNode);
-		}
+
+#undef ADDROOT
+#undef GETNAME
 
 		return iRet;//传递返回值
 	}
 
 	//不抛出异常
 	template<bool bRoot = false>//根部特化版本，用于处理末尾
-	static int GetNBT(InputStream &tData, NBT_Node &nRoot, size_t szStackDepth) noexcept//递归调用读取并添加节点
+	static int GetNBT(InputStream &tData, NBT_Type::Compound &nRoot, size_t szStackDepth) noexcept//递归调用读取并添加节点
 	{
 		int iRet = AllOk;//默认值
 		CHECK_STACK_DEPTH(szStackDepth);
-		//节点类型检查：保证当前nRoot是NBT_Type::Compound类型，否则失败
-		if (!nRoot.TypeHolds<NBT_Type::Compound>())//类型错误
-		{
-			iRet = Error(InternalTypeError, tData, __FUNCSIG__ ": nRoot is not type: [NBT_Type::%s]", NBT_Type::GetTypeName(NBT_TAG::Compound));
-			STACK_TRACEBACK("TypeHolds Test");
-			return iRet;
-		}
 		
+		//读取
 		do
 		{
 			if (!tData.HasAvailData(sizeof(NBT_TAG_RAW_TYPE)))//处理末尾情况
@@ -690,7 +730,7 @@ catch(...)\
 			}
 
 			//处理正常情况
-			iRet = SwitchNBT(tData, nRoot, (NBT_TAG)(NBT_TAG_RAW_TYPE)tData.GetNext(), szStackDepth - 1);//已捕获所有异常
+			iRet = SwitchNBT<true>(tData, nRoot, (NBT_TAG)(NBT_TAG_RAW_TYPE)tData.GetNext(), szStackDepth - 1);//已捕获所有异常
 		} while (iRet == AllOk);//iRet<AllOk即为错误，跳出循环，>AllOk则为其它动作，跳出循环
 
 		if constexpr (bRoot)//根部情况遇到Compound_End则转为AllOk返回
@@ -703,7 +743,7 @@ catch(...)\
 
 		if (iRet < AllOk)
 		{
-			STACK_TRACEBACK("Compound Size: [%zu]", nRoot.GetData<NBT_Type::Compound>().size());
+			STACK_TRACEBACK("Compound Size: [%zu]", nRoot.size());
 		}
 		
 		return iRet;//传递返回值
@@ -727,7 +767,7 @@ public:
 		printf("Max Stack Depth [%zu]\n", szStackDepth);
 
 		//开始递归读取
-		return GetNBT<true>(IptStream, nRoot, szStackDepth) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
+		return GetNBT<true>(IptStream, nRoot.GetCompound(), szStackDepth) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
 		MYCATCH_OTHER;//捕获其他异常
 	}
 
