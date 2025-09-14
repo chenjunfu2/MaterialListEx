@@ -75,7 +75,7 @@ public:
 	}
 
 	// 默认构造（TAG_End）
-	NBT_Node() : data(NBT_Type::End())
+	NBT_Node() : data(NBT_Type::End{})
 	{}
 
 	// 自动析构由variant处理

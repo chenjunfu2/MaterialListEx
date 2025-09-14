@@ -144,7 +144,7 @@ public:
 	{
 		return EntityInfo
 		{
-			stEntityStats.psEntityName == NULL ? NBT_Type::String() : *stEntityStats.psEntityName
+			stEntityStats.psEntityName == NULL ? NBT_Type::String{} : *stEntityStats.psEntityName
 		};
 	}
 

@@ -61,7 +61,7 @@ RegionStatsList RegionProcess(const NBT_Type::Compound &cpRegions)
 				tmp = ItemProcess::ItemStackListUnpackContainer(std::move(tmp));//解包物品内部的容器
 
 				//获取容器名称
-				auto sParentName = it.psTileEntityName == NULL ? NBT_Type::String() : *it.psTileEntityName;
+				auto sParentName = it.psTileEntityName == NULL ? NBT_Type::String{} : *it.psTileEntityName;
 				auto &mpInfoTEC = curInfoTEC[sParentName];
 
 				//遍历所有转换后的物品并合并相同
@@ -107,7 +107,7 @@ RegionStatsList RegionProcess(const NBT_Type::Compound &cpRegions)
 				tmpSlot.listInventory = ItemProcess::ItemStackListUnpackContainer(std::move(tmpSlot.listInventory));
 
 				//获取实体名称并获取带容器名物品信息映射
-				auto sParentName = it.psEntityName == NULL ? NBT_Type::String() : *it.psEntityName;
+				auto sParentName = it.psEntityName == NULL ? NBT_Type::String{} : *it.psEntityName;
 				auto &mpInfoEC = curInfoEC[sParentName];
 				auto &mpInfoEI = curInfoEI[sParentName];
 

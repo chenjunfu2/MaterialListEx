@@ -154,9 +154,9 @@ public:
 		auto byteCount = cpdItem.HasByte(MU8STR("Count"));
 		return ItemStack
 		{
-			sName == NULL ? NBT_Type::String() : *sName,
-			cpdTag == NULL ? NBT_Type::Compound() : *cpdTag,
-			byteCount == NULL ? uint64_t() : (uint64_t)(uint8_t)*byteCount
+			sName == NULL ? NBT_Type::String{} : *sName,
+			cpdTag == NULL ? NBT_Type::Compound{} : *cpdTag,
+			byteCount == NULL ? uint64_t{} : (uint64_t)(uint8_t)*byteCount
 		};
 	}
 
@@ -167,9 +167,9 @@ public:
 		auto byteCount = cpdItem.HasByte(MU8STR("Count"));
 		return ItemStack
 		{
-			sName == NULL ? NBT_Type::String() : std::move(*sName),
-			cpdTag == NULL ? NBT_Type::Compound() : std::move(*cpdTag),
-			byteCount == NULL ? uint64_t() : (uint64_t)(uint8_t)*byteCount//内置类型直接拷贝，移动个P
+			sName == NULL ? NBT_Type::String{} : std::move(*sName),
+			cpdTag == NULL ? NBT_Type::Compound{} : std::move(*cpdTag),
+			byteCount == NULL ? uint64_t{} : (uint64_t)(uint8_t)*byteCount//内置类型直接拷贝，移动个P
 		};
 	}
 
