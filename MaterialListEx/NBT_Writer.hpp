@@ -187,9 +187,9 @@ catch(...)\
 		int iRet = AllOk;
 		if constexpr (sizeof(T) == 1)
 		{
-			MYTRY
+			MYTRY;
 			tData.PutOnce((uint8_t)tVal);
-			MYCATCH_BADALLOC
+			MYCATCH_BADALLOC;
 		}
 		else
 		{
@@ -198,9 +198,9 @@ catch(...)\
 			UT tTmp = (UT)tVal;
 			for (size_t i = 0; i < sizeof(T); ++i)
 			{
-				MYTRY
+				MYTRY;
 				tData.PutOnce((uint8_t)tTmp);
-				MYCATCH_BADALLOC
+				MYCATCH_BADALLOC;
 				tTmp >>= 8;
 			}
 		}
@@ -234,9 +234,9 @@ catch(...)\
 		}
 
 		//Êä³öÃû³Æ
-		MYTRY
+		MYTRY;
 		tData.PutRange(sName.begin(), sName.end());
-		MYCATCH_BADALLOC
+		MYCATCH_BADALLOC;
 
 		return AllOk;
 	}

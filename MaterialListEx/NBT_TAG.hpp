@@ -19,7 +19,7 @@ enum class NBT_TAG : NBT_TAG_RAW_TYPE
 	Compound,	//std::map<std::string, NBT_Node>->字符串为NBT项名称
 	Int_Array,	//std::vector<int32_t>
 	Long_Array,	//std::vector<int64_t>
-	ENUM_END,		//结束标记，用于计算enum元素个数
+	ENUM_END,	//结束标记，用于计算enum元素个数
 };
 
 //运算符重载
@@ -36,6 +36,11 @@ constexpr bool operator==(NBT_TAG l, T r)
 	return (NBT_TAG_RAW_TYPE)l == r;
 }
 
+constexpr bool operator==(NBT_TAG l, NBT_TAG r)
+{
+	return (NBT_TAG_RAW_TYPE)l == (NBT_TAG_RAW_TYPE)r;
+}
+
 template<typename T>
 constexpr bool operator!=(T l, NBT_TAG r)
 {
@@ -48,6 +53,11 @@ constexpr bool operator!=(NBT_TAG l, T r)
 	return (NBT_TAG_RAW_TYPE)l == r;
 }
 
+constexpr bool operator!=(NBT_TAG l, NBT_TAG r)
+{
+	return (NBT_TAG_RAW_TYPE)l != (NBT_TAG_RAW_TYPE)r;
+}
+
 template<typename T>
 constexpr std::strong_ordering operator<=>(T l, NBT_TAG r)
 {
@@ -58,4 +68,9 @@ template<typename T>
 constexpr std::strong_ordering operator<=>(NBT_TAG l, T r)
 {
 	return (NBT_TAG_RAW_TYPE)l <=> r;
+}
+
+constexpr std::strong_ordering operator<=>(NBT_TAG l, NBT_TAG r)
+{
+	return (NBT_TAG_RAW_TYPE)l <=> (NBT_TAG_RAW_TYPE)r;
 }

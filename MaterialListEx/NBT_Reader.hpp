@@ -346,30 +346,19 @@ catch(...)\
 			return iRet;
 		}
 
-		MYTRY
+		MYTRY;
 		//解析出名称
 		sName.reserve(wStringLength);//提前分配
 		sName.assign(tData.Current(), tData.Next(wStringLength));//如果长度为0则构造0长字符串，合法行为
-		MYCATCH_BADALLOC
+		MYCATCH_BADALLOC;
 		tData.AddIndex(wStringLength);//移动下标
 		return AllOk;
 	}
 
-	template<typename T, bool bHasName = true>
-	static int GetBuiltinType(InputStream &tData, NBT_Node &nRoot)
+	template<typename T>
+	static int GetBuiltInType(InputStream &tData, NBT_Node &nodeRet)
 	{
 		int iRet = AllOk;
-		//获取NBT的N（名称）
-		NBT_Type::String sName{};
-		if constexpr (bHasName)//如果无名称则string默认为空
-		{
-			iRet = GetName(tData, sName);
-			if (iRet < AllOk)
-			{
-				STACK_TRACEBACK("GetName");
-				return iRet;
-			}
-		}
 
 		//读取数据
 		using RAW_DATA_T = NBT_Type::BuiltinRawType_T<T>;//类型映射
@@ -378,52 +367,26 @@ catch(...)\
 		iRet = ReadBigEndian(tData, tTmpRawData);
 		if (iRet < AllOk)
 		{
-			STACK_TRACEBACK("Name: \"%s\" tTmpRawData Read", sName.c_str());
+			STACK_TRACEBACK("tTmpRawData Read");
 			return iRet;
 		}
 
-		if constexpr (bHasName)
-		{
-			MYTRY
-			//名称-内含数据的节点插入当前调用栈深度的根节点
-			auto ret = nRoot.GetData<NBT_Type::Compound>().try_emplace(std::move(sName), std::move(std::bit_cast<T>(tTmpRawData)));//无损数据类型转换
-			if (!ret.second)//插入失败，元素已存在
-			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(T).name());
-			}
-			MYCATCH_BADALLOC
-		}
-		else
-		{
-			//无名，为列表元素，直接修改nRoot
-			nRoot.emplace<T>(std::move(std::bit_cast<T>(tTmpRawData)));
-		}
-
+		//返回
+		nodeRet.emplace<T>(std::move(std::bit_cast<T>(tTmpRawData)));
 		return iRet;
 	}
 
-	template<typename T, bool bHasName = true>
-	static int GetArrayType(InputStream &tData, NBT_Node &nRoot)
+	template<typename T>
+	static int GetArrayType(InputStream &tData, NBT_Node &nodeRet)
 	{
 		int iRet = AllOk;
-		//获取NBT的N（名称）
-		NBT_Type::String sName{};
-		if constexpr (bHasName)//如果无名称则string默认为空
-		{
-			iRet = GetName(tData, sName);
-			if (iRet < AllOk)
-			{
-				STACK_TRACEBACK("GetName");
-				return iRet;
-			}
-		}
 
 		//获取4字节有符号数，代表数组元素个数
 		NBT_Type::ArrayLength iElementCount = 0;//4byte
 		iRet = ReadBigEndian(tData, iElementCount);
 		if (iRet < AllOk)
 		{
-			STACK_TRACEBACK("Name: \"%s\" iElementCount Read", sName.c_str());
+			STACK_TRACEBACK("iElementCount Read");
 			return iRet;
 		}
 
@@ -432,13 +395,13 @@ catch(...)\
 		{
 			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + iElementCount[%zu] * sizeof(T::value_type)[%zu])[%zu] > DataSize[%zu]", 
 				tData.Index(), (size_t)iElementCount, sizeof(T::value_type), tData.Index() + (size_t)iElementCount * sizeof(T::value_type), tData.Size());
-			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+			STACK_TRACEBACK("HasAvailData Test");
 			return iRet;
 		}
 		
 		//数组保存
 		T tArray{};
-		MYTRY
+		MYTRY;
 		tArray.reserve(iElementCount);//提前扩容
 		//读取dElementCount个元素
 		for (NBT_Type::ArrayLength i = 0; i < iElementCount; ++i)
@@ -447,43 +410,17 @@ catch(...)\
 			ReadBigEndian<true>(tData, tTmpData);//调用需要确保范围安全
 			tArray.emplace_back(std::move(tTmpData));//读取一个插入一个
 		}
-		MYCATCH_BADALLOC
-		
-		if constexpr (bHasName)
-		{
-			MYTRY
-			//完成后插入
-			auto ret = nRoot.GetData<NBT_Type::Compound>().try_emplace(std::move(sName), std::move(tArray));
-			if (!ret.second)//插入失败，元素已存在
-			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(tArray).name());
-			}
-			MYCATCH_BADALLOC
-		}
-		else//无名称，为列表元素
-		{
-			nRoot.emplace<T>(std::move(tArray));
-		}
+		MYCATCH_BADALLOC;
 
+		//返回
+		nodeRet.emplace<T>(std::move(tArray));
 		return iRet;
 	}
 
-	template<bool bHasName = true>
 	static int GetCompoundType(InputStream &tData, NBT_Node &nRoot, size_t szStackDepth)//此递归函数需要保证传递返回值
 	{
 		int iRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
-		//获取NBT的N（名称）
-		NBT_Type::String sName{};
-		if constexpr (bHasName)//如果无名称则string默认为空
-		{
-			iRet = GetName(tData, sName);
-			if (iRet < AllOk)
-			{
-				STACK_TRACEBACK("GetName");
-				return iRet;
-			}
-		}
 
 		//开始递归
 		NBT_Node nodeTemp{ NBT_Type::Compound{} };
@@ -491,97 +428,44 @@ catch(...)\
 		iRet = GetNBT(tData, nodeTemp, szStackDepth);//此处直接传递，因为GetNBT内部会进行递减
 		if (iRet < AllOk)
 		{
-			STACK_TRACEBACK("Name: \"%s\" GetNBT", sName.c_str());
+			STACK_TRACEBACK("GetNBT");
 			//return iRet;//不跳过，进行插入，以便分析错误之前的正确数据
 		}
 
-		if constexpr (bHasName)
-		{
-			MYTRY
-			//递归完成，所有子节点已到位
-			//取出NBT_Compound挂到自己根部（移动）
-			auto ret = nRoot.GetData<NBT_Type::Compound>().try_emplace(std::move(sName), std::move(nodeTemp));
-			if (!ret.second)//插入失败，元素已存在
-			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(NBT_Type::Compound).name());
-			}
-			MYCATCH_BADALLOC
-		}
-		else//无名称，为列表元素
-		{
-			nRoot = std::move(nodeTemp);
-		}
-
-		return iRet >= AllOk ? AllOk : iRet;//>=AllOk强制返回AllOk以防止Compound_End
+		//返回（这里直接赋值，而不是emplace<type>）
+		nRoot = std::move(nodeTemp);
+		//>=AllOk强制返回AllOk以防止Compound_End
+		return iRet >= AllOk ? AllOk : iRet;
 	}
 
-	template<bool bHasName = true>
-	static int GetStringType(InputStream &tData, NBT_Node &nRoot)
+	static int GetStringType(InputStream &tData, NBT_Node &nodeRet)
 	{
 		int iRet = AllOk;
-		//获取NBT的N（名称）
-		NBT_Type::String sName{};
-		if constexpr (bHasName)//如果无名称则string默认为空
-		{
-			iRet = GetName(tData, sName);
-			if (iRet < AllOk)
-			{
-				STACK_TRACEBACK("GetName");
-				return iRet;
-			}
-		}
 
 		//读取字符串
-		NBT_Type::String sString{};
-		iRet = GetName(tData, sString);//因为string与name读取原理一致，直接借用实现
+		NBT_Type::String tString{};
+		iRet = GetName(tData, tString);//因为string与name读取原理一致，直接借用实现
 		if (iRet < AllOk)
 		{
 			STACK_TRACEBACK("GetName");
 			return iRet;
 		}
 
-		if constexpr (bHasName)
-		{
-			MYTRY
-			//原位构造
-			auto ret = nRoot.GetData<NBT_Type::Compound>().try_emplace(std::move(sName), std::move(sString));
-			if (!ret.second)//插入失败，元素已存在
-			{
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(NBT_Type::String).name());
-			}
-			MYCATCH_BADALLOC
-		}
-		else//列表元素直接赋值
-		{
-			nRoot.emplace<NBT_Type::String>(std::move(sString));
-		}
-		
+		nodeRet.emplace<NBT_Type::String>(std::move(tString));
 		return iRet;
 	}
 
-	template<bool bHasName = true>
-	static int GetListType(InputStream &tData, NBT_Node &nRoot, size_t szStackDepth)
+	static int GetListType(InputStream &tData, NBT_Node &nodeRet, size_t szStackDepth)
 	{
 		int iRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
-		//获取NBT的N（名称）
-		NBT_Type::String sName{};
-		if constexpr (bHasName)//如果无名称则string默认为空
-		{
-			iRet = GetName(tData, sName);
-			if (iRet < AllOk)
-			{
-				STACK_TRACEBACK("GetName");
-				return iRet;
-			}
-		}
 
 		//读取1字节的列表元素类型
 		NBT_TAG_RAW_TYPE bListElementType = 0;//b=byte
 		iRet = ReadBigEndian(tData, bListElementType);
 		if (iRet < AllOk)
 		{
-			STACK_TRACEBACK("Name: \"%s\" bListElementType Read", sName.c_str());
+			STACK_TRACEBACK("bListElementType Read");
 			return iRet;
 		}
 
@@ -589,7 +473,7 @@ catch(...)\
 		if (bListElementType >= NBT_TAG::ENUM_END)
 		{
 			iRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": List NBT Type:Unknown Type Tag[%02X(%d)]", bListElementType, bListElementType);
-			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+			STACK_TRACEBACK("bListElementType Test");
 			return iRet;
 		}
 
@@ -598,7 +482,7 @@ catch(...)\
 		iRet = ReadBigEndian(tData, iListLength);
 		if (iRet < AllOk)
 		{
-			STACK_TRACEBACK("Name: \"%s\" iListLength Read", sName.c_str());
+			STACK_TRACEBACK("iListLength Read");
 			return iRet;
 		}
 
@@ -606,7 +490,7 @@ catch(...)\
 		if (iListLength < 0)
 		{
 			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": iListLength[%d] < 0", iListLength);
-			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+			STACK_TRACEBACK("iListLength Test");
 			return iRet;
 		}
 
@@ -614,20 +498,20 @@ catch(...)\
 		if (bListElementType == NBT_TAG::End && iListLength != 0)
 		{
 			iRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": The list with TAG_End[0x00] tag must be empty, but [%d] elements were found", iListLength);
-			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
+			STACK_TRACEBACK("bListElementType And iListLength Test");
 			return iRet;
 		}
 
 		//确保如果长度为0的情况下，列表类型必为End
 		if (iListLength == 0 && bListElementType != NBT_TAG::End)
 		{
-			bListElementType = NBT_TAG::End;
+			bListElementType = (NBT_TAG_RAW_TYPE)NBT_TAG::End;
 		}
 
 		//根据元素类型，读取n次列表
-		NBT_Type::List tmpList((NBT_TAG)bListElementType);
-		MYTRY
-		tmpList.reserve(iListLength);//已知大小提前分配减少开销
+		NBT_Type::List tList((NBT_TAG)bListElementType);
+		MYTRY;
+		tList.reserve(iListLength);//已知大小提前分配减少开销
 
 		for (NBT_Type::ListLength i = 0; i < iListLength; ++i)
 		{
@@ -635,115 +519,111 @@ catch(...)\
 			iRet = SwitchNBT<false>(tData, tmpNode, (NBT_TAG)bListElementType, szStackDepth - 1);
 			if (iRet < AllOk)//错误处理
 			{
-				STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), iListLength, i);
+				STACK_TRACEBACK("Size: [%d] Index: [%d]", iListLength, i);
 				break;//跳出循环以保留错误数据之前的正确数据
 			}
 
 			//每读取一个往后插入一个
-			tmpList.emplace_back(std::move(tmpNode));
+			tList.emplace_back(std::move(tmpNode));
 		}
-		MYCATCH_BADALLOC
-
-		//列表可嵌套，所以处理本身嵌套无名情况
-		if constexpr (bHasName)
-		{
-			MYTRY
-			auto ret = nRoot.GetData<NBT_Type::Compound>().try_emplace(std::move(sName), std::move(tmpList));
-			if (!ret.second)//插入失败，元素已存在
-			{
-				//此处实为警告而非错误，无需return
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), typeid(tmpList).name());
-			}
-			MYCATCH_BADALLOC
-		}
-		else//列表中的列表，直接赋值，而不进行插入
-		{
-			nRoot.emplace<NBT_Type::List>(std::move(tmpList));
-		}
-
+		MYCATCH_BADALLOC;
+		
+		//返回
+		nodeRet.emplace<NBT_Type::ListLength>(std::move(tList));
 		//如果错误，则传递，否则返回Ok
 		return iRet >= AllOk ? AllOk : iRet;//列表同时作为元素，成功应该返回Ok，而不是传递返回值
 	}
 
 	//这个函数拦截所有内部调用产生的异常并处理返回，所以此函数绝对不抛出异常，由此调用此函数的函数也可无需catch异常
-	template<bool bHasName = true>
+	template<bool bHasName = true>//此项仅针对列表，列表元素无名称
 	static int SwitchNBT(InputStream &tData, NBT_Node &nRoot, NBT_TAG tag, size_t szStackDepth) noexcept//选择函数不检查递归层，由函数调用的函数检查
 	{
 		int iRet = AllOk;
+		
+		//获取NBT的N（名称）
+		NBT_Type::String sName{};//如果bHasName是false，这个变量未使用，编译器会优化，无需担心
+		if constexpr (bHasName)//有名字（非列表元素）则读取
+		{
+			if (tag != NBT_TAG::End && tag < NBT_TAG::ENUM_END)//确保tag不是空，且在范围内
+			{
+				iRet = GetName(tData, sName);
+				if (iRet < AllOk)
+				{
+					STACK_TRACEBACK("GetName");
+					return iRet;
+				}
+			}
+		}
 
-		/*
-		改为函数指针而不是switch
-		函数指针列表constexpr
-		将不同类型的调用中的getname移出，push back方法移出
-		*/
-
-
-		MYTRY
+		//创建临时node对象，读取数据到此处
+		NBT_Node tmpNode{};
+		MYTRY;
 		switch (tag)
 		{
 		case NBT_TAG::End:
 			{
-				iRet = Compound_End;//返回结尾
+				iRet = Compound_End;
+				return iRet;//提前返回结尾
 			}
 			break;
 		case NBT_TAG::Byte:
 			{
-				iRet = GetBuiltinType<NBT_Type::Byte, bHasName>(tData, nRoot);
+				iRet = GetBuiltInType<NBT_Type::Byte>(tData, tmpNode);
 			}
 			break;
 		case NBT_TAG::Short:
 			{
-				iRet = GetBuiltinType<NBT_Type::Short, bHasName>(tData, nRoot);
+				iRet = GetBuiltInType<NBT_Type::Short>(tData, tmpNode);
 			}
 			break;
 		case NBT_TAG::Int:
 			{
-				iRet = GetBuiltinType<NBT_Type::Int, bHasName>(tData, nRoot);
+				iRet = GetBuiltInType<NBT_Type::Int>(tData, tmpNode);
 			}
 			break;
 		case NBT_TAG::Long:
 			{
-				iRet = GetBuiltinType<NBT_Type::Long, bHasName>(tData, nRoot);
+				iRet = GetBuiltInType<NBT_Type::Long>(tData, tmpNode);
 			}
 			break;
 		case NBT_TAG::Float:
 			{
-				iRet = GetBuiltinType<NBT_Type::Float, bHasName>(tData, nRoot);
+				iRet = GetBuiltInType<NBT_Type::Float>(tData, tmpNode);
 			}
 			break;
 		case NBT_TAG::Double:
 			{
-				iRet = GetBuiltinType<NBT_Type::Double, bHasName>(tData, nRoot);
+				iRet = GetBuiltInType<NBT_Type::Double>(tData, tmpNode);
 			}
 			break;
 		case NBT_TAG::Byte_Array:
 			{
-				iRet = GetArrayType<NBT_Type::ByteArray, bHasName>(tData, nRoot);
+				iRet = GetArrayType<NBT_Type::ByteArray>(tData, tmpNode);
 			}
 			break;
 		case NBT_TAG::String:
 			{
-				iRet = GetStringType<bHasName>(tData, nRoot);
+				iRet = GetStringType(tData, tmpNode);
 			}
 			break;
 		case NBT_TAG::List://需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签 ID 或名称）
 			{//最复杂
-				iRet = GetListType<bHasName>(tData, nRoot, szStackDepth);//选择函数不减少递归层
+				iRet = GetListType(tData, tmpNode, szStackDepth);//选择函数不减少递归层
 			}
 			break;
 		case NBT_TAG::Compound://需要递归调用
 			{
-				iRet = GetCompoundType<bHasName>(tData, nRoot, szStackDepth);//选择函数不减少递归层
+				iRet = GetCompoundType(tData, tmpNode, szStackDepth);//选择函数不减少递归层
 			}
 			break;
 		case NBT_TAG::Int_Array:
 			{
-				iRet = GetArrayType<NBT_Type::IntArray, bHasName>(tData, nRoot);
+				iRet = GetArrayType<NBT_Type::IntArray>(tData, tmpNode);
 			}
 			break;
 		case NBT_TAG::Long_Array:
 			{
-				iRet = GetArrayType<NBT_Type::LongArray, bHasName>(tData, nRoot);
+				iRet = GetArrayType<NBT_Type::LongArray>(tData, tmpNode);
 			}
 			break;
 		default://NBT内标数据签错误
@@ -752,11 +632,29 @@ catch(...)\
 			}
 			break;
 		}
-		MYCATCH_OTHER//这里捕获所有其它未捕获的异常
+		MYCATCH_OTHER;//这里捕获所有其它未捕获的异常
 
+		//如果已经出现异常，直接返回，否则走下面
 		if (iRet < AllOk)
 		{
-			STACK_TRACEBACK("iRet < AllOk");
+			STACK_TRACEBACK("Name:\"%s\" Tag read error!", sName.c_str());
+			return iRet;
+		}
+		
+		if constexpr (bHasName)//有名，当前是集合Compound节点，往nRoot插入数据
+		{
+			MYTRY;
+			//名称-内含数据的节点插入当前调用栈深度的根节点
+			auto ret = nRoot.GetData<NBT_Type::Compound>().try_emplace(std::move(sName), std::move(tmpNode));
+			if (!ret.second)//插入失败，元素已存在
+			{
+				Error(ElementExistsWarn, tData, __FUNCSIG__ ": the \"%s\"[NBT_Type::%s] tData already exist!", U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tmpNode.GetTag()));
+			}
+			MYCATCH_BADALLOC;
+		}
+		else//无名，当前是列表元素，直接修改nRoot，然后返回给列表
+		{
+			nRoot = std::move(tmpNode);
 		}
 
 		return iRet;//传递返回值
@@ -818,7 +716,7 @@ public:
 	//szStackDepth 控制栈深度，递归层检查仅由可嵌套的可能进行递归的函数进行，栈深度递减仅由对选择函数的调用进行
 	static bool ReadNBT(NBT_Node &nRoot, const DataType &tData, size_t szDataStartIndex = 0, size_t szStackDepth = 512) noexcept//从data中读取nbt
 	{
-		MYTRY
+		MYTRY;
 		//初始化NBT根对象
 		nRoot.Clear();//清掉原来的数据（注意如果nbt较大的情况下，这是一个较深的递归清理过程，不排除栈空间不足导致清理失败），可能抛出异常之类的，需要try catch
 		nRoot.emplace<NBT_Type::Compound>();//设置为compound
@@ -831,7 +729,7 @@ public:
 
 		//开始递归读取
 		return GetNBT<true>(IptStream, nRoot, szStackDepth) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
-		MYCATCH_OTHER//捕获其他异常
+		MYCATCH_OTHER;//捕获其他异常
 	}
 
 

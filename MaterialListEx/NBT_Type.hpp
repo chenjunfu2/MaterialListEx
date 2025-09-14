@@ -58,6 +58,35 @@ public:
 		LongArray
 	>;
 
+private:
+	constexpr static inline const char *const cstrTypeName[] =
+	{
+		"End",
+		"Byte",
+		"Short",
+		"Int",
+		"Long",
+		"Float",
+		"Double",
+		"ByteArray",
+		"IntArray",
+		"LongArray",
+		"String",
+		"List",
+		"Compound",
+	};
+public:
+	constexpr static inline const char *GetTypeName(NBT_TAG tag)//运行时类型判断，允许静态
+	{
+		if (tag >= NBT_TAG::ENUM_END)
+		{
+			return "Unknown";
+		}
+
+		NBT_TAG_RAW_TYPE tagRaw = (NBT_TAG_RAW_TYPE)tag;
+		return cstrTypeName[tagRaw];
+	}
+
 	//部分结构的Length类型
 	using ArrayLength = int32_t;
 	using StringLength = uint16_t;
