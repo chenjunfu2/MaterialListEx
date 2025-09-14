@@ -121,7 +121,7 @@ private:
 				printf("%gD", nRoot.GetData<NBT_Type::Double>());
 			}
 			break;
-		case NBT_TAG::Byte_Array:
+		case NBT_TAG::ByteArray:
 			{
 				const auto &arr = nRoot.GetData<NBT_Type::ByteArray>();
 				printf("[B;");
@@ -137,7 +137,7 @@ private:
 				printf("]");
 			}
 			break;
-		case NBT_TAG::Int_Array:
+		case NBT_TAG::IntArray:
 			{
 				const auto &arr = nRoot.GetData<NBT_Type::IntArray>();
 				printf("[I;");
@@ -153,7 +153,7 @@ private:
 				printf("]");
 			}
 			break;
-		case NBT_TAG::Long_Array:
+		case NBT_TAG::LongArray:
 			{
 				const auto &arr = nRoot.GetData<NBT_Type::LongArray>();
 				printf("[L;");
@@ -299,7 +299,7 @@ private:
 				sRet += 'D';
 			}
 			break;
-		case NBT_TAG::Byte_Array:
+		case NBT_TAG::ByteArray:
 			{
 				const auto &arr = nRoot.GetData<NBT_Type::ByteArray>();
 				sRet += "[B;";
@@ -316,7 +316,7 @@ private:
 				sRet += ']';
 			}
 			break;
-		case NBT_TAG::Int_Array:
+		case NBT_TAG::IntArray:
 			{
 				const auto &arr = nRoot.GetData<NBT_Type::IntArray>();
 				sRet += "[I;";
@@ -333,7 +333,7 @@ private:
 				sRet += ']';
 			}
 			break;
-		case NBT_TAG::Long_Array:
+		case NBT_TAG::LongArray:
 			{
 				const auto &arr = nRoot.GetData<NBT_Type::LongArray>();
 				sRet += "[L;";
@@ -461,7 +461,7 @@ private:
 				nbtHash.Update(tmp);
 			}
 			break;
-		case NBT_TAG::Byte_Array:
+		case NBT_TAG::ByteArray:
 			{
 				const auto &arr = nRoot.GetData<NBT_Type::ByteArray>();
 				for (const auto &it : arr)
@@ -471,7 +471,7 @@ private:
 				}
 			}
 			break;
-		case NBT_TAG::Int_Array:
+		case NBT_TAG::IntArray:
 			{
 				const auto &arr = nRoot.GetData<NBT_Type::IntArray>();
 				for (const auto &it : arr)
@@ -481,7 +481,7 @@ private:
 				}
 			}
 			break;
-		case NBT_TAG::Long_Array:
+		case NBT_TAG::LongArray:
 			{
 				const auto &arr = nRoot.GetData<NBT_Type::LongArray>();
 				for (const auto &it : arr)

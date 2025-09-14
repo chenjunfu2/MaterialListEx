@@ -600,9 +600,9 @@ catch(...)\
 				iRet = GetBuiltInType<CurType>(tData, tmpNode.GetData<CurType>());
 			}
 			break;
-		case NBT_TAG::Byte_Array:
+		case NBT_TAG::ByteArray:
 			{
-				using CurType = NBT_Type::TagToType_T<NBT_TAG::Byte_Array>;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::ByteArray>;
 				tmpNode.emplace<CurType>();
 				iRet = GetArrayType<CurType>(tData, tmpNode.GetData<CurType>());
 			}
@@ -628,16 +628,16 @@ catch(...)\
 				iRet = GetCompoundType(tData, tmpNode.GetData<CurType>(), szStackDepth);//选择函数不减少递归层
 			}
 			break;
-		case NBT_TAG::Int_Array:
+		case NBT_TAG::IntArray:
 			{
-				using CurType = NBT_Type::TagToType_T<NBT_TAG::Int_Array>;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::IntArray>;
 				tmpNode.emplace<CurType>();
 				iRet = GetArrayType<CurType>(tData, tmpNode.GetData<CurType>());
 			}
 			break;
-		case NBT_TAG::Long_Array:
+		case NBT_TAG::LongArray:
 			{
-				using CurType = NBT_Type::TagToType_T<NBT_TAG::Long_Array>;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::LongArray>;
 				tmpNode.emplace<CurType>();
 				iRet = GetArrayType<CurType>(tData, tmpNode.GetData<CurType>());
 			}

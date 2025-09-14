@@ -13,12 +13,12 @@ enum class NBT_TAG : NBT_TAG_RAW_TYPE
 	Long,		//int64_t
 	Float,		//float 4byte
 	Double,		//double 8byte
-	Byte_Array,	//std::vector<int8_t>
+	ByteArray,	//std::vector<int8_t>
 	String,		//std::string->有长度数据，且为非0终止字符串!!
 	List,		//std::list<NBT_Node>->vector
 	Compound,	//std::map<std::string, NBT_Node>->字符串为NBT项名称
-	Int_Array,	//std::vector<int32_t>
-	Long_Array,	//std::vector<int64_t>
+	IntArray,	//std::vector<int32_t>
+	LongArray,	//std::vector<int64_t>
 	ENUM_END,	//结束标记，用于计算enum元素个数
 };
 
