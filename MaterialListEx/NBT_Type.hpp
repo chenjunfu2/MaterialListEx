@@ -58,6 +58,20 @@ public:
 		LongArray
 	>;
 
+
+	//内置整数类型上下限
+	constexpr static inline Byte Byte_Max = INT8_MAX;
+	constexpr static inline Byte Byte_Min = INT8_MIN;
+
+	constexpr static inline Short Short_Max = INT16_MAX;
+	constexpr static inline Short Short_Min = INT16_MIN;
+
+	constexpr static inline Int Int_Max = INT32_MAX;
+	constexpr static inline Int Int_Min = INT32_MIN;
+
+	constexpr static inline Long Long_Max = INT64_MAX;
+	constexpr static inline Long Long_Min = INT64_MIN;
+
 	//类型存在检查
 	template <typename T, typename List>
 	struct IsValidType;

@@ -229,10 +229,11 @@ catch(...)\
 	{
 		int iRet = AllOk;
 
-		using RAW_DATA_T = NBT_Type::BuiltinRawType_T<T>;//原始类型映射
-
 		//获取原始类型，然后转换到raw类型准备写出
-		RAW_DATA_T tTmpRawData = std::bit_cast<RAW_DATA_T>(nRoot.GetData<T>());
+		const T &tBuiltIn = nRoot.GetData<T>();
+
+		using RAW_DATA_T = NBT_Type::BuiltinRawType_T<T>;//原始类型映射
+		RAW_DATA_T tTmpRawData = std::bit_cast<RAW_DATA_T>(tBuiltIn);
 
 		iRet = WriteBigEndian(tData, tTmpRawData);
 		if (iRet < AllOk)
@@ -244,17 +245,70 @@ catch(...)\
 		return iRet;
 	}
 
-	//PutArrayType
+	template<typename T>
+	static int PutArrayType(OutputStream &tData, const NBT_Node &nRoot)
+	{
+		int iRet = AllOk;
 
-	//PutCompoundType
+		const T &tArray = nRoot.GetData<T>();
 
-	//PutStringType
+		//获取数组大小判断是否超过要求上限
+		//也就是4字节有符号整数上限
+		size_t szArraySize = tArray.size();
+		if (szArraySize > (size_t)NBT_Type::Int_Max)
+		{
+			//error
+			//stack
+			return iRet;
+		}
 
-	//PutListType
+		//获取实际写出大小
+		NBT_Type::Int iElementCount = (NBT_Type::Int)szArraySize;
 
-	//SwitchNBT
+		iRet = WriteBigEndian(tData, iElementCount);
+		if (iRet < AllOk)
+		{
+			//stack
+			return iRet;
+		}
 
-	//PutNBT
+		for (NBT_Type::Int i = 0; i < iElementCount; ++i)
+		{
+			typename T::value_type tTmpData = tArray[i];
+			iRet = WriteBigEndian(tData, tTmpData);
+			if (iRet < AllOk)
+			{
+				//stack
+				return iRet;
+			}
+		}
+
+		return iRet;
+	}
+
+	static int PutCompoundType(OutputStream &tData, const NBT_Node &nRoot)
+	{
+		int iRet = AllOk;
+
+
+
+
+
+		return iRet;
+	}
+
+	static int PutStringType(OutputStream &tData, const NBT_Node &nRoot)
+	{
+
+
+
+	}
+
+	//static int PutListType(OutputStream &tData, const NBT_Node &nRoot)
+
+	//static int SwitchNBT(OutputStream &tData, const NBT_Node &nRoot)
+
+	//static int PutNBT(OutputStream &tData, const NBT_Node &nRoot)
 
 public:
 	NBT_Writer(void) = delete;

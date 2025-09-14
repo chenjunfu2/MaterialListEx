@@ -91,7 +91,7 @@ public:
 	}
 };
 
-template <typename DataType = std::basic_string<uint8_t>>
+template <typename DataType = std::basic_string<NBT_TAG_RAW_TYPE>>
 class NBT_Reader
 {
 	using InputStream = MyInputStream<DataType>;//流类型
@@ -212,11 +212,11 @@ private:
 
 			if (i != tData.Index())
 			{
-				printf(" %02X ", (uint8_t)tData[i]);
+				printf(" %02X ", (NBT_TAG_RAW_TYPE)tData[i]);
 			}
 			else//如果是当前出错字节，加方括号框起
 			{
-				printf("[%02X]", (uint8_t)tData[i]);
+				printf("[%02X]", (NBT_TAG_RAW_TYPE)tData[i]);
 			}
 		}
 
@@ -299,7 +299,7 @@ catch(...)\
 
 		if constexpr (sizeof(T) == 1)
 		{
-			tVal = (T)(uint8_t)tData.GetNext();
+			tVal = (T)(NBT_TAG_RAW_TYPE)tData.GetNext();
 		}
 		else
 		{
@@ -307,7 +307,7 @@ catch(...)\
 			for (size_t i = 0; i < sizeof(T); ++i)
 			{
 				tTmp <<= 8;
-				tTmp |= (T)(uint8_t)tData.GetNext();//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
+				tTmp |= (T)(NBT_TAG_RAW_TYPE)tData.GetNext();//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
 			}
 			tVal = tTmp;
 		}
@@ -412,19 +412,19 @@ catch(...)\
 		}
 
 		//获取4字节有符号数，代表数组元素个数
-		int32_t dwElementCount = 0;//dw->double-word=4*byte
-		iRet = ReadBigEndian(tData, dwElementCount);
+		NBT_Type::Int iElementCount = 0;//4byte
+		iRet = ReadBigEndian(tData, iElementCount);
 		if (iRet < AllOk)
 		{
-			STACK_TRACEBACK("Name: \"%s\" dwElementCount Read", sName.c_str());
+			STACK_TRACEBACK("Name: \"%s\" iElementCount Read", sName.c_str());
 			return iRet;
 		}
 
 		//判断长度是否超过
-		if (!tData.HasAvailData(dwElementCount * sizeof(T::value_type)))//保证下方调用安全
+		if (!tData.HasAvailData(iElementCount * sizeof(T::value_type)))//保证下方调用安全
 		{
-			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + dwElementCount[%zu] * sizeof(T::value_type)[%zu])[%zu] > DataSize[%zu]", 
-				tData.Index(), (size_t)dwElementCount, sizeof(T::value_type), tData.Index() + (size_t)dwElementCount * sizeof(T::value_type), tData.Size());
+			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + iElementCount[%zu] * sizeof(T::value_type)[%zu])[%zu] > DataSize[%zu]", 
+				tData.Index(), (size_t)iElementCount, sizeof(T::value_type), tData.Index() + (size_t)iElementCount * sizeof(T::value_type), tData.Size());
 			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
 			return iRet;
 		}
@@ -432,9 +432,9 @@ catch(...)\
 		//数组保存
 		T tArray{};
 		MYTRY
-		tArray.reserve(dwElementCount);//提前扩容
+		tArray.reserve(iElementCount);//提前扩容
 		//读取dElementCount个元素
-		for (int32_t i = 0; i < dwElementCount; ++i)
+		for (NBT_Type::Int i = 0; i < iElementCount; ++i)
 		{
 			typename T::value_type tTmpData;
 			ReadBigEndian<true>(tData, tTmpData);//调用需要确保范围安全
@@ -587,7 +587,7 @@ catch(...)\
 		}
 
 		//读取1字节的列表元素类型
-		uint8_t bListElementType = 0;//b=byte
+		NBT_TAG_RAW_TYPE bListElementType = 0;//b=byte
 		iRet = ReadBigEndian(tData, bListElementType);
 		if (iRet < AllOk)
 		{
@@ -604,26 +604,26 @@ catch(...)\
 		}
 
 		//读取4字节的有符号列表长度
-		int32_t dwListLength = 0;//dw=double-world=4*byte
-		iRet = ReadBigEndian(tData, dwListLength);
+		NBT_Type::Int iListLength = 0;//4byte
+		iRet = ReadBigEndian(tData, iListLength);
 		if (iRet < AllOk)
 		{
-			STACK_TRACEBACK("Name: \"%s\" dwListLength Read", sName.c_str());
+			STACK_TRACEBACK("Name: \"%s\" iListLength Read", sName.c_str());
 			return iRet;
 		}
 
 		//检查有符号数大小范围
-		if (dwListLength < 0)
+		if (iListLength < 0)
 		{
-			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": dwListLength[%d] < 0", dwListLength);
+			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": iListLength[%d] < 0", iListLength);
 			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
 			return iRet;
 		}
 
 		//防止重复N个结束标签，带有结束标签的必须是空列表
-		if (bListElementType == NBT_TAG::End && dwListLength != 0)
+		if (bListElementType == NBT_TAG::End && iListLength != 0)
 		{
-			iRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": The list with TAG_End[0x00] tag must be empty, but [%d] elements were found", dwListLength);
+			iRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": The list with TAG_End[0x00] tag must be empty, but [%d] elements were found", iListLength);
 			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
 			return iRet;
 		}
@@ -631,26 +631,26 @@ catch(...)\
 		//根据元素类型，读取n次列表
 		NBT_Type::List tmpList((NBT_TAG)bListElementType);
 		MYTRY
-		tmpList.reserve(dwListLength);//已知大小提前分配减少开销
+		tmpList.reserve(iListLength);//已知大小提前分配减少开销
 
-		for (int32_t i = 0; i < dwListLength; ++i)
+		for (NBT_Type::Int i = 0; i < iListLength; ++i)
 		{
 			NBT_Node tmpNode{};//列表元素会直接赋值修改
 			iRet = SwitchNBT<false>(tData, tmpNode, (NBT_TAG)bListElementType, szStackDepth - 1);
 			if (iRet < AllOk)//错误处理
 			{
-				STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), dwListLength, i);
+				STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), iListLength, i);
 				break;//跳出循环以保留错误数据之前的正确数据
 			}
 
 			if (bListElementType == NBT_TAG::End)//空元素特判
 			{
 				//读取1字节的bCompoundEndTag
-				uint8_t bCompoundEndTag = 0;//b=byte
+				NBT_TAG_RAW_TYPE bCompoundEndTag = 0;//b=byte
 				iRet = ReadBigEndian(tData, bCompoundEndTag);
 				if (iRet < AllOk)
 				{
-					STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d] bCompoundEndTag Read", sName.c_str(), dwListLength, i);
+					STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d] bCompoundEndTag Read", sName.c_str(), iListLength, i);
 					break;//跳出循环以保留错误数据之前的正确数据
 				}
 
@@ -658,7 +658,7 @@ catch(...)\
 				if (bCompoundEndTag != NBT_TAG::End)
 				{
 					iRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": require Compound End Tag [0x00], but read Unknown Tag [0x%02X]!", bCompoundEndTag);
-					STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), dwListLength, i);
+					STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), iListLength, i);
 					break;//跳出循环以保留错误数据之前的正确数据
 				}
 			}
@@ -795,7 +795,7 @@ catch(...)\
 		
 		do
 		{
-			if (!tData.HasAvailData(sizeof(uint8_t)))//处理末尾情况
+			if (!tData.HasAvailData(sizeof(NBT_TAG_RAW_TYPE)))//处理末尾情况
 			{
 				if constexpr (!bRoot)//非根部情况遇到末尾，则报错
 				{
@@ -810,7 +810,7 @@ catch(...)\
 			}
 
 			//处理正常情况
-			iRet = SwitchNBT(tData, nRoot, (NBT_TAG)(uint8_t)tData.GetNext(), szStackDepth - 1);//已捕获所有异常
+			iRet = SwitchNBT(tData, nRoot, (NBT_TAG)(NBT_TAG_RAW_TYPE)tData.GetNext(), szStackDepth - 1);//已捕获所有异常
 		} while (iRet == AllOk);//iRet<AllOk即为错误，跳出循环，>AllOk则为其它动作，跳出循环
 
 		if constexpr (bRoot)//根部情况遇到Compound_End则转为AllOk返回
