@@ -529,7 +529,7 @@ catch(...)\
 		MYCATCH_BADALLOC;
 		
 		//返回
-		nodeRet.emplace<NBT_Type::ListLength>(std::move(tList));
+		nodeRet.emplace<NBT_Type::List>(std::move(tList));
 		//如果错误，则传递，否则返回Ok
 		return iRet >= AllOk ? AllOk : iRet;//列表同时作为元素，成功应该返回Ok，而不是传递返回值
 	}

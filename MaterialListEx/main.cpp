@@ -348,7 +348,7 @@ void Convert(const char *const pFileName)
 		auto tmpCurTime = std::string{ '[' } + std::to_string(CodeTimer::GetNowTime()) + std::string{ ']' };//获取当前系统时间
 		sCsvPath.replace(szPos, std::string::npos, tmpCurTime);//放入尾部
 		sCsvPath.append(".csv");//后缀名改成csv
-	} while (IsFileExist(sCsvPath) && i32Count-- > 0);//如果文件已经存在，重试
+	} while (NBT_IO::IsFileExist(sCsvPath) && i32Count-- > 0);//如果文件已经存在，重试
 
 	if (i32Count > 0)//如果没次数了就别打开了，直接让它失败
 	{
