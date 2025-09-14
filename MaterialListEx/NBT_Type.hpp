@@ -58,6 +58,19 @@ public:
 		LongArray
 	>;
 
+	//部分结构的Length类型
+	using ArrayLength = int32_t;
+	using StringLength = uint16_t;
+	using ListLength = int32_t;
+
+	constexpr static inline ArrayLength ArrayLength_Max = INT32_MAX;
+	constexpr static inline ArrayLength ArrayLength_Min = INT32_MIN;
+
+	constexpr static inline StringLength StringLength_Max = UINT16_MAX;
+	constexpr static inline StringLength StringLength_Min = 0;
+
+	constexpr static inline ListLength ListLength_Max = INT32_MAX;
+	constexpr static inline ListLength ListLength_Min = INT32_MIN;
 
 	//内置整数类型上下限
 	constexpr static inline Byte Byte_Max = INT8_MAX;

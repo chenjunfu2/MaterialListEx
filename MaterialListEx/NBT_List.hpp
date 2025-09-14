@@ -24,7 +24,7 @@ class MyList :protected List
 	class NBT_Writer;
 private:
 	//列表元素类型（只能一种元素）
-	NBT_TAG enValueTag = NBT_TAG::End;
+	NBT_TAG enElementTag = NBT_TAG::End;
 	//此变量仅用于规约列表元素类型，无需参与比较与hash，但是需要参与构造与移动
 private:
 	inline bool TestTagAndSetType(NBT_TAG enTargetTag)
@@ -34,13 +34,13 @@ private:
 			return false;//不能插入空值，拒掉
 		}
 
-		if (enValueTag == NBT_TAG::End)
+		if (enElementTag == NBT_TAG::End)
 		{
-			enValueTag = enTargetTag;
+			enElementTag = enTargetTag;
 			return true;
 		}
 
-		return enTargetTag == enValueTag;
+		return enTargetTag == enElementTag;
 	}
 
 	template<typename V>
@@ -58,17 +58,17 @@ private:
 
 	inline void TestInit(void)
 	{
-		if (enValueTag == NBT_TAG::End && !List::empty())
+		if (enElementTag == NBT_TAG::End && !List::empty())
 		{
 			Clear();
 			throw std::invalid_argument("Tag is end but the list is not empty");
 		}
 
-		if (enValueTag != NBT_TAG::End)
+		if (enElementTag != NBT_TAG::End)
 		{
 			for (const auto &it : (List)*this)
 			{
-				if (it.GetTag() != enValueTag)
+				if (it.GetTag() != enElementTag)
 				{
 					Clear();
 					throw std::invalid_argument("List contains elements of different types");
@@ -78,23 +78,23 @@ private:
 	}
 public:
 	template<typename... Args>
-	MyList(NBT_TAG _enValueTag, Args&&... args) :List(std::forward<Args>(args)...), enValueTag(_enValueTag)
+	MyList(NBT_TAG _enElementTag, Args&&... args) :List(std::forward<Args>(args)...), enElementTag(_enElementTag)
 	{
 		TestInit();
 	}
 
 	template<typename... Args>
-	MyList(Args&&... args) : List(std::forward<Args>(args)...), enValueTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
+	MyList(Args&&... args) : List(std::forward<Args>(args)...), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
 	{
 		TestInit();
 	}
 
-	MyList(NBT_TAG _enValueTag, std::initializer_list<typename List::value_type> init) : List(init), enValueTag(_enValueTag)
+	MyList(NBT_TAG _enElementTag, std::initializer_list<typename List::value_type> init) : List(init), enElementTag(_enElementTag)
 	{
 		TestInit();
 	}
 
-	MyList(std::initializer_list<typename List::value_type> init) : List(init), enValueTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
+	MyList(std::initializer_list<typename List::value_type> init) : List(init), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
 	{
 		TestInit();
 	}
@@ -108,21 +108,21 @@ public:
 
 	MyList(MyList &&_Move) noexcept
 		:List(std::move(_Move)),
-		 enValueTag(std::move(_Move.enValueTag))
+		 enElementTag(std::move(_Move.enElementTag))
 	{
-		_Move.enValueTag = NBT_TAG::End;
+		_Move.enElementTag = NBT_TAG::End;
 	}
 	MyList(const MyList &_Other)
 		:List(_Other),
-		enValueTag(_Other.enValueTag)
+		enElementTag(_Other.enElementTag)
 	{}
 
 	MyList &operator=(MyList &&_Move) noexcept
 	{
 		List::operator=(std::move(_Move));
-		enValueTag = std::move(_Move.enValueTag);
+		enElementTag = std::move(_Move.enElementTag);
 
-		_Move.enValueTag = NBT_TAG::End;
+		_Move.enElementTag = NBT_TAG::End;
 
 		return *this;
 	}
@@ -130,7 +130,7 @@ public:
 	MyList &operator=(const MyList &_Other)
 	{
 		List::operator=(_Other);
-		enValueTag = _Other.enValueTag;
+		enElementTag = _Other.enElementTag;
 
 		return *this;
 	}
@@ -138,19 +138,19 @@ public:
 	//运算符重载
 	bool operator==(const MyList &_Right) const noexcept
 	{
-		return enValueTag == _Right.enValueTag &&
+		return enElementTag == _Right.enElementTag &&
 			(const List &)*this == (const List &)_Right;
 	}
 
 	bool operator!=(const MyList &_Right) const noexcept
 	{
-		return enValueTag != _Right.enValueTag ||
+		return enElementTag != _Right.enElementTag ||
 			(const List &)*this != (const List &)_Right;
 	}
 
 	std::partial_ordering operator<=>(const MyList &_Right) const noexcept
 	{
-		if (auto cmp = enValueTag <=> _Right.enValueTag; cmp != 0)
+		if (auto cmp = enElementTag <=> _Right.enElementTag; cmp != 0)
 		{
 			return cmp;
 		}
@@ -177,13 +177,13 @@ public:
 			return false;
 		}
 
-		enValueTag = tagNewValue;
+		enElementTag = tagNewValue;
 		return true;
 	}
 
 	NBT_TAG GetTag(void)
 	{
-		return enValueTag;
+		return enElementTag;
 	}
 
 	//简化list查询
@@ -274,7 +274,7 @@ public:
 
 		if (Empty())
 		{
-			enValueTag = NBT_TAG::End;//清除类型
+			enElementTag = NBT_TAG::End;//清除类型
 		}
 
 		return true;
@@ -283,7 +283,7 @@ public:
 	inline void Clear(void)
 	{
 		List::clear();
-		enValueTag = NBT_TAG::End;
+		enElementTag = NBT_TAG::End;
 	}
 
 	//功能函数

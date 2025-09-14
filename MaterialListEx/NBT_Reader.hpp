@@ -108,6 +108,7 @@ private:
 		NbtTypeTagError,//NBT标签类型错误（NBT文件问题）
 		OutOfRangeError,//（NBT内部长度错误溢出）（NBT文件问题）
 		InternalTypeError,//变体NBT节点类型错误（代码问题）
+
 		AllOk,//没有问题
 		Compound_End,//集合结束
 	};
@@ -135,6 +136,7 @@ private:
 	enum WarnCode : int
 	{
 		NoWarn = 0,
+
 		ElementExistsWarn,
 
 		WARNCODE_END,
@@ -152,7 +154,12 @@ private:
 	//记得同步数组！
 	static_assert(sizeof(warnReason) / sizeof(warnReason[0]) == WARNCODE_END, "warnReason array out sync");
 
+	//error处理
 	//使用变参形参表+vprintf代理复杂输出，给出更多扩展信息
+	/*
+		主动检查引发的错误，主动调用iRet = Error报告，然后触发STACK_TRACEBACK，最后返回iRet到上一级
+		上一级返回的错误通过if (iRet < AllOk)判断的，直接触发STACK_TRACEBACK后返回iRet到上一级
+	*/
 	template <typename T, typename std::enable_if<std::is_same<T, ErrCode>::value || std::is_same<T, WarnCode>::value, int>::type = 0>
 	static int _cdecl Error(const T &code, const InputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...) noexcept//gcc使用__attribute__((format))
 	{
@@ -322,29 +329,29 @@ catch(...)\
 	{
 		int iRet = AllOk;
 		//读取2字节的无符号名称长度
-		uint16_t wNameLength = 0;//w->word=2*byte
-		iRet = ReadBigEndian(tData, wNameLength);
+		NBT_Type::StringLength wStringLength = 0;//w->word=2*byte
+		iRet = ReadBigEndian(tData, wStringLength);
 		if (iRet < AllOk)
 		{
-			STACK_TRACEBACK("wNameLength Read");
+			STACK_TRACEBACK("wStringLength Read");
 			return iRet;
 		}
 
 		//判断长度是否超过
-		if (!tData.HasAvailData(wNameLength))
+		if (!tData.HasAvailData(wStringLength))
 		{
-			int iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + wNameLength[%zu])[%zu] > DataSize[%zu]",
-				tData.Index(), (size_t)wNameLength, tData.Index() + (size_t)wNameLength, tData.Size());
+			int iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + wStringLength[%zu])[%zu] > DataSize[%zu]",
+				tData.Index(), (size_t)wStringLength, tData.Index() + (size_t)wStringLength, tData.Size());
 			STACK_TRACEBACK("HasAvailData");
 			return iRet;
 		}
 
 		MYTRY
 		//解析出名称
-		sName.reserve(wNameLength);//提前分配
-		sName.assign(tData.Current(), tData.Next(wNameLength));//如果长度为0则构造0长字符串，合法行为
+		sName.reserve(wStringLength);//提前分配
+		sName.assign(tData.Current(), tData.Next(wStringLength));//如果长度为0则构造0长字符串，合法行为
 		MYCATCH_BADALLOC
-		tData.AddIndex(wNameLength);//移动下标
+		tData.AddIndex(wStringLength);//移动下标
 		return AllOk;
 	}
 
@@ -412,7 +419,7 @@ catch(...)\
 		}
 
 		//获取4字节有符号数，代表数组元素个数
-		NBT_Type::Int iElementCount = 0;//4byte
+		NBT_Type::ArrayLength iElementCount = 0;//4byte
 		iRet = ReadBigEndian(tData, iElementCount);
 		if (iRet < AllOk)
 		{
@@ -434,7 +441,7 @@ catch(...)\
 		MYTRY
 		tArray.reserve(iElementCount);//提前扩容
 		//读取dElementCount个元素
-		for (NBT_Type::Int i = 0; i < iElementCount; ++i)
+		for (NBT_Type::ArrayLength i = 0; i < iElementCount; ++i)
 		{
 			typename T::value_type tTmpData;
 			ReadBigEndian<true>(tData, tTmpData);//调用需要确保范围安全
@@ -524,31 +531,14 @@ catch(...)\
 			}
 		}
 
-		//读取2字节的无符号名称长度
-		uint16_t wStrLength = 0;//w->word=2*byte
-		iRet = ReadBigEndian(tData, wStrLength);
-		if (iRet < AllOk)
-		{
-			STACK_TRACEBACK("Name: \"%s\" wStrLength Read", sName.c_str());
-			return iRet;
-		}
-
-		//判断长度是否超过
-		if (!tData.HasAvailData(wStrLength))
-		{
-			iRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + wStrLength[%zu])[%zu] > DataSize[%zu]",
-				tData.Index(), (size_t)wStrLength, tData.Index() + (size_t)wStrLength, tData.Size());
-			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
-			return iRet;
-		}
-
 		//读取字符串
 		NBT_Type::String sString{};
-		MYTRY
-		sString.reserve(wStrLength);//预分配
-		sString.assign(tData.Current(), tData.Next(wStrLength));//范围赋值
-		MYCATCH_BADALLOC
-		tData.AddIndex(wStrLength);//移动下标
+		iRet = GetName(tData, sString);//因为string与name读取原理一致，直接借用实现
+		if (iRet < AllOk)
+		{
+			STACK_TRACEBACK("GetName");
+			return iRet;
+		}
 
 		if constexpr (bHasName)
 		{
@@ -604,7 +594,7 @@ catch(...)\
 		}
 
 		//读取4字节的有符号列表长度
-		NBT_Type::Int iListLength = 0;//4byte
+		NBT_Type::ListLength iListLength = 0;//4byte
 		iRet = ReadBigEndian(tData, iListLength);
 		if (iRet < AllOk)
 		{
@@ -623,9 +613,15 @@ catch(...)\
 		//防止重复N个结束标签，带有结束标签的必须是空列表
 		if (bListElementType == NBT_TAG::End && iListLength != 0)
 		{
-			iRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": The list with TAG_End[0x00] tag must be empty, but [%d] elements were found", iListLength);
+			iRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": The list with TAG_End[0x00] tag must be empty, but [%d] elements were found", iListLength);
 			STACK_TRACEBACK("Name: \"%s\"", sName.c_str());
 			return iRet;
+		}
+
+		//确保如果长度为0的情况下，列表类型必为End
+		if (iListLength == 0 && bListElementType != NBT_TAG::End)
+		{
+			bListElementType = NBT_TAG::End;
 		}
 
 		//根据元素类型，读取n次列表
@@ -633,7 +629,7 @@ catch(...)\
 		MYTRY
 		tmpList.reserve(iListLength);//已知大小提前分配减少开销
 
-		for (NBT_Type::Int i = 0; i < iListLength; ++i)
+		for (NBT_Type::ListLength i = 0; i < iListLength; ++i)
 		{
 			NBT_Node tmpNode{};//列表元素会直接赋值修改
 			iRet = SwitchNBT<false>(tData, tmpNode, (NBT_TAG)bListElementType, szStackDepth - 1);
@@ -641,26 +637,6 @@ catch(...)\
 			{
 				STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), iListLength, i);
 				break;//跳出循环以保留错误数据之前的正确数据
-			}
-
-			if (bListElementType == NBT_TAG::End)//空元素特判
-			{
-				//读取1字节的bCompoundEndTag
-				NBT_TAG_RAW_TYPE bCompoundEndTag = 0;//b=byte
-				iRet = ReadBigEndian(tData, bCompoundEndTag);
-				if (iRet < AllOk)
-				{
-					STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d] bCompoundEndTag Read", sName.c_str(), iListLength, i);
-					break;//跳出循环以保留错误数据之前的正确数据
-				}
-
-				//判断tag是否符合
-				if (bCompoundEndTag != NBT_TAG::End)
-				{
-					iRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": require Compound End Tag [0x00], but read Unknown Tag [0x%02X]!", bCompoundEndTag);
-					STACK_TRACEBACK("Name: \"%s\" Size: [%d] Index: [%d]", sName.c_str(), iListLength, i);
-					break;//跳出循环以保留错误数据之前的正确数据
-				}
 			}
 
 			//每读取一个往后插入一个

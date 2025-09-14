@@ -65,13 +65,18 @@ class NBT_Writer
 private:
 	enum ErrCode : int
 	{
-		ERRCODE_END = -5,//结束标记，统计负数部分大小
+		ERRCODE_END = -9,//结束标记，统计负数部分大小
 
 		UnknownError,//其他错误
 		StdException,//标准异常
 		OutOfMemoryError,//内存不足错误
-		StringTooLongError,
-		AllOk,
+		ListElementTypeError,//列表元素类型错误（代码问题）
+		StackDepthExceeded,//调用栈深度过深（代码问题）
+		StringTooLongError,//字符串过长错误
+		ArrayTooLongError,//数组过长错误
+		ListTooLongError,//列表过长错误
+
+		AllOk,//没有问题
 	};
 
 	//确保[非错误码]为零，防止出现非法的[非错误码]导致判断失效数组溢出
@@ -82,7 +87,11 @@ private:
 		"UnknownError",
 		"StdException",
 		"OutOfMemoryError",
+		"ListElementTypeError",
+		"StackDepthExceeded",
 		"StringTooLongError",
+		"ArrayTooLongError",
+		"ListTooLongError",
 
 		"AllOk",
 	};
@@ -111,6 +120,10 @@ private:
 
 	//error处理
 	//使用变参形参表+vprintf代理复杂输出，给出更多扩展信息
+	/*
+		主动检查引发的错误，主动调用iRet = Error报告，然后触发STACK_TRACEBACK，最后返回iRet到上一级
+		上一级返回的错误通过if (iRet < AllOk)判断的，直接触发STACK_TRACEBACK后返回iRet到上一级
+	*/
 	template <typename T, typename std::enable_if<std::is_same<T, ErrCode>::value || std::is_same<T, WarnCode>::value, int>::type = 0>
 	static int _cdecl Error(const T &code, const OutputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...)
 	{
@@ -199,8 +212,12 @@ catch(...)\
 	static int PutName(OutputStream &tData, const NBT_Type::String &sName)
 	{
 		int iRet = AllOk;
+
+		//获取string长度
+		size_t szStringLength = sName.size();
+
 		//检查大小是否符合上限
-		if (sName.length() > UINT16_MAX)
+		if (szStringLength > (size_t)NBT_Type::StringLength_Max)
 		{
 			iRet = Error(StringTooLongError, tData, __FUNCSIG__ ": sName.length()[%zu] > UINT16_MAX[%zu]", sName.length(), UINT16_MAX);
 			//STACK_TRACEBACK
@@ -208,7 +225,7 @@ catch(...)\
 		}
 
 		//输出名称长度
-		uint16_t wNameLength = (uint16_t)sName.length();
+		NBT_Type::StringLength wNameLength = (uint16_t)szStringLength;
 		iRet = WriteBigEndian(tData, wNameLength);
 		if (iRet < AllOk)
 		{
@@ -254,8 +271,8 @@ catch(...)\
 
 		//获取数组大小判断是否超过要求上限
 		//也就是4字节有符号整数上限
-		size_t szArraySize = tArray.size();
-		if (szArraySize > (size_t)NBT_Type::Int_Max)
+		size_t szArrayLength = tArray.size();
+		if (szArrayLength > (size_t)NBT_Type::ArrayLength_Max)
 		{
 			//error
 			//stack
@@ -263,16 +280,16 @@ catch(...)\
 		}
 
 		//获取实际写出大小
-		NBT_Type::Int iElementCount = (NBT_Type::Int)szArraySize;
-
-		iRet = WriteBigEndian(tData, iElementCount);
+		NBT_Type::ArrayLength iArrayLength = (NBT_Type::ArrayLength)szArrayLength;
+		iRet = WriteBigEndian(tData, iArrayLength);
 		if (iRet < AllOk)
 		{
 			//stack
 			return iRet;
 		}
 
-		for (NBT_Type::Int i = 0; i < iElementCount; ++i)
+		//写出元素
+		for (NBT_Type::ArrayLength i = 0; i < iArrayLength; ++i)
 		{
 			typename T::value_type tTmpData = tArray[i];
 			iRet = WriteBigEndian(tData, tTmpData);
@@ -286,11 +303,11 @@ catch(...)\
 		return iRet;
 	}
 
-	static int PutCompoundType(OutputStream &tData, const NBT_Node &nRoot)
+	static int PutCompoundType(OutputStream &tData, const NBT_Node &nRoot, size_t szStackDepth)
 	{
 		int iRet = AllOk;
-
-
+		CHECK_STACK_DEPTH(szStackDepth);
+		//集合中如果存在nbt end类型的元素，删除而不输出
 
 
 
@@ -299,12 +316,78 @@ catch(...)\
 
 	static int PutStringType(OutputStream &tData, const NBT_Node &nRoot)
 	{
+		int iRet = AllOk;
+
+		const NBT_Type::String &tString = nRoot.GetData<NBT_Type::String>();
+		iRet = PutName(tData, tString);//借用PutName实现，因为string走的name相同操作
+		if (iRet < AllOk)
+		{
+			//stack
+			return iRet;
+		}
 
 
-
+		return iRet;
 	}
 
-	//static int PutListType(OutputStream &tData, const NBT_Node &nRoot)
+	static int PutListType(OutputStream &tData, const NBT_Node &nRoot, size_t szStackDepth)
+	{
+		int iRet = AllOk;
+		CHECK_STACK_DEPTH(szStackDepth);
+
+		const NBT_Type::List tList = nRoot.GetData<NBT_Type::List>();
+
+		//检查
+		size_t szListLength = tList.size();
+		if (szListLength > (size_t)NBT_Type::ListLength_Max)//大于的情况下强制赋值会导致严重问题，只能返回错误
+		{
+			//error
+			//stack
+			return iRet;
+		}
+
+		//转换为写入大小
+		NBT_Type::ListLength iListLength = (NBT_Type::ListLength)szListLength;
+
+		//判断：长度不为0但是拥有空标签
+		NBT_TAG enListValueTag = tList.enElementTag;
+		if (iListLength != 0 && enListValueTag == NBT_TAG::End)
+		{
+			//error
+			//stack
+			return iRet;
+		}
+
+		//获取列表标签，如果列表长度为0，则强制改为空标签
+		NBT_TAG bListElementType = iListLength == 0 ? NBT_TAG::End : enListValueTag;
+
+		//写出标签
+		iRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)bListElementType);
+		if (iRet < AllOk)
+		{
+			//stack
+			return iRet;
+		}
+
+		//写出长度
+		iRet = WriteBigEndian(tData, iListLength);
+		if (iRet < AllOk)
+		{
+			//stack
+			return iRet;
+		}
+
+		//写出列表（递归）
+		//写出时判断元素标签与bListElementType不一致的错误
+		for (NBT_Type::ListLength i = 0; i < iListLength; ++i)
+		{
+			//这里暂时不实现，需要调用下面SwitchNBT递归
+
+
+		}
+
+		return iRet;
+	}
 
 	//static int SwitchNBT(OutputStream &tData, const NBT_Node &nRoot)
 
@@ -317,6 +400,8 @@ public:
 	static bool WriteNBT(DataType &tData, const NBT_Node &nRoot)
 	{
 
+
+		return true;
 	}
 
 
