@@ -530,6 +530,9 @@ catch(...)\
 	static int SwitchNBT(InputStream &tData, std::conditional_t<bHasName, NBT_Type::Compound, NBT_Node> &nRoot, NBT_TAG tag, size_t szStackDepth) noexcept//选择函数不检查递归层，由函数调用的函数检查
 	{
 		int iRet = AllOk;
+
+		MYTRY;//异常块开头
+		MYTRY;
 		
 		/*获取NBT的N（名称）*/
 		NBT_Type::String sName{};
@@ -547,7 +550,6 @@ catch(...)\
 		}
 
 		NBT_Node tmpNode{};
-		MYTRY;
 		switch (tag)
 		{
 		case NBT_TAG::End:
@@ -559,97 +561,85 @@ catch(...)\
 		case NBT_TAG::Byte:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Byte>;
-				CurType tmpGet{};
-				iRet = GetBuiltInType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(std::move(tmpGet));
+				tmpNode.emplace<CurType>();
+				iRet = GetBuiltInType<CurType>(tData, tmpNode.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::Short:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Short>;
-				CurType tmpGet{};
-				iRet = GetBuiltInType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(std::move(tmpGet));
+				tmpNode.emplace<CurType>();
+				iRet = GetBuiltInType<CurType>(tData, tmpNode.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::Int:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Int>;
-				CurType tmpGet{};
-				iRet = GetBuiltInType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(std::move(tmpGet));
+				tmpNode.emplace<CurType>();
+				iRet = GetBuiltInType<CurType>(tData, tmpNode.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::Long:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Long>;
-				CurType tmpGet{};
-				iRet = GetBuiltInType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(std::move(tmpGet));
+				tmpNode.emplace<CurType>();
+				iRet = GetBuiltInType<CurType>(tData, tmpNode.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::Float:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Float>;
-				CurType tmpGet{};
-				iRet = GetBuiltInType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(std::move(tmpGet));
+				tmpNode.emplace<CurType>();
+				iRet = GetBuiltInType<CurType>(tData, tmpNode.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::Double:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Double>;
-				CurType tmpGet{};
-				iRet = GetBuiltInType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(std::move(tmpGet));
+				tmpNode.emplace<CurType>();
+				iRet = GetBuiltInType<CurType>(tData, tmpNode.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::Byte_Array:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Byte_Array>;
-				CurType tmpGet{};
-				iRet = GetArrayType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(std::move(tmpGet));
+				tmpNode.emplace<CurType>();
+				iRet = GetArrayType<CurType>(tData, tmpNode.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::String:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::String>;
-				CurType tmpGet{};
-				iRet = GetStringType(tData, tmpGet);
-				tmpNode.emplace<CurType>(std::move(tmpGet));
+				tmpNode.emplace<CurType>();
+				iRet = GetStringType(tData, tmpNode.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::List://需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签 ID 或名称）
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::List>;
-				CurType tmpGet{};
-				iRet = GetListType(tData, tmpGet, szStackDepth);//选择函数不减少递归层
-				tmpNode.emplace<CurType>(std::move(tmpGet));
+				tmpNode.emplace<CurType>();
+				iRet = GetListType(tData, tmpNode.GetData<CurType>(), szStackDepth);//选择函数不减少递归层
 			}
 			break;
 		case NBT_TAG::Compound://需要递归调用
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Compound>;
-				CurType tmpGet{};
-				iRet = GetCompoundType(tData, tmpGet, szStackDepth);//选择函数不减少递归层
-				tmpNode.emplace<CurType>(std::move(tmpGet));
+				tmpNode.emplace<CurType>();
+				iRet = GetCompoundType(tData, tmpNode.GetData<CurType>(), szStackDepth);//选择函数不减少递归层
 			}
 			break;
 		case NBT_TAG::Int_Array:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Int_Array>;
-				CurType tmpGet{};
-				iRet = GetArrayType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(std::move(tmpGet));
+				tmpNode.emplace<CurType>();
+				iRet = GetArrayType<CurType>(tData, tmpNode.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::Long_Array:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Long_Array>;
-				CurType tmpGet{};
-				iRet = GetArrayType<CurType>(tData, tmpGet);
-				tmpNode.emplace<CurType>(std::move(tmpGet));
+				tmpNode.emplace<CurType>();
+				iRet = GetArrayType<CurType>(tData, tmpNode.GetData<CurType>());
 			}
 			break;
 		default://NBT内标数据签错误
@@ -658,9 +648,9 @@ catch(...)\
 			}
 			break;
 		}
-		MYCATCH_OTHER;//这里捕获所有其它未捕获的异常
+		
 
-		//如果已经出现异常，直接返回，否则走下面
+		//如果已经出现错误，直接返回，否则走下面
 		if (iRet < AllOk)
 		{
 			STACK_TRACEBACK("Tag read error!");
@@ -683,6 +673,9 @@ catch(...)\
 		{
 			nRoot = std::move(tmpNode);
 		}
+
+		MYCATCH_BADALLOC;//这里捕获其他非预期的内存不足异常
+		MYCATCH_OTHER;//这里捕获所有其它未捕获的异常
 
 		return iRet;//传递返回值
 	}
