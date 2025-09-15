@@ -200,9 +200,9 @@ private:
 		printf
 		(
 			"Data Review:\n"\
-			"Current: 0x % 02llX(% zu)\n"\
-			"Data Size : 0x % 02llX(% zu)\n"\
-			"Data[0x % 02llX(% zu)] ~Data[0x % 02llX(% zu)]:\n",
+			"Current: 0x%02llX(%zu)\n"\
+			"Data Size: 0x%02llX(%zu)\n"\
+			"Data[0x%02llX(%zu)]~[0x%02llX(%zu)]:\n",
 
 			(uint64_t)tData.Index(), tData.Index(),
 			(uint64_t)tData.Size(), tData.Size(),
