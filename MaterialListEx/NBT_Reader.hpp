@@ -415,7 +415,7 @@ catch(...)\
 		//读取dElementCount个元素
 		for (NBT_Type::ArrayLength i = 0; i < iElementCount; ++i)
 		{
-			typename T::value_type tTmpData;
+			typename T::value_type tTmpData{};
 			ReadBigEndian<true>(tData, tTmpData);//调用需要确保范围安全
 			tArrayRet.emplace_back(std::move(tTmpData));//读取一个插入一个
 		}
@@ -586,7 +586,7 @@ catch(...)\
 			if (eRet != AllOk)//错误处理
 			{
 				STACK_TRACEBACK("Size: [%d] Index: [%d]", iListLength, i);
-				break;//跳出循环以保留错误数据之前的正确数据
+				return eRet;
 			}
 
 			//每读取一个往后插入一个

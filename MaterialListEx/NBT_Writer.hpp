@@ -63,9 +63,9 @@ class NBT_Writer
 {
 	using OutputStream = MyOutputStream<DataType>;//流类型
 private:
-	enum ErrCode : int
+	enum ErrCode : uint8_t
 	{
-		ERRCODE_END = -9,//结束标记，统计负数部分大小
+		AllOk = 0,//没有问题
 
 		UnknownError,//其他错误
 		StdException,//标准异常
@@ -76,14 +76,13 @@ private:
 		ArrayTooLongError,//数组过长错误
 		ListTooLongError,//列表过长错误
 
-		AllOk,//没有问题
+		ERRCODE_END,//结束标记
 	};
-
-	//确保[非错误码]为零，防止出现非法的[非错误码]导致判断失效数组溢出
-	static_assert(AllOk == 0, "AllOk != 0");
 
 	static inline const char *const errReason[] =//反向数组运算方式：(-ERRCODE_END - 1) + ErrCode
 	{
+		"AllOk",
+
 		"UnknownError",
 		"StdException",
 		"OutOfMemoryError",
@@ -92,23 +91,18 @@ private:
 		"StringTooLongError",
 		"ArrayTooLongError",
 		"ListTooLongError",
-
-		"AllOk",
 	};
 
 	//记得同步数组！
 	static_assert(sizeof(errReason) / sizeof(errReason[0]) == (-ERRCODE_END), "errReason array out sync");
 
 
-	enum WarnCode : int
+	enum WarnCode : uint8_t
 	{
 		NoWarn = 0,
 
 		WARNCODE_END,
 	};
-
-	//确保[非警告码]为零，防止出现非法的[非警告码]导致判断失效数组溢出
-	static_assert(NoWarn == 0, "NoWarn != 0");
 
 	static inline const char *const warnReason[] =//正常数组，直接用WarnCode访问
 	{
@@ -120,18 +114,19 @@ private:
 
 	//error处理
 	//使用变参形参表+vprintf代理复杂输出，给出更多扩展信息
-	/*
-		主动检查引发的错误，主动调用iRet = Error报告，然后触发STACK_TRACEBACK，最后返回iRet到上一级
-		上一级返回的错误通过if (iRet < AllOk)判断的，直接触发STACK_TRACEBACK后返回iRet到上一级
-	*/
-	template <typename T, typename std::enable_if<std::is_same<T, ErrCode>::value || std::is_same<T, WarnCode>::value, int>::type = 0>
-	static int _cdecl Error(const T &code, const OutputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...)
+	//主动检查引发的错误，主动调用eRet = Error报告，然后触发STACK_TRACEBACK，最后返回eRet到上一级
+	//上一级返回的错误通过if (eRet != AllOk)判断的，直接触发STACK_TRACEBACK后返回eRet到上一级
+	//如果是警告值，则不返回值
+	template <typename T>
+	requires(std::is_same_v<T, ErrCode> || std::is_same_v<T, WarnCode>)
+	static std::conditional_t<std::is_same_v<T, ErrCode>, ErrCode, void> _cdecl Error(const T &code, const OutputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...) noexcept//gcc使用__attribute__((format))，msvc使用_Printf_format_string_
 	{
-		/*考虑添加栈回溯，输出详细错误发生的nbt嵌套路径*/
 
-
-
-		return code;
+		//警告不返回值
+		if constexpr (std::is_same_v<T, ErrCode>)
+		{
+			return code;
+		}
 	}
 
 #define _RP___FUNCSIG__ __FUNCSIG__//用于编译过程二次替换达到函数内部
@@ -145,51 +140,46 @@ private:
 {\
 	if((Depth) <= 0)\
 	{\
-		iRet = Error(StackDepthExceeded, tData, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
+		eRet = Error(StackDepthExceeded, tData, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
 		STACK_TRACEBACK("(Depth) <= 0");\
-		return iRet;\
+		return eRet;\
 	}\
 }
-
 
 #define MYTRY \
 try\
 {
 
-#define MYCATCH_BADALLOC \
+#define MYCATCH \
 }\
 catch(const std::bad_alloc &e)\
 {\
-	int iRet = Error(OutOfMemoryError, tData, _RP___FUNCSIG__ ": Info:[%s]", e.what());\
+	ErrCode eRet = Error(OutOfMemoryError, tData, _RP___FUNCSIG__ ": Info:[%s]", e.what());\
 	STACK_TRACEBACK("catch(std::bad_alloc)");\
-	return iRet;\
-}
-
-#define MYCATCH_OTHER \
+	return eRet;\
 }\
 catch(const std::exception &e)\
 {\
-	int iRet = Error(StdException, tData, _RP___FUNCSIG__ ": Info:[%s]", e.what());\
+	ErrCode eRet = Error(StdException, tData, _RP___FUNCSIG__ ": Info:[%s]", e.what());\
 	STACK_TRACEBACK("catch(std::exception)");\
-	return iRet;\
+	return eRet;\
 }\
 catch(...)\
 {\
-	int iRet =  Error(UnknownError, tData, _RP___FUNCSIG__ ": Info:[Unknown Exception]");\
+	ErrCode eRet =  Error(UnknownError, tData, _RP___FUNCSIG__ ": Info:[Unknown Exception]");\
 	STACK_TRACEBACK("catch(...)");\
-	return iRet;\
+	return eRet;\
 }
 
 	//大小端转换
 	template<typename T>
-	static inline int WriteBigEndian(OutputStream &tData, const T &tVal)
+	static inline ErrCode WriteBigEndian(OutputStream &tData, const T &tVal) noexcept
 	{
-		int iRet = AllOk;
+	MYTRY;
+		ErrCode eRet = AllOk;
 		if constexpr (sizeof(T) == 1)
 		{
-			MYTRY;
 			tData.PutOnce((uint8_t)tVal);
-			MYCATCH_BADALLOC;
 		}
 		else
 		{
@@ -198,20 +188,19 @@ catch(...)\
 			UT tTmp = (UT)tVal;
 			for (size_t i = 0; i < sizeof(T); ++i)
 			{
-				MYTRY;
 				tData.PutOnce((uint8_t)tTmp);
-				MYCATCH_BADALLOC;
 				tTmp >>= 8;
 			}
 		}
 
-		return iRet;
+		return eRet;
+	MYCATCH;
 	}
 
-	//PutName
-	static int PutName(OutputStream &tData, const NBT_Type::String &sName)
+	static ErrCode PutName(OutputStream &tData, const NBT_Type::String &sName) noexcept
 	{
-		int iRet = AllOk;
+	MYTRY;
+		ErrCode eRet = AllOk;
 
 		//获取string长度
 		size_t szStringLength = sName.size();
@@ -219,51 +208,50 @@ catch(...)\
 		//检查大小是否符合上限
 		if (szStringLength > (size_t)NBT_Type::StringLength_Max)
 		{
-			iRet = Error(StringTooLongError, tData, __FUNCSIG__ ": sName.length()[%zu] > UINT16_MAX[%zu]", sName.length(), UINT16_MAX);
+			eRet = Error(StringTooLongError, tData, __FUNCSIG__ ": sName.length()[%zu] > UINT16_MAX[%zu]", sName.length(), UINT16_MAX);
 			//STACK_TRACEBACK
-			return iRet;
+			return eRet;
 		}
 
 		//输出名称长度
 		NBT_Type::StringLength wNameLength = (uint16_t)szStringLength;
-		iRet = WriteBigEndian(tData, wNameLength);
-		if (iRet < AllOk)
+		eRet = WriteBigEndian(tData, wNameLength);
+		if (eRet < AllOk)
 		{
 			STACK_TRACEBACK("wNameLength Write");
-			return iRet;
+			return eRet;
 		}
 
 		//输出名称
-		MYTRY;
 		tData.PutRange(sName.begin(), sName.end());
-		MYCATCH_BADALLOC;
 
-		return AllOk;
+		return eRet;
+	MYCATCH;
 	}
 
 	template<typename T>
-	static int PutbuiltInType(OutputStream &tData, const T &tBuiltIn)
+	static ErrCode PutbuiltInType(OutputStream &tData, const T &tBuiltIn) noexcept
 	{
-		int iRet = AllOk;
+		ErrCode eRet = AllOk;
 
 		//获取原始类型，然后转换到raw类型准备写出
 		using RAW_DATA_T = NBT_Type::BuiltinRawType_T<T>;//原始类型映射
 		RAW_DATA_T tTmpRawData = std::bit_cast<RAW_DATA_T>(tBuiltIn);
 
-		iRet = WriteBigEndian(tData, tTmpRawData);
-		if (iRet < AllOk)
+		eRet = WriteBigEndian(tData, tTmpRawData);
+		if (eRet < AllOk)
 		{
 			STACK_TRACEBACK("Name: \"%s\" tTmpRawData Write");
-			return iRet;
+			return eRet;
 		}
 
-		return iRet;
+		return eRet;
 	}
 
 	template<typename T>
-	static int PutArrayType(OutputStream &tData, const T &tArray)
+	static ErrCode PutArrayType(OutputStream &tData, const T &tArray) noexcept
 	{
-		int iRet = AllOk;
+		ErrCode eRet = AllOk;
 
 		//获取数组大小判断是否超过要求上限
 		//也就是4字节有符号整数上限
@@ -272,61 +260,62 @@ catch(...)\
 		{
 			//error
 			//stack
-			return iRet;
+			return eRet;
 		}
 
 		//获取实际写出大小
 		NBT_Type::ArrayLength iArrayLength = (NBT_Type::ArrayLength)szArrayLength;
-		iRet = WriteBigEndian(tData, iArrayLength);
-		if (iRet < AllOk)
+		eRet = WriteBigEndian(tData, iArrayLength);
+		if (eRet < AllOk)
 		{
 			//stack
-			return iRet;
+			return eRet;
 		}
 
 		//写出元素
 		for (NBT_Type::ArrayLength i = 0; i < iArrayLength; ++i)
 		{
 			typename T::value_type tTmpData = tArray[i];
-			iRet = WriteBigEndian(tData, tTmpData);
-			if (iRet < AllOk)
+			eRet = WriteBigEndian(tData, tTmpData);
+			if (eRet < AllOk)
 			{
 				//stack
-				return iRet;
+				return eRet;
 			}
 		}
 
-		return iRet;
+		return eRet;
 	}
 
-	static int PutCompoundType(OutputStream &tData, const NBT_Type::Compound &nRoot, size_t szStackDepth)
+	static ErrCode PutCompoundType(OutputStream &tData, const NBT_Type::Compound &nRoot, size_t szStackDepth) noexcept
 	{
-		int iRet = AllOk;
+		ErrCode eRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
 		//集合中如果存在nbt end类型的元素，删除而不输出
 
 
 
-		return iRet;
+
+		return eRet;
 	}
 
-	static int PutStringType(OutputStream &tData, const NBT_Type::String &tString)
+	static ErrCode PutStringType(OutputStream &tData, const NBT_Type::String &tString) noexcept
 	{
-		int iRet = AllOk;
+		ErrCode eRet = AllOk;
 
-		iRet = PutName(tData, tString);//借用PutName实现，因为string走的name相同操作
-		if (iRet < AllOk)
+		eRet = PutName(tData, tString);//借用PutName实现，因为string走的name相同操作
+		if (eRet < AllOk)
 		{
 			//stack
-			return iRet;
+			return eRet;
 		}
 
-		return iRet;
+		return eRet;
 	}
 
-	static int PutListType(OutputStream &tData, const NBT_Type::List &tList, size_t szStackDepth)
+	static ErrCode PutListType(OutputStream &tData, const NBT_Type::List &tList, size_t szStackDepth) noexcept
 	{
-		int iRet = AllOk;
+		ErrCode eRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
 
 		//检查
@@ -335,7 +324,7 @@ catch(...)\
 		{
 			//error
 			//stack
-			return iRet;
+			return eRet;
 		}
 
 		//转换为写入大小
@@ -347,52 +336,50 @@ catch(...)\
 		{
 			//error
 			//stack
-			return iRet;
+			return eRet;
 		}
 
 		//获取列表标签，如果列表长度为0，则强制改为空标签
 		NBT_TAG bListElementType = iListLength == 0 ? NBT_TAG::End : enListValueTag;
 
 		//写出标签
-		iRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)bListElementType);
-		if (iRet < AllOk)
+		eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)bListElementType);
+		if (eRet < AllOk)
 		{
 			//stack
-			return iRet;
+			return eRet;
 		}
 
 		//写出长度
-		iRet = WriteBigEndian(tData, iListLength);
-		if (iRet < AllOk)
+		eRet = WriteBigEndian(tData, iListLength);
+		if (eRet < AllOk)
 		{
 			//stack
-			return iRet;
+			return eRet;
 		}
 
 		//写出列表（递归）
 		//写出时判断元素标签与bListElementType不一致的错误
 		for (NBT_Type::ListLength i = 0; i < iListLength; ++i)
 		{
-			//这里暂时不实现，需要调用下面SwitchNBT递归
+			//这里暂时不实现，需要调用下面PutSwitch递归
 
 
 		}
 
-		return iRet;
+		return eRet;
 	}
 
-	static int SwitchNBT(OutputStream &tData, const NBT_Node &nRoot, size_t szStackDepth) noexcept
+	static ErrCode PutSwitch(OutputStream &tData, const NBT_Node &nRoot, size_t szStackDepth) noexcept
 	{
-		int iRet = AllOk;
+		ErrCode eRet = AllOk;
 
 
 
 
 
-		return iRet;
+		return eRet;
 	}
-
-	//static int PutNBT(OutputStream &tData, const NBT_Node &nRoot)
 
 public:
 	NBT_Writer(void) = delete;
