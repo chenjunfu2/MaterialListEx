@@ -242,13 +242,11 @@ catch(...)\
 	}
 
 	template<typename T>
-	static int PutbuiltInType(OutputStream &tData, const NBT_Node &nRoot)
+	static int PutbuiltInType(OutputStream &tData, const T &tBuiltIn)
 	{
 		int iRet = AllOk;
 
 		//获取原始类型，然后转换到raw类型准备写出
-		const T &tBuiltIn = nRoot.GetData<T>();
-
 		using RAW_DATA_T = NBT_Type::BuiltinRawType_T<T>;//原始类型映射
 		RAW_DATA_T tTmpRawData = std::bit_cast<RAW_DATA_T>(tBuiltIn);
 
@@ -263,11 +261,9 @@ catch(...)\
 	}
 
 	template<typename T>
-	static int PutArrayType(OutputStream &tData, const NBT_Node &nRoot)
+	static int PutArrayType(OutputStream &tData, const T &tArray)
 	{
 		int iRet = AllOk;
-
-		const T &tArray = nRoot.GetData<T>();
 
 		//获取数组大小判断是否超过要求上限
 		//也就是4字节有符号整数上限
@@ -303,7 +299,7 @@ catch(...)\
 		return iRet;
 	}
 
-	static int PutCompoundType(OutputStream &tData, const NBT_Node &nRoot, size_t szStackDepth)
+	static int PutCompoundType(OutputStream &tData, const NBT_Type::Compound &nRoot, size_t szStackDepth)
 	{
 		int iRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
@@ -314,11 +310,10 @@ catch(...)\
 		return iRet;
 	}
 
-	static int PutStringType(OutputStream &tData, const NBT_Node &nRoot)
+	static int PutStringType(OutputStream &tData, const NBT_Type::String &tString)
 	{
 		int iRet = AllOk;
 
-		const NBT_Type::String &tString = nRoot.GetData<NBT_Type::String>();
 		iRet = PutName(tData, tString);//借用PutName实现，因为string走的name相同操作
 		if (iRet < AllOk)
 		{
@@ -329,12 +324,10 @@ catch(...)\
 		return iRet;
 	}
 
-	static int PutListType(OutputStream &tData, const NBT_Node &nRoot, size_t szStackDepth)
+	static int PutListType(OutputStream &tData, const NBT_Type::List &tList, size_t szStackDepth)
 	{
 		int iRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
-
-		const NBT_Type::List tList = nRoot.GetData<NBT_Type::List>();
 
 		//检查
 		size_t szListLength = tList.size();
@@ -388,7 +381,16 @@ catch(...)\
 		return iRet;
 	}
 
-	//static int SwitchNBT(OutputStream &tData, const NBT_Node &nRoot)
+	static int SwitchNBT(OutputStream &tData, const NBT_Node &nRoot, size_t szStackDepth) noexcept
+	{
+		int iRet = AllOk;
+
+
+
+
+
+		return iRet;
+	}
 
 	//static int PutNBT(OutputStream &tData, const NBT_Node &nRoot)
 
