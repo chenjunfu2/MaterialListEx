@@ -443,21 +443,21 @@ catch(...)\
 					eRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": Index[%zu] >= DataSize()[%zu]", tData.Index(), tData.Size());
 				}
 
-				break;//否则直接返回（默认值AllOk）
+				return eRet;//否则直接返回（默认值AllOk）
 			}
 
 			//先读取一下类型
 			NBT_TAG tagNbt = (NBT_TAG)(NBT_TAG_RAW_TYPE)tData.GetNext();
 			if (tagNbt == NBT_TAG::End)//处理End情况
 			{
-				break;//直接返回（默认值AllOk）
+				return eRet;//直接返回（默认值AllOk）
 			}
 
 			if (tagNbt >= NBT_TAG::ENUM_END)//确认在范围内
 			{
 				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch default: Unknown Type Tag[%02X(%d)]", tagNbt, tagNbt);//此处不进行提前返回，往后默认返回处理
 				STACK_TRACEBACK("tagNbt >= NBT_TAG::ENUM_END");
-				break;//超出范围立刻返回
+				return eRet;//超出范围立刻返回
 			}
 
 			//然后读取名称
@@ -466,7 +466,7 @@ catch(...)\
 			if (eRet != AllOk)
 			{
 				STACK_TRACEBACK("GetName Fail, Name: \"\" [NBT_Type::%s]", NBT_Type::GetTypeName(tagNbt));
-				break;//名称读取失败立刻返回
+				return eRet;//名称读取失败立刻返回
 			}
 
 			//然后根据类型，调用对应的类型读取并返回到tmpNode
@@ -475,7 +475,7 @@ catch(...)\
 			if (eRet != AllOk)
 			{
 				STACK_TRACEBACK("GetSwitch Fail, Name: \"%s\" [NBT_Type::%s]", U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tagNbt));
-				//break;//注意此处不跳过，进行插入，以便分析错误之前的正确数据
+				//return eRet;//注意此处不返回，进行插入，以便分析错误之前的正确数据
 			}
 
 			//sName:tmpNode，插入当前调用栈深度的根节点
@@ -497,7 +497,7 @@ catch(...)\
 			if (eRet != AllOk)
 			{
 				STACK_TRACEBACK("While break with an error!");
-				break;//出错返回
+				return eRet;//出错返回
 			}
 		}
 
@@ -707,6 +707,23 @@ catch(...)\
 public:
 	NBT_Reader(void) = delete;
 	~NBT_Reader(void) = delete;
+
+	/*
+	备注：此函数读取nbt时，会创建一个默认根，然后把nbt内所有数据集合到此默认根上，
+	也就是哪怕按照mojang的nbt标准，默认根是无名compound，也会被挂接到返回值里的
+	内含NBT_Type::Compound的NBT_Node中，然后遍历NBT_Node（）即可得到所有根，
+	这么做的目的是为了方便读写例程且不用在外部部分实现mojang的无名compound特殊处理
+
+	这样可以在一定程度上甚至比mojang标准支持更多的NBT文件情况，
+	比如文件内并不是Compound开始的，而是单纯的几个不同类型且带有名字的NBT，那么也能
+	正常读取到并全部挂在NBT_Type::Compound中，就好像nbt文件本身就是一个
+	NBT_Type::Compound一样，相对的，写入函数也能支持写入
+	
+	所以对于对称函数WriteNBT写出的时候，传入的值也是一个内含NBT_Type::Compound的
+	NBT_Node，然后传入的NBT_Type::Compound本身不会被以任何形式写入NBT文件，而是
+	挂接在下面的内容写入，这样既能保证兼容mojang的nbt文件，也能一定程度上扩展nbt文件
+	内可以存储的内容（也就是并不总是非要以一个无名称的compound开头）
+	*/
 
 	//szStackDepth 控制栈深度，递归层检查仅由可嵌套的可能进行递归的函数进行，栈深度递减仅由对选择函数的调用进行
 	static bool ReadNBT(NBT_Node &nRoot, const DataType &tData, size_t szDataStartIndex = 0, size_t szStackDepth = 512) noexcept//从data中读取nbt

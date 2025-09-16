@@ -96,7 +96,6 @@ private:
 	//记得同步数组！
 	static_assert(sizeof(errReason) / sizeof(errReason[0]) == (-ERRCODE_END), "errReason array out sync");
 
-
 	enum WarnCode : uint8_t
 	{
 		NoWarn = 0,
@@ -291,18 +290,43 @@ catch(...)\
 	{
 		ErrCode eRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
-		//集合中如果存在nbt end类型的元素，删除而不输出
+		
 		//注意compound是为数不多的没有元素数量限制的结构
+		//此处无需检查大小，且无需写出大小
+		for (const auto &it : tCompound)
+		{
+			NBT_TAG curTag = it.second.GetTag();
 
+			//集合中如果存在nbt end类型的元素，删除而不输出
+			if (curTag == NBT_TAG::End)
+			{
+				continue;
+			}
 
+			//先写出tag
+			eRet = WriteBigEndian((NBT_TAG_RAW_TYPE)curTag);
+			if (eRet != AllOk)
+			{
+				//stack
+				break;
+			}
 
+			//然后写出name
+			eRet = PutName(tData, it.first);
+			if (eRet != AllOk)
+			{
+				//stack
+				break;
+			}
 
-
-
-
-
-
-
+			//最后根据tag类型写出数据
+			eRet = PutSwitch(tData, it.second, curTag, szStackDepth - 1);
+			if (eRet != AllOk)
+			{
+				//stack
+				break;
+			}
+		}
 
 		return eRet;
 	}
@@ -348,10 +372,10 @@ catch(...)\
 		}
 
 		//获取列表标签，如果列表长度为0，则强制改为空标签
-		NBT_TAG bListElementType = iListLength == 0 ? NBT_TAG::End : enListValueTag;
+		NBT_TAG enListElementTag = iListLength == 0 ? NBT_TAG::End : enListValueTag;
 
 		//写出标签
-		eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)bListElementType);
+		eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)enListElementTag);
 		if (eRet < AllOk)
 		{
 			//stack
@@ -370,15 +394,31 @@ catch(...)\
 		//写出时判断元素标签与bListElementType不一致的错误
 		for (NBT_Type::ListLength i = 0; i < iListLength; ++i)
 		{
-			//这里暂时不实现，需要调用下面PutSwitch递归
+			//获取元素与类型
+			const NBT_Node &tmpNode = tList[i];
+			NBT_TAG curTag = tmpNode.GetTag();
 
+			//对于每个元素，检查类型是否与列表存储一致
+			if (curTag != enListElementTag)
+			{
+				//error
+				//stack
+				return eRet;
+			}
 
+			//一致，很好，那么输出
+			eRet = PutSwitch(tData, tmpNode, enListElementTag, szStackDepth - 1);
+			if (eRet != AllOk)
+			{
+				//stack
+				return eRet;
+			}
 		}
 
 		return eRet;
 	}
 
-	static ErrCode PutSwitch(OutputStream &tData, const NBT_Node &nRoot, size_t szStackDepth) noexcept
+	static ErrCode PutSwitch(OutputStream &tData, const NBT_Node &nRoot, NBT_TAG tagNbt, size_t szStackDepth) noexcept
 	{
 		ErrCode eRet = AllOk;
 
