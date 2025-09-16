@@ -187,10 +187,10 @@ private:
 		}
 
 		//如果可以，预览szCurrent前后n个字符，否则裁切到边界
-#define VIEW_PRE 32//向前
-#define VIEW_SUF (32 + 8)//向后
-		size_t rangeBeg = (tData.Index() > VIEW_PRE) ? (tData.Index() - VIEW_PRE) : 0;//上边界裁切
-		size_t rangeEnd = ((tData.Index() + VIEW_SUF) < tData.Size()) ? (tData.Index() + VIEW_SUF) : tData.Size();//下边界裁切
+#define VIEW_PRE (4 * 8 + 4)//向前
+#define VIEW_SUF (4 * 8 + 4)//向后
+		size_t rangeBeg = (tData.Index() > VIEW_PRE) ? (tData.Index() - VIEW_PRE) : (0);//上边界裁切
+		size_t rangeEnd = ((tData.Index() + VIEW_SUF) < tData.Size()) ? (tData.Index() + VIEW_SUF) : (tData.Size());//下边界裁切
 #undef VIEW_SUF
 #undef VIEW_PRE
 		//输出信息
@@ -221,11 +221,11 @@ private:
 
 			if (i != tData.Index())
 			{
-				printf(" %02X ", (NBT_TAG_RAW_TYPE)tData[i]);
+				printf(" %02X ", (uint8_t)tData[i]);
 			}
 			else//如果是当前出错字节，加方括号框起
 			{
-				printf("[%02X]", (NBT_TAG_RAW_TYPE)tData[i]);
+				printf("[%02X]", (uint8_t)tData[i]);
 			}
 		}
 

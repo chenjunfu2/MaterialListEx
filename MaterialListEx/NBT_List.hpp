@@ -289,7 +289,7 @@ public:
 	template <bool bNoCheck = false, typename V>
 	std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> AddBack(V &&vTagVal)
 	{
-		if (!bNoCheck)
+		if constexpr (!bNoCheck)
 		{
 			if (!TestAndSetType(vTagVal))
 			{
@@ -300,7 +300,7 @@ public:
 		//插入
 		List::emplace_back(std::forward<V>(vTagVal));
 
-		if (!bNoCheck)
+		if constexpr (!bNoCheck)
 		{
 			return std::pair{ List::end() - 1,true };
 		}
@@ -313,7 +313,7 @@ public:
 	template <bool bNoCheck = false, typename V>
 	std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Set(size_t szPos, V &&vTagVal)
 	{
-		if (!bNoCheck)
+		if constexpr (!bNoCheck)
 		{
 			if (szPos > List::size())
 			{
@@ -327,7 +327,7 @@ public:
 
 		List::operator[](szPos) = std::forward<V>(vTagVal);
 
-		if (!bNoCheck)
+		if constexpr (!bNoCheck)
 		{
 			return std::pair{ List::begin() + szPos,true };
 		}
@@ -341,7 +341,7 @@ public:
 	template <bool bNoCheck = false>
 	std::conditional_t<bNoCheck, void, bool> Remove(size_t szPos)
 	{
-		if (!bNoCheck)
+		if constexpr (!bNoCheck)
 		{
 			if (szPos > List::size())
 			{
@@ -356,7 +356,7 @@ public:
 			enElementTag = NBT_TAG::End;//清除类型
 		}
 
-		if (!bNoCheck)
+		if constexpr (!bNoCheck)
 		{
 			return true;
 		}

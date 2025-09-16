@@ -200,10 +200,16 @@ int main(int argc, char *argv[])
 
 	NBT_Helper::Print(test);
 
-	std::basic_string<uint8_t> tData{};
-	NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(tData, test);
 	//NBT_IO::IsFileExist("TestNbt.nbt");
-	NBT_IO::WriteFile("TestNbt.nbt", tData);
+	std::basic_string<uint8_t> tData{};
+	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(tData, test) ||
+		!NBT_IO::WriteFile("TestNbt.nbt", tData))
+	{
+		printf("write fail\n");
+		return -1;
+	}
+
+	printf("write success\n");
 
 	return 0;
 

@@ -25,7 +25,7 @@ public:
 	}
 
 	template<typename V>
-	requires(std::is_constructible_v<T::value_type, V &&>)
+	requires(std::is_constructible_v<typename T::value_type, V &&>)
 	void PutOnce(V &&c)
 	{
 		tData.push_back(std::forward<V>(c));
@@ -41,7 +41,7 @@ public:
 		tData.pop_back();
 	}
 
-	size_t GetSize(void) const noexcept
+	size_t Size(void) const noexcept
 	{
 		return tData.size();
 	}
@@ -167,8 +167,8 @@ private:
 		}
 
 		//如果可以，预览szCurrent前n个字符，否则裁切到边界
-#define VIEW_PRE (64+8)//向前
-		size_t rangeBeg = (tData.Size() > VIEW_PRE + 1) ? (tData.Size() - (VIEW_PRE + 1)) : 0;//上边界裁切
+#define VIEW_PRE (7 * 8)//向前
+		size_t rangeBeg = (tData.Size() > VIEW_PRE) ? (tData.Size() - VIEW_PRE) : (0);//上边界裁切
 		size_t rangeEnd = tData.Size();//下边界裁切
 #undef VIEW_PRE
 		//输出信息
@@ -195,14 +195,7 @@ private:
 				printf("0x%02llX: ", (uint64_t)i);
 			}
 
-			if (i != tData.Index())
-			{
-				printf(" %02X ", (NBT_TAG_RAW_TYPE)tData[i]);
-			}
-			else//如果是当前出错字节，加方括号框起
-			{
-				printf("[%02X]", (NBT_TAG_RAW_TYPE)tData[i]);
-			}
+			printf(" %02X ", (uint8_t)tData[i]);
 		}
 
 		//输出提示信息
@@ -581,13 +574,13 @@ catch(...)\
 			break;
 		case NBT_TAG::List://可能递归，需要处理szStackDepth
 			{
-				using CurType = NBT_Type::TagToType_T<NBT_TAG::String>;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::List>;
 				eRet = PutListType(tData, nodeNbt.GetData<CurType>(), szStackDepth);
 			}
 			break;
 		case NBT_TAG::Compound://可能递归，需要处理szStackDepth
 			{
-				using CurType = NBT_Type::TagToType_T<NBT_TAG::String>;
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Compound>;
 				eRet = PutCompoundType(tData, nodeNbt.GetData<CurType>(), szStackDepth);
 			}
 			break;
@@ -641,7 +634,7 @@ public:
 		printf("Max Stack Depth [%zu]\n", szStackDepth);
 
 		//开始递归输出
-		return PutCompoundType(OptStream, tCompound, szStackDepth);
+		return PutCompoundType(OptStream, tCompound, szStackDepth) == AllOk;
 	MYCATCH;//以防万一还是需要捕获一下
 	}
 
