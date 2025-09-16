@@ -23,7 +23,24 @@ class NBT_IO
 public:
 	static bool WriteFile(const char *const _FileName, const std::basic_string<uint8_t> &_Data)
 	{
+		FILE *pFile = fopen(_FileName, "wb");
+		if (pFile == NULL)
+		{
+			return false;
+		}
 
+		//获取文件大小并写出
+		uint64_t qwFileSize = _Data.size();
+		if (fwrite(_Data.data(), sizeof(_Data[0]), qwFileSize, pFile) != qwFileSize)
+		{
+			return false;
+		}
+
+		//完成，关闭文件
+		fclose(pFile);
+		pFile = NULL;
+
+		return true;
 	}
 
 	static bool ReadFile(const char *const _FileName, std::basic_string<uint8_t> &_Data)
@@ -44,7 +61,10 @@ public:
 
 		//直接给数据塞string里
 		_Data.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
-		fread(_Data.data(), sizeof(_Data[0]), qwFileSize, pFile);//直接读入data
+		if (fread(_Data.data(), sizeof(_Data[0]), qwFileSize, pFile) != qwFileSize)//直接读入data
+		{
+			return false;
+		}
 		//完成，关闭文件
 		fclose(pFile);
 		pFile = NULL;
