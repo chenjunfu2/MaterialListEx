@@ -315,7 +315,7 @@ catch(...)\
 			T tTmp = 0;
 			for (size_t i = 0; i < sizeof(T); ++i)
 			{
-				tTmp <<= 8;
+				tTmp <<= 8;//每次移动刚才提取的地位到高位，然后继续提取
 				tTmp |= (T)(uint8_t)tData.GetNext();//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
 			}
 			tVal = tTmp;
@@ -352,7 +352,7 @@ catch(...)\
 		
 		//解析出名称
 		tName.reserve(wStringLength);//提前分配
-		tName.assign(tData.CurrentAddr(), wStringLength);//构造string（如果长度为0则构造0长字符串，合法行为）
+		tName.assign((const NBT_Type::String::value_type *)tData.CurrentAddr(), wStringLength);//构造string（如果长度为0则构造0长字符串，合法行为）
 		tData.AddIndex(wStringLength);//移动下标
 
 		return eRet;

@@ -273,11 +273,13 @@ catch(...)\
 		{
 			//统一到无符号类型，防止有符号右移错误
 			using UT = typename std::make_unsigned<T>::type;
+			static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
+
 			UT tTmp = (UT)tVal;
 			for (size_t i = 0; i < sizeof(T); ++i)
 			{
-				tData.PutOnce((uint8_t)tTmp);
-				tTmp >>= 8;
+				tData.PutOnce((uint8_t)(tTmp >> (8 * (sizeof(T) - 1))));//每次提取最高8位
+				tTmp <<= 8;//然后删除最高八位
 			}
 		}
 
@@ -312,7 +314,7 @@ catch(...)\
 		}
 
 		//输出名称
-		tData.PutRange((typename DataType::value_type *)sName.data(), sName.size());
+		tData.PutRange((const typename DataType::value_type *)sName.data(), sName.size());
 
 		return eRet;
 	MYCATCH;
