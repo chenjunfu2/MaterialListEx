@@ -319,7 +319,7 @@ catch(...)\
 		}
 
 		//Êä³öÃû³Æ
-		tData.PutRange(sName.data(), sName.size());
+		tData.PutRange((typename DataType::value_type *)sName.data(), sName.size());
 
 		return eRet;
 	MYCATCH;

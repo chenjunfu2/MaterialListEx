@@ -21,7 +21,7 @@ class MyList :protected List
 	friend class NBT_Reader;
 
 	template <typename DataType>
-	class NBT_Writer;
+	friend class NBT_Writer;
 private:
 	//列表元素类型（只能一种元素）
 	NBT_TAG enElementTag = NBT_TAG::End;

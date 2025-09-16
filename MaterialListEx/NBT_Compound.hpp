@@ -20,7 +20,7 @@ class MyCompound :protected Compound//Compound is Map
 	friend class NBT_Reader;
 
 	template <typename DataType>
-	class NBT_Writer;
+	friend class NBT_Writer;
 private:
 	//总是允许插入nbt end，但是在写出文件时会忽略end类型
 	//template<typename V>

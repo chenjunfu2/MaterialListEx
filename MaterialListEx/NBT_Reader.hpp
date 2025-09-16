@@ -34,7 +34,7 @@ public:
 		}
 	}
 
-	const T::value_type *CurrentAddr() const noexcept
+	const typename T::value_type *CurrentAddr() const noexcept
 	{
 		return &(tData.data()[szIndex]);
 	}
