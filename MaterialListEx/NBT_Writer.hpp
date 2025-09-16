@@ -170,7 +170,7 @@ private:
 		}
 
 		//如果可以，预览szCurrent前n个字符，否则裁切到边界
-#define VIEW_PRE (7 * 8)//向前
+#define VIEW_PRE (8 * 8 + 8)//向前
 		size_t rangeBeg = (tData.Size() > VIEW_PRE) ? (tData.Size() - VIEW_PRE) : (0);//上边界裁切
 		size_t rangeEnd = tData.Size();//下边界裁切
 #undef VIEW_PRE
