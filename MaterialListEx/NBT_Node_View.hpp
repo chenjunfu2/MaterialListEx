@@ -189,28 +189,28 @@ public:
 		Has开头的类型名函数带参数版本：查找当前Compound是否有特定Name的Tag，并返回此Name的Tag（转换到指定类型）的指针
 	*/
 #define TYPE_GET_FUNC(type)\
-inline const NBT_Type::##type &Get##type() const\
+const NBT_Type::##type &Get##type() const\
 {\
 	return *std::get<PtrType<NBT_Type::##type>>(data);\
 }\
 \
 template <typename = void>\
 requires(!bIsConst)\
-inline NBT_Type::##type &Get##type()\
+NBT_Type::##type &Get##type()\
 {\
 	return *std::get<PtrType<NBT_Type::##type>>(data);\
 }\
 \
-inline bool Is##type() const\
+bool Is##type() const\
 {\
 	return std::holds_alternative<PtrType<NBT_Type::##type>>(data);\
 }\
-friend inline std::conditional_t<bIsConst, const NBT_Type::##type &, NBT_Type::##type &> Get##type(NBT_Node_View & node)\
+friend std::conditional_t<bIsConst, const NBT_Type::##type &, NBT_Type::##type &> Get##type(NBT_Node_View & node)\
 {\
 	return node.Get##type();\
 }\
 \
-friend inline const NBT_Type::##type &Get##type(const NBT_Node_View & node)\
+friend const NBT_Type::##type &Get##type(const NBT_Node_View & node)\
 {\
 	return node.Get##type();\
 }

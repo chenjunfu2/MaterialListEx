@@ -111,7 +111,7 @@ private:
 		ERRCODE_END,//结束标记，统计负数部分大小
 	};
 
-	static inline const char *const errReason[] =//反向数组运算方式：(-ERRCODE_END - 1) + ErrCode
+	constexpr static inline const char *const errReason[] =
 	{
 		"AllOk",
 
@@ -137,7 +137,7 @@ private:
 		WARNCODE_END,
 	};
 
-	static inline const char *const warnReason[] =//正常数组，直接用WarnCode访问
+	constexpr static inline const char *const warnReason[] =//正常数组，直接用WarnCode访问
 	{
 		"NoWarn",
 
@@ -298,7 +298,7 @@ catch(...)\
 
 	// 读取大端序数值，bNoCheck为true则不进行任何检查
 	template<bool bNoCheck = false, typename T>
-	static inline std::conditional_t<bNoCheck, void, ErrCode> ReadBigEndian(InputStream &tData, T &tVal) noexcept
+	static std::conditional_t<bNoCheck, void, ErrCode> ReadBigEndian(InputStream &tData, T &tVal) noexcept
 	{
 		if constexpr (!bNoCheck)
 		{
@@ -332,7 +332,7 @@ catch(...)\
 		}
 	}
 
-	static inline ErrCode GetName(InputStream &tData, NBT_Type::String &tNameRet) noexcept
+	static ErrCode GetName(InputStream &tData, NBT_Type::String &tNameRet) noexcept
 	{
 	MYTRY;
 		ErrCode eRet = AllOk;
@@ -365,7 +365,7 @@ catch(...)\
 	}
 
 	template<typename T>
-	static inline ErrCode GetBuiltInType(InputStream &tData, T &tBuiltInRet) noexcept
+	static ErrCode GetBuiltInType(InputStream &tData, T &tBuiltInRet) noexcept
 	{
 		ErrCode eRet = AllOk;
 
@@ -387,7 +387,7 @@ catch(...)\
 	}
 
 	template<typename T>
-	static inline ErrCode GetArrayType(InputStream &tData, T &tArrayRet) noexcept
+	static ErrCode GetArrayType(InputStream &tData, T &tArrayRet) noexcept
 	{
 	MYTRY;
 		ErrCode eRet = AllOk;
@@ -505,7 +505,7 @@ catch(...)\
 	MYCATCH;
 	}
 
-	static inline ErrCode GetStringType(InputStream &tData, NBT_Type::String &tStringRet) noexcept
+	static ErrCode GetStringType(InputStream &tData, NBT_Type::String &tStringRet) noexcept
 	{
 		ErrCode eRet = AllOk;
 
@@ -716,7 +716,7 @@ public:
 		nRoot.emplace<NBT_Type::Compound>();//设置为compound
 
 		//初始化数据流对象
-		InputStream IptStream{ tData,szDataStartIndex };
+		InputStream IptStream(tData, szDataStartIndex);
 
 		//输出最大栈深度
 		printf("Max Stack Depth [%zu]\n", szStackDepth);

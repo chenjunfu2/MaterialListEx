@@ -28,12 +28,12 @@ public:
 	CSV_Tool(void) = default;
 
 	CSV_Tool(const CSV_Tool &) = delete;
-	CSV_Tool(CSV_Tool &&_Other) noexcept :
-		pFile(_Other.pFile),//因为是构造可以直接赋值，不用先关闭原先的
-		bNewLine(_Other.bNewLine)
+	CSV_Tool(CSV_Tool &&_Copy) noexcept :
+		pFile(_Copy.pFile),//因为是构造可以直接赋值，不用先关闭原先的
+		bNewLine(_Copy.bNewLine)
 	{
-		_Other.pFile = NULL;
-		_Other.bNewLine = true;
+		_Copy.pFile = NULL;
+		_Copy.bNewLine = true;
 	}
 
 	CSV_Tool(FILE *_pFile) :pFile(_pFile)
@@ -50,13 +50,13 @@ public:
 	}
 
 	CSV_Tool &operator=(const CSV_Tool &) = delete;
-	CSV_Tool &operator=(CSV_Tool &&_Other) noexcept
+	CSV_Tool &operator=(CSV_Tool &&_Copy) noexcept
 	{
 		CloseFile();//切记先关闭文件，这不是构造，之前可能存在已打开的文件
-		pFile = _Other.pFile;
-		bNewLine = _Other.bNewLine;
-		_Other.pFile = NULL;
-		_Other.bNewLine = true;
+		pFile = _Copy.pFile;
+		bNewLine = _Copy.bNewLine;
+		_Copy.pFile = NULL;
+		_Copy.bNewLine = true;
 	}
 	
 	operator bool(void)

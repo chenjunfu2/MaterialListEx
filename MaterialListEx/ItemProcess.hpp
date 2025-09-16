@@ -44,7 +44,7 @@ public:
 				_l.cpdTag	==	_r.cpdTag;//开销最大放最后
 	}
 
-	inline std::partial_ordering operator<=>(const ItemInfo &_r) const noexcept
+	std::partial_ordering operator<=>(const ItemInfo &_r) const noexcept
 	{
 		//先按照哈希序
 		if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
@@ -87,7 +87,7 @@ public:
 		return _l.u64Hash == _r.u64Hash && _l.sName == _r.sName;
 	}
 
-	inline std::strong_ordering operator<=>(const NoTagItemInfo &_r) const noexcept
+	std::strong_ordering operator<=>(const NoTagItemInfo &_r) const noexcept
 	{
 		//先按照哈希序
 		if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)

@@ -79,7 +79,7 @@ private:
 		ERRCODE_END,//结束标记
 	};
 
-	static inline const char *const errReason[] =//反向数组运算方式：(-ERRCODE_END - 1) + ErrCode
+	constexpr static inline const char *const errReason[] =
 	{
 		"AllOk",
 
@@ -104,7 +104,7 @@ private:
 		WARNCODE_END,
 	};
 
-	static inline const char *const warnReason[] =//正常数组，直接用WarnCode访问
+	constexpr static inline const char *const warnReason[] =//正常数组，直接用WarnCode访问
 	{
 		"NoWarn",
 	};
@@ -173,7 +173,7 @@ catch(...)\
 
 	//大小端转换
 	template<typename T>
-	static inline ErrCode WriteBigEndian(OutputStream &tData, const T &tVal) noexcept
+	static ErrCode WriteBigEndian(OutputStream &tData, const T &tVal) noexcept
 	{
 	MYTRY;
 		ErrCode eRet = AllOk;
@@ -287,11 +287,19 @@ catch(...)\
 		return eRet;
 	}
 
-	static ErrCode PutCompoundType(OutputStream &tData, const NBT_Type::Compound &nRoot, size_t szStackDepth) noexcept
+	static ErrCode PutCompoundType(OutputStream &tData, const NBT_Type::Compound &tCompound, size_t szStackDepth) noexcept
 	{
 		ErrCode eRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
 		//集合中如果存在nbt end类型的元素，删除而不输出
+		//注意compound是为数不多的没有元素数量限制的结构
+
+
+
+
+
+
+
 
 
 
@@ -385,7 +393,7 @@ public:
 	NBT_Writer(void) = delete;
 	~NBT_Writer(void) = delete;
 
-	static bool WriteNBT(DataType &tData, const NBT_Node &nRoot)
+	static bool WriteNBT(DataType &tData, const NBT_Node &nRoot, size_t szStackDepth = 512)
 	{
 
 

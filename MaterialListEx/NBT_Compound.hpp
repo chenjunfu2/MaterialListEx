@@ -13,8 +13,8 @@ class NBT_Reader;
 template <typename DataType>
 class NBT_Writer;
 
-template<typename Map>
-class MyCompound :protected Map
+template<typename Compound>
+class MyCompound :protected Compound//Compound is Map
 {
 	template <typename DataType>
 	friend class NBT_Reader;
@@ -26,7 +26,7 @@ private:
 	//template<typename V>
 	//bool TestType(V vTagVal)
 	//{
-	//	if constexpr (std::is_same_v<std::decay_t<V>, Map::mapped_type>)
+	//	if constexpr (std::is_same_v<std::decay_t<V>, Compound::mapped_type>)
 	//	{
 	//		return vTagVal.GetTag() != NBT_TAG::End;
 	//	}
@@ -36,157 +36,187 @@ private:
 	//	}
 	//}
 public:
+	//完美转发、初始化列表代理构造
 	template<typename... Args>
-	MyCompound(Args&&... args) : Map(std::forward<Args>(args)...)
+	MyCompound(Args&&... args) : Compound(std::forward<Args>(args)...)
 	{}
 
-	MyCompound(std::initializer_list<typename Map::value_type> init) : Map(init)
+	MyCompound(std::initializer_list<typename Compound::value_type> init) : Compound(init)
 	{}
 
+	//无参构造析构
+	MyCompound(void) = default;
 	~MyCompound(void) = default;
+
+	//移动拷贝构造
+	MyCompound(MyCompound &&_Move) noexcept :Compound(std::move(_Move))
+	{}
+
+	MyCompound(const MyCompound &_Copy) noexcept :Compound(_Copy)
+	{}
+
+	//赋值
+	MyCompound &operator=(MyCompound &&_Move) noexcept
+	{
+		Compound::operator=(std::move(_Move));
+		return *this;
+	}
+
+	MyCompound &operator=(const MyCompound &_Copy)
+	{
+		Compound::operator=(_Copy);
+		return *this;
+	}
+
+
+	//返回内部数据（父类）
+	const Compound &GetData(void) const noexcept
+	{
+		return *this;
+	}
 
 	//运算符重载
 	bool operator==(const MyCompound &_Right) const noexcept
 	{
-		return (const Map &)*this == (const Map &)_Right;
+		return (const Compound &)*this == (const Compound &)_Right;
 	}
 
 	bool operator!=(const MyCompound &_Right) const noexcept
 	{
-		return (const Map &)*this != (const Map &)_Right;
+		return (const Compound &)*this != (const Compound &)_Right;
 	}
 
 	std::partial_ordering operator<=>(const MyCompound &_Right) const noexcept
 	{
-		return (const Map &)*this <=> (const Map &)_Right;
+		return (const Compound &)*this <=> (const Compound &)_Right;
 	}
 
 	//暴露父类接口
-	using Map::begin;
-	using Map::end;
-	using Map::cbegin;
-	using Map::cend;
-	using Map::rbegin;
-	using Map::rend;
-	using Map::crbegin;
-	using Map::crend;
-	using Map::operator[];
+	using Compound::begin;
+	using Compound::end;
+	using Compound::cbegin;
+	using Compound::cend;
+	using Compound::rbegin;
+	using Compound::rend;
+	using Compound::crbegin;
+	using Compound::crend;
+	using Compound::operator[];
 
 	//简化map查询
-	inline typename Map::mapped_type &Get(const typename Map::key_type &sTagName)
+	typename Compound::mapped_type &Get(const typename Compound::key_type &sTagName)
 	{
-		return Map::at(sTagName);
+		return Compound::at(sTagName);
 	}
 
-	inline const typename Map::mapped_type &Get(const typename Map::key_type &sTagName) const
+	const typename Compound::mapped_type &Get(const typename Compound::key_type &sTagName) const
 	{
-		return Map::at(sTagName);
+		return Compound::at(sTagName);
 	}
 
-	inline typename Map::mapped_type *Search(const typename Map::key_type &sTagName) noexcept
+	typename Compound::mapped_type *Search(const typename Compound::key_type &sTagName) noexcept
 	{
-		auto find = Map::find(sTagName);
-		return find == Map::end() ? NULL : &((*find).second);
+		auto find = Compound::find(sTagName);
+		return find == Compound::end() ? NULL : &((*find).second);
 	}
 
-	inline const typename Map::mapped_type *Search(const typename Map::key_type &sTagName) const noexcept
+	const typename Compound::mapped_type *Search(const typename Compound::key_type &sTagName) const noexcept
 	{
-		auto find = Map::find(sTagName);
-		return find == Map::end() ? NULL : &((*find).second);
+		auto find = Compound::find(sTagName);
+		return find == Compound::end() ? NULL : &((*find).second);
 	}
 
 	//简化map插入
 	//使用完美转发，不丢失引用、右值信息
 	template <typename K, typename V>
-	inline std::pair<typename Map::iterator, bool> Put(K &&sTagName, V &&vTagVal)
-		requires std::constructible_from<typename Map::key_type, K &&> && std::constructible_from<typename Map::mapped_type, V &&>
+	std::pair<typename Compound::iterator, bool> Put(K &&sTagName, V &&vTagVal)
+		requires std::constructible_from<typename Compound::key_type, K &&> && std::constructible_from<typename Compound::mapped_type, V &&>
 	{
 		//总是允许插入nbt end，但是在写出文件时会忽略end类型
 		//if (!TestType(vTagVal))
 		//{
-		//	return std::pair{ Map::end(),false };
+		//	return std::pair{ Compound::end(),false };
 		//}
 
-		return Map::try_emplace(std::forward<K>(sTagName), std::forward<V>(vTagVal));
+		return Compound::try_emplace(std::forward<K>(sTagName), std::forward<V>(vTagVal));
 	}
 
-	inline std::pair<typename Map::iterator, bool> Put(const typename Map::value_type &mapValue)
+	std::pair<typename Compound::iterator, bool> Put(const typename Compound::value_type &mapValue)
 	{
 		//总是允许插入nbt end，但是在写出文件时会忽略end类型
 		//if (!TestType(mapValue.second.GetTag()))
 		//{
-		//	return std::pair{ Map::end(),false };
+		//	return std::pair{ Compound::end(),false };
 		//}
 
-		return Map::insert(mapValue);
+		return Compound::insert(mapValue);
 	}
 
-	inline std::pair<typename Map::iterator, bool> Put(typename Map::value_type &&mapValue)
+	std::pair<typename Compound::iterator, bool> Put(typename Compound::value_type &&mapValue)
 	{
 		//总是允许插入nbt end，但是在写出文件时会忽略end类型
 		//if (!TestType(mapValue.second.GetTag()))
 		//{
-		//	return std::pair{ Map::end(),false };
+		//	return std::pair{ Compound::end(),false };
 		//}
 
-		return Map::insert(std::move(mapValue));
+		return Compound::insert(std::move(mapValue));
 	}
 
 	//简化删除
-	inline bool Remove(const typename Map::key_type &sTagName)
+	bool Remove(const typename Compound::key_type &sTagName)
 	{
-		return Map::erase(sTagName) != 0;//返回1即为成功，否则为0，标准库：返回值为删除的元素数（0 或 1）。
+		return Compound::erase(sTagName) != 0;//返回1即为成功，否则为0，标准库：返回值为删除的元素数（0 或 1）。
 	}
 
-	inline void Clear(void)
+	void Clear(void)
 	{
-		Map::clear();
+		Compound::clear();
 	}
 
 	//功能函数
-	inline bool Empty(void) const noexcept
+	bool Empty(void) const noexcept
 	{
-		return Map::empty();
+		return Compound::empty();
 	}
 
-	inline size_t Size(void) const noexcept
+	size_t Size(void) const noexcept
 	{
-		return Map::size();
+		return Compound::size();
 	}
 
 	//简化判断
-	inline bool Contains(const typename Map::key_type &sTagName) const noexcept
+	bool Contains(const typename Compound::key_type &sTagName) const noexcept
 	{
-		return Map::contains(sTagName);
+		return Compound::contains(sTagName);
 	}
 
-	inline bool Contains(const typename Map::key_type &sTagName, const NBT_TAG &enTypeTag) const noexcept
+	bool Contains(const typename Compound::key_type &sTagName, const NBT_TAG &enTypeTag) const noexcept
 	{
 		auto *p = Search(sTagName);
 		return p != NULL && p->GetTag() == enTypeTag;
 	}
 
 #define TYPE_GET_FUNC(type)\
-inline const typename NBT_Type::##type &Get##type(const typename Map::key_type & sTagName) const\
+const typename NBT_Type::##type &Get##type(const typename Compound::key_type & sTagName) const\
 {\
-	return Map::at(sTagName).Get##type();\
+	return Compound::at(sTagName).Get##type();\
 }\
 \
-inline typename NBT_Type::##type &Get##type(const typename Map::key_type & sTagName)\
+typename NBT_Type::##type &Get##type(const typename Compound::key_type & sTagName)\
 {\
-	return Map::at(sTagName).Get##type();\
+	return Compound::at(sTagName).Get##type();\
 }\
 \
-inline const typename NBT_Type::##type *Has##type(const typename Map::key_type & sTagName) const noexcept\
+const typename NBT_Type::##type *Has##type(const typename Compound::key_type & sTagName) const noexcept\
 {\
-	auto find = Map::find(sTagName);\
-	return find != Map::end() && find->second.Is##type() ? &(find->second.Get##type()) : NULL;\
+	auto find = Compound::find(sTagName);\
+	return find != Compound::end() && find->second.Is##type() ? &(find->second.Get##type()) : NULL;\
 }\
 \
-inline typename NBT_Type::##type *Has##type(const typename Map::key_type & sTagName) noexcept\
+typename NBT_Type::##type *Has##type(const typename Compound::key_type & sTagName) noexcept\
 {\
-	auto find = Map::find(sTagName);\
-	return find != Map::end() && find->second.Is##type() ? &(find->second.Get##type()) : NULL;\
+	auto find = Compound::find(sTagName);\
+	return find != Compound::end() && find->second.Is##type() ? &(find->second.Get##type()) : NULL;\
 }
 
 	TYPE_GET_FUNC(End);
@@ -207,15 +237,15 @@ inline typename NBT_Type::##type *Has##type(const typename Map::key_type & sTagN
 
 #define TYPE_PUT_FUNC(type)\
 template <typename K>\
-inline std::pair<typename Map::iterator, bool> Put##type(K &&sTagName, const typename NBT_Type::##type &vTagVal)\
-	requires std::constructible_from<typename Map::key_type, K &&>\
+std::pair<typename Compound::iterator, bool> Put##type(K &&sTagName, const typename NBT_Type::##type &vTagVal)\
+	requires std::constructible_from<typename Compound::key_type, K &&>\
 {\
 	return Put(std::forward<K>(sTagName), vTagVal);\
 }\
 \
 template <typename K>\
-inline std::pair<typename Map::iterator, bool> Put##type(K &&sTagName, typename NBT_Type::##type &&vTagVal)\
-	requires std::constructible_from<typename Map::key_type, K &&>\
+std::pair<typename Compound::iterator, bool> Put##type(K &&sTagName, typename NBT_Type::##type &&vTagVal)\
+	requires std::constructible_from<typename Compound::key_type, K &&>\
 {\
 	return Put(std::forward<K>(sTagName), vTagVal);\
 }
