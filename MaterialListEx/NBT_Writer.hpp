@@ -138,14 +138,12 @@ private:
 
 #define STACK_TRACEBACK(fmt, ...) printf("In [" _RP___FUNCSIG__ "] Line:[" _RP___LINE__ "]: \n"##fmt "\n\n", ##__VA_ARGS__);
 #define CHECK_STACK_DEPTH(Depth) \
+if((Depth) <= 0)\
 {\
-	if((Depth) <= 0)\
-	{\
-		eRet = Error(StackDepthExceeded, tData, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
-		STACK_TRACEBACK("(Depth) <= 0");\
-		return eRet;\
-	}\
-}
+	eRet = Error(StackDepthExceeded, tData, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
+	STACK_TRACEBACK("(Depth) <= 0");\
+	return eRet;\
+}\
 
 #define MYTRY \
 try\
@@ -209,8 +207,9 @@ catch(...)\
 		//检查大小是否符合上限
 		if (szStringLength > (size_t)NBT_Type::StringLength_Max)
 		{
-			eRet = Error(StringTooLongError, tData, __FUNCSIG__ ": sName.length()[%zu] > UINT16_MAX[%zu]", sName.length(), UINT16_MAX);
-			//STACK_TRACEBACK
+			eRet = Error(StringTooLongError, tData, __FUNCSIG__ ": szStringLength[%zu] > StringLength_Max[%zu]",
+				szStringLength, (size_t)NBT_Type::StringLength_Max);
+			STACK_TRACEBACK("szStringLength Test");
 			return eRet;
 		}
 
@@ -242,7 +241,7 @@ catch(...)\
 		eRet = WriteBigEndian(tData, tTmpRawData);
 		if (eRet < AllOk)
 		{
-			STACK_TRACEBACK("Name: \"%s\" tTmpRawData Write");
+			STACK_TRACEBACK("tTmpRawData Write");
 			return eRet;
 		}
 
@@ -259,8 +258,9 @@ catch(...)\
 		size_t szArrayLength = tArray.size();
 		if (szArrayLength > (size_t)NBT_Type::ArrayLength_Max)
 		{
-			//error
-			//stack
+			eRet = Error(ArrayTooLongError, tData, __FUNCSIG__ ": szArrayLength[%zu] > ArrayLength_Max[%zu]",
+				szArrayLength, (size_t)NBT_Type::ArrayLength_Max);
+			STACK_TRACEBACK("szArrayLength Test");
 			return eRet;
 		}
 
@@ -269,7 +269,7 @@ catch(...)\
 		eRet = WriteBigEndian(tData, iArrayLength);
 		if (eRet < AllOk)
 		{
-			//stack
+			STACK_TRACEBACK("iArrayLength Write");
 			return eRet;
 		}
 
@@ -280,7 +280,7 @@ catch(...)\
 			eRet = WriteBigEndian(tData, tTmpData);
 			if (eRet < AllOk)
 			{
-				//stack
+				STACK_TRACEBACK("tTmpData Write");
 				return eRet;
 			}
 		}
@@ -340,7 +340,7 @@ catch(...)\
 		eRet = PutName(tData, tString);//借用PutName实现，因为string走的name相同操作
 		if (eRet < AllOk)
 		{
-			//stack
+			STACK_TRACEBACK("PutString");//因为是借用实现，所以这里小小的改个名，防止报错Name误导人
 			return eRet;
 		}
 
@@ -356,8 +356,9 @@ catch(...)\
 		size_t szListLength = tList.size();
 		if (szListLength > (size_t)NBT_Type::ListLength_Max)//大于的情况下强制赋值会导致严重问题，只能返回错误
 		{
-			//error
-			//stack
+			eRet = Error(ListTooLongError, tData, __FUNCSIG__ ": szListLength[%zu] > ListLength_Max[%zu]",
+				szListLength, (size_t)NBT_Type::ListLength_Max);
+			STACK_TRACEBACK("szListLength Test");
 			return eRet;
 		}
 
@@ -366,10 +367,11 @@ catch(...)\
 
 		//判断：长度不为0但是拥有空标签
 		NBT_TAG enListValueTag = tList.enElementTag;
-		if (iListLength != 0 && enListValueTag == NBT_TAG::End)
+		if (enListValueTag == NBT_TAG::End && iListLength != 0)
 		{
-			//error
-			//stack
+			eRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": The list with TAG_End[0x00] tag must be empty, but [%d] elements were found",
+				iListLength);
+			STACK_TRACEBACK("iListLength And enListValueTag Test");
 			return eRet;
 		}
 
@@ -380,7 +382,7 @@ catch(...)\
 		eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)enListElementTag);
 		if (eRet < AllOk)
 		{
-			//stack
+			STACK_TRACEBACK("enListElementTag Write");
 			return eRet;
 		}
 
@@ -388,7 +390,7 @@ catch(...)\
 		eRet = WriteBigEndian(tData, iListLength);
 		if (eRet < AllOk)
 		{
-			//stack
+			STACK_TRACEBACK("iListLength Write");
 			return eRet;
 		}
 
@@ -403,8 +405,10 @@ catch(...)\
 			//对于每个元素，检查类型是否与列表存储一致
 			if (curTag != enListElementTag)
 			{
-				//error
-				//stack
+				eRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": Expected type [NBT_Type::%s][0x%02X(%d)] in list, but found type [NBT_Type::%s][0x%02X(%d)]",
+				NBT_Type::GetTypeName(enListElementTag), (NBT_TAG_RAW_TYPE)enListElementTag, (NBT_TAG_RAW_TYPE)enListElementTag,
+				NBT_Type::GetTypeName(curTag), (NBT_TAG_RAW_TYPE)curTag, (NBT_TAG_RAW_TYPE)curTag);
+				STACK_TRACEBACK("curTag Test");
 				return eRet;
 			}
 
@@ -413,7 +417,7 @@ catch(...)\
 			eRet = PutSwitch(tData, tmpNode, enListElementTag, szStackDepth - 1);
 			if (eRet != AllOk)
 			{
-				//stack
+				STACK_TRACEBACK("PutSwitch Error, Size: [%d] Index: [%d]", iListLength, i);
 				return eRet;
 			}
 		}
@@ -525,11 +529,20 @@ public:
 	NBT_Writer(void) = delete;
 	~NBT_Writer(void) = delete;
 
-	static bool WriteNBT(DataType &tData, const NBT_Node &nRoot, size_t szStackDepth = 512)
+	//输出到tData中，部分功能和原理参照ReadNBT处的注释，szDataStartIndex在此处可以对一个tData通过不同的tCompound和szDataStartIndex = tData.size()
+	//来调用以达到把多个不同的nbt输出到同一个tData内的功能
+	static bool WriteNBT(DataType &tData, const NBT_Type::Compound &tCompound, size_t szDataStartIndex = 0, size_t szStackDepth = 512) noexcept
 	{
+	MYTRY;
+		//初始化数据流对象
+		OutputStream OptStream(tData, szDataStartIndex);
 
+		//输出最大栈深度
+		printf("Max Stack Depth [%zu]\n", szStackDepth);
 
-		return true;
+		//开始递归输出
+		return PutCompoundType(OptStream, tCompound, szStackDepth);
+	MYCATCH;//以防万一还是需要捕获一下
 	}
 
 

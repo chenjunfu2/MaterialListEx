@@ -261,14 +261,12 @@ private:
 
 #define STACK_TRACEBACK(fmt, ...) printf("In [" _RP___FUNCSIG__ "] Line:[" _RP___LINE__ "]: \n"##fmt "\n\n", ##__VA_ARGS__);
 #define CHECK_STACK_DEPTH(Depth) \
+if((Depth) <= 0)\
 {\
-	if((Depth) <= 0)\
-	{\
-		eRet = Error(StackDepthExceeded, tData, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
-		STACK_TRACEBACK("(Depth) <= 0");\
-		return eRet;\
-	}\
-}
+	eRet = Error(StackDepthExceeded, tData, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
+	STACK_TRACEBACK("(Depth) <= 0");\
+	return eRet;\
+}\
 
 #define MYTRY \
 try\
@@ -306,7 +304,7 @@ catch(...)\
 			{
 				ErrCode eRet = Error(OutOfRangeError, tData, "tData size [%zu], current index [%zu], remaining data size [%zu], but try to read [%zu]",
 					tData.Size(), tData.Index(), tData.Size() - tData.Index(), sizeof(T));
-				STACK_TRACEBACK("HasAvailData");
+				STACK_TRACEBACK("HasAvailData Test");
 				return eRet;
 			}
 		}
@@ -350,7 +348,7 @@ catch(...)\
 		{
 			ErrCode eRet = Error(OutOfRangeError, tData, __FUNCSIG__ ": (Index[%zu] + wStringLength[%zu])[%zu] > DataSize[%zu]",
 				tData.Index(), (size_t)wStringLength, tData.Index() + (size_t)wStringLength, tData.Size());
-			STACK_TRACEBACK("HasAvailData");
+			STACK_TRACEBACK("HasAvailData Test");
 			return eRet;
 		}
 
@@ -457,7 +455,7 @@ catch(...)\
 			{
 				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch default: Unknown Type Tag[0x%02X(%d)]",
 					(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);//此处不进行提前返回，往后默认返回处理
-				STACK_TRACEBACK("tagNbt >= NBT_TAG::ENUM_END");
+				STACK_TRACEBACK("tagNbt Test");
 				return eRet;//超出范围立刻返回
 			}
 
@@ -466,7 +464,7 @@ catch(...)\
 			eRet = GetName(tData, sName);
 			if (eRet != AllOk)
 			{
-				STACK_TRACEBACK("GetName Fail, Name: \"\" [NBT_Type::%s]", NBT_Type::GetTypeName(tagNbt));
+				STACK_TRACEBACK("GetName Fail, Type [NBT_Type::%s]", NBT_Type::GetTypeName(tagNbt));
 				return eRet;//名称读取失败立刻返回
 			}
 
@@ -565,7 +563,8 @@ catch(...)\
 		//防止重复N个结束标签，带有结束标签的必须是空列表
 		if (enListElementTag == NBT_TAG::End && iListLength != 0)
 		{
-			eRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": The list with TAG_End[0x00] tag must be empty, but [%d] elements were found", iListLength);
+			eRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": The list with TAG_End[0x00] tag must be empty, but [%d] elements were found",
+				iListLength);
 			STACK_TRACEBACK("enListElementTag And iListLength Test");
 			return eRet;
 		}
@@ -587,7 +586,7 @@ catch(...)\
 			eRet = GetSwitch(tData, tmpNode, (NBT_TAG)enListElementTag, szStackDepth - 1);
 			if (eRet != AllOk)//错误处理
 			{
-				STACK_TRACEBACK("Size: [%d] Index: [%d]", iListLength, i);
+				STACK_TRACEBACK("GetSwitch Error, Size: [%d] Index: [%d]", iListLength, i);
 				return eRet;
 			}
 
@@ -734,6 +733,7 @@ public:
 
 	//szStackDepth 控制栈深度，递归层检查仅由可嵌套的可能进行递归的函数进行，栈深度递减仅由对选择函数的调用进行
 	//注意此函数不会清空tCompound，所以可以对一个tCompound通过不同的tData多次调用来读取多个nbt片段并合并到一起
+	//如果指定了szDataStartIndex则会忽略tData中长度为szDataStartIndex的数据
 	static bool ReadNBT(NBT_Type::Compound &tCompound, const DataType &tData, size_t szDataStartIndex = 0, size_t szStackDepth = 512) noexcept//从data中读取nbt
 	{
 	MYTRY;
