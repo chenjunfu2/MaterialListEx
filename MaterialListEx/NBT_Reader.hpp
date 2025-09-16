@@ -313,7 +313,7 @@ catch(...)\
 
 		if constexpr (sizeof(T) == 1)
 		{
-			tVal = (T)(NBT_TAG_RAW_TYPE)tData.GetNext();
+			tVal = (T)(uint8_t)tData.GetNext();
 		}
 		else
 		{
@@ -321,7 +321,7 @@ catch(...)\
 			for (size_t i = 0; i < sizeof(T); ++i)
 			{
 				tTmp <<= 8;
-				tTmp |= (T)(NBT_TAG_RAW_TYPE)tData.GetNext();//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
+				tTmp |= (T)(uint8_t)tData.GetNext();//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
 			}
 			tVal = tTmp;
 		}
