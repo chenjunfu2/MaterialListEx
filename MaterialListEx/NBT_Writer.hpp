@@ -101,7 +101,7 @@ private:
 	};
 
 	//记得同步数组！
-	static_assert(sizeof(errReason) / sizeof(errReason[0]) == (-ERRCODE_END), "errReason array out sync");
+	static_assert(sizeof(errReason) / sizeof(errReason[0]) == (ERRCODE_END), "errReason array out sync");
 
 	enum WarnCode : uint8_t
 	{
