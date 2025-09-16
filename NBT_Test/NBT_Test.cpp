@@ -200,6 +200,9 @@ int main(int argc, char *argv[])
 
 	NBT_Helper::Print(test);
 
+
+	NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(test,)
+
 	return 0;
 
 
