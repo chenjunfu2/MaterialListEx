@@ -9,7 +9,7 @@ template <typename DataType>
 class NBT_Writer;
 
 template<typename Array>
-class MyArray :public Array
+class MyArray :public Array//暂时不考虑保护继承
 {
 	template <typename DataType>
 	friend class NBT_Reader;
