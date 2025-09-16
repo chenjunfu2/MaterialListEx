@@ -407,7 +407,7 @@ catch(...)\
 			if (eRet != AllOk)
 			{
 				STACK_TRACEBACK("curTag Write");
-				break;
+				return eRet;
 			}
 
 			//然后写出name
@@ -415,7 +415,7 @@ catch(...)\
 			if (eRet != AllOk)
 			{
 				STACK_TRACEBACK("PutName Fail, Type: [NBT_Type::%s]", NBT_Type::GetTypeName(curTag));
-				break;
+				return eRet;
 			}
 
 			//最后根据tag类型写出数据
@@ -424,8 +424,16 @@ catch(...)\
 			{
 				STACK_TRACEBACK("PutSwitch Fail, Name: \"%s\", Type: [NBT_Type::%s]",
 					U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(curTag));
-				break;
+				return eRet;
 			}
+		}
+
+		//注意Compound类型有一个NBT_TAG::End结尾，且不论是否写出错误，结尾都必须存在
+		eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)NBT_TAG::End);
+		if (eRet != AllOk)
+		{
+			STACK_TRACEBACK("NBT_TAG::End[0x00(0)] Write");
+			return eRet;
 		}
 
 		return eRet;

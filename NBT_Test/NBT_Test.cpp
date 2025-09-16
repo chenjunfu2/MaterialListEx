@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 
 	//NBT_IO::IsFileExist("TestNbt.nbt");
 	std::basic_string<uint8_t> tData{};
-	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(tData, test) ||
+	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(tData, { {"",std::move(test)} }) ||
 		!NBT_IO::WriteFile("TestNbt.nbt", tData))
 	{
 		printf("write fail\n");
