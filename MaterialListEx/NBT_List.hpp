@@ -436,7 +436,7 @@ std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::i
 template <bool bNoCheck = false>\
 std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Add##type(size_t szPos, typename NBT_Type::##type &&vTagVal)\
 {\
-	return Add<bNoCheck>(szPos, vTagVal);\
+	return Add<bNoCheck>(szPos, std::move(vTagVal));\
 }\
 \
 template <bool bNoCheck = false>\
@@ -448,7 +448,7 @@ std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::i
 template <bool bNoCheck = false>\
 std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> AddBack##type(typename NBT_Type::##type &&vTagVal)\
 {\
-	return AddBack<bNoCheck>(vTagVal);\
+	return AddBack<bNoCheck>(std::move(vTagVal));\
 }\
 \
 template <bool bNoCheck = false>\
@@ -460,7 +460,7 @@ std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::i
 template <bool bNoCheck = false>\
 std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Set##type(size_t szPos, typename NBT_Type::##type &&vTagVal)\
 {\
-	return Set<bNoCheck>(szPos, vTagVal);\
+	return Set<bNoCheck>(szPos, std::move(vTagVal));\
 }
 
 	TYPE_PUT_FUNC(End);

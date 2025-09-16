@@ -247,7 +247,7 @@ template <typename K>\
 std::pair<typename Compound::iterator, bool> Put##type(K &&sTagName, typename NBT_Type::##type &&vTagVal)\
 	requires std::constructible_from<typename Compound::key_type, K &&>\
 {\
-	return Put(std::forward<K>(sTagName), vTagVal);\
+	return Put(std::forward<K>(sTagName), std::move(vTagVal));\
 }
 
 	TYPE_PUT_FUNC(End);

@@ -197,6 +197,7 @@ int main(int argc, char *argv[])
 	list.AddBack(std::move(test));
 	list.AddBack(NBT_Type::Compound{ {"yeee",NBT_Type::String("eeeey")} });
 
+	test.PutList("root", std::move(list));
 
 	//putchar('\n');
 	//PrintBool(test.Contains("test"));
@@ -209,11 +210,11 @@ int main(int argc, char *argv[])
 	//putchar('\n');
 
 	printf("before write:\n");
-	NBT_Helper::Print(list);
+	NBT_Helper::Print(test);
 
 	//NBT_IO::IsFileExist("TestNbt.nbt");
 	std::basic_string<uint8_t> tData{};
-	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(tData, NBT_Type::Compound{ {"",std::move(list)} }) ||//构造一个空名称compound
+	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(tData, NBT_Type::Compound{ {"",std::move(test)} }) ||//构造一个空名称compound
 		!NBT_IO::WriteFile("TestNbt.nbt", tData))
 	{
 		printf("write fail\n");
