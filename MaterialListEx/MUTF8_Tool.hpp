@@ -11,8 +11,8 @@ class MUTF8_Tool
 	static_assert(sizeof(MU8T) == 1, "MU8T size must be at 1 byte");
 	static_assert(sizeof(U16T) == 2, "U16T size must be at 2 bytes");
 
-	MUTF8_Tool() = delete;
-	~MUTF8_Tool() = delete;
+	MUTF8_Tool(void) = delete;
+	~MUTF8_Tool(void) = delete;
 private:
 	template<size_t szBytes>
 	static void EncodeMUTF8Bmp(const U16T u16Char, MU8T(&mu8CharArr)[szBytes])

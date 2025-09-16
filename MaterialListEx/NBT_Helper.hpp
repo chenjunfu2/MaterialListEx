@@ -11,7 +11,6 @@
 
 class NBT_Helper
 {
-public:
 	NBT_Helper() = delete;
 	~NBT_Helper() = delete;
 public:

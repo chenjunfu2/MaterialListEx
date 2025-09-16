@@ -20,6 +20,8 @@
 
 class NBT_IO
 {
+	NBT_IO(void) = delete;
+	~NBT_IO(void) = delete;
 public:
 	static bool WriteFile(const char *const _FileName, const std::basic_string<uint8_t> &_Data)
 	{

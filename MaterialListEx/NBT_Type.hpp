@@ -21,6 +21,8 @@ class MyCompound;
 
 class NBT_Type
 {
+	NBT_Type(void) = delete;
+	~NBT_Type(void) = delete;
 public:
 	using Float_Raw = uint32_t;
 	using Double_Raw = uint64_t;
@@ -76,7 +78,7 @@ private:
 		"Compound",
 	};
 public:
-	constexpr static inline const char *GetTypeName(NBT_TAG tag)//运行时类型判断，允许静态
+	constexpr static inline const char *GetTypeName(NBT_TAG tag) noexcept//运行时类型判断，允许静态
 	{
 		if (tag >= NBT_TAG::ENUM_END)
 		{

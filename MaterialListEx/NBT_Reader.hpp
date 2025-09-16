@@ -88,6 +88,9 @@ public:
 template <typename DataType = std::basic_string<uint8_t>>
 class NBT_Reader
 {
+	NBT_Reader(void) = delete;
+	~NBT_Reader(void) = delete;
+
 	using InputStream = MyInputStream<DataType>;//流类型
 private:
 	enum ErrCode : uint8_t
@@ -709,9 +712,6 @@ catch(...)\
 	}
 
 public:
-	NBT_Reader(void) = delete;
-	~NBT_Reader(void) = delete;
-
 	/*
 	备注：此函数读取nbt时，会创建一个默认根，然后把nbt内所有数据集合到此默认根上，
 	也就是哪怕按照mojang的nbt标准，默认根是无名Compound，也会被挂接到返回值里的

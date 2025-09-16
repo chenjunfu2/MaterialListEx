@@ -66,6 +66,9 @@ public:
 template <typename DataType = std::basic_string<uint8_t>>
 class NBT_Writer
 {
+	NBT_Writer(void) = delete;
+	~NBT_Writer(void) = delete;
+
 	using OutputStream = MyOutputStream<DataType>;//流类型
 private:
 	enum ErrCode : uint8_t
@@ -621,9 +624,6 @@ catch(...)\
 	}
 
 public:
-	NBT_Writer(void) = delete;
-	~NBT_Writer(void) = delete;
-
 	//输出到tData中，部分功能和原理参照ReadNBT处的注释，szDataStartIndex在此处可以对一个tData通过不同的tCompound和szDataStartIndex = tData.size()
 	//来调用以达到把多个不同的nbt输出到同一个tData内的功能
 	static bool WriteNBT(DataType &tData, const NBT_Type::Compound &tCompound, size_t szDataStartIndex = 0, size_t szStackDepth = 512) noexcept
