@@ -633,7 +633,7 @@ public:
 		OutputStream OptStream(tData, szDataStartIndex);
 
 		//输出最大栈深度
-		printf("Max Stack Depth [%zu]\n", szStackDepth);
+		//printf("Max Stack Depth [%zu]\n", szStackDepth);
 
 		//开始递归输出
 		return PutCompoundType(OptStream, tCompound, szStackDepth) == AllOk;

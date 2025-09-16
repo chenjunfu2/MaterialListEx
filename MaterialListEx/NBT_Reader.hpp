@@ -738,7 +738,7 @@ public:
 		InputStream IptStream(tData, szDataStartIndex);
 
 		//输出最大栈深度
-		printf("Max Stack Depth [%zu]\n", szStackDepth);
+		//printf("Max Stack Depth [%zu]\n", szStackDepth);
 
 		//开始递归读取
 		return GetCompoundType<true>(IptStream, tCompound, szStackDepth) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
