@@ -148,33 +148,56 @@ return 0;
 int main(int argc, char *argv[])
 {
 	std::basic_string<uint8_t> tR{};
-	NBT_IO::ReadFile("TestNbt.nbt", tR);
-
 	NBT_Type::Compound cpd;
-	NBT_Reader<std::basic_string<uint8_t>>::ReadNBT(cpd, tR);
+	if (!NBT_IO::ReadFile("TestNbt.nbt", tR) ||
+		!NBT_Reader<std::basic_string<uint8_t>>::ReadNBT(cpd, tR))
+	{
+		printf("TestNbt Read Fail!\nData before the error was encountered:\n");
+	}
+	else
+	{
+		printf("TestNbt Read Ok!\nData:\n");
+	}
 	NBT_Helper::Print(cpd);
+	
 
 	NBT_Node nn0{ NBT_Type::Compound{} }, nn1{ NBT_Type::List{} };
 
 	NBT_Type::Compound &test = nn0.GetCompound();
 	//NBT_Type::Compound &test = GetCompound(nn0);
-	test.Put("test", 1LL);
-	test.PutByte("test2", 1LL);
-	test.PutInt("test3", 1LL);
-	//test.PutEnd("testend", {});
-
+	test.PutEnd("testend", {});
+	test.PutString("str0", "0000000");
+	test.PutByte("byte1", 1);
+	test.PutShort("short2", 2);
+	test.PutInt("int3", 3);
+	test.PutLong("long4", 4);
+	test.PutFloat("float5", 5.0f);
+	test.PutDouble("double6", 6.0);
 
 	//NBT_Type::List &list = nn1.GetList();
 	NBT_Type::List &list = GetList(nn1);
 	list.AddBack(NBT_Type::End{});
 	list.AddBack((NBT_Type::Int)1);
-	list.AddBack((NBT_Type::Int)2);
+	list.AddBack((NBT_Type::Int)9);
 	list.AddBack((NBT_Type::Int)3);
+	list.AddBack((NBT_Type::Int)5);
+	list.AddBack((NBT_Type::Int)7);
+	list.AddBack((NBT_Type::Int)0);
 	list.AddBack(NBT_Type::End{});
 
-	test.Put("list", list);
-	NBT_Helper::Print(list);
+	test.Put("list7", std::move(list));
+
+	test.PutCompound("compound8", test);
 	
+	test.PutByteArray("byte array9", { (NBT_Type::Byte)'a',(NBT_Type::Byte)'b',(NBT_Type::Byte)'c',(NBT_Type::Byte)255,(NBT_Type::Byte)0 });
+	test.PutIntArray("int array10", { 192,168,0,1,6666,555,99999999,2147483647,(NBT_Type::Int)2147483647 + 1 });
+	test.PutLongArray("long array11", { 0,0,0,0,-1,-1,-9,1'1451'4191'9810,233 });
+	
+
+	list.AddBack(std::move(test));
+	list.AddBack(NBT_Type::Compound{ {"yeee",NBT_Type::String("eeeey")} });
+
+
 	//putchar('\n');
 	//PrintBool(test.Contains("test"));
 	//putchar('\n');
@@ -185,11 +208,12 @@ int main(int argc, char *argv[])
 	//PrintBool(test.Contains("test2", NBT_TAG::Byte));
 	//putchar('\n');
 
-	NBT_Helper::Print(test);
+	printf("before write:\n");
+	NBT_Helper::Print(list);
 
 	//NBT_IO::IsFileExist("TestNbt.nbt");
 	std::basic_string<uint8_t> tData{};
-	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(tData, { {"",std::move(test)} }) ||
+	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(tData, NBT_Type::Compound{ {"",std::move(list)} }) ||//构造一个空名称compound
 		!NBT_IO::WriteFile("TestNbt.nbt", tData))
 	{
 		printf("write fail\n");
@@ -198,10 +222,11 @@ int main(int argc, char *argv[])
 
 	printf("write success\n");
 
+
+
+
 	return 0;
-
-
-
+	/*
 	using mp = std::pair<const NBT_Type::String, NBT_Node>;
 
 	NBT_Node 
@@ -295,7 +320,5 @@ int main(int argc, char *argv[])
 	
 
 	return 0;
-
-
-	return 0;
+	*/
 }

@@ -204,11 +204,11 @@ private:
 		//输出提示信息
 		if constexpr (std::is_same_v<T, ErrCode>)
 		{
-			printf("\nSkip err data and return...\n\n");
+			printf("\nSkip err and return...\n\n");
 		}
 		else if constexpr (std::is_same_v<T, WarnCode>)
 		{
-			printf("\nSkip warn data and continue...\n\n");
+			printf("\nSkip warn and continue...\n\n");
 		}
 		else
 		{
