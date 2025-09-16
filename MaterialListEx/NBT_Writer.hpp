@@ -75,6 +75,7 @@ private:
 		StringTooLongError,//字符串过长错误
 		ArrayTooLongError,//数组过长错误
 		ListTooLongError,//列表过长错误
+		NbtTypeTagError,//NBT标签类型错误
 
 		ERRCODE_END,//结束标记
 	};
@@ -91,6 +92,7 @@ private:
 		"StringTooLongError",
 		"ArrayTooLongError",
 		"ListTooLongError",
+		"NbtTypeTagError",
 	};
 
 	//记得同步数组！
@@ -419,13 +421,102 @@ catch(...)\
 		return eRet;
 	}
 
-	static ErrCode PutSwitch(OutputStream &tData, const NBT_Node &nRoot, NBT_TAG tagNbt, size_t szStackDepth) noexcept
+	static ErrCode PutSwitch(OutputStream &tData, const NBT_Node &nodeNbt, NBT_TAG tagNbt, size_t szStackDepth) noexcept
 	{
 		ErrCode eRet = AllOk;
 
+		switch (tagNbt)
+		{
+		case NBT_TAG::Byte:
+			{
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Byte>;
+				eRet = PutbuiltInType<CurType>(tData, nodeNbt.GetData<CurType>());
+			}
+			break;
+		case NBT_TAG::Short:
+			{
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Short>;
+				eRet = PutbuiltInType<CurType>(tData, nodeNbt.GetData<CurType>());
+			}
+			break;
+		case NBT_TAG::Int:
+			{
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Int>;
+				eRet = PutbuiltInType<CurType>(tData, nodeNbt.GetData<CurType>());
+			}
+			break;
+		case NBT_TAG::Long:
+			{
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Long>;
+				eRet = PutbuiltInType<CurType>(tData, nodeNbt.GetData<CurType>());
+			}
+			break;
+		case NBT_TAG::Float:
+			{
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Float>;
+				eRet = PutbuiltInType<CurType>(tData, nodeNbt.GetData<CurType>());
+			}
+			break;
+		case NBT_TAG::Double:
+			{
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::Double>;
+				eRet = PutbuiltInType<CurType>(tData, nodeNbt.GetData<CurType>());
+			}
+			break;
+		case NBT_TAG::ByteArray:
+			{
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::ByteArray>;
+				eRet = PutArrayType<CurType>(tData, nodeNbt.GetData<CurType>());
+			}
+			break;
+		case NBT_TAG::String://类型唯一，非模板函数
+			{
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::String>;
+				eRet = PutStringType(tData, nodeNbt.GetData<CurType>());
+			}
+			break;
+		case NBT_TAG::List://可能递归，需要处理szStackDepth
+			{
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::String>;
+				eRet = PutListType(tData, nodeNbt.GetData<CurType>(), szStackDepth);
+			}
+			break;
+		case NBT_TAG::Compound://可能递归，需要处理szStackDepth
+			{
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::String>;
+				eRet = PutCompoundType(tData, nodeNbt.GetData<CurType>(), szStackDepth);
+			}
+			break;
+		case NBT_TAG::IntArray:
+			{
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::IntArray>;
+				eRet = PutArrayType<CurType>(tData, nodeNbt.GetData<CurType>());
+			}
+			break;
+		case NBT_TAG::LongArray:
+			{
+				using CurType = NBT_Type::TagToType_T<NBT_TAG::LongArray>;
+				eRet = PutArrayType<CurType>(tData, nodeNbt.GetData<CurType>());
+			}
+			break;
+		case NBT_TAG::End://注意end标签绝对不可以进来
+			{
+				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch error: Unexpected Type Tag NBT_TAG::End[0x00(0)]");
+			}
+			break;
+		default://数据出错
+			{
+				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch error: Unknown Type Tag[0x%02X(%d)]",
+					(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);//此处不进行提前返回，往后默认返回处理
+			}
+			break;
+		}
 
-
-
+		if (eRet != AllOk)//如果出错，打一下栈回溯
+		{
+			STACK_TRACEBACK("Tag[0x%02X(%d)] write error!",
+				(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);
+		}
 
 		return eRet;
 	}

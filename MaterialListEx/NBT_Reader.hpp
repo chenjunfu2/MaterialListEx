@@ -332,7 +332,7 @@ catch(...)\
 		}
 	}
 
-	static ErrCode GetName(InputStream &tData, NBT_Type::String &tNameRet) noexcept
+	static ErrCode GetName(InputStream &tData, NBT_Type::String &tName) noexcept
 	{
 	MYTRY;
 		ErrCode eRet = AllOk;
@@ -356,8 +356,8 @@ catch(...)\
 
 		
 		//解析出名称
-		tNameRet.reserve(wStringLength);//提前分配
-		tNameRet.assign(tData.Current(), tData.Next(wStringLength));//构造string（如果长度为0则构造0长字符串，合法行为）
+		tName.reserve(wStringLength);//提前分配
+		tName.assign(tData.Current(), tData.Next(wStringLength));//构造string（如果长度为0则构造0长字符串，合法行为）
 		tData.AddIndex(wStringLength);//移动下标
 
 		return eRet;
@@ -365,7 +365,7 @@ catch(...)\
 	}
 
 	template<typename T>
-	static ErrCode GetBuiltInType(InputStream &tData, T &tBuiltInRet) noexcept
+	static ErrCode GetBuiltInType(InputStream &tData, T &tBuiltIn) noexcept
 	{
 		ErrCode eRet = AllOk;
 
@@ -382,12 +382,12 @@ catch(...)\
 		}
 
 		//转换并返回
-		tBuiltInRet = std::move(std::bit_cast<T>(tTmpRawData));
+		tBuiltIn = std::move(std::bit_cast<T>(tTmpRawData));
 		return eRet;
 	}
 
 	template<typename T>
-	static ErrCode GetArrayType(InputStream &tData, T &tArrayRet) noexcept
+	static ErrCode GetArrayType(InputStream &tData, T &tArray) noexcept
 	{
 	MYTRY;
 		ErrCode eRet = AllOk;
@@ -411,13 +411,13 @@ catch(...)\
 		}
 		
 		//数组保存
-		tArrayRet.reserve(iElementCount);//提前扩容
+		tArray.reserve(iElementCount);//提前扩容
 		//读取dElementCount个元素
 		for (NBT_Type::ArrayLength i = 0; i < iElementCount; ++i)
 		{
 			typename T::value_type tTmpData{};
 			ReadBigEndian<true>(tData, tTmpData);//调用需要确保范围安全
-			tArrayRet.emplace_back(std::move(tTmpData));//读取一个插入一个
+			tArray.emplace_back(std::move(tTmpData));//读取一个插入一个
 		}
 
 		return eRet;
@@ -426,7 +426,7 @@ catch(...)\
 
 	//如果是非根部，有额外检测
 	template<bool bRoot>
-	static ErrCode GetCompoundType(InputStream &tData, NBT_Type::Compound &tCompoundRet, size_t szStackDepth) noexcept
+	static ErrCode GetCompoundType(InputStream &tData, NBT_Type::Compound &tCompound, size_t szStackDepth) noexcept
 	{
 	MYTRY;
 		ErrCode eRet = AllOk;
@@ -455,7 +455,7 @@ catch(...)\
 
 			if (tagNbt >= NBT_TAG::ENUM_END)//确认在范围内
 			{
-				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch default: Unknown Type Tag[%02X(%d)]",
+				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch default: Unknown Type Tag[0x%02X(%d)]",
 					(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);//此处不进行提前返回，往后默认返回处理
 				STACK_TRACEBACK("tagNbt >= NBT_TAG::ENUM_END");
 				return eRet;//超出范围立刻返回
@@ -483,7 +483,7 @@ catch(...)\
 			//根据实际mc java代码得出，如果插入一个已经存在的键，会导致原先的值被替换并丢弃
 			//那么在失败后，手动从迭代器替换当前值，注意，此处必须是try_emplace，因为try_emplace失败后原先的值
 			//tmpNode不会被移动导致丢失，所以也无需拷贝插入以防止移动丢失问题
-			auto [it,bSuccess] = tCompoundRet.try_emplace(std::move(sName), std::move(tmpNode));
+			auto [it,bSuccess] = tCompound.try_emplace(std::move(sName), std::move(tmpNode));
 			if (!bSuccess)
 			{
 				//使用当前值替换掉阻止插入的原始值
@@ -506,22 +506,22 @@ catch(...)\
 	MYCATCH;
 	}
 
-	static ErrCode GetStringType(InputStream &tData, NBT_Type::String &tStringRet) noexcept
+	static ErrCode GetStringType(InputStream &tData, NBT_Type::String &tString) noexcept
 	{
 		ErrCode eRet = AllOk;
 
 		//读取字符串
-		eRet = GetName(tData, tStringRet);//因为string与name读取原理一致，直接借用实现
+		eRet = GetName(tData, tString);//因为string与name读取原理一致，直接借用实现
 		if (eRet != AllOk)
 		{
-			STACK_TRACEBACK("GetString");//这里小小的改个名，防止报错误导人
+			STACK_TRACEBACK("GetString");//因为是借用实现，所以这里小小的改个名，防止报错Name误导人
 			return eRet;
 		}
 
 		return eRet;
 	}
 
-	static ErrCode GetListType(InputStream &tData, NBT_Type::List &tListRet, size_t szStackDepth) noexcept
+	static ErrCode GetListType(InputStream &tData, NBT_Type::List &tList, size_t szStackDepth) noexcept
 	{
 	MYTRY;
 		ErrCode eRet = AllOk;
@@ -539,7 +539,7 @@ catch(...)\
 		//错误的列表元素类型
 		if (enListElementTag >= NBT_TAG::ENUM_END)
 		{
-			eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": List NBT Type:Unknown Type Tag[%02X(%d)]",
+			eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": List NBT Type:Unknown Type Tag[0x%02X(%d)]",
 				(NBT_TAG_RAW_TYPE)enListElementTag, (NBT_TAG_RAW_TYPE)enListElementTag);
 			STACK_TRACEBACK("enListElementTag Test");
 			return eRet;
@@ -577,8 +577,8 @@ catch(...)\
 		}
 
 		//设置类型并提前扩容
-		tListRet.enElementTag = (NBT_TAG)enListElementTag;//先设置类型
-		tListRet.reserve(iListLength);//已知大小提前分配减少开销
+		tList.enElementTag = (NBT_TAG)enListElementTag;//先设置类型
+		tList.reserve(iListLength);//已知大小提前分配减少开销
 
 		//根据元素类型，读取n次列表
 		for (NBT_Type::ListLength i = 0; i < iListLength; ++i)
@@ -592,7 +592,7 @@ catch(...)\
 			}
 
 			//每读取一个往后插入一个
-			tListRet.emplace_back(std::move(tmpNode));
+			tList.emplace_back(std::move(tmpNode));
 		}
 		
 		return eRet;
@@ -600,7 +600,7 @@ catch(...)\
 	}
 
 	//这个函数拦截所有内部调用产生的异常并处理返回，所以此函数绝对不抛出异常，由此调用此函数的函数也可无需catch异常
-	static ErrCode GetSwitch(InputStream &tData, NBT_Node &nodeRet, NBT_TAG tagNbt, size_t szStackDepth) noexcept//选择函数不检查递归层，由函数调用的函数检查
+	static ErrCode GetSwitch(InputStream &tData, NBT_Node &nodeNbt, NBT_TAG tagNbt, size_t szStackDepth) noexcept//选择函数不检查递归层，由函数调用的函数检查
 	{
 		ErrCode eRet = AllOk;
 
@@ -609,91 +609,95 @@ catch(...)\
 		case NBT_TAG::Byte:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Byte>;
-				nodeRet.emplace<CurType>();
-				eRet = GetBuiltInType<CurType>(tData, nodeRet.GetData<CurType>());
+				nodeNbt.emplace<CurType>();
+				eRet = GetBuiltInType<CurType>(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::Short:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Short>;
-				nodeRet.emplace<CurType>();
-				eRet = GetBuiltInType<CurType>(tData, nodeRet.GetData<CurType>());
+				nodeNbt.emplace<CurType>();
+				eRet = GetBuiltInType<CurType>(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::Int:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Int>;
-				nodeRet.emplace<CurType>();
-				eRet = GetBuiltInType<CurType>(tData, nodeRet.GetData<CurType>());
+				nodeNbt.emplace<CurType>();
+				eRet = GetBuiltInType<CurType>(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::Long:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Long>;
-				nodeRet.emplace<CurType>();
-				eRet = GetBuiltInType<CurType>(tData, nodeRet.GetData<CurType>());
+				nodeNbt.emplace<CurType>();
+				eRet = GetBuiltInType<CurType>(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::Float:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Float>;
-				nodeRet.emplace<CurType>();
-				eRet = GetBuiltInType<CurType>(tData, nodeRet.GetData<CurType>());
+				nodeNbt.emplace<CurType>();
+				eRet = GetBuiltInType<CurType>(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::Double:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Double>;
-				nodeRet.emplace<CurType>();
-				eRet = GetBuiltInType<CurType>(tData, nodeRet.GetData<CurType>());
+				nodeNbt.emplace<CurType>();
+				eRet = GetBuiltInType<CurType>(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::ByteArray:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::ByteArray>;
-				nodeRet.emplace<CurType>();
-				eRet = GetArrayType<CurType>(tData, nodeRet.GetData<CurType>());
+				nodeNbt.emplace<CurType>();
+				eRet = GetArrayType<CurType>(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::String:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::String>;
-				nodeRet.emplace<CurType>();
-				eRet = GetStringType(tData, nodeRet.GetData<CurType>());
+				nodeNbt.emplace<CurType>();
+				eRet = GetStringType(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::List://需要递归调用，列表开头给出标签ID和长度，后续都为一系列同类型标签的有效负载（无标签 ID 或名称）
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::List>;
-				nodeRet.emplace<CurType>();
-				eRet = GetListType(tData, nodeRet.GetData<CurType>(), szStackDepth);//选择函数不减少递归层
+				nodeNbt.emplace<CurType>();
+				eRet = GetListType(tData, nodeNbt.GetData<CurType>(), szStackDepth);//选择函数不减少递归层
 			}
 			break;
 		case NBT_TAG::Compound://需要递归调用
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Compound>;
-				nodeRet.emplace<CurType>();
-				eRet = GetCompoundType<false>(tData, nodeRet.GetData<CurType>(), szStackDepth);//选择函数不减少递归层
+				nodeNbt.emplace<CurType>();
+				eRet = GetCompoundType<false>(tData, nodeNbt.GetData<CurType>(), szStackDepth);//选择函数不减少递归层
 			}
 			break;
 		case NBT_TAG::IntArray:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::IntArray>;
-				nodeRet.emplace<CurType>();
-				eRet = GetArrayType<CurType>(tData, nodeRet.GetData<CurType>());
+				nodeNbt.emplace<CurType>();
+				eRet = GetArrayType<CurType>(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::LongArray:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::LongArray>;
-				nodeRet.emplace<CurType>();
-				eRet = GetArrayType<CurType>(tData, nodeRet.GetData<CurType>());
+				nodeNbt.emplace<CurType>();
+				eRet = GetArrayType<CurType>(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
 		case NBT_TAG::End://不应该在任何时候遇到此标签，Compound会读取到并消耗掉，不会传入，List遇到此标签不会调用读取，所以遇到即为错误
-		default://其它未知标签
-			{//NBT内标数据签错误
-				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch error: Unknown or unexpected Type Tag[%02X(%d)]",
+			{
+				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch error: Unexpected Type Tag NBT_TAG::End[0x00(0)]");
+			}
+			break;
+		default://其它未知标签，如NBT内标数据签错误
+			{
+				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch error: Unknown Type Tag[0x%02X(%d)]",
 					(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);//此处不进行提前返回，往后默认返回处理
 			}
 			break;
@@ -701,7 +705,7 @@ catch(...)\
 		
 		if (eRet != AllOk)//如果出错，打一下栈回溯
 		{
-			STACK_TRACEBACK("\"%s\" Tag[%02X(%d)] read error!", U16ANSI(U16STR(sName)).c_str(),
+			STACK_TRACEBACK("Tag[0x%02X(%d)] read error!",
 				(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);
 		}
 
