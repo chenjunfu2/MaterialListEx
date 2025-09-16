@@ -455,7 +455,8 @@ catch(...)\
 
 			if (tagNbt >= NBT_TAG::ENUM_END)//确认在范围内
 			{
-				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch default: Unknown Type Tag[%02X(%d)]", tagNbt, tagNbt);//此处不进行提前返回，往后默认返回处理
+				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch default: Unknown Type Tag[%02X(%d)]",
+					(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);//此处不进行提前返回，往后默认返回处理
 				STACK_TRACEBACK("tagNbt >= NBT_TAG::ENUM_END");
 				return eRet;//超出范围立刻返回
 			}
@@ -527,19 +528,20 @@ catch(...)\
 		CHECK_STACK_DEPTH(szStackDepth);
 
 		//读取1字节的列表元素类型
-		NBT_TAG_RAW_TYPE bListElementType = 0;//b=byte
-		eRet = ReadBigEndian(tData, bListElementType);
+		NBT_TAG_RAW_TYPE enListElementTag = 0;//b=byte
+		eRet = ReadBigEndian(tData, enListElementTag);
 		if (eRet != AllOk)
 		{
-			STACK_TRACEBACK("bListElementType Read");
+			STACK_TRACEBACK("enListElementTag Read");
 			return eRet;
 		}
 
 		//错误的列表元素类型
-		if (bListElementType >= NBT_TAG::ENUM_END)
+		if (enListElementTag >= NBT_TAG::ENUM_END)
 		{
-			eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": List NBT Type:Unknown Type Tag[%02X(%d)]", bListElementType, bListElementType);
-			STACK_TRACEBACK("bListElementType Test");
+			eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": List NBT Type:Unknown Type Tag[%02X(%d)]",
+				(NBT_TAG_RAW_TYPE)enListElementTag, (NBT_TAG_RAW_TYPE)enListElementTag);
+			STACK_TRACEBACK("enListElementTag Test");
 			return eRet;
 		}
 
@@ -561,28 +563,28 @@ catch(...)\
 		}
 
 		//防止重复N个结束标签，带有结束标签的必须是空列表
-		if (bListElementType == NBT_TAG::End && iListLength != 0)
+		if (enListElementTag == NBT_TAG::End && iListLength != 0)
 		{
 			eRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": The list with TAG_End[0x00] tag must be empty, but [%d] elements were found", iListLength);
-			STACK_TRACEBACK("bListElementType And iListLength Test");
+			STACK_TRACEBACK("enListElementTag And iListLength Test");
 			return eRet;
 		}
 
 		//确保如果长度为0的情况下，列表类型必为End
-		if (iListLength == 0 && bListElementType != NBT_TAG::End)
+		if (iListLength == 0 && enListElementTag != NBT_TAG::End)
 		{
-			bListElementType = (NBT_TAG_RAW_TYPE)NBT_TAG::End;
+			enListElementTag = (NBT_TAG_RAW_TYPE)NBT_TAG::End;
 		}
 
 		//设置类型并提前扩容
-		tListRet.enElementTag = (NBT_TAG)bListElementType;//先设置类型
+		tListRet.enElementTag = (NBT_TAG)enListElementTag;//先设置类型
 		tListRet.reserve(iListLength);//已知大小提前分配减少开销
 
 		//根据元素类型，读取n次列表
 		for (NBT_Type::ListLength i = 0; i < iListLength; ++i)
 		{
 			NBT_Node tmpNode{};//列表元素会直接赋值修改
-			eRet = GetSwitch(tData, tmpNode, (NBT_TAG)bListElementType, szStackDepth - 1);
+			eRet = GetSwitch(tData, tmpNode, (NBT_TAG)enListElementTag, szStackDepth - 1);
 			if (eRet != AllOk)//错误处理
 			{
 				STACK_TRACEBACK("Size: [%d] Index: [%d]", iListLength, i);
@@ -691,14 +693,16 @@ catch(...)\
 		case NBT_TAG::End://不应该在任何时候遇到此标签，Compound会读取到并消耗掉，不会传入，List遇到此标签不会调用读取，所以遇到即为错误
 		default://其它未知标签
 			{//NBT内标数据签错误
-				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch error: Unknown or unexpected Type Tag[%02X(%d)]", tagNbt, tagNbt);//此处不进行提前返回，往后默认返回处理
+				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch error: Unknown or unexpected Type Tag[%02X(%d)]",
+					(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);//此处不进行提前返回，往后默认返回处理
 			}
 			break;
 		}
 		
 		if (eRet != AllOk)//如果出错，打一下栈回溯
 		{
-			STACK_TRACEBACK("Tag read error!");
+			STACK_TRACEBACK("\"%s\" Tag[%02X(%d)] read error!", U16ANSI(U16STR(sName)).c_str(),
+				(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);
 		}
 
 		return eRet;//传递返回值

@@ -391,7 +391,7 @@ catch(...)\
 		}
 
 		//写出列表（递归）
-		//写出时判断元素标签与bListElementType不一致的错误
+		//写出时判断元素标签与enListElementTag不一致的错误
 		for (NBT_Type::ListLength i = 0; i < iListLength; ++i)
 		{
 			//获取元素与类型
@@ -407,6 +407,7 @@ catch(...)\
 			}
 
 			//一致，很好，那么输出
+			//列表无名字，无需重复tag，只需输出数据
 			eRet = PutSwitch(tData, tmpNode, enListElementTag, szStackDepth - 1);
 			if (eRet != AllOk)
 			{
