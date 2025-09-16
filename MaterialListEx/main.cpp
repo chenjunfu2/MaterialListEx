@@ -218,7 +218,7 @@ void Convert(const char *const pFileName)
 		 sNbtData = std::move(tmp);
 
 		 printf("File decompressed size:[%lld]\n", (uint64_t)sNbtData.size());
-		 timer.PrintElapsed("Decompress time:[", "]\n");
+		 timer.PrintElapsed("File decompress time:[", "]\n");
 
 #ifdef _DEBUG
 		 //路径预处理
