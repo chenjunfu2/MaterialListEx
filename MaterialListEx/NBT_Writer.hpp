@@ -7,7 +7,7 @@
 
 #include "NBT_Node.hpp"
 
-template <typename T>
+template <typename T = std::basic_string<uint8_t>>
 class MyOutputStream
 {
 private:
@@ -31,9 +31,9 @@ public:
 		tData.push_back(std::forward<V>(c));
 	}
 
-	void PutRange(typename T::const_iterator itBeg, typename T::const_iterator itEnd)
+	void PutRange(const typename T::value_type *pData, size_t szSize)
 	{
-		tData.append(itBeg, itEnd);
+		tData.append(pData, szSize);
 	}
 
 	void UnPut(void) noexcept
@@ -319,7 +319,7 @@ catch(...)\
 		}
 
 		//输出名称
-		tData.PutRange(sName.begin(), sName.end());
+		tData.PutRange(sName.data(), sName.size());
 
 		return eRet;
 	MYCATCH;
@@ -405,7 +405,7 @@ catch(...)\
 			}
 
 			//先写出tag
-			eRet = WriteBigEndian((NBT_TAG_RAW_TYPE)curTag);
+			eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)curTag);
 			if (eRet != AllOk)
 			{
 				STACK_TRACEBACK("curTag Write");

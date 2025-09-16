@@ -5,7 +5,7 @@
 
 #include "NBT_Node.hpp"
 
-template <typename T>
+template <typename T = std::basic_string<uint8_t>>
 class MyInputStream
 {
 private:
@@ -34,14 +34,9 @@ public:
 		}
 	}
 
-	T::const_iterator Current() const noexcept
+	const T::value_type *CurrentAddr() const noexcept
 	{
-		return tData.begin() + szIndex;
-	}
-
-	T::const_iterator Next(size_t szSize) const noexcept
-	{
-		return tData.begin() + (szIndex + szSize);
+		return &(tData.data()[szIndex]);
 	}
 
 	size_t AddIndex(size_t szSize) noexcept
@@ -357,7 +352,7 @@ catch(...)\
 		
 		//解析出名称
 		tName.reserve(wStringLength);//提前分配
-		tName.assign(tData.Current(), tData.Next(wStringLength));//构造string（如果长度为0则构造0长字符串，合法行为）
+		tName.assign(tData.CurrentAddr(), wStringLength);//构造string（如果长度为0则构造0长字符串，合法行为）
 		tData.AddIndex(wStringLength);//移动下标
 
 		return eRet;
