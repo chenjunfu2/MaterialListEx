@@ -210,6 +210,7 @@ int main(int argc, char *argv[])
 	//putchar('\n');
 
 	printf("before write:\n");
+	NBT_Helper::Print(list);
 	NBT_Helper::Print(test);
 
 	//NBT_IO::IsFileExist("TestNbt.nbt");
