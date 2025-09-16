@@ -16,6 +16,11 @@ public:
 	{}
 	~MyInputStream() = default;//默认析构，走tData的析构即可
 
+	const typename T::value_type &operator[](size_t szIndex) const noexcept
+	{
+		return tData[szIndex];
+	}
+
 	typename T::value_type GetNext() noexcept
 	{
 		return tData[szIndex++];
@@ -27,11 +32,6 @@ public:
 		{
 			--szIndex;
 		}
-	}
-
-	const typename T::value_type &operator[](size_t szIndex) const noexcept
-	{
-		return tData[szIndex];
 	}
 
 	T::const_iterator Current() const noexcept
@@ -156,6 +156,7 @@ private:
 	requires(std::is_same_v<T, ErrCode> || std::is_same_v<T, WarnCode>)
 	static std::conditional_t<std::is_same_v<T, ErrCode>, ErrCode, void> _cdecl Error(const T &code, const InputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...) noexcept//gcc使用__attribute__((format))，msvc使用_Printf_format_string_
 	{
+		//打印错误原因
 		if constexpr (std::is_same_v<T, ErrCode>)
 		{
 			if (code >= ERRCODE_END)
@@ -179,6 +180,7 @@ private:
 			static_assert(false, "Unknown [T code] Type!");
 		}
 
+		//打印扩展信息
 		if (cpExtraInfo != NULL)
 		{
 			printf("Extra Info:\"");
@@ -202,12 +204,12 @@ private:
 			"Data Review:\n"\
 			"Current: 0x%02llX(%zu)\n"\
 			"Data Size: 0x%02llX(%zu)\n"\
-			"Data[0x%02llX(%zu)]~[0x%02llX(%zu)]:\n",
+			"Data[0x%02llX(%zu),0x%02llX(%zu)):\n",
 
 			(uint64_t)tData.Index(), tData.Index(),
 			(uint64_t)tData.Size(), tData.Size(),
 			(uint64_t)rangeBeg, rangeBeg,
-			(uint64_t)rangeEnd - 1LLU, rangeEnd - 1
+			(uint64_t)rangeEnd, rangeEnd
 		);
 		
 		//打数据
@@ -464,7 +466,7 @@ catch(...)\
 			eRet = GetName(tData, sName);
 			if (eRet != AllOk)
 			{
-				STACK_TRACEBACK("GetName Fail, Type [NBT_Type::%s]", NBT_Type::GetTypeName(tagNbt));
+				STACK_TRACEBACK("GetName Fail, Type: [NBT_Type::%s]", NBT_Type::GetTypeName(tagNbt));
 				return eRet;//名称读取失败立刻返回
 			}
 
@@ -473,7 +475,7 @@ catch(...)\
 			eRet = GetSwitch(tData, tmpNode, tagNbt, szStackDepth - 1);
 			if (eRet != AllOk)
 			{
-				STACK_TRACEBACK("GetSwitch Fail, Name: \"%s\" [NBT_Type::%s]", U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tagNbt));
+				STACK_TRACEBACK("GetSwitch Fail, Name: \"%s\", Type: [NBT_Type::%s]", U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tagNbt));
 				//return eRet;//注意此处不返回，进行插入，以便分析错误之前的正确数据
 			}
 
@@ -488,7 +490,7 @@ catch(...)\
 				it->second = std::move(tmpNode);
 
 				//发出警告，注意警告不用eRet接返回值
-				Error(ElementExistsWarn, tData, __FUNCSIG__ ": Name: \"%s\" [NBT_Type::%s] tData already exist!",
+				Error(ElementExistsWarn, tData, __FUNCSIG__ ": Name: \"%s\", Type: [NBT_Type::%s] data already exist!",
 					U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tagNbt));
 			}
 

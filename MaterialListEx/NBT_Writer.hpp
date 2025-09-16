@@ -19,6 +19,11 @@ public:
 	}
 	~MyOutputStream(void) = default;
 
+	const typename T::value_type &operator[](size_t szIndex) const noexcept
+	{
+		return tData[szIndex];
+	}
+
 	template<typename V>
 	requires(std::is_constructible_v<T::value_type, V &&>)
 	void PutOnce(V &&c)
@@ -102,12 +107,16 @@ private:
 	{
 		NoWarn = 0,
 
+		EndElementIgnoreWarn,
+
 		WARNCODE_END,
 	};
 
 	constexpr static inline const char *const warnReason[] =//正常数组，直接用WarnCode访问
 	{
 		"NoWarn",
+
+		"EndElementIgnoreWarn",
 	};
 
 	//记得同步数组！
@@ -122,6 +131,93 @@ private:
 	requires(std::is_same_v<T, ErrCode> || std::is_same_v<T, WarnCode>)
 	static std::conditional_t<std::is_same_v<T, ErrCode>, ErrCode, void> _cdecl Error(const T &code, const OutputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...) noexcept//gcc使用__attribute__((format))，msvc使用_Printf_format_string_
 	{
+		//打印错误原因
+		if constexpr (std::is_same_v<T, ErrCode>)
+		{
+			if (code >= ERRCODE_END)
+			{
+				return code;
+			}
+			//上方if保证code不会溢出
+			printf("Read Err[%d]: \"%s\"\n", code, errReason[code]);
+		}
+		else if constexpr (std::is_same_v<T, WarnCode>)
+		{
+			if (code >= WARNCODE_END)
+			{
+				return;
+			}
+			//上方if保证code不会溢出
+			printf("Read Warn[%d]: \"%s\"\n", code, warnReason[code]);
+		}
+		else
+		{
+			static_assert(false, "Unknown [T code] Type!");
+		}
+
+		//打印扩展信息
+		if (cpExtraInfo != NULL)
+		{
+			printf("Extra Info:\"");
+			va_list args;//变长形参
+			va_start(args, cpExtraInfo);
+			vprintf(cpExtraInfo, args);
+			va_end(args);
+			printf("\"\n");
+		}
+
+		//如果可以，预览szCurrent前n个字符，否则裁切到边界
+#define VIEW_PRE (64+8)//向前
+		size_t rangeBeg = (tData.Size() > VIEW_PRE + 1) ? (tData.Size() - (VIEW_PRE + 1)) : 0;//上边界裁切
+		size_t rangeEnd = tData.Size();//下边界裁切
+#undef VIEW_PRE
+		//输出信息
+		printf
+		(
+			"Data Review:\n"\
+			"Data Size: 0x%02llX(%zu)\n"\
+			"Data[0x%02llX(%zu),0x%02llX(%zu)):\n",
+
+			(uint64_t)tData.Size(), tData.Size(),
+			(uint64_t)rangeBeg, rangeBeg,
+			(uint64_t)rangeEnd, rangeEnd
+		);
+
+		//打数据
+		for (size_t i = rangeBeg; i < rangeEnd; ++i)
+		{
+			if ((i - rangeBeg) % 8 == 0)//输出地址
+			{
+				if (i != rangeBeg)//除去第一个每8个换行
+				{
+					printf("\n");
+				}
+				printf("0x%02llX: ", (uint64_t)i);
+			}
+
+			if (i != tData.Index())
+			{
+				printf(" %02X ", (NBT_TAG_RAW_TYPE)tData[i]);
+			}
+			else//如果是当前出错字节，加方括号框起
+			{
+				printf("[%02X]", (NBT_TAG_RAW_TYPE)tData[i]);
+			}
+		}
+
+		//输出提示信息
+		if constexpr (std::is_same_v<T, ErrCode>)
+		{
+			printf("\nSkip err data and return...\n\n");
+		}
+		else if constexpr (std::is_same_v<T, WarnCode>)
+		{
+			printf("\nSkip warn data and continue...\n\n");
+		}
+		else
+		{
+			static_assert(false, "Unknown [T code] Type!");
+		}
 
 		//警告不返回值
 		if constexpr (std::is_same_v<T, ErrCode>)
@@ -302,6 +398,9 @@ catch(...)\
 			//集合中如果存在nbt end类型的元素，删除而不输出
 			if (curTag == NBT_TAG::End)
 			{
+				//End元素被忽略警告（警告不返回错误码）
+				Error(EndElementIgnoreWarn, tData, __FUNCSIG__ ": Name: \"%s\", type is [NBT_Type::End], ignored!",
+					U16ANSI(U16STR(sName)).c_str());
 				continue;
 			}
 
@@ -309,7 +408,7 @@ catch(...)\
 			eRet = WriteBigEndian((NBT_TAG_RAW_TYPE)curTag);
 			if (eRet != AllOk)
 			{
-				//stack
+				STACK_TRACEBACK("curTag Write");
 				break;
 			}
 
@@ -317,7 +416,7 @@ catch(...)\
 			eRet = PutName(tData, it.first);
 			if (eRet != AllOk)
 			{
-				//stack
+				STACK_TRACEBACK("PutName Fail, Type: [NBT_Type::%s]", NBT_Type::GetTypeName(tagNbt));
 				break;
 			}
 
@@ -325,7 +424,8 @@ catch(...)\
 			eRet = PutSwitch(tData, it.second, curTag, szStackDepth - 1);
 			if (eRet != AllOk)
 			{
-				//stack
+				STACK_TRACEBACK("PutSwitch Fail, Name: \"%s\", Type: [NBT_Type::%s]",
+					U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tagNbt));
 				break;
 			}
 		}
