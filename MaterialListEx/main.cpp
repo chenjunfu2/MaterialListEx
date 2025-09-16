@@ -213,7 +213,7 @@ void Convert(const char *const pFileName)
 	 {
 		 std::basic_string<uint8_t> tmp;
 		 timer.Start();
-		 gzip::Decompressor{}.decompress(tmp, (char *)sNbtData.data(), sNbtData.size());
+		 gzip::Decompressor(SIZE_MAX).decompress(tmp, (char *)sNbtData.data(), sNbtData.size());
 		 timer.Stop();
 		 sNbtData = std::move(tmp);
 
