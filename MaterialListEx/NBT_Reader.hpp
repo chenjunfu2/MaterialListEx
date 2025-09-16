@@ -718,28 +718,25 @@ public:
 
 	/*
 	备注：此函数读取nbt时，会创建一个默认根，然后把nbt内所有数据集合到此默认根上，
-	也就是哪怕按照mojang的nbt标准，默认根是无名compound，也会被挂接到返回值里的
-	内含NBT_Type::Compound的NBT_Node中，然后遍历NBT_Node（）即可得到所有根，
-	这么做的目的是为了方便读写例程且不用在外部部分实现mojang的无名compound特殊处理
-
-	这样可以在一定程度上甚至比mojang标准支持更多的NBT文件情况，
+	也就是哪怕按照mojang的nbt标准，默认根是无名Compound，也会被挂接到返回值里的
+	NBT_Type::Compound中。遍历函数返回的NBT_Type::Compound即可得到所有NBT数据，
+	这么做的目的是为了方便读写例程且不用在某些地方部分实现mojang的无名compound的
+	特殊处理，这种情况下可以在一定程度上甚至比mojang标准支持更多的NBT文件情况，
 	比如文件内并不是Compound开始的，而是单纯的几个不同类型且带有名字的NBT，那么也能
-	正常读取到并全部挂在NBT_Type::Compound中，就好像nbt文件本身就是一个
-	NBT_Type::Compound一样，相对的，写入函数也能支持写入
-	
-	所以对于对称函数WriteNBT写出的时候，传入的值也是一个内含NBT_Type::Compound的
-	NBT_Node，然后传入的NBT_Type::Compound本身不会被以任何形式写入NBT文件，而是
-	挂接在下面的内容写入，这样既能保证兼容mojang的nbt文件，也能一定程度上扩展nbt文件
-	内可以存储的内容（也就是并不总是非要以一个无名称的compound开头）
+	正常读取到并全部挂在NBT_Type::Compound中，就好像nbt文件本身就是一个大的无名
+	NBT_Type::Compound一样，相对的，写出函数也能支持写出此种情况，所以写出函数
+	WriteNBT在写出的时候，传入的值也是一个内含NBT_Type::Compound的NBT_Node，
+	然后传入的NBT_Type::Compound本身不会被以任何形式写入NBT文件，而是内部数据，
+	也就是挂接在下面的内容会被写入，这样既能保证兼容mojang的nbt文件，也能一定程度上
+	扩展nbt文件内可以存储的内容（允许nbt文件直接存储多个键值对而不是必须先挂在一个
+	无名称的Compound下）
 	*/
 
 	//szStackDepth 控制栈深度，递归层检查仅由可嵌套的可能进行递归的函数进行，栈深度递减仅由对选择函数的调用进行
-	static bool ReadNBT(NBT_Node &nRoot, const DataType &tData, size_t szDataStartIndex = 0, size_t szStackDepth = 512) noexcept//从data中读取nbt
+	//注意此函数不会清空tCompound，所以可以对一个tCompound通过不同的tData多次调用来读取多个nbt片段并合并到一起
+	static bool ReadNBT(NBT_Type::Compound &tCompound, const DataType &tData, size_t szDataStartIndex = 0, size_t szStackDepth = 512) noexcept//从data中读取nbt
 	{
 	MYTRY;
-		//初始化NBT根对象
-		nRoot.emplace<NBT_Type::Compound>();//设置为compound
-
 		//初始化数据流对象
 		InputStream IptStream(tData, szDataStartIndex);
 
@@ -747,7 +744,7 @@ public:
 		printf("Max Stack Depth [%zu]\n", szStackDepth);
 
 		//开始递归读取
-		return GetCompoundType<true>(IptStream, nRoot.GetCompound(), szStackDepth) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
+		return GetCompoundType<true>(IptStream, tCompound, szStackDepth) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
 	MYCATCH;
 	}
 

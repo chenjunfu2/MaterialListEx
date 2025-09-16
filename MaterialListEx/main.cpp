@@ -272,7 +272,7 @@ void Convert(const char *const pFileName)
 
 
 	//以下使用nbt
-	NBT_Node nRoot;
+	 NBT_Type::Compound nRoot;
 	timer.Start();
 	if (!NBT_Reader<std::basic_string<uint8_t>>::ReadNBT(nRoot, sNbtData))
 	{
@@ -286,15 +286,15 @@ void Convert(const char *const pFileName)
 	//NBT_Helper::Print(nRoot);
 	//return 0;
 
-	const auto &tmp = nRoot.GetCompound();//获取根下第一个compound，正常情况下根部下只有这一个compound
-	if (tmp.Size() != 1)
+	//正常mc投影nbt内只有一个Compound
+	if (nRoot.Size() != 1)
 	{
 		printf("Error root size");
 		return;
 	}
 
 	//输出名称（一般是空字符串）
-	const auto &root = *tmp.begin();
+	const auto &root = *nRoot.begin();
 #ifdef _DEBUG
 	printf("root:\"%s\"\n", U16ANSI(U16STR(root.first)).c_str());
 #endif
