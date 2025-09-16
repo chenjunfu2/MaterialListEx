@@ -391,9 +391,9 @@ catch(...)\
 		
 		//注意compound是为数不多的没有元素数量限制的结构
 		//此处无需检查大小，且无需写出大小
-		for (const auto &it : tCompound)
+		for (const auto &[sName, nodeNbt] : tCompound)
 		{
-			NBT_TAG curTag = it.second.GetTag();
+			NBT_TAG curTag = nodeNbt.GetTag();
 
 			//集合中如果存在nbt end类型的元素，删除而不输出
 			if (curTag == NBT_TAG::End)
@@ -413,19 +413,19 @@ catch(...)\
 			}
 
 			//然后写出name
-			eRet = PutName(tData, it.first);
+			eRet = PutName(tData, sName);
 			if (eRet != AllOk)
 			{
-				STACK_TRACEBACK("PutName Fail, Type: [NBT_Type::%s]", NBT_Type::GetTypeName(tagNbt));
+				STACK_TRACEBACK("PutName Fail, Type: [NBT_Type::%s]", NBT_Type::GetTypeName(curTag));
 				break;
 			}
 
 			//最后根据tag类型写出数据
-			eRet = PutSwitch(tData, it.second, curTag, szStackDepth - 1);
+			eRet = PutSwitch(tData, nodeNbt, curTag, szStackDepth - 1);
 			if (eRet != AllOk)
 			{
 				STACK_TRACEBACK("PutSwitch Fail, Name: \"%s\", Type: [NBT_Type::%s]",
-					U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tagNbt));
+					U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(curTag));
 				break;
 			}
 		}
