@@ -23,17 +23,17 @@ class NBT_IO
 	NBT_IO(void) = delete;
 	~NBT_IO(void) = delete;
 public:
-	static bool WriteFile(const char *const _FileName, const std::basic_string<uint8_t> &_Data)
+	static bool WriteFile(const char *const pcFileName, const std::basic_string<uint8_t> &u8Data)
 	{
-		FILE *pFile = fopen(_FileName, "wb");
+		FILE *pFile = fopen(pcFileName, "wb");
 		if (pFile == NULL)
 		{
 			return false;
 		}
 
 		//获取文件大小并写出
-		uint64_t qwFileSize = _Data.size();
-		if (fwrite(_Data.data(), sizeof(_Data[0]), qwFileSize, pFile) != qwFileSize)
+		uint64_t qwFileSize = u8Data.size();
+		if (fwrite(u8Data.data(), sizeof(u8Data[0]), qwFileSize, pFile) != qwFileSize)
 		{
 			return false;
 		}
@@ -45,9 +45,9 @@ public:
 		return true;
 	}
 
-	static bool ReadFile(const char *const _FileName, std::basic_string<uint8_t> &_Data)
+	static bool ReadFile(const char *const pcFileName, std::basic_string<uint8_t> &u8Data)
 	{
-		FILE *pFile = fopen(_FileName, "rb");
+		FILE *pFile = fopen(pcFileName, "rb");
 		if (pFile == NULL)
 		{
 			return false;
@@ -62,8 +62,8 @@ public:
 		rewind(pFile);
 
 		//直接给数据塞string里
-		_Data.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
-		if (fread(_Data.data(), sizeof(_Data[0]), qwFileSize, pFile) != qwFileSize)//直接读入data
+		u8Data.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
+		if (fread(u8Data.data(), sizeof(u8Data[0]), qwFileSize, pFile) != qwFileSize)//直接读入data
 		{
 			return false;
 		}
@@ -80,5 +80,37 @@ public:
 		bool bExists = std::filesystem::exists(sFileName, ec);
 
 		return !ec && bExists;//没有错误并且存在
+	}
+
+	static bool DecompressIfZipped(std::basic_string<uint8_t> &u8Data)
+	{
+		if (!gzip::is_compressed((const char *)u8Data.data(), u8Data.size()))
+		{
+			return true;
+		}
+
+		try
+		{
+			std::basic_string<uint8_t> tmpData{};
+			gzip::Decompressor{ SIZE_MAX }.decompress(tmpData, (const char *)u8Data.data(), u8Data.size());
+			u8Data = std::move(tmpData);
+		}
+		catch (const std::bad_alloc& e)
+		{
+			printf("std::bad_alloc:[%s]\n", e.what());
+			return false;
+		}
+		catch (const std::exception &e)
+		{
+			printf("std::exception:[%s]\n", e.what());
+			return false;
+		}
+		catch (...)
+		{
+			printf("Unknown Error\n");
+			return false;
+		}
+
+		return true;
 	}
 };

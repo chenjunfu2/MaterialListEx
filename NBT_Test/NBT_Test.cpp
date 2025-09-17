@@ -144,8 +144,98 @@ return 0;
 
 
 
+int main(void)
+{
+	//测试：
+	//先读取原始nbt，解压后从nbt写出，然后再读入
+	//最后用nbt分别解析这两个是否与原始等价（注意不是相同而是等价）
+	//因为受到map排序的问题，nbt并非总是相同的，但是元素却是等价的
 
-int main(int argc, char *argv[])
+	std::basic_string<uint8_t> dataOriginal{};
+	if (!NBT_IO::ReadFile("Original.nbt", dataOriginal))
+	{
+		printf("[Line:%d]Original Read Fail\n", __LINE__);
+		return -1;
+	}
+
+	if (!NBT_IO::DecompressIfZipped(dataOriginal))
+	{
+		printf("[Line:%d]Decompress Fail\n", __LINE__);
+		return -1;
+	}
+
+	NBT_Type::Compound cpdOriginal{};
+	if (!NBT_Reader<std::basic_string<uint8_t>>::ReadNBT(cpdOriginal, dataOriginal))
+	{
+		printf("[Line:%d]ReadNBT Fail\n", __LINE__);
+		return -1;
+	}
+
+	
+	dataOriginal.resize(0);
+	//dataOriginal.shrink_to_fit();//删除内存
+	auto &dataNew = dataOriginal;//起个别名继续用，不删除内存减少重复分配开销
+
+	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(dataNew, cpdOriginal))
+	{
+		printf("[Line:%d]ReadNBT Fail\n", __LINE__);
+		return -1;
+	}
+
+	//写出到dataWrite之后不用写入文件，假装是文件读取的，直接用readnbt解析，然后比较之前的解析与后面的解析
+	NBT_Type::Compound cpdNew{};
+	if (!NBT_Reader<std::basic_string<uint8_t>>::ReadNBT(cpdNew, dataNew))
+	{
+		printf("[Line:%d]ReadNBT Fail\n", __LINE__);
+		return -1;
+	}
+
+	dataNew.resize(0);
+	dataNew.shrink_to_fit();//删除内存
+
+	//递归比较
+	std::partial_ordering cmp = cpdOriginal <=> cpdNew;
+	//std::strong_ordering;//强序
+	//std::weak_ordering;//弱序
+	//std::partial_ordering;//偏序
+
+	printf("cpdOriginal <=> cpdNew : cpdOriginal [");
+
+	if (cmp == std::partial_ordering::equivalent)
+	{
+		printf("equivalent");
+	}
+	else if (cmp == std::partial_ordering::greater)
+	{
+		printf("greater");
+	}
+	else if (cmp == std::partial_ordering::less)
+	{
+		printf("less");
+	}
+	else if (cmp == std::partial_ordering::unordered)
+	{
+		printf("unordered");
+	}
+	else
+	{
+		printf("unknown");
+	}
+
+	printf("] cpdNew\n");
+
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+int main0(int argc, char *argv[])
 {
 	std::basic_string<uint8_t> tR{};
 	NBT_Type::Compound cpd;

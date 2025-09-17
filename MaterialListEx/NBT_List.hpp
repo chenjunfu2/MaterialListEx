@@ -389,6 +389,11 @@ public:
 		return List::resize(szNewSize);
 	}
 
+	void ShrinkToFit(void)
+	{
+		return List::shrink_to_fit();
+	}
+
 #define TYPE_GET_FUNC(type)\
 const typename NBT_Type::##type &Get##type(const typename List::size_type &szPos) const\
 {\
