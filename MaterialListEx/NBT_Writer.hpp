@@ -428,7 +428,7 @@ catch(...)\
 			}
 		}
 
-		//注意Compound类型有一个NBT_TAG::End结尾，且不论是否写出错误，结尾都必须存在
+		//注意Compound类型有一个NBT_TAG::End结尾，如果写出错误则在前面返回，不放置结尾
 		eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)NBT_TAG::End);
 		if (eRet != AllOk)
 		{
