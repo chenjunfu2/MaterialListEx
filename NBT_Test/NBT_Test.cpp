@@ -144,15 +144,24 @@ return 0;
 
 
 
-int main(void)
+int main(int argc, char *argv[])
 {
+	if (argc != 2)
+	{
+		printf("[Line:%d]Argc Not 2", __LINE__);
+		return -114514;
+	}
+
+	const char *pInputFileName = argv[1];
+	printf("Current File:\"%s\"\n", pInputFileName);
+
 	//测试：
 	//先读取原始nbt，解压后从nbt写出，然后再读入
 	//最后用nbt分别解析这两个是否与原始等价（注意不是相同而是等价）
 	//因为受到map排序的问题，nbt并非总是相同的，但是元素却是等价的
 
 	std::basic_string<uint8_t> dataOriginal{};
-	if (!NBT_IO::ReadFile("Original.nbt", dataOriginal))
+	if (!NBT_IO::ReadFile(pInputFileName, dataOriginal))
 	{
 		printf("[Line:%d]Original Read Fail\n", __LINE__);
 		return -1;
@@ -226,12 +235,6 @@ int main(void)
 
 	return 0;
 }
-
-
-
-
-
-
 
 
 
