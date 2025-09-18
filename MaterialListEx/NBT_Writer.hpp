@@ -394,6 +394,8 @@ catch(...)\
 		return eRet;
 	}
 
+	//如果是非根部，不会输出额外的Compound_End
+	template<bool bRoot>
 	static ErrCode PutCompoundType(OutputStream &tData, const NBT_Type::Compound &tCompound, size_t szStackDepth) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -440,12 +442,15 @@ catch(...)\
 			}
 		}
 
-		//注意Compound类型有一个NBT_TAG::End结尾，如果写出错误则在前面返回，不放置结尾
-		eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)NBT_TAG::End);
-		if (eRet != AllOk)
+		if constexpr (!bRoot)
 		{
-			STACK_TRACEBACK("NBT_TAG::End[0x00(0)] Write");
-			return eRet;
+			//注意Compound类型有一个NBT_TAG::End结尾，如果写出错误则在前面返回，不放置结尾
+			eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)NBT_TAG::End);
+			if (eRet != AllOk)
+			{
+				STACK_TRACEBACK("NBT_TAG::End[0x00(0)] Write");
+				return eRet;
+			}
 		}
 
 		return eRet;
@@ -606,7 +611,7 @@ catch(...)\
 		case NBT_TAG::Compound://可能递归，需要处理szStackDepth
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Compound>;
-				eRet = PutCompoundType(tData, nodeNbt.GetData<CurType>(), szStackDepth);
+				eRet = PutCompoundType<false>(tData, nodeNbt.GetData<CurType>(), szStackDepth);
 			}
 			break;
 		case NBT_TAG::IntArray:
@@ -656,7 +661,7 @@ public:
 		//printf("Max Stack Depth [%zu]\n", szStackDepth);
 
 		//开始递归输出
-		return PutCompoundType(OptStream, tCompound, szStackDepth) == AllOk;
+		return PutCompoundType<true>(OptStream, tCompound, szStackDepth) == AllOk;
 	MYCATCH;//以防万一还是需要捕获一下
 	}
 
