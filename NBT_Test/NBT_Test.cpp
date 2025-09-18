@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
 #ifdef WRITE_TO_FILE
 	printf("\dataNew WriteFile Start\n");
 	ct.Start();
-	if (!NBT_IO::WriteFile("read_dcp.nbt", dataNew))
+	if (!NBT_IO::WriteFile("write_dcp.nbt", dataNew))
 	{
 		printf("[Line:%d]dataNew WriteFile Fail\n", __LINE__);
 		return -1;
