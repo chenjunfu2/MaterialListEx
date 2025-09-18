@@ -9,21 +9,29 @@ template <typename T = std::basic_string<uint8_t>>
 class MyInputStream
 {
 private:
-	const T &tData;
-	size_t szIndex;
+	const T::value_type * const pData = NULL;
+	const size_t szDataSize = 0;
+	size_t szIndex = 0;
 public:
-	MyInputStream(const T &_tData, size_t szStartIdx = 0) :tData(_tData), szIndex(szStartIdx)
+	//因为string的[]运算符访问有坑，每次都会判断是否是优化模式导致问题，所以存储data指针直接访问以加速
+	MyInputStream(const T &tData, size_t szStartIdx = 0) :pData(tData.data()), szDataSize(tData.size()), szIndex(szStartIdx)
 	{}
-	~MyInputStream() = default;//默认析构，走tData的析构即可
+	~MyInputStream(void) = default;//默认析构
+
+	MyInputStream(const MyInputStream &) = delete;
+	MyInputStream(MyInputStream &&) = delete;
+
+	MyInputStream &operator=(const MyInputStream &) = delete;
+	MyInputStream &operator=(MyInputStream &&) = delete;
 
 	const typename T::value_type &operator[](size_t szIndex) const noexcept
 	{
-		return tData[szIndex];
+		return pData[szIndex];
 	}
 
 	typename T::value_type GetNext() noexcept
 	{
-		return tData[szIndex++];
+		return pData[szIndex++];
 	}
 
 	void UnGet() noexcept
@@ -34,9 +42,9 @@ public:
 		}
 	}
 
-	const typename T::value_type *CurrentAddr() const noexcept
+	const typename T::value_type *CurData() const noexcept
 	{
-		return &(tData.data()[szIndex]);
+		return &(pData[szIndex]);
 	}
 
 	size_t AddIndex(size_t szSize) noexcept
@@ -51,17 +59,17 @@ public:
 
 	bool IsEnd() const noexcept
 	{
-		return szIndex >= tData.size();
+		return szIndex >= szDataSize;
 	}
 
 	size_t Size() const noexcept
 	{
-		return tData.size();
+		return szDataSize;
 	}
 
 	bool HasAvailData(size_t szSize) const noexcept
 	{
-		return (tData.size() - szIndex) >= szSize;
+		return (szDataSize - szIndex) >= szSize;
 	}
 
 	void Reset() noexcept
@@ -69,9 +77,9 @@ public:
 		szIndex = 0;
 	}
 
-	const T &Data() const noexcept
+	const T::value_type *BaseData() const noexcept
 	{
-		return tData;
+		return pData;
 	}
 
 	size_t Index() const noexcept
@@ -293,7 +301,6 @@ catch(...)\
 	return eRet;\
 }
 
-
 	//读取大端序数值，bNoCheck为true则不进行任何检查
 	template<bool bNoCheck = false, typename T>
 	static inline std::conditional_t<bNoCheck, void, ErrCode> ReadBigEndian(InputStream &tData, T &tVal) noexcept
@@ -319,10 +326,16 @@ catch(...)\
 			using UT = typename std::make_unsigned<T>::type;
 			static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
 
-			for (size_t i = sizeof(T); i > 0; --i)
+			//静态展开（替代for）
+			[&] <size_t... Is>(std::index_sequence<Is...>)
 			{
-				tVal |= ((UT)(uint8_t)tData.GetNext()) << (8 * (i - 1));//每次移动刚才提取的地位到高位，然后继续提取
-			}
+				((tVal |= (UT)(uint8_t)tData.GetNext() << (8 * (sizeof(T) - Is - 1))), ...);
+			}(std::make_index_sequence<sizeof(T)>{});
+
+			//for (size_t i = sizeof(T); i > 0; --i)
+			//{
+			//	tVal |= ((UT)(uint8_t)tData.GetNext()) << (8 * (i - 1));//每次移动刚才提取的地位到高位，然后继续提取
+			//}
 		}
 
 		if constexpr (!bNoCheck)
@@ -356,7 +369,7 @@ catch(...)\
 		
 		//解析出名称
 		tName.reserve(wStringLength);//提前分配
-		tName.assign((const NBT_Type::String::value_type *)tData.CurrentAddr(), wStringLength);//构造string（如果长度为0则构造0长字符串，合法行为）
+		tName.assign((const NBT_Type::String::value_type *)tData.CurData(), wStringLength);//构造string（如果长度为0则构造0长字符串，合法行为）
 		tData.AddIndex(wStringLength);//移动下标
 
 		return eRet;

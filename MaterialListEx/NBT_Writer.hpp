@@ -278,10 +278,16 @@ catch(...)\
 			using UT = typename std::make_unsigned<T>::type;
 			static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
 
-			for (size_t i = sizeof(T); i > 0; --i)
+			//静态展开（替代for）
+			[&] <size_t... Is>(std::index_sequence<Is...>)
 			{
-				tData.PutOnce((uint8_t)(((UT)tVal) >> (8 * (i - 1))));//依次提取
-			}
+				(tData.PutOnce((uint8_t)(((UT)tVal) >> (8 * (sizeof(T) - Is - 1)))), ...);
+			}(std::make_index_sequence<sizeof(T)>{});
+
+			//for (size_t i = sizeof(T); i > 0; --i)
+			//{
+			//	tData.PutOnce((uint8_t)(((UT)tVal) >> (8 * (i - 1))));//依次提取
+			//}
 		}
 
 		return eRet;
