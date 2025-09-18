@@ -294,7 +294,7 @@ catch(...)\
 }
 
 
-	// 读取大端序数值，bNoCheck为true则不进行任何检查
+	//读取大端序数值，bNoCheck为true则不进行任何检查
 	template<bool bNoCheck = false, typename T>
 	static inline std::conditional_t<bNoCheck, void, ErrCode> ReadBigEndian(InputStream &tData, T &tVal) noexcept
 	{

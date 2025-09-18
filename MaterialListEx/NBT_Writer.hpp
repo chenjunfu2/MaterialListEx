@@ -262,7 +262,7 @@ catch(...)\
 	return eRet;\
 }
 
-	//大小端转换
+	//写出大端序值
 	template<typename T>
 	static inline ErrCode WriteBigEndian(OutputStream &tData, const T &tVal) noexcept
 	{
