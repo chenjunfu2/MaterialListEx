@@ -484,7 +484,3 @@ std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::i
 
 #undef TYPE_PUT_FUNC
 };
-
-#ifndef NBT_Node
-#include "NBT_Node.hpp"//这个include用来骗IDE代码提示的
-#endif

@@ -24,7 +24,7 @@ public:
 	using String::String;
 };
 
-//在std命名空间中添加此类的hash以便map自动获取
+//在std命名空间中添加此类的hash以便unordered_map等自动获取
 namespace std
 {
 	template<typename T>
@@ -36,8 +36,3 @@ namespace std
 		}
 	};
 }
-
-
-#ifndef NBT_Node
-#include "NBT_Node.hpp"//这个include用来骗IDE代码提示的
-#endif

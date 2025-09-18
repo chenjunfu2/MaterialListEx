@@ -3,20 +3,20 @@
 #include <stdint.h>
 #include <variant>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <type_traits>
 
 #include "NBT_TAG.hpp"
 
 class NBT_Node;
-template<typename Array>
+template <typename Array>
 class MyArray;
-template<typename String>
+template <typename String>
 class MyString;
 template <typename List>
 class MyList;
-template<typename Map>
+template <typename Compound>
 class MyCompound;
 
 class NBT_Type
@@ -39,7 +39,7 @@ public:
 	using LongArray		= MyArray<std::vector<Long>>;
 	using String		= MyString<std::string>;//Java MUTF-8 String
 	using List			= MyList<std::vector<NBT_Node>>;//存储一系列同类型标签的有效负载（无标签 ID 或名称）//原先为list，因为mc内list也通过下标访问，改为vector模拟
-	using Compound		= MyCompound<std::map<String, NBT_Node>>;//挂在序列下的内容都通过map绑定名称
+	using Compound		= MyCompound<std::unordered_map<String, NBT_Node>>;//挂在序列下的内容都通过map绑定名称
 
 	//类型列表
 	template<typename... Ts> struct _TypeList{};

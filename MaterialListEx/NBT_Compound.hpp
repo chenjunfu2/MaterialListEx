@@ -1,6 +1,6 @@
 #pragma once
 
-#include <map>
+#include <unordered_map>
 #include <compare>
 #include <type_traits>
 #include <initializer_list>
@@ -12,6 +12,21 @@ class NBT_Reader;
 
 template <typename DataType>
 class NBT_Writer;
+
+template <typename T>
+concept HasSpaceship = requires(const T & a, const T & b)
+{
+	{ a <=> b };
+};
+
+template <typename T>
+concept HasRBegin = requires(T t) {t.rbegin();};
+template <typename T>
+concept HasCRBegin = requires(T t) {t.crbegin();};
+template <typename T>
+concept HasREnd = requires(T t) {t.rend();};
+template <typename T>
+concept HasCREnd = requires(T t) {t.crend();};
 
 template<typename Compound>
 class MyCompound :protected Compound//Compound is Map
@@ -88,7 +103,21 @@ public:
 
 	std::partial_ordering operator<=>(const MyCompound &_Right) const noexcept
 	{
-		return (const Compound &)*this <=> (const Compound &)_Right;
+		if constexpr (HasSpaceship<Compound>)
+		{
+			return (const Compound &)*this <=> (const Compound &)_Right;
+		}
+		else
+		{
+			if (operator==(_Right))
+			{
+				return std::partial_ordering::equivalent;//相等返回相等
+			}
+			else
+			{
+				return std::partial_ordering::unordered;//否则返回不可比较
+			}
+		}
 	}
 
 	//暴露父类接口
@@ -96,11 +125,24 @@ public:
 	using Compound::end;
 	using Compound::cbegin;
 	using Compound::cend;
-	using Compound::rbegin;
-	using Compound::rend;
-	using Compound::crbegin;
-	using Compound::crend;
 	using Compound::operator[];
+
+	//using Compound::rbegin;
+	//using Compound::rend;
+	//using Compound::crbegin;
+	//using Compound::crend;
+	
+	//存在则映射
+	//-------------------- rbegin --------------------
+	auto rbegin() requires HasRBegin<Compound> {return Compound::rbegin();}
+	auto rbegin() const requires HasRBegin<Compound> {return Compound::rbegin();}
+	auto crbegin() const noexcept requires HasCRBegin<Compound> {return Compound::crbegin();}
+	//-------------------- rend --------------------
+	auto rend() requires HasREnd<Compound> {return Compound::rend();}
+	auto rend() const requires HasREnd<Compound> {return Compound::rend();}
+	auto crend() const noexcept requires HasCREnd<Compound> {return Compound::crend();}
+	
+	
 
 	//简化map查询
 	typename Compound::mapped_type &Get(const typename Compound::key_type &sTagName)
@@ -265,9 +307,4 @@ std::pair<typename Compound::iterator, bool> Put##type(K &&sTagName, typename NB
 	TYPE_PUT_FUNC(Compound);
 
 #undef TYPE_PUT_FUNC
-
 };
-
-#ifndef NBT_Node
-#include "NBT_Node.hpp"//这个include用来骗IDE代码提示的
-#endif
