@@ -9,11 +9,15 @@ template <typename T = std::basic_string<uint8_t>>
 class MyInputStream
 {
 private:
-	const T::value_type * const pData = NULL;
+	const typename T::value_type * const pData = NULL;
 	const size_t szDataSize = 0;
 	size_t szIndex = 0;
 public:
 	//因为string的[]运算符访问有坑，每次都会判断是否是优化模式导致问题，所以存储data指针直接访问以加速
+	//否则汇编里会出现一大堆
+	//cmp qword ptr [...],10h
+	//jb ...
+	//这种判断string是否是小于16的优化模式，来决定怎么访问，开销非常恶心
 	MyInputStream(const T &tData, size_t szStartIdx = 0) :pData(tData.data()), szDataSize(tData.size()), szIndex(szStartIdx)
 	{}
 	~MyInputStream(void) = default;//默认析构
@@ -77,7 +81,7 @@ public:
 		szIndex = 0;
 	}
 
-	const T::value_type *BaseData() const noexcept
+	const typename T::value_type *BaseData() const noexcept
 	{
 		return pData;
 	}
@@ -326,12 +330,23 @@ catch(...)\
 			using UT = typename std::make_unsigned<T>::type;
 			static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
 
-			//静态展开（替代for）
-			[&] <size_t... Is>(std::index_sequence<Is...>)
-			{
-				((tVal |= (UT)(uint8_t)tData.GetNext() << (8 * (sizeof(T) - Is - 1))), ...);
-			}(std::make_index_sequence<sizeof(T)>{});
+			//缓冲区，读取
+			uint8_t u8BigEndianBuffer[sizeof(T)] = { 0 };
+			std::memcpy(u8BigEndianBuffer, tData.CurData(), sizeof(u8BigEndianBuffer));
+			tData.AddIndex(sizeof(u8BigEndianBuffer));//读取后递增
 
+			//静态展开（替代for）
+			[&] <size_t... Is>(std::index_sequence<Is...>) -> void
+			{
+				UT tmpVal = 0;//临时量缓存，避免编译器一直生成引用访问造成开销
+				((tmpVal |= ((UT)u8BigEndianBuffer[Is]) << (8 * (sizeof(T) - Is - 1))), ...);//模板展开位操作
+
+				//读取完成赋值给tVal
+				tVal = (T)tmpVal;
+			}
+			(std::make_index_sequence<sizeof(T)>{});
+
+			//与上面操作等价但性能较低的写法，保留以用于增加可读性
 			//for (size_t i = sizeof(T); i > 0; --i)
 			//{
 			//	tVal |= ((UT)(uint8_t)tData.GetNext()) << (8 * (i - 1));//每次移动刚才提取的地位到高位，然后继续提取

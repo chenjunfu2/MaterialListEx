@@ -278,12 +278,20 @@ catch(...)\
 			using UT = typename std::make_unsigned<T>::type;
 			static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
 
-			//静态展开（替代for）
-			[&] <size_t... Is>(std::index_sequence<Is...>)
+			//缓冲区，写入
+			uint8_t u8BigEndianBuffer[sizeof(T)] = { 0 };
+
+			//静态展开（替代for），写入缓冲区
+			[&] <size_t... Is>(std::index_sequence<Is...>) -> void
 			{
-				(tData.PutOnce((uint8_t)(((UT)tVal) >> (8 * (sizeof(T) - Is - 1)))), ...);
+				UT tmpVal = (UT)tVal;//临时量缓存，避免编译器一直生成引用访问造成开销
+				((u8BigEndianBuffer[Is] = (uint8_t)(tmpVal >> (8 * (sizeof(T) - Is - 1)))), ...);
+
+				//缓冲区范围写入到tData
+				tData.PutRange(u8BigEndianBuffer, sizeof(u8BigEndianBuffer));
 			}(std::make_index_sequence<sizeof(T)>{});
 
+			//与上面操作等价但性能较低的写法，保留以用于增加可读性
 			//for (size_t i = sizeof(T); i > 0; --i)
 			//{
 			//	tData.PutOnce((uint8_t)(((UT)tVal) >> (8 * (i - 1))));//依次提取
