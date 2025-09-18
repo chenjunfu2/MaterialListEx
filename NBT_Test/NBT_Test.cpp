@@ -151,6 +151,8 @@ return 0;
 最后用nbt分别解析这两个是否与原始等价（注意不是相同而是等价）
 因为受到map排序的问题，nbt并非总是相同的，但是元素却是等价的
 */
+#define WRITE_TO_FILE
+
 int main(int argc, char *argv[])
 {
 	if (argc != 2)
@@ -177,7 +179,7 @@ int main(int argc, char *argv[])
 	ct.Stop();
 	ct.PrintElapsed("dataOriginal ReadFile Time: ");
 
-	printf("File Size: [%zu]B ≈ [%.4lf]KB ≈ [%.4lf]MB ≈ [%.4lf]GB\n",
+	printf("File Read Size: [%zu]B ≈ [%.4lf]KB ≈ [%.4lf]MB ≈ [%.4lf]GB\n",
 		dataOriginal.size(),
 		(double)dataOriginal.size() / 1024.0,
 		(double)dataOriginal.size() / 1024.0 / 1024.0,
@@ -199,6 +201,18 @@ int main(int argc, char *argv[])
 		(double)dataOriginal.size() / 1024.0,
 		(double)dataOriginal.size() / 1024.0 / 1024.0,
 		(double)dataOriginal.size() / 1024.0 / 1024.0 / 1024.0);
+
+#ifdef WRITE_TO_FILE
+	printf("\ndataOriginal WriteFile Start\n");
+	ct.Start();
+	if (!NBT_IO::WriteFile("read_dcp.nbt", dataOriginal))
+	{
+		printf("[Line:%d]dataOriginal WriteFile Fail\n", __LINE__);
+		return -1;
+	}
+	ct.Stop();
+	ct.PrintElapsed("dataOriginal WriteFile Time: ");
+#endif // WRITE_TO_FILE
 
 	//从已确保解压的二进制数据中解析到nbt
 	printf("\ndataOriginal ReadNBT To cpdOriginal Start\n");
@@ -231,7 +245,19 @@ int main(int argc, char *argv[])
 		(double)dataNew.size() / 1024.0 / 1024.0,
 		(double)dataNew.size() / 1024.0 / 1024.0 / 1024.0);
 
-	//写出到dataWrite之后不用写入文件，假装是文件读取的，直接用readnbt解析，然后比较之前的解析与后面的解析
+#ifdef WRITE_TO_FILE
+	printf("\dataNew WriteFile Start\n");
+	ct.Start();
+	if (!NBT_IO::WriteFile("read_dcp.nbt", dataNew))
+	{
+		printf("[Line:%d]dataNew WriteFile Fail\n", __LINE__);
+		return -1;
+	}
+	ct.Stop();
+	ct.PrintElapsed("dataNew WriteFile Time: ");
+#endif // WRITE_TO_FILE
+
+	//写出到dataWrite之后，假装是文件读取的，直接用readnbt解析，然后比较之前的解析与后面的解析
 	NBT_Type::Compound cpdNew{};
 	printf("\ndataNew ReadNBT To cpdNew Start\n");
 	ct.Start();
