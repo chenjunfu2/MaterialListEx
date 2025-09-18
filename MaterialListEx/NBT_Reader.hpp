@@ -321,7 +321,7 @@ catch(...)\
 
 			for (size_t i = 0; i < sizeof(T); ++i)
 			{
-				tVal |= ((UT)(uint8_t)tData.GetNext()) << (sizeof(T) * i);//每次移动刚才提取的地位到高位，然后继续提取
+				tVal |= ((UT)(uint8_t)tData.GetNext()) << (8 * i);//每次移动刚才提取的地位到高位，然后继续提取
 			}
 		}
 
