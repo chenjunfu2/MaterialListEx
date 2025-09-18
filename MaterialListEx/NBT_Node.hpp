@@ -196,3 +196,12 @@ friend const NBT_Type::##type &Get##type(const NBT_Node & node)\
 
 #undef TYPE_GET_FUNC
 };
+
+/*
+TODO:
+给NBTList与NBTCompound添加一个附加字段
+往里面插入数据的时候，会根据数据的大小计算
+出nbt的大小合并到自身，删除的时候去掉
+这样在写出的时候可以预分配，而不是被动的触发
+容器的扩容拷贝，增加写出性能
+*/
