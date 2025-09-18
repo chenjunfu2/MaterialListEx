@@ -36,6 +36,11 @@ public:
 		tData.append(pData, szSize);
 	}
 
+	void AddReserve(size_t szAddSize)
+	{
+		tData.reserve(tData.size() + szAddSize);
+	}
+
 	void UnPut(void) noexcept
 	{
 		tData.pop_back();
@@ -262,12 +267,19 @@ catch(...)\
 	return eRet;\
 }
 
+	static inline ErrCode CheckReserve(OutputStream &tData, size_t szAddSize)
+	{
+	MYTRY;
+		tData.AddReserve(szAddSize);
+		return AllOk;
+	MYCATCH;
+	}
+
 	//写出大端序值
 	template<typename T>
 	static inline ErrCode WriteBigEndian(OutputStream &tData, const T &tVal) noexcept
 	{
 	MYTRY;
-		ErrCode eRet = AllOk;
 		if constexpr (sizeof(T) == 1)
 		{
 			tData.PutOnce((uint8_t)tVal);
@@ -298,7 +310,7 @@ catch(...)\
 			//}
 		}
 
-		return eRet;
+		return AllOk;
 	MYCATCH;
 	}
 
@@ -329,7 +341,14 @@ catch(...)\
 		}
 
 		//输出名称
-		tData.PutRange((const typename DataType::value_type *)sName.data(), sName.size());
+		ErrCode eRet = CheckReserve(tData, szStringLength * sizeof(sName[0]));//提前分配
+		if (eRet != AllOk)
+		{
+			STACK_TRACEBACK("CheckReserve Fail, Check Size: [%zu]", sizeof(T));
+			return eRet;
+		}
+		//范围写入
+		tData.PutRange((const typename DataType::value_type *)sName.data(), szStringLength);
 
 		return eRet;
 	MYCATCH;
@@ -380,6 +399,13 @@ catch(...)\
 		}
 
 		//写出元素
+		ErrCode eRet = CheckReserve(tData, iArrayLength * sizeof(tArray[0]));//提前分配
+		if (eRet != AllOk)
+		{
+			STACK_TRACEBACK("CheckReserve Fail, Check Size: [%zu]", sizeof(T));
+			return eRet;
+		}
+
 		for (NBT_Type::ArrayLength i = 0; i < iArrayLength; ++i)
 		{
 			typename T::value_type tTmpData = tArray[i];
