@@ -296,7 +296,7 @@ catch(...)\
 
 	// 读取大端序数值，bNoCheck为true则不进行任何检查
 	template<bool bNoCheck = false, typename T>
-	static std::conditional_t<bNoCheck, void, ErrCode> ReadBigEndian(InputStream &tData, T &tVal) noexcept
+	static inline std::conditional_t<bNoCheck, void, ErrCode> ReadBigEndian(InputStream &tData, T &tVal) noexcept
 	{
 		if constexpr (!bNoCheck)
 		{
@@ -315,13 +315,14 @@ catch(...)\
 		}
 		else
 		{
-			T tTmp = 0;
+			//统一到无符号类型
+			using UT = typename std::make_unsigned<T>::type;
+			static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
+
 			for (size_t i = 0; i < sizeof(T); ++i)
 			{
-				tTmp <<= 8;//每次移动刚才提取的地位到高位，然后继续提取
-				tTmp |= (T)(uint8_t)tData.GetNext();//因为只会左移，不存在有符号导致的算术位移bug，不用转换为无符号类型
+				tVal |= ((UT)(uint8_t)tData.GetNext()) << (sizeof(T) * i);//每次移动刚才提取的地位到高位，然后继续提取
 			}
-			tVal = tTmp;
 		}
 
 		if constexpr (!bNoCheck)

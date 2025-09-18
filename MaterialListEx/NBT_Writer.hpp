@@ -264,7 +264,7 @@ catch(...)\
 
 	//大小端转换
 	template<typename T>
-	static ErrCode WriteBigEndian(OutputStream &tData, const T &tVal) noexcept
+	static inline ErrCode WriteBigEndian(OutputStream &tData, const T &tVal) noexcept
 	{
 	MYTRY;
 		ErrCode eRet = AllOk;
@@ -278,11 +278,9 @@ catch(...)\
 			using UT = typename std::make_unsigned<T>::type;
 			static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
 
-			UT tTmp = (UT)tVal;
-			for (size_t i = 0; i < sizeof(T); ++i)
+			for (size_t i = sizeof(T); i > 0; --i)
 			{
-				tData.PutOnce((uint8_t)(tTmp >> (8 * (sizeof(T) - 1))));//每次提取最高8位
-				tTmp <<= 8;//然后删除最高八位
+				tData.PutOnce((uint8_t)(((UT)tVal) >> (8 * (i - 1))));//依次提取
 			}
 		}
 
