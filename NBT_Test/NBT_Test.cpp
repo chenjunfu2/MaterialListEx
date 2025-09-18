@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
 	dataNew.shrink_to_fit();//删除内存
 
 	//递归比较
-	printf("\nData Compare Start");
+	printf("\nData Compare Start\n");
 	ct.Start();
 	std::partial_ordering cmp = cpdOriginal <=> cpdNew;
 	ct.Stop();
