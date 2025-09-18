@@ -319,9 +319,9 @@ catch(...)\
 			using UT = typename std::make_unsigned<T>::type;
 			static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
 
-			for (size_t i = 0; i < sizeof(T); ++i)
+			for (size_t i = sizeof(T); i > 0; --i)
 			{
-				tVal |= ((UT)(uint8_t)tData.GetNext()) << (8 * i);//每次移动刚才提取的地位到高位，然后继续提取
+				tVal |= ((UT)(uint8_t)tData.GetNext()) << (8 * (i - 1));//每次移动刚才提取的地位到高位，然后继续提取
 			}
 		}
 
