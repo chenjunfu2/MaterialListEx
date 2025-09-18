@@ -215,7 +215,6 @@ int main(int argc, char *argv[])
 	//删除数据但不释放内存以便复用
 	dataOriginal.resize(0);
 	auto &dataNew = dataOriginal;//起个别名继续用，不删除内存减少重复分配开销
-
 	printf("\ndataOriginal WriteNBT To dataNew Start\n");
 	ct.Start();
 	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(dataNew, cpdOriginal))
@@ -226,9 +225,14 @@ int main(int argc, char *argv[])
 	ct.Stop();
 	ct.PrintElapsed("dataOriginal WriteNBT To dataNew Time: ");
 
+	printf("File WriteNBT Size: [%zu]B ≈ [%.4lf]KB ≈ [%.4lf]MB ≈ [%.4lf]GB\n",
+		dataNew.size(),
+		(double)dataNew.size() / 1024.0,
+		(double)dataNew.size() / 1024.0 / 1024.0,
+		(double)dataNew.size() / 1024.0 / 1024.0 / 1024.0);
+
 	//写出到dataWrite之后不用写入文件，假装是文件读取的，直接用readnbt解析，然后比较之前的解析与后面的解析
 	NBT_Type::Compound cpdNew{};
-
 	printf("\ndataNew ReadNBT To cpdNew Start\n");
 	ct.Start();
 	if (!NBT_Reader<std::basic_string<uint8_t>>::ReadNBT(cpdNew, dataNew))
@@ -239,8 +243,12 @@ int main(int argc, char *argv[])
 	ct.Stop();
 	ct.PrintElapsed("dataNew ReadNBT To cpdNew Time: ");
 
+	printf("\nFree Memory Start\n");
+	ct.Start();
 	dataNew.resize(0);
 	dataNew.shrink_to_fit();//删除内存
+	ct.Stop();
+	ct.PrintElapsed("Free Memory Time: ");
 
 	//递归比较
 	printf("\nData Compare Start\n");
