@@ -4,5 +4,10 @@ MaterialListEx/nlohmann/** linguist-vendored
 MaterialListEx/xxhash/** linguist-vendored
 MaterialListEx/*.html linguist-vendored
 MaterialListEx/*.py linguist-vendored
-NBT_Test/*.bat linguist-vendored
+MaterialListEx/*.bat linguist-vendored
+MaterialListEx/*.cmd linguist-vendored
+
+NBT_Test/*.html linguist-vendored
 NBT_Test/*.py linguist-vendored
+NBT_Test/*.bat linguist-vendored
+NBT_Test/*.cmd linguist-vendored
