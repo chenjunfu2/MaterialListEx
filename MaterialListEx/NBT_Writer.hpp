@@ -341,7 +341,7 @@ catch(...)\
 		}
 
 		//输出名称
-		ErrCode eRet = CheckReserve(tData, szStringLength * sizeof(sName[0]));//提前分配
+		eRet = CheckReserve(tData, szStringLength * sizeof(sName[0]));//提前分配
 		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("CheckReserve Fail, Check Size: [%zu]", szStringLength * sizeof(sName[0]));
@@ -399,7 +399,7 @@ catch(...)\
 		}
 
 		//写出元素
-		ErrCode eRet = CheckReserve(tData, iArrayLength * sizeof(tArray[0]));//提前分配
+		eRet = CheckReserve(tData, iArrayLength * sizeof(tArray[0]));//提前分配
 		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("CheckReserve Fail, Check Size: [%zu]", iArrayLength * sizeof(tArray[0]));
