@@ -344,7 +344,7 @@ catch(...)\
 		ErrCode eRet = CheckReserve(tData, szStringLength * sizeof(sName[0]));//提前分配
 		if (eRet != AllOk)
 		{
-			STACK_TRACEBACK("CheckReserve Fail, Check Size: [%zu]", sizeof(T));
+			STACK_TRACEBACK("CheckReserve Fail, Check Size: [%zu]", szStringLength * sizeof(sName[0]));
 			return eRet;
 		}
 		//范围写入
@@ -402,7 +402,7 @@ catch(...)\
 		ErrCode eRet = CheckReserve(tData, iArrayLength * sizeof(tArray[0]));//提前分配
 		if (eRet != AllOk)
 		{
-			STACK_TRACEBACK("CheckReserve Fail, Check Size: [%zu]", sizeof(T));
+			STACK_TRACEBACK("CheckReserve Fail, Check Size: [%zu]", iArrayLength * sizeof(tArray[0]));
 			return eRet;
 		}
 
