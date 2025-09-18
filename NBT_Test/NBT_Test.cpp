@@ -151,7 +151,7 @@ return 0;
 最后用nbt分别解析这两个是否与原始等价（注意不是相同而是等价）
 因为受到map排序的问题，nbt并非总是相同的，但是元素却是等价的
 */
-#define WRITE_TO_FILE
+//#define WRITE_TO_FILE
 
 int main(int argc, char *argv[])
 {
