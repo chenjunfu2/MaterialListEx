@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 		(double)dataNew.size() / 1024.0 / 1024.0 / 1024.0);
 
 #ifdef WRITE_TO_FILE
-	printf("\dataNew WriteFile Start\n");
+	printf("\ndataNew WriteFile Start\n");
 	ct.Start();
 	if (!NBT_IO::WriteFile("write_dcp.nbt", dataNew))
 	{
