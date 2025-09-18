@@ -3,6 +3,7 @@
 #include "..\MaterialListEx\NBT_Writer.hpp"
 #include "..\MaterialListEx\NBT_Helper.hpp"
 #include "..\MaterialListEx\NBT_IO.hpp"
+#include "..\MaterialListEx\CodeTimer.hpp"
 
 #include <stdio.h>
 //#include <source_location>
@@ -144,6 +145,12 @@ return 0;
 
 
 
+/*
+测试流程：
+先读取原始nbt，解压后从nbt写出，然后再读入
+最后用nbt分别解析这两个是否与原始等价（注意不是相同而是等价）
+因为受到map排序的问题，nbt并非总是相同的，但是元素却是等价的
+*/
 int main(int argc, char *argv[])
 {
 	if (argc != 2)
@@ -155,60 +162,97 @@ int main(int argc, char *argv[])
 	const char *pInputFileName = argv[1];
 	printf("Current File:\"%s\"\n", pInputFileName);
 
-	//测试：
-	//先读取原始nbt，解压后从nbt写出，然后再读入
-	//最后用nbt分别解析这两个是否与原始等价（注意不是相同而是等价）
-	//因为受到map排序的问题，nbt并非总是相同的，但是元素却是等价的
+	CodeTimer ct{};
+	printf("Test Start:\n");
 
+	//从文件中读入
 	std::basic_string<uint8_t> dataOriginal{};
+	printf("\ndataOriginal ReadFile Start\n");
+	ct.Start();
 	if (!NBT_IO::ReadFile(pInputFileName, dataOriginal))
 	{
-		printf("[Line:%d]Original Read Fail\n", __LINE__);
+		printf("[Line:%d]dataOriginal Read Fail\n", __LINE__);
 		return -1;
 	}
+	ct.Stop();
+	ct.PrintElapsed("dataOriginal ReadFile Time: ");
 
+	printf("File Size: [%zu]B ≈ [%.4lf]KB ≈ [%.4lf]MB ≈ [%.4lf]GB\n",
+		dataOriginal.size(),
+		(double)dataOriginal.size() / 1024.0,
+		(double)dataOriginal.size() / 1024.0 / 1024.0,
+		(double)dataOriginal.size() / 1024.0 / 1024.0 / 1024.0);
+
+	//如果已经压缩则解压
+	printf("\ndataOriginal DecompressIfZipped Start\n");
+	ct.Start();
 	if (!NBT_IO::DecompressIfZipped(dataOriginal))
 	{
-		printf("[Line:%d]Decompress Fail\n", __LINE__);
+		printf("[Line:%d]dataOriginal DecompressIfZipped Fail\n", __LINE__);
 		return -1;
 	}
+	ct.Stop();
+	ct.PrintElapsed("dataOriginal DecompressIfZipped Time: ");
 
+	printf("File Decompress Size: [%zu]B ≈ [%.4lf]KB ≈ [%.4lf]MB ≈ [%.4lf]GB\n",
+		dataOriginal.size(),
+		(double)dataOriginal.size() / 1024.0,
+		(double)dataOriginal.size() / 1024.0 / 1024.0,
+		(double)dataOriginal.size() / 1024.0 / 1024.0 / 1024.0);
+
+	//从已确保解压的二进制数据中解析到nbt
+	printf("\ndataOriginal ReadNBT To cpdOriginal Start\n");
+	ct.Start();
 	NBT_Type::Compound cpdOriginal{};
 	if (!NBT_Reader<std::basic_string<uint8_t>>::ReadNBT(cpdOriginal, dataOriginal))
 	{
-		printf("[Line:%d]ReadNBT Fail\n", __LINE__);
+		printf("[Line:%d]dataOriginal ReadNBT To cpdOriginal Fail\n", __LINE__);
 		return -1;
 	}
+	ct.Stop();
+	ct.PrintElapsed("dataOriginal ReadNBT To cpdOriginal Time: ");
 
-	
+	//删除数据但不释放内存以便复用
 	dataOriginal.resize(0);
-	//dataOriginal.shrink_to_fit();//删除内存
 	auto &dataNew = dataOriginal;//起个别名继续用，不删除内存减少重复分配开销
 
+	printf("\ndataOriginal WriteNBT To dataNew Start\n");
+	ct.Start();
 	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(dataNew, cpdOriginal))
 	{
-		printf("[Line:%d]ReadNBT Fail\n", __LINE__);
+		printf("[Line:%d]dataOriginal WriteNBT To dataNew Fail\n", __LINE__);
 		return -1;
 	}
+	ct.Stop();
+	ct.PrintElapsed("dataOriginal WriteNBT To dataNew Time: ");
 
 	//写出到dataWrite之后不用写入文件，假装是文件读取的，直接用readnbt解析，然后比较之前的解析与后面的解析
 	NBT_Type::Compound cpdNew{};
+
+	printf("\ndataNew ReadNBT To cpdNew Start\n");
+	ct.Start();
 	if (!NBT_Reader<std::basic_string<uint8_t>>::ReadNBT(cpdNew, dataNew))
 	{
-		printf("[Line:%d]ReadNBT Fail\n", __LINE__);
+		printf("[Line:%d]dataNew ReadNBT To cpdNew Fail\n", __LINE__);
 		return -1;
 	}
+	ct.Stop();
+	ct.PrintElapsed("dataNew ReadNBT To cpdNew Time: ");
 
 	dataNew.resize(0);
 	dataNew.shrink_to_fit();//删除内存
 
 	//递归比较
+	printf("\nData Compare Start");
+	ct.Start();
 	std::partial_ordering cmp = cpdOriginal <=> cpdNew;
+	ct.Stop();
+	ct.PrintElapsed("Data Compare Time: ");
 	//std::strong_ordering;//强序
 	//std::weak_ordering;//弱序
 	//std::partial_ordering;//偏序
 
-	printf("cpdOriginal <=> cpdNew : cpdOriginal [");
+	printf("\nComparison results :\ncpdOriginal [");
 
 	if (cmp == std::partial_ordering::equivalent)
 	{
