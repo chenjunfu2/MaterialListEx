@@ -147,7 +147,7 @@ public:
 
 	void WriteRaw(const std::string &str)
 	{
-		fwrite(str.c_str(), str.size(), 1, pFile);
+		fwrite(str.data(), str.size(), 1, pFile);
 	}
 
 	void WriteEmpty(size_t szSlot)
