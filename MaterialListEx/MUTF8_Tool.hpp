@@ -95,15 +95,47 @@ private:
 		u16HighSurrogate = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'1111'1111'1100'0000'0000) >> 10 | (uint32_t)0b1101'1000'0000'0000);
 		u16LowSurrogate  = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1111'1111) >>  0 | (uint32_t)0b1101'1100'0000'0000);
 	}
+private:
+	//来点魔法类，伪装成basic string，在插入的时候进行数据长度计数，忽略插入的数据，最后隐式转换为size_t长度
+	//这样就能在最小修改的情况下用同一个函数套模板来获取转换后的长度（且100%准确），而不是重写一个例程
+	template<typename T>
+	class FakeStringCounter
+	{
+	private:
+		size_t szCounter = 0;
+	public:
+		FakeStringCounter(void) = default;
+		~FakeStringCounter(void) = default;
 
+		void clear(void) noexcept
+		{
+			szCounter = 0;
+		}
 
+		FakeStringCounter &append(const T *const, size_t szAppendSize) noexcept
+		{
+			szCounter += szAppendSize;
+		}
+
+		void push_back(const T &) noexcept
+		{
+			szCounter += 1;
+		}
+
+		operator size_t(void) const noexcept
+		{
+			return szCounter;
+		}
+	};
 
 public:
 //v=val b=beg e=end 注意范围是左右边界包含关系，而不是普通的左边界包含
 #define IN_RANGE(v,b,e) ((uint16_t)(v)>=(uint16_t)(b)&&(uint16_t)(v)<=(uint16_t)(e))
-	static std::basic_string<MU8T> U16ToMU8(const std::basic_string_view<U16T> &u16String)
+
+	template<bool bCounter = false>
+	static std::conditional_t<bCounter, size_t, std::basic_string<MU8T>> U16ToMU8(const std::basic_string_view<U16T> &u16String)
 	{
-		std::basic_string<MU8T> mu8String{};//字符串结尾为0xC0 0x80而非0x00
+		std::conditional_t<bCounter, FakeStringCounter<MU8T>, std::basic_string<MU8T>> mu8String{};//字符串结尾为0xC0 0x80而非0x00
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的mu8str
 		//if (u16String.size() == 0)
 		//{
@@ -188,9 +220,11 @@ public:
 
 //检查迭代器并获取下一个字节（如果可以，否则跳出）
 #define GET_NEXTCHAR(c) if (++it == end) { break; } else { c = *it; }
-	static std::basic_string<U16T> MU8ToU16(const std::basic_string_view<MU8T> &mu8String)
+
+	template<bool bCounter = false>
+	static std::conditional_t<bCounter, size_t, std::basic_string<U16T>> MU8ToU16(const std::basic_string_view<MU8T> &mu8String)
 	{
-		std::basic_string<U16T> u16String{};//字符串末尾为0x00
+		std::conditional_t<bCounter, FakeStringCounter<U16T>, std::basic_string<U16T>>u16String{};//字符串末尾为0x00
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的u16str
 		//if (mu8String.size() == 0)
 		//{
