@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 	printf("\ndataOriginal ReadNBT To cpdOriginal Start\n");
 	ct.Start();
 	NBT_Type::Compound cpdOriginal{};
-	if (!NBT_Reader<std::basic_string<uint8_t>>::ReadNBT(cpdOriginal, dataOriginal))
+	if (!NBT_Reader<std::basic_string_view<uint8_t>>::ReadNBT(cpdOriginal, dataOriginal))
 	{
 		printf("[Line:%d]dataOriginal ReadNBT To cpdOriginal Fail\n", __LINE__);
 		return -1;
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
 	NBT_Type::Compound cpdNew{};
 	printf("\ndataNew ReadNBT To cpdNew Start\n");
 	ct.Start();
-	if (!NBT_Reader<std::basic_string<uint8_t>>::ReadNBT(cpdNew, dataNew))
+	if (!NBT_Reader<std::basic_string_view<uint8_t>>::ReadNBT(cpdNew, dataNew))
 	{
 		printf("[Line:%d]dataNew ReadNBT To cpdNew Fail\n", __LINE__);
 		return -1;
@@ -321,7 +321,7 @@ int main0(int argc, char *argv[])
 	std::basic_string<uint8_t> tR{};
 	NBT_Type::Compound cpd;
 	if (!NBT_IO::ReadFile("TestNbt.nbt", tR) ||
-		!NBT_Reader<std::basic_string<uint8_t>>::ReadNBT(cpd, tR))
+		!NBT_Reader<std::basic_string_view<uint8_t>>::ReadNBT(cpd, tR))
 	{
 		printf("TestNbt Read Fail!\nData before the error was encountered:\n");
 	}

@@ -5,20 +5,21 @@
 
 #include "NBT_Node.hpp"
 
-template <typename T = std::basic_string<uint8_t>>
+//请尽可能使用basic_string_view来减少开销
+//因为string的[]运算符访问有坑，每次都会判断是否是优化模式导致问题，所以存储data指针直接访问以加速
+//否则汇编里会出现一大堆
+//cmp qword ptr [...],10h
+//jb ...
+//这种判断string是否是小于16的优化模式，来决定怎么访问string
+template <typename T = std::basic_string_view<uint8_t>>
 class MyInputStream
 {
 private:
-	const typename T::value_type * const pData = NULL;
-	const size_t szDataSize = 0;
+	const T &tData = {};
 	size_t szIndex = 0;
 public:
-	//因为string的[]运算符访问有坑，每次都会判断是否是优化模式导致问题，所以存储data指针直接访问以加速
-	//否则汇编里会出现一大堆
-	//cmp qword ptr [...],10h
-	//jb ...
-	//这种判断string是否是小于16的优化模式，来决定怎么访问，开销非常恶心
-	MyInputStream(const T &tData, size_t szStartIdx = 0) :pData(tData.data()), szDataSize(tData.size()), szIndex(szStartIdx)
+	
+	MyInputStream(const T &_tData, size_t szStartIdx = 0) :tData(_tData), szIndex(szStartIdx)
 	{}
 	~MyInputStream(void) = default;//默认析构
 
@@ -30,12 +31,12 @@ public:
 
 	const typename T::value_type &operator[](size_t szIndex) const noexcept
 	{
-		return pData[szIndex];
+		return tData[szIndex];
 	}
 
 	typename T::value_type GetNext() noexcept
 	{
-		return pData[szIndex++];
+		return tData[szIndex++];
 	}
 
 	void UnGet() noexcept
@@ -48,7 +49,7 @@ public:
 
 	const typename T::value_type *CurData() const noexcept
 	{
-		return &(pData[szIndex]);
+		return &(tData[szIndex]);
 	}
 
 	size_t AddIndex(size_t szSize) noexcept
@@ -63,17 +64,17 @@ public:
 
 	bool IsEnd() const noexcept
 	{
-		return szIndex >= szDataSize;
+		return szIndex >= tData.size();
 	}
 
 	size_t Size() const noexcept
 	{
-		return szDataSize;
+		return tData.size();
 	}
 
 	bool HasAvailData(size_t szSize) const noexcept
 	{
-		return (szDataSize - szIndex) >= szSize;
+		return (tData.size() - szIndex) >= szSize;
 	}
 
 	void Reset() noexcept
@@ -83,7 +84,7 @@ public:
 
 	const typename T::value_type *BaseData() const noexcept
 	{
-		return pData;
+		return tData.data();
 	}
 
 	size_t Index() const noexcept
@@ -97,8 +98,8 @@ public:
 	}
 };
 
-template <typename DataType = std::basic_string<uint8_t>>
-class NBT_Reader
+template <typename DataType = std::basic_string_view<uint8_t>>
+class NBT_Reader//请尽可能使用basic_string_view
 {
 	NBT_Reader(void) = delete;
 	~NBT_Reader(void) = delete;

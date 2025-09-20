@@ -101,7 +101,7 @@ private:
 public:
 //v=val b=beg e=end 注意范围是左右边界包含关系，而不是普通的左边界包含
 #define IN_RANGE(v,b,e) ((uint16_t)(v)>=(uint16_t)(b)&&(uint16_t)(v)<=(uint16_t)(e))
-	static std::basic_string<MU8T> U16ToMU8(const std::basic_string<U16T> &u16String)
+	static std::basic_string<MU8T> U16ToMU8(const std::basic_string_view<U16T> &u16String)
 	{
 		std::basic_string<MU8T> mu8String{};//字符串结尾为0xC0 0x80而非0x00
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的mu8str
@@ -188,7 +188,7 @@ public:
 
 //检查迭代器并获取下一个字节（如果可以，否则跳出）
 #define GET_NEXTCHAR(c) if (++it == end) { break; } else { c = *it; }
-	static std::basic_string<U16T> MU8ToU16(const std::basic_string<MU8T> &mu8String)
+	static std::basic_string<U16T> MU8ToU16(const std::basic_string_view<MU8T> &mu8String)
 	{
 		std::basic_string<U16T> u16String{};//字符串末尾为0x00
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的u16str
