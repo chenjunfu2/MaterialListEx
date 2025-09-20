@@ -411,40 +411,32 @@ public:
 		return U16ToMU8Impl<std::basic_string<MU8T>>(u16String.data(), u16String.size());
 	}
 	
-	static consteval size_t U16ToMU8Size(const U16T *u16String, size_t szStringSize)
+	static constexpr size_t U16ToMU8Size(const U16T *u16String, size_t szStringSize)
 	{
 		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringSize).GetData();
 	}
 	template<size_t N>
 	static consteval typename size_t U16ToMU8Size(const U16T(&u16String)[N])
 	{
-		if (N > 0 && u16String[N - 1] == u'\0')
-		{
-			return U16ToMU8Size(u16String, N - 1);
-		}
-		else
-		{
-			return U16ToMU8Size(u16String, N);
-		}
+		size_t szStringSize =
+			N > 0 && u16String[N - 1] == u'\0'
+			? N - 1
+			: N;
+
+		return U16ToMU8Size(u16String, szStringSize);
 	}
 
-	static consteval typename auto U16ToMU8(const U16T *u16String, size_t szStringSize)
-	{
-		constexpr size_t szNewSize = U16ToMU8Size(u16String, szStringSize);
-		return U16ToMU8Impl<StaticString<MU8T, szNewSize>>(u16String, szStringSize).GetData();//报错表达式必须含有常量值
-	}
-	template<size_t N>
-	static consteval typename auto U16ToMU8(const U16T(&u16String)[N])
-	{
-		if (N > 0 && u16String[N - 1] == u'\0')
-		{
-			return U16ToMU8(u16String, N - 1);
-		}
-		else
-		{
-			return U16ToMU8(u16String, N);
-		}
-	}
+	//template<size_t N>
+	//static consteval typename auto U16ToMU8(const U16T(&u16String)[N])
+	//{
+	//	size_t szStringSize = 
+	//		N > 0 && u16String[N - 1] == u'\0' 
+	//		? N - 1 
+	//		: N;
+	//
+	//	constexpr size_t szNewSize = U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringSize).GetData();//U16ToMU8Size(u16String, szStringSize);
+	//	return U16ToMU8Impl<StaticString<MU8T, szNewSize>>(u16String, szStringSize).GetData();
+	//}
 
 	//---------------------------------------------------------------------------------------------//
 
@@ -466,12 +458,23 @@ public:
 	//	constexpr size_t szNewSize = MU8ToU16Size(mu8String, szStringSize);
 	//	return MU8ToU16Impl<StaticString<U16T, szNewSize>>(mu8String, szStringSize).GetData();//报错表达式必须含有常量值
 	//}
+
+	friend consteval auto operator""_mu8(const char16_t *u16Str, size_t szStrSize);
 };
 
-//consteval auto operator""_mu8(const char16_t *u16Str, size_t szStrSize)
-//{
-//	return MUTF8_Tool<char, char16_t>::U16ToMU8Static(u16Str, szStrSize);
-//}
+consteval auto operator""_mu8(const char16_t *u16Str, size_t szStrSize)
+{
+	using Type = MUTF8_Tool<char, char16_t>;
+
+	if (szStrSize > 0 && u16Str[szStrSize - 1] == u'\0')
+	{
+		--szStrSize;
+	}
+
+	constexpr size_t szNewSize = Type::U16ToMU8Impl<Type::FakeStringCounter<char>>(u16Str, szStrSize).GetData();
+
+	return Type::U16ToMU8Impl<Type::StaticString<char, szNewSize>>(u16Str, szStrSize).GetData();
+}
 
 #define MU8STR(charstr) (u##charstr##_mu8)
 //#define MU8STR(charstr) (charstr)//纯英文情况下，转换后效果不变

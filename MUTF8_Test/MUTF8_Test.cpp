@@ -110,5 +110,6 @@ consteval size_t Test2(void)
 int main(void)
 {
 	printf("%zu\n", Test2<Test()>());
+	printf("%s\n", MUTF8_Tool<>::U16ToMU8(u"test").data());
 	return 0;
 }
