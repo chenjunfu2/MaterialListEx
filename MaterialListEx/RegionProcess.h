@@ -40,7 +40,7 @@ struct MapSortList
 	{
 		if (l.second == r.second)//数量相等情况下按key排序
 		{
-			return l.first < r.first;//升序
+			return (l.first.operator<=><true>(r.first)) < 0;//升序
 		}
 		else//否则val排序
 		{

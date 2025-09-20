@@ -44,12 +44,33 @@ public:
 				_l.cpdTag	==	_r.cpdTag;//开销最大放最后
 	}
 
+	static bool NoEqual(const ItemInfo &_l, const ItemInfo &_r) noexcept
+	{
+		return	_l.u64Hash	!=	_r.u64Hash	||
+				_l.sName	!=	_r.sName	||
+				_l.cpdTag	!=	_r.cpdTag;//开销最大放最后
+	}
+
+	bool operator==(const ItemInfo &_r) const noexcept
+	{
+		return Equal(*this, _r);
+	}
+
+	bool operator!=(const ItemInfo &_r) const noexcept
+	{
+		return NoEqual(*this, _r);
+	}
+
+	template<bool bRawCompare = false>
 	std::partial_ordering operator<=>(const ItemInfo &_r) const noexcept
 	{
-		//先按照哈希序
-		if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
+		if constexpr (!bRawCompare)//如果是bRawCompare那么跳过哈希比较
 		{
-			return tmp;
+			//先按照哈希序
+			if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
+			{
+				return tmp;
+			}
 		}
 
 		//后按照名称序
@@ -87,12 +108,31 @@ public:
 		return _l.u64Hash == _r.u64Hash && _l.sName == _r.sName;
 	}
 
+	static bool NoEqual(const NoTagItemInfo &_l, const NoTagItemInfo &_r) noexcept
+	{
+		return _l.u64Hash != _r.u64Hash || _l.sName != _r.sName;
+	}
+
+	bool operator==(const NoTagItemInfo &_r) const noexcept
+	{
+		return Equal(*this, _r);
+	}
+
+	bool operator!=(const NoTagItemInfo &_r) const noexcept
+	{
+		return NoEqual(*this, _r);
+	}
+
+	template<bool bRawCompare = false>
 	std::strong_ordering operator<=>(const NoTagItemInfo &_r) const noexcept
 	{
-		//先按照哈希序
-		if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
+		if constexpr (!bRawCompare)//如果是bRawCompare那么跳过哈希比较
 		{
-			return tmp;
+			//先按照哈希序
+			if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
+			{
+				return tmp;
+			}
 		}
 
 		//后按照名称序

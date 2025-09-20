@@ -21,15 +21,28 @@ public:
 		tpStop = std::chrono::steady_clock::now();
 	}
 
-	//打印时差
-	void PrintElapsed(const char *const cpBegInfo = "", const char *const cpEndInfo = "\n")
+	template<typename T = std::chrono::nanoseconds>
+	T Diff(void)
 	{
-		auto tmp = std::chrono::duration_cast<std::chrono::nanoseconds>(tpStop - tpStart);
-		printf("%s%lfms%s", cpBegInfo, (long double)tmp.count() * 1E-6, cpEndInfo);
+		return std::chrono::duration_cast<T>(tpStop - tpStart);
 	}
 
-	static uint64_t GetNowTime(void)
+	//打印时差
+	template<typename T = std::chrono::nanoseconds>
+	void PrintElapsed(const char *const cpBegInfo = "", const char *const cpEndInfo = "\n")
 	{
-		return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+		printf("%s%.6lfms%s", cpBegInfo, (long double)Diff<T>().count() * 1E-6, cpEndInfo);
+	}
+
+	template<typename T = std::chrono::milliseconds>
+	static uint64_t GetSteadyTime(void)
+	{
+		return std::chrono::duration_cast<T>(std::chrono::steady_clock::now().time_since_epoch()).count();
+	}
+
+	template<typename T = std::chrono::milliseconds>
+	static uint64_t GetSystemTime(void)
+	{
+		return std::chrono::duration_cast<T>(std::chrono::system_clock::now().time_since_epoch()).count();
 	}
 };

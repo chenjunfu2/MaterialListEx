@@ -312,6 +312,16 @@ void Convert(const char *const pFileName)
 		printf("RegionProcess error: %s\n", e.what());
 		return;
 	}
+	catch (const std::exception &e)
+	{
+		printf("RegionProcess error: %s\n", e.what());
+		return;
+	}
+	catch (...)
+	{
+		printf("RegionProcess error: Unknown Error!\n");
+		return;
+	}
 	timer.Stop();
 	timer.PrintElapsed("RegionProcess time:[", "]\n");
 
@@ -345,7 +355,7 @@ void Convert(const char *const pFileName)
 	do
 	{
 		//时间用[]包围
-		auto tmpCurTime = std::string{ '[' } + std::to_string(CodeTimer::GetNowTime()) + std::string{ ']' };//获取当前系统时间
+		auto tmpCurTime = std::string{ '[' } + std::to_string(CodeTimer::GetSystemTime()) + std::string{ ']' };//获取当前系统时间
 		sCsvPath.replace(szPos, std::string::npos, tmpCurTime);//放入尾部
 		sCsvPath.append(".csv");//后缀名改成csv
 	} while (NBT_IO::IsFileExist(sCsvPath) && i32Count-- > 0);//如果文件已经存在，重试
