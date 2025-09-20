@@ -90,6 +90,7 @@ consteval size_t operator""_X(void)
 int main999(void)
 {
 	printf("%zu", ("test"_Y));
+	123_X;
 
 	return 0;
 }
