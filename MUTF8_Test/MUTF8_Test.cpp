@@ -34,7 +34,7 @@ std::basic_string<wchar_t> generate_all_valid_utf16le()
 	return result;
 }
 
-int main()
+int main0()
 {
 	char arrTest[] =
 	{
@@ -70,5 +70,44 @@ int main()
 	}
 
 
+	return 0;
+}
+
+
+consteval size_t operator""_Y(const char *Str, size_t Size)
+{
+	return Size;
+}
+
+template <char... Cs>
+consteval size_t operator""_X(void)
+{
+	constexpr char arr[] = { Cs... };
+	return sizeof(arr);
+}
+
+
+int main999(void)
+{
+	printf("%zu", ("test"_Y));
+
+	return 0;
+}
+
+
+consteval auto Test(void)
+{
+	return MUTF8_Tool<>::U16ToMU8Size(u"你好");
+}
+
+template<size_t N>
+consteval size_t Test2(void)
+{
+	return N;
+}
+
+int main(void)
+{
+	printf("%zu\n", Test2<Test()>());
 	return 0;
 }

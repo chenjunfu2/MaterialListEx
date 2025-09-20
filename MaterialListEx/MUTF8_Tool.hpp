@@ -415,9 +415,35 @@ public:
 	{
 		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringSize).GetData();
 	}
+	template<size_t N>
+	static consteval typename size_t U16ToMU8Size(const U16T(&u16String)[N])
+	{
+		if (N > 0 && u16String[N - 1] == u'\0')
+		{
+			return U16ToMU8Size(u16String, N - 1);
+		}
+		else
+		{
+			return U16ToMU8Size(u16String, N);
+		}
+	}
+
 	static consteval typename auto U16ToMU8(const U16T *u16String, size_t szStringSize)
 	{
-		return U16ToMU8Impl<StaticString<MU8T, U16ToMU8Size(u16String, szStringSize)>>(u16String, szStringSize).GetData();
+		constexpr size_t szNewSize = U16ToMU8Size(u16String, szStringSize);
+		return U16ToMU8Impl<StaticString<MU8T, szNewSize>>(u16String, szStringSize).GetData();//报错表达式必须含有常量值
+	}
+	template<size_t N>
+	static consteval typename auto U16ToMU8(const U16T(&u16String)[N])
+	{
+		if (N > 0 && u16String[N - 1] == u'\0')
+		{
+			return U16ToMU8(u16String, N - 1);
+		}
+		else
+		{
+			return U16ToMU8(u16String, N);
+		}
 	}
 
 	//---------------------------------------------------------------------------------------------//
@@ -435,17 +461,17 @@ public:
 	{
 		return MU8ToU16Impl<FakeStringCounter<U16T>>(mu8String, szStringSize).GetData();
 	}
-	static consteval typename auto MU8ToU16(const MU8T *mu8String, size_t szStringSize)
-	{
-		return MU8ToU16Impl<StaticString<U16T, MU8ToU16Size(mu8String, szStringSize)>>(mu8String, szStringSize).GetData();
-	}
+	//static consteval typename auto MU8ToU16(const MU8T *mu8String, size_t szStringSize)
+	//{
+	//	constexpr size_t szNewSize = MU8ToU16Size(mu8String, szStringSize);
+	//	return MU8ToU16Impl<StaticString<U16T, szNewSize>>(mu8String, szStringSize).GetData();//报错表达式必须含有常量值
+	//}
 };
 
-consteval auto operator""_mu8(const char16_t *u16Str, size_t szStrSize)
-{
-	return MUTF8_Tool<char, char16_t>::U16ToMU8(u16Str, szStrSize - 1);
-}
-
+//consteval auto operator""_mu8(const char16_t *u16Str, size_t szStrSize)
+//{
+//	return MUTF8_Tool<char, char16_t>::U16ToMU8Static(u16Str, szStrSize);
+//}
 
 #define MU8STR(charstr) (u##charstr##_mu8)
 //#define MU8STR(charstr) (charstr)//纯英文情况下，转换后效果不变
