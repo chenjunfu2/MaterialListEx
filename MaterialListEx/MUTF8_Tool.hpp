@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <assert.h>
 #include <stdint.h>
+#include <array>
 
 template<typename MU8T = char, typename U16T = char16_t>
 class MUTF8_Tool
@@ -15,7 +16,7 @@ class MUTF8_Tool
 	~MUTF8_Tool(void) = delete;
 private:
 	template<size_t szBytes>
-	static void EncodeMUTF8Bmp(const U16T u16Char, MU8T(&mu8CharArr)[szBytes])
+	static constexpr void EncodeMUTF8Bmp(const U16T u16Char, MU8T(&mu8CharArr)[szBytes])
 	{
 		if constexpr (szBytes == 1)
 		{
@@ -38,7 +39,7 @@ private:
 		}
 	}
 
-	static void EncodeMUTF8Supplementary(const U16T u16HighSurrogate, const U16T u16LowSurrogate,  MU8T(&mu8CharArr)[6])
+	static constexpr void EncodeMUTF8Supplementary(const U16T u16HighSurrogate, const U16T u16LowSurrogate,  MU8T(&mu8CharArr)[6])
 	{
 		//取出代理对数据并组合 范围：100000-1FFFFF
 		uint32_t u32RawChar = //(uint32_t)0b0000'0000'0001'0000'0000'0000'0000'0000 |//U16代理对实际编码高位 bit20 -> 1 ignore
@@ -56,7 +57,7 @@ private:
 	}
 
 	template<size_t szBytes>
-	static void DecodeMUTF8Bmp(const MU8T(&mu8CharArr)[szBytes], U16T &u16Char)
+	static constexpr void DecodeMUTF8Bmp(const MU8T(&mu8CharArr)[szBytes], U16T &u16Char)
 	{
 		if constexpr (szBytes == 1)
 		{
@@ -79,7 +80,7 @@ private:
 		}
 	}
 
-	static void DecodeMUTF8Supplementary(const MU8T(&mu8CharArr)[6], U16T &u16HighSurrogate, U16T &u16LowSurrogate)
+	static constexpr void DecodeMUTF8Supplementary(const MU8T(&mu8CharArr)[6], U16T &u16HighSurrogate, U16T &u16LowSurrogate)
 	{
 		//忽略mu8CharArr[0]和mu8CharArr[3]（固定字节）
 		uint32_t u32RawChar = //(uint16_t)0b0000'0000'0001'0000'0000'0000'0000'0000 |//bit20->1 ignore
@@ -104,46 +105,94 @@ private:
 	private:
 		size_t szCounter = 0;
 	public:
-		FakeStringCounter(void) = default;
-		~FakeStringCounter(void) = default;
+		constexpr FakeStringCounter(void) = default;
+		constexpr ~FakeStringCounter(void) = default;
 
-		void clear(void) noexcept
+		constexpr void clear(void) noexcept
 		{
 			szCounter = 0;
 		}
 
-		FakeStringCounter &append(const T *const, size_t szAppendSize) noexcept
+		constexpr FakeStringCounter &append(const T *const, size_t szSize) noexcept
 		{
-			szCounter += szAppendSize;
+			szCounter += szSize;
+			return *this;
 		}
 
-		void push_back(const T &) noexcept
+		constexpr void push_back(const T &) noexcept
 		{
 			szCounter += 1;
 		}
 
-		operator size_t(void) const noexcept
+		constexpr size_t GetData(void) const noexcept
 		{
 			return szCounter;
 		}
 	};
 
-public:
+	template<typename T, size_t N>
+	class StaticString
+	{
+	public:
+		using ARRAY_TYPE = std::array<T, N>;
+	private:
+		ARRAY_TYPE arrData{};
+		size_t szIndex = 0;
+	public:
+		constexpr StaticString(void) = default;
+		constexpr ~StaticString(void) = default;
+
+		constexpr void clear(void) noexcept
+		{
+			szIndex = 0;
+		}
+
+		constexpr StaticString &append(const T *const pData, size_t szSize) noexcept
+		{
+			if (szIndex + szSize > arrData.size())
+			{
+				return *this;
+			}
+
+			std::ranges::copy(pData, &pData[szSize], &arrData[szIndex]);
+			szIndex += szSize;
+
+			//for (size_t i = 0; i < szSize; ++i, ++szIndex)
+			//{
+			//	arrData[szIndex] = pData[i];
+			//}
+			return *this;
+		}
+
+		constexpr void push_back(const T &tData) noexcept
+		{
+			if (szIndex + 1 > arrData.size())
+			{
+				return *this;
+			}
+
+			arrData[szIndex] = tData;
+			szIndex += 1;
+		}
+
+		constexpr ARRAY_TYPE GetData(void) const noexcept
+		{
+			return arrData;
+		}
+	};
+
+private:
 //v=val b=beg e=end 注意范围是左右边界包含关系，而不是普通的左边界包含
 #define IN_RANGE(v,b,e) ((uint16_t)(v)>=(uint16_t)(b)&&(uint16_t)(v)<=(uint16_t)(e))
 
-	template<bool bCounter = false>
-	static std::conditional_t<bCounter, size_t, std::basic_string<MU8T>> U16ToMU8(const std::basic_string_view<U16T> &u16String)
+	template<typename T>
+	static constexpr T U16ToMU8Impl(const U16T *u16String, size_t szStringSize)
 	{
-		std::conditional_t<bCounter, FakeStringCounter<MU8T>, std::basic_string<MU8T>> mu8String{};//字符串结尾为0xC0 0x80而非0x00
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的mu8str
-		//if (u16String.size() == 0)
-		//{
-		//	mu8String.push_back((uint8_t)0xC0);
-		//	mu8String.push_back((uint8_t)0x80);
-		//}
 
-		for (auto it = u16String.begin(), end = u16String.end(); it != end; ++it)
+		T mu8String{};//字符串结尾为0xC0 0x80而非0x00
+
+		for (auto it = u16String, end = u16String + szStringSize; it != end; ++it)
 		{
 			U16T u16Char = *it;
 			if (IN_RANGE(u16Char, 0x0001, 0x007F))//单字节码点
@@ -221,17 +270,14 @@ public:
 //检查迭代器并获取下一个字节（如果可以，否则跳出）
 #define GET_NEXTCHAR(c) if (++it == end) { break; } else { c = *it; }
 
-	template<bool bCounter = false>
-	static std::conditional_t<bCounter, size_t, std::basic_string<U16T>> MU8ToU16(const std::basic_string_view<MU8T> &mu8String)
+	template<typename T = std::basic_string<U16T>>//FakeStringCounter<U16T>
+	static constexpr T MU8ToU16Impl(const MU8T *mu8String, size_t szStringSize)
 	{
-		std::conditional_t<bCounter, FakeStringCounter<U16T>, std::basic_string<U16T>>u16String{};//字符串末尾为0x00
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的u16str
-		//if (mu8String.size() == 0)
-		//{
-		//	u16String.push_back((uint16_t)0x00);
-		//}
 
-		for (auto it = mu8String.begin(), end = mu8String.end(); it != end; ++it)
+		T u16String{};//字符串末尾为0x0000
+		
+		for (auto it = mu8String, end = mu8String + szStringSize; it != end; ++it)
 		{
 			MU8T mu8Char = *it;
 			//判断是几字节的mu8
@@ -355,10 +401,54 @@ public:
 	}
 #undef GET_NEXTCHAR
 
+public:
+	static size_t U16ToMU8Size(const std::basic_string_view<U16T> &u16String)
+	{
+		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String.data(), u16String.size()).GetData();
+	}
+	static std::basic_string<MU8T> U16ToMU8(const std::basic_string_view<U16T> &u16String)
+	{
+		return U16ToMU8Impl<std::basic_string<MU8T>>(u16String.data(), u16String.size());
+	}
+	
+	static consteval size_t U16ToMU8Size(const U16T *u16String, size_t szStringSize)
+	{
+		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringSize).GetData();
+	}
+	static consteval typename auto U16ToMU8(const U16T *u16String, size_t szStringSize)
+	{
+		return U16ToMU8Impl<StaticString<MU8T, U16ToMU8Size(u16String, szStringSize)>>(u16String, szStringSize).GetData();
+	}
+
+	//---------------------------------------------------------------------------------------------//
+
+	static constexpr size_t MU8ToU16Size(const std::basic_string_view<MU8T> &mu8String)
+	{
+		return MU8ToU16Impl<FakeStringCounter<U16T>>(mu8String.data(), mu8String.size()).GetData();
+	}
+	static std::basic_string<U16T> MU8ToU16(const std::basic_string_view<MU8T> &mu8String)
+	{
+		return MU8ToU16Impl<std::basic_string<U16T>>(mu8String.data(), mu8String.size());
+	}
+	
+	static consteval size_t MU8ToU16Size(const MU8T *mu8String, size_t szStringSize)
+	{
+		return MU8ToU16Impl<FakeStringCounter<U16T>>(mu8String, szStringSize).GetData();
+	}
+	static consteval typename auto MU8ToU16(const MU8T *mu8String, size_t szStringSize)
+	{
+		return MU8ToU16Impl<StaticString<U16T, MU8ToU16Size(mu8String, szStringSize)>>(mu8String, szStringSize).GetData();
+	}
 };
 
-//#define MU8STR(charstr) MUTF8_Tool<>::U16ToMU8(u##charstr)
-#define MU8STR(charstr) (charstr)//纯英文情况下，转换后效果不变
+consteval auto operator""_mu8(const char16_t *u16Str, size_t szStrSize)
+{
+	return MUTF8_Tool<char, char16_t>::U16ToMU8(u16Str, szStrSize - 1);
+}
+
+
+#define MU8STR(charstr) (u##charstr##_mu8)
+//#define MU8STR(charstr) (charstr)//纯英文情况下，转换后效果不变
 #define U16STR(mu8str) MUTF8_Tool<>::MU8ToU16(mu8str)
 
 /*
