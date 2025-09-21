@@ -2,6 +2,10 @@
 
 #include <new>//std::bad_alloc
 #include <bit>//std::bit_cast
+#include <string>
+#include <stdint.h>
+#include <stdlib.h>//byte swap
+#include <type_traits>
 
 #include "NBT_Node.hpp"
 
@@ -37,6 +41,12 @@ public:
 	typename T::value_type GetNext() noexcept
 	{
 		return tData[szIndex++];
+	}
+
+	void GetRange(void *pDest, size_t szSize) noexcept
+	{
+		std::memcpy(pDest, &tData[szIndex], szSize);
+		szIndex += szSize;
 	}
 
 	void UnGet() noexcept
@@ -308,6 +318,7 @@ catch(...)\
 
 	//读取大端序数值，bNoCheck为true则不进行任何检查
 	template<bool bNoCheck = false, typename T>
+	requires std::integral<T>
 	static inline std::conditional_t<bNoCheck, void, ErrCode> ReadBigEndian(InputStream &tData, T &tVal) noexcept
 	{
 		if constexpr (!bNoCheck)
@@ -321,11 +332,29 @@ catch(...)\
 			}
 		}
 
-		if constexpr (sizeof(T) == 1)
+		if constexpr (sizeof(T) == sizeof(uint8_t))
 		{
 			tVal = (T)(uint8_t)tData.GetNext();
 		}
-		else
+		else if constexpr (sizeof(T) == sizeof(uint16_t))
+		{
+			uint16_t tmp{};
+			tData.GetRange((uint8_t *)&tmp, sizeof(tmp));
+			tVal = (T)(uint16_t)_byteswap_ushort(tmp);
+		}
+		else if constexpr (sizeof(T) == sizeof(uint32_t))
+		{
+			uint32_t tmp{};
+			tData.GetRange((uint8_t *)&tmp, sizeof(tmp));
+			tVal = (T)(uint32_t)_byteswap_ulong(tmp);
+		}
+		else if constexpr (sizeof(T) == sizeof(uint64_t))
+		{
+			uint64_t tmp{};
+			tData.GetRange((uint8_t *)&tmp, sizeof(tmp));
+			tVal = (T)(uint64_t)_byteswap_uint64(tmp);
+		}
+		else//other
 		{
 			//统一到无符号类型
 			using UT = typename std::make_unsigned<T>::type;
@@ -333,8 +362,7 @@ catch(...)\
 
 			//缓冲区，读取
 			uint8_t u8BigEndianBuffer[sizeof(T)] = { 0 };
-			std::memcpy(u8BigEndianBuffer, tData.CurData(), sizeof(u8BigEndianBuffer));
-			tData.AddIndex(sizeof(u8BigEndianBuffer));//读取后递增
+			tData.GetRange(u8BigEndianBuffer, sizeof(u8BigEndianBuffer));
 
 			//静态展开（替代for）
 			[&] <size_t... Is>(std::index_sequence<Is...>) -> void
@@ -344,8 +372,7 @@ catch(...)\
 
 				//读取完成赋值给tVal
 				tVal = (T)tmpVal;
-			}
-			(std::make_index_sequence<sizeof(T)>{});
+			}(std::make_index_sequence<sizeof(T)>{});
 
 			//与上面操作等价但性能较低的写法，保留以用于增加可读性
 			//for (size_t i = sizeof(T); i > 0; --i)

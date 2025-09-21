@@ -1,8 +1,10 @@
 #pragma once
 
 #include <new>//bad alloc
+#include <bit>//std::bit_cast
 #include <string>
 #include <stdint.h>
+#include <stdlib.h>//byte swap
 #include <type_traits>
 
 #include "NBT_Node.hpp"
@@ -277,14 +279,30 @@ catch(...)\
 
 	//写出大端序值
 	template<typename T>
+	requires std::integral<T>
 	static inline ErrCode WriteBigEndian(OutputStream &tData, const T &tVal) noexcept
 	{
 	MYTRY;
-		if constexpr (sizeof(T) == 1)
+		if constexpr (sizeof(T) == sizeof(uint8_t))
 		{
 			tData.PutOnce((uint8_t)tVal);
 		}
-		else
+		else if constexpr (sizeof(T) == sizeof(uint16_t))
+		{
+			uint16_t tmp = _byteswap_ushort((uint16_t)tVal);
+			tData.PutRange((const uint8_t*)&tmp, sizeof(tmp));
+		}
+		else if constexpr (sizeof(T) == sizeof(uint32_t))
+		{
+			uint32_t tmp = _byteswap_ulong((uint32_t)tVal);
+			tData.PutRange((const uint8_t *)&tmp, sizeof(tmp));
+		}
+		else if constexpr (sizeof(T) == sizeof(uint64_t))
+		{
+			uint64_t tmp = _byteswap_uint64((uint64_t)tVal);
+			tData.PutRange((const uint8_t *)&tmp, sizeof(tmp));
+		}
+		else//other
 		{
 			//统一到无符号类型，防止有符号右移错误
 			using UT = typename std::make_unsigned<T>::type;
