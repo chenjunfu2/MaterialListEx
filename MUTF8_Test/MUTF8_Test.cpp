@@ -107,9 +107,45 @@ consteval size_t Test2(void)
 	return N;
 }
 
+template<size_t N>
+consteval size_t Test3(const char16_t(&u16String)[N])
+{
+	return MUTF8_Tool<>::U16ToMU8Size(u16String);
+}
+
+consteval size_t Test4(const char16_t *u16String, size_t N)
+{
+	auto tmp = MUTF8_Tool<>::U16ToMU8Size(u16String, N);
+	return tmp;
+}
+
+consteval size_t Test5(const char16_t *u16String, size_t N)
+{
+	return Test4(u16String, N);
+}
+
+consteval size_t Test6(const char16_t *u16String, size_t N)
+{
+	return Test2<Test5(u16String, N)>();
+}
+
+template<size_t N>
+consteval size_t Test7(const char16_t(&u16String)[N])
+{
+	//std::cw<u16String>;
+	return Test2<Test3(u16String)>(); // Test3(u16String) 在模板参数位置是常量表达式
+}
+
 int main(void)
 {
-	printf("%zu\n", Test2<Test()>());
-	printf("%s\n", MUTF8_Tool<>::U16ToMU8(u"test").data());
+	constexpr auto t0 = Test2<Test3(u"你好")>();
+	constexpr auto t1 = Test2<Test()>();
+	constexpr auto t2 = Test2<Test4(u"不是，哥们", sizeof(u"不是，哥们") / sizeof(uint16_t) - 1)>();
+	constexpr auto t3 = Test6(u"不是，哥们", sizeof(u"不是，哥们") / sizeof(uint16_t) - 1);
+
+	printf("%zu\n", t0);
+	printf("%zu\n", t1);
+	printf("%zu\n", t2);
+	//printf("%s\n", MUTF8_Tool<>::U16ToMU8(u"test").data());
 	return 0;
 }

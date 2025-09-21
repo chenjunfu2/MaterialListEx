@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <array>
+#include <algorithm>
 
 template<typename MU8T = char, typename U16T = char16_t>
 class MUTF8_Tool
@@ -130,6 +131,7 @@ private:
 		}
 	};
 
+	//魔法类2，伪装成string，转换到静态字符串作为std::array返回
 	template<typename T, size_t N>
 	class StaticString
 	{
@@ -168,7 +170,7 @@ private:
 		{
 			if (szIndex + 1 > arrData.size())
 			{
-				return *this;
+				return;
 			}
 
 			arrData[szIndex] = tData;
@@ -186,13 +188,13 @@ private:
 #define IN_RANGE(v,b,e) ((uint16_t)(v)>=(uint16_t)(b)&&(uint16_t)(v)<=(uint16_t)(e))
 
 	template<typename T>
-	static constexpr T U16ToMU8Impl(const U16T *u16String, size_t szStringSize)
+	static constexpr T U16ToMU8Impl(const U16T *u16String, size_t szStringLength)
 	{
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的mu8str
 
 		T mu8String{};//字符串结尾为0xC0 0x80而非0x00
 
-		for (auto it = u16String, end = u16String + szStringSize; it != end; ++it)
+		for (auto it = u16String, end = u16String + szStringLength; it != end; ++it)
 		{
 			U16T u16Char = *it;
 			if (IN_RANGE(u16Char, 0x0001, 0x007F))//单字节码点
@@ -271,13 +273,13 @@ private:
 #define GET_NEXTCHAR(c) if (++it == end) { break; } else { c = *it; }
 
 	template<typename T = std::basic_string<U16T>>//FakeStringCounter<U16T>
-	static constexpr T MU8ToU16Impl(const MU8T *mu8String, size_t szStringSize)
+	static constexpr T MU8ToU16Impl(const MU8T *mu8String, size_t szStringLength)
 	{
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的u16str
 
 		T u16String{};//字符串末尾为0x0000
 		
-		for (auto it = mu8String, end = mu8String + szStringSize; it != end; ++it)
+		for (auto it = mu8String, end = mu8String + szStringLength; it != end; ++it)
 		{
 			MU8T mu8Char = *it;
 			//判断是几字节的mu8
@@ -411,32 +413,38 @@ public:
 		return U16ToMU8Impl<std::basic_string<MU8T>>(u16String.data(), u16String.size());
 	}
 	
-	static constexpr size_t U16ToMU8Size(const U16T *u16String, size_t szStringSize)
+	static constexpr size_t U16ToMU8Size(const U16T *u16String, size_t szStringLength)
 	{
-		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringSize).GetData();
+		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringLength).GetData();
 	}
 	template<size_t N>
-	static consteval typename size_t U16ToMU8Size(const U16T(&u16String)[N])
+	static consteval size_t U16ToMU8Size(const U16T(&u16String)[N])
 	{
-		size_t szStringSize =
+		size_t szStringLength =
 			N > 0 && u16String[N - 1] == u'\0'
 			? N - 1
 			: N;
 
-		return U16ToMU8Size(u16String, szStringSize);
+		return U16ToMU8Size(u16String, szStringLength);
 	}
 
-	//template<size_t N>
-	//static consteval typename auto U16ToMU8(const U16T(&u16String)[N])
-	//{
-	//	size_t szStringSize = 
-	//		N > 0 && u16String[N - 1] == u'\0' 
-	//		? N - 1 
-	//		: N;
-	//
-	//	constexpr size_t szNewSize = U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringSize).GetData();//U16ToMU8Size(u16String, szStringSize);
-	//	return U16ToMU8Impl<StaticString<MU8T, szNewSize>>(u16String, szStringSize).GetData();
-	//}
+	template<size_t N>
+	static consteval size_t Tmp()
+	{
+		return N;
+	}
+
+	template<size_t N>
+	static consteval auto U16ToMU8(const U16T(&u16String)[N])
+	{
+		size_t szStringLength = 
+			N > 0 && u16String[N - 1] == u'\0' 
+			? N - 1 
+			: N;
+	
+		constexpr size_t szNewSize = U16ToMU8Size(u16String);
+		return U16ToMU8Impl<StaticString<MU8T, szNewSize>>(u16String, szStringLength).GetData();
+	}
 
 	//---------------------------------------------------------------------------------------------//
 
@@ -449,34 +457,34 @@ public:
 		return MU8ToU16Impl<std::basic_string<U16T>>(mu8String.data(), mu8String.size());
 	}
 	
-	static consteval size_t MU8ToU16Size(const MU8T *mu8String, size_t szStringSize)
+	static consteval size_t MU8ToU16Size(const MU8T *mu8String, size_t szStringLength)
 	{
-		return MU8ToU16Impl<FakeStringCounter<U16T>>(mu8String, szStringSize).GetData();
+		return MU8ToU16Impl<FakeStringCounter<U16T>>(mu8String, szStringLength).GetData();
 	}
-	//static consteval typename auto MU8ToU16(const MU8T *mu8String, size_t szStringSize)
+	//static consteval typename auto MU8ToU16(const MU8T *mu8String, size_t szStringLength)
 	//{
-	//	constexpr size_t szNewSize = MU8ToU16Size(mu8String, szStringSize);
-	//	return MU8ToU16Impl<StaticString<U16T, szNewSize>>(mu8String, szStringSize).GetData();//报错表达式必须含有常量值
+	//	constexpr size_t szNewSize = MU8ToU16Size(mu8String, szStringLength);
+	//	return MU8ToU16Impl<StaticString<U16T, szNewSize>>(mu8String, szStringLength).GetData();//报错表达式必须含有常量值
 	//}
 
-	friend consteval auto operator""_mu8(const char16_t *u16Str, size_t szStrSize);
+	//friend consteval auto operator""_mu8(const char16_t *u16Str, size_t szStrSize);
 };
 
-consteval auto operator""_mu8(const char16_t *u16Str, size_t szStrSize)
-{
-	using Type = MUTF8_Tool<char, char16_t>;
+//consteval auto operator""_mu8(const char16_t *u16Str, size_t szStrSize)
+//{
+//	using Type = MUTF8_Tool<char, char16_t>;
+//
+//	if (szStrSize > 0 && u16Str[szStrSize - 1] == u'\0')
+//	{
+//		--szStrSize;
+//	}
+//
+//	constexpr size_t szNewSize = Type::U16ToMU8Impl<Type::FakeStringCounter<char>>(u16Str, szStrSize).GetData();
+//
+//	return Type::U16ToMU8Impl<Type::StaticString<char, szNewSize>>(u16Str, szStrSize).GetData();
+//}
 
-	if (szStrSize > 0 && u16Str[szStrSize - 1] == u'\0')
-	{
-		--szStrSize;
-	}
-
-	constexpr size_t szNewSize = Type::U16ToMU8Impl<Type::FakeStringCounter<char>>(u16Str, szStrSize).GetData();
-
-	return Type::U16ToMU8Impl<Type::StaticString<char, szNewSize>>(u16Str, szStrSize).GetData();
-}
-
-#define MU8STR(charstr) (u##charstr##_mu8)
+#define MU8STR(charstr) MUTF8_Tool<>::U16ToMU8(u##charstr)
 //#define MU8STR(charstr) (charstr)//纯英文情况下，转换后效果不变
 #define U16STR(mu8str) MUTF8_Tool<>::MU8ToU16(mu8str)
 
