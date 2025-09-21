@@ -28,10 +28,9 @@ public:
 	}
 
 	//¥Ú”° ±≤Ó
-	template<typename T = std::chrono::nanoseconds>
 	void PrintElapsed(const char *const cpBegInfo = "", const char *const cpEndInfo = "\n")
 	{
-		printf("%s%.6lfms%s", cpBegInfo, (long double)Diff<T>().count() * 1E-6, cpEndInfo);
+		printf("%s%.6lfms%s", cpBegInfo, (long double)Diff<std::chrono::nanoseconds>().count() * 1E-6, cpEndInfo);
 	}
 
 	template<typename T = std::chrono::milliseconds>
