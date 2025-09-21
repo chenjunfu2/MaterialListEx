@@ -612,12 +612,12 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 
 		const constexpr static char *pSurfaceNameList[] =
 		{
-			"down",
-			"east",
-			"north",
-			"south",
-			"up",
-			"west",
+			MU8STR("down"),
+			MU8STR("east"),
+			MU8STR("north"),
+			MU8STR("south"),
+			MU8STR("up"),
+			MU8STR("west"),
 		};
 
 
@@ -632,7 +632,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 			uint64_t u64Counter = 0;
 			for (const auto &it : pSurfaceNameList)
 			{
-				const auto pSurface = stBlocks.pcpdProperties->HasString(MU8STR(it));
+				const auto pSurface = stBlocks.pcpdProperties->HasString(it);
 				if (pSurface != NULL)
 				{
 					if (*pSurface == MU8STR("true"))
