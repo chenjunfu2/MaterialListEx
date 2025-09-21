@@ -51,7 +51,7 @@ void PrintInfo(const T &info, const Language &lang)
 			printf("%s[%s]%s:%lld = %s\n",
 				U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)).c_str(),
 				refItem.first.sName.c_str(),
-				U16ANSI(U16STR(NBT_Helper::Serialize(refItem.first.cpdTag))).c_str(),
+				U16ANSI(CVRTU16(NBT_Helper::Serialize(refItem.first.cpdTag))).c_str(),
 				refItem.second,
 				CountFormat(refItem.second).c_str());
 		}
@@ -86,7 +86,7 @@ void PrintInfo(const T &info, const Language &lang, CSV_Tool &csv)
 		//判断是否存在cpd成员，有则输出
 		if constexpr (HasCpdTag<std::decay_t<decltype(refItem.first)>>)
 		{
-			csv.WriteOnce<true>(U16ANSI(U16STR(NBT_Helper::Serialize(refItem.first.cpdTag))));
+			csv.WriteOnce<true>(U16ANSI(CVRTU16(NBT_Helper::Serialize(refItem.first.cpdTag))));
 		}
 
 		csv.WriteOnce<true>(std::format("{}个 = {}", refItem.second, CountFormat(refItem.second)));
@@ -296,7 +296,7 @@ void Convert(const char *const pFileName)
 	//输出名称（一般是空字符串）
 	const auto &root = *nRoot.begin();
 #ifdef _DEBUG
-	printf("root:\"%s\"\n", U16ANSI(U16STR(root.first)).c_str());
+	printf("root:\"%s\"\n", U16ANSI(CVRTU16(root.first)).c_str());
 #endif
 
 	timer.Start();
@@ -398,7 +398,7 @@ void Convert(const char *const pFileName)
 	//处理所有区域
 	for (const auto &it : listRegionStats)
 	{
-		PrintLine(csv, "区域(Region)", '[' + U16ANSI(U16STR(it.sRegionName)) + ']');
+		PrintLine(csv, "区域(Region)", '[' + U16ANSI(CVRTU16(it.sRegionName)) + ']');
 	
 		//PrintLine(csv);
 		//PrintLine(csv, "类型(Type)", "[block]");

@@ -530,7 +530,7 @@ catch(...)\
 			eRet = GetSwitch(tData, tmpNode, tagNbt, szStackDepth - 1);
 			if (eRet != AllOk)
 			{
-				STACK_TRACEBACK("GetSwitch Fail, Name: \"%s\", Type: [NBT_Type::%s]", U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tagNbt));
+				STACK_TRACEBACK("GetSwitch Fail, Name: \"%s\", Type: [NBT_Type::%s]", U16ANSI(CVRTU16(sName)).c_str(), NBT_Type::GetTypeName(tagNbt));
 				//return eRet;//注意此处不返回，进行插入，以便分析错误之前的正确数据
 			}
 
@@ -546,7 +546,7 @@ catch(...)\
 
 				//发出警告，注意警告不用eRet接返回值
 				Error(ElementExistsWarn, tData, __FUNCSIG__ ": Name: \"%s\", Type: [NBT_Type::%s] data already exist!",
-					U16ANSI(U16STR(sName)).c_str(), NBT_Type::GetTypeName(tagNbt));
+					U16ANSI(CVRTU16(sName)).c_str(), NBT_Type::GetTypeName(tagNbt));
 			}
 
 			//最后判断是否出错

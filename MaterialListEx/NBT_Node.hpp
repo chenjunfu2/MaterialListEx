@@ -8,6 +8,8 @@
 #include "NBT_List.hpp"
 #include "NBT_Compound.hpp"
 
+#define MU8STR(charLiteralString) NBT_Type::String::View(CHAR2MU8STR(charLiteralString))
+
 template <bool bIsConst>
 class NBT_Node_View;
 

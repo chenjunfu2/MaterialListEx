@@ -1,6 +1,7 @@
 ﻿// MUTF8_Test.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
 //
 
+/*
 #include <stdio.h>
 #include "../MaterialListEx/MUTF8_Tool.hpp"
 #include "../MaterialListEx/Windows_ANSI.hpp"
@@ -94,58 +95,143 @@ int main999(void)
 
 	return 0;
 }
+*/
+//--------------------------------------------------------------------------//
+#include <stdio.h>
+#include <utility>
 
-
-consteval auto Test(void)
+consteval size_t MyStaticFunc(const char16_t *u16String, size_t N)
 {
-	return MUTF8_Tool<>::U16ToMU8Size(u"你好");
+	size_t szCounter = 0;
+	for (auto it = u16String, end = u16String + N; it != end; ++it)
+	{
+		if (*it < 255)
+		{
+			++szCounter;
+		}
+		else
+		{
+			szCounter += 2;
+		}
+	}
+
+	return szCounter;
 }
 
 template<size_t N>
-consteval size_t Test2(void)
+consteval size_t MyStaticFunc(const char16_t(&u16String)[N])
+{
+	return MyStaticFunc(u16String, N);
+}
+
+
+template<size_t N>
+consteval size_t Test(void)
 {
 	return N;
 }
 
-template<size_t N>
-consteval size_t Test3(const char16_t(&u16String)[N])
+consteval auto Test0(void)
 {
-	return MUTF8_Tool<>::U16ToMU8Size(u16String);
+	return MyStaticFunc(u"你好");
+}
+
+consteval auto Test1(void)
+{
+	return Test<Test0()>();
+}
+
+template<size_t N>
+consteval size_t Test2(const char16_t(&u16String)[N])
+{
+	return MyStaticFunc(u16String);
+}
+
+consteval size_t Test3(const char16_t *u16String, size_t N)
+{
+	auto tmp = MyStaticFunc(u16String, N);
+	return tmp;
 }
 
 consteval size_t Test4(const char16_t *u16String, size_t N)
 {
-	auto tmp = MUTF8_Tool<>::U16ToMU8Size(u16String, N);
-	return tmp;
+	return Test3(u16String, N);
 }
 
-consteval size_t Test5(const char16_t *u16String, size_t N)
-{
-	return Test4(u16String, N);
-}
+//template<size_t N>
+//consteval size_t Test5(const char16_t(&u16String)[N])
+//{
+//	return Test<Test2(u16String)>();
+//}
+//
+//consteval size_t Test6(const char16_t *u16String, size_t N)
+//{
+//	return Test<Test3(u16String, N)>();
+//}
 
-consteval size_t Test6(const char16_t *u16String, size_t N)
-{
-	return Test2<Test5(u16String, N)>();
-}
+//template<typename ...Args>
+//consteval size_t Test7(Args... args)
+//{
+//	return Test<Test2(std::forward<Args>(args)...)>();
+//}
 
-template<size_t N>
-consteval size_t Test7(const char16_t(&u16String)[N])
-{
-	//std::cw<u16String>;
-	return Test2<Test3(u16String)>(); // Test3(u16String) 在模板参数位置是常量表达式
-}
+//template<typename T>
+//consteval size_t Test8(T&& t)
+//{
+//	return Test<Test2(std::forward<T>(t))>();
+//}
 
-int main(void)
+//template <auto &Str>
+//consteval size_t Test9()
+//{
+//	return Test<Test2(Str)>();
+//}
+
+
+int mainyy(void)
 {
-	constexpr auto t0 = Test2<Test3(u"你好")>();
-	constexpr auto t1 = Test2<Test()>();
-	constexpr auto t2 = Test2<Test4(u"不是，哥们", sizeof(u"不是，哥们") / sizeof(uint16_t) - 1)>();
-	constexpr auto t3 = Test6(u"不是，哥们", sizeof(u"不是，哥们") / sizeof(uint16_t) - 1);
+	constexpr auto t0 = Test<Test0()>();
+	constexpr auto t1 = Test1();
+
+	constexpr auto t2 = Test<Test2(u"测试，哥们")>();
+	constexpr auto t3 = Test<Test3(u"测试，哥们", sizeof(u"测试，哥们") / sizeof(char16_t) - 1)>();
+	constexpr auto t4 = Test<Test4(u"测试，哥们", sizeof(u"测试，哥们") / sizeof(char16_t) - 1)>();
+
+	//constexpr auto t5 = Test5(u"不是，哥们");
+	//constexpr auto t6 = Test6(u"不是，哥们", sizeof(u"不是，哥们") / sizeof(char16_t) - 1);
+	//constexpr auto t7 = Test7(u"不是，哥们");
+	//constexpr auto t8 = Test8(u"不是，哥们");
+	//constexpr auto t9 = Test9<u"不是，哥们">();
 
 	printf("%zu\n", t0);
 	printf("%zu\n", t1);
 	printf("%zu\n", t2);
-	//printf("%s\n", MUTF8_Tool<>::U16ToMU8(u"test").data());
+	printf("%zu\n", t3);
+	printf("%zu\n", t4);
+	//printf("%zu\n", t5);
+	//printf("%zu\n", t6);
+	//printf("%zu\n", t7);
+	//printf("%zu\n", t8);
+	//printf("%zu\n", t9);
+	return 0;
+}
+
+
+
+#include "../MaterialListEx/NBT_Node.hpp"
+#include "../MaterialListEx/MUTF8_Tool.hpp"
+#include "../MaterialListEx/Windows_ANSI.hpp"
+
+//转换为静态字符串数组
+//#define MU8STR_(charLiteralString) (MUTF8_Tool<char,char16_t>::U16ToMU8<MUTF8_Tool<char,char16_t>::U16ToMU8Size(u##charLiteralString)>(u##charLiteralString))
+
+int main(void)
+{
+	NBT_Type::String t = MU8STR("test啊");
+
+	bool b = t.ends_with(MU8STR("t啊"));
+
+	printf("%.*s\n%s\n", (unsigned int)t.size(), t.data(), b ? "true" : "false");
+
 	return 0;
 }

@@ -12,7 +12,7 @@
 class NBT_Node;
 template <typename Array>
 class MyArray;
-template <typename String>
+template <typename String, typename StringView>
 class MyString;
 template <typename List>
 class MyList;
@@ -37,7 +37,7 @@ public:
 	using ByteArray		= MyArray<std::vector<Byte>>;
 	using IntArray		= MyArray<std::vector<Int>>;
 	using LongArray		= MyArray<std::vector<Long>>;
-	using String		= MyString<std::string>;//Java MUTF-8 String
+	using String		= MyString<std::string, std::string_view>;//Java MUTF-8 String
 	using List			= MyList<std::vector<NBT_Node>>;//存储一系列同类型标签的有效负载（无标签 ID 或名称）//原先为list，因为mc内list也通过下标访问，改为vector模拟
 	using Compound		= MyCompound<std::unordered_map<String, NBT_Node>>;//挂在序列下的内容都通过map绑定名称
 

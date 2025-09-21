@@ -204,16 +204,16 @@ private:
 
 //所有使用下列宏的地方必须是常量字符串！
 #define FIND(name)\
-const static std::string target = MU8STR(name);\
+const static NBT_Type::String target = MU8STR(name);\
 size_t szPos = stBlocks.psBlockName->find(target);\
-if (szPos != std::string::npos)
+if (szPos != NBT_Type::String::npos)
 
 #define STARTSWITH(name)\
-const static std::string target = MU8STR(name);\
+const static NBT_Type::String target = MU8STR(name);\
 if (stBlocks.psBlockName->starts_with(target))
 
 #define ENDSWITH(name)\
-const static std::string target = MU8STR(name);\
+const static NBT_Type::String target = MU8STR(name);\
 if (stBlocks.psBlockName->ends_with(target))
 
 	static bool CvrtUnItemedBlocks(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)
@@ -610,7 +610,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 			MU8STR("minecraft:sculk_vein"),
 		};
 
-		const constexpr static char *pSurfaceNameList[] =
+		const static NBT_Type::String pSurfaceNameList[] =
 		{
 			MU8STR("down"),
 			MU8STR("east"),
