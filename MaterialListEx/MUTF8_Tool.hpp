@@ -163,14 +163,15 @@ private:
 						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
 					}
 				}
-				else
+				else//高代理之前遇到低代理或其它合法3字节字符
 				{
 					if (IN_RANGE(u16Char, 0xDC00, 0xDFFF))//遇到低代理对
 					{
 						u16Char = 0xFFFD;//错误，在高代理之前遇到低代理
-						//下方转换u16未知字符
+						//替换u16未知字符后给下方转换
 					}
-					
+
+					//转换3字节字符
 					MU8T mu8Char[3];
 					EncodeMUTF8Bmp(u16Char, mu8Char);
 					mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
@@ -201,7 +202,7 @@ private:
 		{
 			MU8T mu8Char = *it;
 			//判断是几字节的mu8
-			if (((uint8_t)mu8Char & (uint8_t)0b1000'0000) == (uint8_t)0b0000'0000)//最高位不为1，单字节码点
+			if (((uint8_t)mu8Char & (uint8_t)0b1000'0000) == (uint8_t)0b0000'0000)//最高位为0，单字节码点
 			{
 				//放入数组
 				MU8T mu8CharArr[1] = { mu8Char };
@@ -211,7 +212,7 @@ private:
 				DecodeMUTF8Bmp(mu8CharArr, u16Char);
 				u16String.push_back(u16Char);
 			}
-			else if(((uint8_t)mu8Char & (uint8_t)0b1110'0000) == (uint8_t)0b1100'0000)//高3位中最高两位为1，双字节码点
+			else if(((uint8_t)mu8Char & (uint8_t)0b1110'0000) == (uint8_t)0b1100'0000)//高3位为110，双字节码点
 			{
 				//先保存第一个字节
 				MU8T mu8CharArr[2] = { mu8Char };//[0]=mu8Char

@@ -250,7 +250,8 @@ int main(void)
 	//printf("%s\n", t1.c_str());
 
 
-	printf("%s\n", MU8STR("test").c_str());
+	//setlocale(LC_ALL, "zn_CN.UTF-8");
+	//printf("%s\n", MU8STR("😂🤣").c_str());
 
 	return 0;
 }
