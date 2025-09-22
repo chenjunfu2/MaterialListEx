@@ -8,6 +8,8 @@
 #include "NBT_List.hpp"
 #include "NBT_Compound.hpp"
 
+//在这里，CHAR2MU8STR的定义与NBT_Type::String的定义都已完备，给出转换方式以使得所有静态
+//字符串初始化到NBT_Type::String，方便与标准库重载，而不是直接拿到std::array导致重载失败
 #define MU8STR(charLiteralString) (NBT_Type::String(CHAR2MU8STR(charLiteralString)))
 
 template <bool bIsConst>
