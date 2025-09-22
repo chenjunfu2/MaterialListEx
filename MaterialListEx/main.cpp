@@ -465,11 +465,12 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
+			printf("Convert Success, Next\n");
 			++iSucceed;
 		}
 	}
 
-	printf("Conversion completed, total[%d], successful[%d], failed[%d]\n", iTotal, iSucceed, iTotal - iSucceed);
+	printf("\n\nConversion completed\ntotal[%d], successful[%d], failed[%d]\n", iTotal, iSucceed, iTotal - iSucceed);
 
 	return 0;
 }
