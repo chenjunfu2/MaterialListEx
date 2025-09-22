@@ -322,7 +322,7 @@ private:
 	}
 #undef GET_NEXTCHAR
 private:
-	//来点魔法类，伪装成basic string，在插入的时候进行数据长度计数，忽略插入的数据，最后隐式转换为size_t长度
+	//来点魔法类，伪装成basic string，在插入的时候进行数据长度计数，忽略插入的数据，最后转换为size_t长度
 	//这样就能在最小修改的情况下用同一个函数套模板来获取转换后的长度（且100%准确），而不是重写一个例程
 	template<typename T>
 	class FakeStringCounter
@@ -490,6 +490,12 @@ public:
 #define CHAR2MU8STR(charLiteralString) (MUTF8_Tool<char,char16_t>::U16ToMU8<MUTF8_Tool<char,char16_t>::U16ToMU8Size(u##charLiteralString)>(u##charLiteralString))
 
 /*
+TODO:
+mu8和u8互转
+*/
+
+//英文原文
+/*
 4.4.7. The CONSTANT_Utf8_info Structure
 The CONSTANT_Utf8_info structure is used to represent constant string values:
 
@@ -601,7 +607,7 @@ There are two differences between this format and the "standard" UTF-8 format. F
 For more information regarding the standard UTF-8 format, see Section 3.9 Unicode Encoding Forms of The Unicode Standard, Version 13.0.
 */
 
-/*
+//中文翻译
 /*
 4.4.7. CONSTANT_Utf8_info 结构
 CONSTANT_Utf8_info 结构用于表示常量字符串值：
