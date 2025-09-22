@@ -41,11 +41,11 @@ public:
 	using StringView::StringView;
 
 	template<size_t N>//c风格字符串or数组
-	MyStringView(const typename StringView::value_type(&ltrStr)[N]) :StringView(ltrStr, CalcStringViewSize(ltrStr, N))
+	constexpr MyStringView(const typename StringView::value_type(&ltrStr)[N]) :StringView(ltrStr, CalcStringViewSize(ltrStr, N))
 	{}
 
 	template<size_t N>//注意，array不会CalcStringSize以删除不必要的结尾，因为预期array不包含任何结尾，以size代表长度
-	MyStringView(const std::array<typename StringView::value_type, N> &strArray) : StringView(strArray.data(), strArray.size())
+	constexpr MyStringView(const std::array<typename StringView::value_type, N> &strArray) : StringView(strArray.data(), strArray.size())
 	{}
 };
 
@@ -95,9 +95,6 @@ public:
 
 	template<size_t N>//注意，array不会CalcStringSize以删除不必要的结尾，因为预期array不包含任何结尾，以size代表长度
 	MyString(const std::array<typename String::value_type, N> &strArray) : String(strArray.data(), strArray.size())
-	{}
-
-	MyString(const View &strView) :String(strView)
 	{}
 };
 

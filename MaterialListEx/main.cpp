@@ -301,27 +301,27 @@ void Convert(const char *const pFileName)
 
 	timer.Start();
 	RegionStatsList listRegionStats{};
-	try
+	//try
 	{
 		//获取regions，也就是区域，一个投影可能有多个区域（选区）
 		const auto &cpdRegions = GetCompound(root.second).GetCompound(MU8STR("Regions"));
 		listRegionStats = RegionProcess(cpdRegions);
 	}
-	catch (const std::out_of_range &e)//map的at查不到
-	{
-		printf("RegionProcess error: %s\n", e.what());
-		return;
-	}
-	catch (const std::exception &e)
-	{
-		printf("RegionProcess error: %s\n", e.what());
-		return;
-	}
-	catch (...)
-	{
-		printf("RegionProcess error: Unknown Error!\n");
-		return;
-	}
+	//catch (const std::out_of_range &e)//map的at查不到
+	//{
+	//	printf("RegionProcess error: %s\n", e.what());
+	//	return;
+	//}
+	//catch (const std::exception &e)
+	//{
+	//	printf("RegionProcess error: %s\n", e.what());
+	//	return;
+	//}
+	//catch (...)
+	//{
+	//	printf("RegionProcess error: Unknown Error!\n");
+	//	return;
+	//}
 	timer.Stop();
 	timer.PrintElapsed("RegionProcess time:[", "]\n");
 

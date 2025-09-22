@@ -485,6 +485,7 @@ public:
 //#define MU8STR(charLiteralString) (charLiteralString)
 
 //转换为静态字符串数组
+//在mutf-8中，任何字符串结尾\0都会被映射成0xC0 0x80，且保证串中不包含0x00，所以一定程度上可以和c-str（以0结尾）兼容
 #define CHAR2MU8STR(charLiteralString) (MUTF8_Tool<char,char16_t>::U16ToMU8<MUTF8_Tool<char,char16_t>::U16ToMU8Size(u##charLiteralString)>(u##charLiteralString))
 
 /*

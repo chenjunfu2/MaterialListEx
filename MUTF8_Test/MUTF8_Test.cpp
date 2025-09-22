@@ -222,16 +222,35 @@ int mainyy(void)
 #include "../MaterialListEx/MUTF8_Tool.hpp"
 #include "../MaterialListEx/Windows_ANSI.hpp"
 
+#include <stdlib.h>
+#include <locale.h>
+
 //转换为静态字符串数组
 //#define MU8STR_(charLiteralString) (MUTF8_Tool<char,char16_t>::U16ToMU8<MUTF8_Tool<char,char16_t>::U16ToMU8Size(u##charLiteralString)>(u##charLiteralString))
 
+NBT_Type::String FT(const NBT_Type::String &s)
+{
+	return s;
+}
+
+
 int main(void)
 {
-	NBT_Type::String t = MU8STR("test啊");
+	//NBT_Type::String t = MU8STR("test啊");
+	//std::string t(std::string_view("test啊"));
 
-	bool b = t.ends_with(MU8STR("t啊"));
+	//bool b = t.ends_with(MU8STR("t啊"));
 
-	printf("%.*s\n%s\n", (unsigned int)t.size(), t.data(), b ? "true" : "false");
+	//printf("%.*s\n%s\n", (unsigned int)t.size(), t.data(), b ? "true" : "false");
+
+	//setlocale(LC_ALL, "zn_CN.UTF-8");
+	//NBT_Type::String t(MU8STR("测试"));
+	//std::string t1("测试");
+	//printf("%s\n", t.c_str());
+	//printf("%s\n", t1.c_str());
+
+
+	printf("%s\n", MU8STR("test").c_str());
 
 	return 0;
 }

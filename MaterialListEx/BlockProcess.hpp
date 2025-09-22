@@ -633,12 +633,9 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 			for (const auto &it : pSurfaceNameList)
 			{
 				const auto pSurface = stBlocks.pcpdProperties->HasString(it);
-				if (pSurface != NULL)
+				if (pSurface != NULL && *pSurface == MU8STR("true"))
 				{
-					if (*pSurface == MU8STR("true"))
-					{
-						++u64Counter;
-					}
+					++u64Counter;
 				}
 			}
 
