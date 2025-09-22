@@ -191,7 +191,7 @@ void PrintLine(CSV_Tool &csv)
 }
 
 
-void Convert(const char *const pFileName)
+bool Convert(const char *const pFileName)
 {
 	//计数器
 	CodeTimer timer;
@@ -202,7 +202,7 @@ void Convert(const char *const pFileName)
 	if (!NBT_IO::ReadFile(pFileName, sNbtData))
 	{
 		printf("Nbt File read fail\n");
-		return;
+		return false;
 	}
 	timer.Stop();
 
@@ -239,13 +239,13 @@ void Convert(const char *const pFileName)
 			 FILE *pFile = fopen(sPath.c_str(), "wb");
 			 if (pFile == NULL)
 			 {
-				 return;
+				 return false;
 			 }
 
 			 timer.Start();
 			 if (fwrite(sNbtData.data(), sizeof(sNbtData[0]), sNbtData.size(), pFile) != sNbtData.size())
 			 {
-				 return;
+				 return false;
 			 }
 			 timer.Stop();
 
@@ -265,7 +265,6 @@ void Convert(const char *const pFileName)
 	 {
 		 printf("File is not compressed\n");
 	 }
-
 #else
 	 }
 #endif // DEBUG
@@ -278,19 +277,18 @@ void Convert(const char *const pFileName)
 	{
 		printf("\nData before the error was encountered:");
 		NBT_Helper::Print(nRoot);
-		return;
+		return false;
 	}
 	timer.Stop();
 	timer.PrintElapsed("Read NBT time:[", "]\n");
 
 	//NBT_Helper::Print(nRoot);
-	//return 0;
 
 	//正常mc投影nbt内只有一个Compound
 	if (nRoot.Size() != 1)
 	{
 		printf("Error root size");
-		return;
+		return false;
 	}
 
 	//输出名称（一般是空字符串）
@@ -301,27 +299,27 @@ void Convert(const char *const pFileName)
 
 	timer.Start();
 	RegionStatsList listRegionStats{};
-	//try
+	try
 	{
 		//获取regions，也就是区域，一个投影可能有多个区域（选区）
 		const auto &cpdRegions = GetCompound(root.second).GetCompound(MU8STR("Regions"));
 		listRegionStats = RegionProcess(cpdRegions);
 	}
-	//catch (const std::out_of_range &e)//map的at查不到
-	//{
-	//	printf("RegionProcess error: %s\n", e.what());
-	//	return;
-	//}
-	//catch (const std::exception &e)
-	//{
-	//	printf("RegionProcess error: %s\n", e.what());
-	//	return;
-	//}
-	//catch (...)
-	//{
-	//	printf("RegionProcess error: Unknown Error!\n");
-	//	return;
-	//}
+	catch (const std::out_of_range &e)//map的at查不到
+	{
+		printf("RegionProcess error: %s\n", e.what());
+		return false;
+	}
+	catch (const std::exception &e)
+	{
+		printf("RegionProcess error: %s\n", e.what());
+		return false;
+	}
+	catch (...)
+	{
+		printf("RegionProcess error: Unknown Error!\n");
+		return false;
+	}
 	timer.Stop();
 	timer.PrintElapsed("RegionProcess time:[", "]\n");
 
@@ -440,6 +438,8 @@ void Convert(const char *const pFileName)
 	}
 	timer.Stop();
 	timer.PrintElapsed("\nOutput time:[", "]\n");
+
+	return true;
 }
 
 int main(int argc, char *argv[])
@@ -450,13 +450,26 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	printf("[%d] file(s)\n", argc - 1);
+	int iTotal = argc - 1;
 
-	for (int i = 1; i < argc; ++i)
+	printf("total [%d] file(s)\n", iTotal);
+
+	int iSucceed = 0;
+	for (int i = 1; i < argc; ++i)//注意argc从1开始作为索引访问argv，因为argv[0]是程序自身路径
 	{
 		printf("\n[%d] ", i);
-		Convert(argv[i]);
+		bool b = Convert(argv[i]);
+		if (!b)
+		{
+			printf("Convert Error, Skip\n");
+		}
+		else
+		{
+			++iSucceed;
+		}
 	}
+
+	printf("Conversion completed, total[%d], successful[%d], failed[%d]\n", iTotal, iSucceed, iTotal - iSucceed);
 
 	return 0;
 }
