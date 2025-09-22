@@ -470,7 +470,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	printf("\n\nConversion completed.\n[%d]total, [%d]successful, [%d]failed\n", iTotal, iSucceed, iTotal - iSucceed);
+	printf("\nConversion completed.\n[%d]total, [%d]successful, [%d]failed\n\n", iTotal, iSucceed, iTotal - iSucceed);
 
 	//借用一下cmd命令暂停，防止闪现看不到输出
 	system("pause");
