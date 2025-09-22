@@ -16,6 +16,7 @@
 #include "Windows_FileSystem.hpp"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string>
 #include <functional>
 #include <format>
@@ -469,7 +470,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	printf("\n\nConversion completed.\n   total[%d]\n   successful[%d]\n   failed[%d]\n", iTotal, iSucceed, iTotal - iSucceed);
+	printf("\n\nConversion completed.\n[%d]total, [%d]successful, [%d]failed\n", iTotal, iSucceed, iTotal - iSucceed);
 
+	//借用一下cmd命令暂停，防止闪现看不到输出
+	system("pause");
 	return 0;
 }
