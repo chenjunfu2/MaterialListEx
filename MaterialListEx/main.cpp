@@ -52,7 +52,7 @@ void PrintInfo(const T &info, const Language &lang)
 			printf("%s[%s]%s:%lld = %s\n",
 				U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)).c_str(),
 				refItem.first.sName.c_str(),
-				U16ANSI(CVRTU16(NBT_Helper::Serialize(refItem.first.cpdTag))).c_str(),
+				U16ANSI(MUTF8_Tool<char>::MU8ToU16(NBT_Helper::Serialize(refItem.first.cpdTag))).c_str(),
 				refItem.second,
 				CountFormat(refItem.second).c_str());
 		}
@@ -82,12 +82,12 @@ void PrintInfo(const T &info, const Language &lang, CSV_Tool &csv)
 		const auto &refItem = itItem.get();
 
 		csv.WriteOnce<true>(U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)));
-		csv.WriteOnce<true>(refItem.first.sName);
+		csv.WriteOnce<true>(U16ANSI(refItem.first.sName.ToUTF16()));
 
 		//判断是否存在cpd成员，有则输出
 		if constexpr (HasCpdTag<std::decay_t<decltype(refItem.first)>>)
 		{
-			csv.WriteOnce<true>(U16ANSI(CVRTU16(NBT_Helper::Serialize(refItem.first.cpdTag))));
+			csv.WriteOnce<true>(U16ANSI(MUTF8_Tool<char>::MU8ToU16(NBT_Helper::Serialize(refItem.first.cpdTag))));
 		}
 
 		csv.WriteOnce<true>(std::format("{}个 = {}", refItem.second, CountFormat(refItem.second)));
@@ -134,7 +134,7 @@ void PrintInfo(const MapMSL<T> &info, const Language &lang, CSV_Tool &csv)
 		csv.WriteStart();//连续写入开始
 		csv.WriteContinue<true>(U8ANSI(lang.KeyTranslate(enParentKeyType, itParent.first)));
 		csv.WriteContinue<false>("(");
-		csv.WriteContinue<true>(itParent.first);
+		csv.WriteContinue<true>(U16ANSI(itParent.first.ToUTF16()));
 		csv.WriteContinue<false>(")");
 		csv.WriteStop();//连续写入结束
 		csv.NewLine();//换行
@@ -295,7 +295,7 @@ bool Convert(const char *const pFileName)
 	//输出名称（一般是空字符串）
 	const auto &root = *nRoot.begin();
 #ifdef _DEBUG
-	printf("root:\"%s\"\n", U16ANSI(CVRTU16(root.first)).c_str());
+	printf("root:\"%s\"\n", U16ANSI(root.first.ToUTF16()).c_str());
 #endif
 
 	timer.Start();
@@ -397,7 +397,7 @@ bool Convert(const char *const pFileName)
 	//处理所有区域
 	for (const auto &it : listRegionStats)
 	{
-		PrintLine(csv, "区域(Region)", '[' + U16ANSI(CVRTU16(it.sRegionName)) + ']');
+		PrintLine(csv, "区域(Region)", '[' + U16ANSI(it.sRegionName.ToUTF16()) + ']');
 	
 		//PrintLine(csv);
 		//PrintLine(csv, "类型(Type)", "[block]");

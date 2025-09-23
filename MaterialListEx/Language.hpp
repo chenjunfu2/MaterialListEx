@@ -89,12 +89,12 @@ public:
 
 	const std::string &KeyTranslate(KeyType enKeyType, const NBT_Type::String &sKeyName) const
 	{
-		static const NBT_Type::String sKeyTypePrefix[] =
+		static const std::string sKeyTypePrefix[] =
 		{
-			MU8STR(""),//未知留空
-			MU8STR("block."),
-			MU8STR("entity."),
-			MU8STR("item."),
+			"",//未知留空
+			"block.",
+			"entity.",
+			"item.",
 		};
 
 		if (enKeyType >= ENUM_END || enKeyType < None)
@@ -109,7 +109,7 @@ public:
 		//拆解sKeyName并与sKeyTypePrefix[enKeyType]组合
 
 		//把名称空间的:转换成.
-		NBT_Type::String sJsonKey = sKeyName;//拷贝一份
+		std::string sJsonKey = sKeyName.ToCharTypeUTF8();//转换到char类型并拷贝
 		std::replace(sJsonKey.begin(), sJsonKey.end(), ':', '.');
 
 	re_find:

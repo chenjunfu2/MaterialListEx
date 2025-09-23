@@ -106,24 +106,40 @@ public:
 	MyString(const View &view) :String(view)//允许从view构造string
 	{}
 
+	//直接获取char类型的视图
+	std::basic_string_view<char> GetCharTypeView(void) const
+	{
+		return std::basic_string_view<char>((const char *)String::data(), String::size());
+	}
+
+	auto ToCharTypeUTF8(void) const
+	{
+		return MUTF8_Tool<typename String::value_type, char16_t, char>::MU8ToU8(*this);//char8_t改为char
+	}
+
 	auto ToUTF8(void) const
 	{
-		return MU8CV2U8(*this);
+		return MUTF8_Tool<typename String::value_type, char16_t, char8_t>::MU8ToU8(*this);
 	}
 
 	auto ToUTF16(void) const
 	{
-		return MU8CV2U16(*this);
+		return MUTF8_Tool<typename String::value_type, char16_t, char8_t>::MU8ToU16(*this);
 	}
 
-	void FromUTF8(std::basic_string_view<chat8_t> u8String) const
+	void FromCharTypeUTF8(std::basic_string_view<char> u8String)
 	{
-		*this = U8CV2MU8(u8String);
+		*this = std::move(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u8String));//char8_t改为char
 	}
 
-	void FromUTF16(std::basic_string_view<chat16_t> u16String) const
+	void FromUTF8(std::basic_string_view<char8_t> u8String)
 	{
-		*this = U16CV2MU8(u16String);
+		*this = std::move(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U8ToMU8(u8String));
+	}
+
+	void FromUTF16(std::basic_string_view<char16_t> u16String)
+	{
+		*this = std::move(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U16ToMU8(u16String));
 	}
 };
 

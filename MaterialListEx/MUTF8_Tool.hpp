@@ -562,10 +562,10 @@ private:
 					//撤回二次读取，尽管前面已确认是0b1110'1101，但是存在111开头的合法3码点
 					--it;
 					--it;
-					//替换为三个utf16错误字符，因为撤回二次，本来有4个错误字节的现在只要3个
-					PUSH_FAIL_U16CHAR;
-					PUSH_FAIL_U16CHAR;
-					PUSH_FAIL_U16CHAR;
+					//替换为三个utf8错误字符，因为撤回二次，本来有4个错误字节的现在只要3个
+					PUSH_FAIL_U8CHAR;
+					PUSH_FAIL_U8CHAR;
+					PUSH_FAIL_U8CHAR;
 					continue;
 				}
 
