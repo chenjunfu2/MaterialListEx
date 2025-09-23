@@ -103,6 +103,27 @@ private:
 		u16LowSurrogate  = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1111'1111) >>  0 | (uint32_t)0b1101'1100'0000'0000);
 	}
 
+
+	static constexpr void UTF8SupplementaryToMUTF8(const U8T(&u8CharArr)[4], MU8T(&mu8CharArr)[6])
+	{
+		/*
+		utf-8 4 bytes bit distribution:
+		000i'uuuu zzzz'yyyy yyxx'xxxx - 1111'0iuu 10uu'zzzz 10yy'yyyy 10xx'xxxx
+		
+		modified utf-8 6 bytes bit distribution:（注意忽略了i）
+		000i'uuuu zzzz'yyyy yyxx'xxxx - 1110'1101 1010'uuuu 10zz'zzyy 1110'1101 1011'yyyy 10xx'xxxx
+		*/
+
+
+
+	}
+
+	static constexpr void MUTF8SupplementaryToUTF8(const MU8T(&mu8CharArr)[6], U8T(&u8CharArr)[4])
+	{
+
+
+	}
+
 private:
 //c=char d=do检查迭代器并获取下一个字节（如果可以，否则执行指定语句后跳出）
 #define GET_NEXTCHAR(c,d) if (++it == end) { (d);break; } else { c = *it; }
@@ -219,7 +240,7 @@ private:
 				if (!HAS_BITMASK(mu8CharArr[1], 0b1100'0000, 0b1000'0000))//高2位不是10，错误，跳过
 				{
 					--it;//撤回读取（避免for自动递增跳过刚才的字符）
-					u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
+					PUSH_FAIL_U16CHAR;//替换为utf16错误字符
 					continue;//重试，因为当前字符可能是错误的，而刚才多读取的才是正确的，所以需要撤回continue重新尝试
 				}
 
@@ -592,228 +613,80 @@ public:
 
 //英文原文
 /*
-4.4.7. The CONSTANT_Utf8_info Structure
-The CONSTANT_Utf8_info structure is used to represent constant string values:
+Modified UTF-8 Strings
+The JNI uses modified UTF-8 strings to represent various string types. Modified UTF-8 strings are the same as those used by the Java VM. Modified UTF-8 strings are encoded so that character sequences that contain only non-null ASCII characters can be represented using only one byte per character, but all Unicode characters can be represented.
 
-CONSTANT_Utf8_info {
-	u1 tag;
-	u2 length;
-	u1 bytes[length];
-}
-The items of the CONSTANT_Utf8_info structure are as follows:
+All characters in the range \u0001 to \u007F are represented by a single byte, as follows:
 
-tag
-The tag item has the value CONSTANT_Utf8 (1).
+0xxxxxxx
+The seven bits of data in the byte give the value of the character represented.
 
-length
-The value of the length item gives the number of bytes in the bytes array (not the length of the resulting string).
+The null character ('\u0000') and characters in the range '\u0080' to '\u07FF' are represented by a pair of bytes x and y:
 
-bytes[]
-The bytes array contains the bytes of the string.
+x: 110xxxxx
+y: 10yyyyyy
+The bytes represent the character with the value ((x & 0x1f) << 6) + (y & 0x3f).
 
-No byte may have the value (byte)0.
+Characters in the range '\u0800' to '\uFFFF' are represented by 3 bytes x, y, and z:
 
-No byte may lie in the range (byte)0xf0 to (byte)0xff.
+x: 1110xxxx
+y: 10yyyyyy
+z: 10zzzzzz
+The character with the value ((x & 0xf) << 12) + ((y & 0x3f) << 6) + (z & 0x3f) is represented by the bytes.
 
-String content is encoded in modified UTF-8. Modified UTF-8 strings are encoded so that code point sequences that contain only non-null ASCII characters can be represented using only 1 byte per code point, but all code points in the Unicode codespace can be represented. Modified UTF-8 strings are not null-terminated. The encoding is as follows:
+Characters with code points above U+FFFF (so-called supplementary characters) are represented by separately encoding the two surrogate code units of their UTF-16 representation. Each of the surrogate code units is represented by three bytes. This means, supplementary characters are represented by six bytes, u, v, w, x, y, and z:
 
-Code points in the range '\u0001' to '\u007F' are represented by a single byte:
-
-Table 4.7.
-
-0	bits 6-0
-The 7 bits of data in the byte give the value of the code point represented.
-
-The null code point ('\u0000') and code points in the range '\u0080' to '\u07FF' are represented by a pair of bytes x and y :
-
-Table 4.8.
-
-x:
-Table 4.9.
-
-1	1	0	bits 10-6
-y:
-Table 4.10.
-
-1	0	bits 5-0
-
-The two bytes represent the code point with the value:
-
-((x & 0x1f) << 6) + (y & 0x3f)
-
-Code points in the range '\u0800' to '\uFFFF' are represented by 3 bytes x, y, and z :
-
-Table 4.11.
-
-x:
-Table 4.12.
-
-1	1	1	0	bits 15-12
-y:
-Table 4.13.
-
-1	0	bits 11-6
-z:
-Table 4.14.
-
-1	0	bits 5-0
-
-The three bytes represent the code point with the value:
-
-((x & 0xf) << 12) + ((y & 0x3f) << 6) + (z & 0x3f)
-
-Characters with code points above U+FFFF (so-called supplementary characters) are represented by separately encoding the two surrogate code units of their UTF-16 representation. Each of the surrogate code units is represented by three bytes. This means supplementary characters are represented by six bytes, u, v, w, x, y, and z :
-
-Table 4.15.
-
-u:
-Table 4.16.
-
-1	1	1	0	1	1	0	1
-v:
-Table 4.17.
-
-1	0	1	0	(bits 20-16)-1
-w:
-Table 4.18.
-
-1	0	bits 15-10
-x:
-Table 4.19.
-
-1	1	1	0	1	1	0	1
-y:
-Table 4.20.
-
-1	0	1	1	bits 9-6
-z:
-Table 4.21.
-
-1	0	bits 5-0
-
-The six bytes represent the code point with the value:
-
-0x10000 + ((v & 0x0f) << 16) + ((w & 0x3f) << 10) +
-((y & 0x0f) << 6) + (z & 0x3f)
+u: 11101101
+v: 1010vvvv
+w: 10wwwwww
+x: 11101101
+y: 1011yyyy
+z: 10zzzzzz
+The character with the value 0x10000+((v&0x0f)<<16)+((w&0x3f)<<10)+(y&0x0f)<<6)+(z&0x3f) is represented by the six bytes.
 
 The bytes of multibyte characters are stored in the class file in big-endian (high byte first) order.
 
-There are two differences between this format and the "standard" UTF-8 format. First, the null character (char)0 is encoded using the 2-byte format rather than the 1-byte format, so that modified UTF-8 strings never have embedded nulls. Second, only the 1-byte, 2-byte, and 3-byte formats of standard UTF-8 are used. The Java Virtual Machine does not recognize the four-byte format of standard UTF-8; it uses its own two-times-three-byte format instead.
+There are two differences between this format and the standard UTF-8 format. First, the null character (char)0 is encoded using the two-byte format rather than the one-byte format. This means that modified UTF-8 strings never have embedded nulls. Second, only the one-byte, two-byte, and three-byte formats of standard UTF-8 are used. The Java VM does not recognize the four-byte format of standard UTF-8; it uses its own two-times-three-byte format instead.
 
-For more information regarding the standard UTF-8 format, see Section 3.9 Unicode Encoding Forms of The Unicode Standard, Version 13.0.
+For more information regarding the standard UTF-8 format, see section 3.9 Unicode Encoding Forms of The Unicode Standard, Version 4.0.
 */
 
 //中文翻译
 /*
-4.4.7. CONSTANT_Utf8_info 结构
-CONSTANT_Utf8_info 结构用于表示常量字符串值：
+修改后的 UTF-8 字符串
+JNI 使用修改后的 UTF-8 字符串来表示各种字符串类型。修改后的 UTF-8 字符串与 Java VM 所使用的字符串相同。修改后的 UTF-8 字符串经过编码，使得仅包含非空 ASCII 字符的字符序列可以每个字符仅使用一个字节来表示，但所有 Unicode 字符都可以被表示。
 
-CONSTANT_Utf8_info {
-u1 tag;
-u2 length;
-u1 bytes[length];
-}
-该结构的成员如下：
+范围在 \u0001 到 \u007F 之间的所有字符都由单个字节表示，如下所示：
 
-tag
-tag 项的值为 CONSTANT_Utf8 (1)。
+0xxxxxxx
+字节中的七位数据给出了所表示字符的值。
 
-length
-length 项的值表示 bytes 数组的字节数（不是字符串长度）。
+空字符 ('\u0000') 和范围在 '\u0080' 到 '\u07FF' 之间的字符由一对字节 x 和 y 表示：
 
-bytes[]
-bytes 数组包含字符串的字节。
+x: 110xxxxx
+y: 10yyyyyy
+这些字节表示值为 ((x & 0x1f) << 6) + (y & 0x3f) 的字符。
 
-字节值禁止为 (byte)0。
+范围在 '\u0800' 到 '\uFFFF' 之间的字符由三个字节 x、y 和 z 表示：
 
-字节值禁止在 (byte)0xf0 到 (byte)0xff 范围内。
+x: 1110xxxx
+y: 10yyyyyy
+z: 10zzzzzz
+值为 ((x & 0xf) << 12) + ((y & 0x3f) << 6) + (z & 0x3f) 的字符由这些字节表示。
 
-字符串内容使用修改后的 UTF-8 编码。改进的 UTF-8 编码使得仅包含非空 ASCII 字符的代码点序列可以用每代码点 1 字节表示，同时能表示 Unicode 编码空间的所有代码点。修改后的 UTF-8 字符串不以空字符结尾。编码规则如下：
+码点高于 U+FFFF 的字符（即所谓的补充字符）通过分别编码其 UTF-16 表示的两个代理码元来表示。每个代理码元由三个字节表示。这意味着，补充字符由六个字节 u、v、w、x、y 和 z 表示：
 
-'\u0001' 到 '\u007F' 范围的代码点使用单字节表示：
+u: 11101101
+v: 1010vvvv
+w: 10wwwwww
+x: 11101101
+y: 1011yyyy
+z: 10zzzzzz
+值为 0x10000+((v&0x0f)<<16)+((w&0x3f)<<10)+(y&0x0f)<<6)+(z&0x3f) 的字符由这六个字节表示。
 
-表 4.7.
+多字节字符的字节在类文件中以大端序（高位字节在前）存储。
 
-0 位6-0
-字节中的7位数据给出代码点的值
+此格式与标准 UTF-8 格式有两个区别。首先，空字符 (char)0 使用双字节格式而非单字节格式进行编码。这意味着修改后的 UTF-8 字符串永远不会包含嵌入的空字符。其次，仅使用标准 UTF-8 的单字节、双字节和三字节格式。Java VM 不识别标准 UTF-8 的四字节格式；它使用自己的两次三字节格式来代替。
 
-空代码点（'\u0000'）和 '\u0080' 到 '\u07FF' 范围的代码点使用两个字节 x 和 y 表示：
-
-表 4.8.
-
-x:
-表 4.9.
-
-1 1 0 位10-6
-y:
-表 4.10.
-
-1 0 位5-0
-
-这两个字节表示的代码点值为：
-((x & 0x1f) << 6) + (y & 0x3f)
-
-'\u0800' 到 '\uFFFF' 范围的代码点使用三个字节 x, y 和 z 表示：
-
-表 4.11.
-
-x:
-表 4.12.
-
-1 1 1 0 位15-12
-y:
-表 4.13.
-
-1 0 位11-6
-z:
-表 4.14.
-
-1 0 位5-0
-
-这三个字节表示的代码点值为：
-((x & 0xf) << 12) + ((y & 0x3f) << 6) + (z & 0x3f)
-
-U+FFFF 以上的代码点（补充字符）通过分别编码其 UTF-16 表示的两个代理代码单元实现。每个代理代码单元用三个字节表示，即补充字符最终由六个字节 u, v, w, x, y 和 z 表示：
-
-表 4.15.
-
-u:
-表 4.16.
-
-1 1 1 0 1 1 0 1
-v:
-表 4.17.
-
-1 0 1 0 (位20-16)-1
-w:
-表 4.18.
-
-1 0 位15-10
-x:
-表 4.19.
-
-1 1 1 0 1 1 0 1
-y:
-表 4.20.
-
-1 0 1 1 位9-6
-z:
-表 4.21.
-
-1 0 位5-0
-
-这六个字节表示的代码点值为：
-0x10000 + ((v & 0x0f) << 16) + ((w & 0x3f) << 10) +
-((y & 0x0f) << 6) + (z & 0x3f)
-
-多字节字符的字节按大端序（高位字节在前）存储在class文件中。
-
-本格式与"标准"UTF-8格式有两点区别：
-第一，空字符(char)0使用双字节格式而非单字节格式，
-因此修改后的UTF-8字符串不会包含嵌入式空值；
-第二，仅使用标准UTF-8的单字节、双字节和三字节格式。
-Java虚拟机不识别标准UTF-8的四字节格式，
-而是使用自定义的双三字节格式。
-
-关于标准UTF-8格式的更多信息，请参阅《The Unicode Standard, Version 13.0》第3.9节"Unicode Encoding Forms"。
+有关标准 UTF-8 格式的更多信息，请参阅 Unicode 标准 4.0 版的第 3.9 节 Unicode 编码形式。
 */

@@ -1,0 +1,243 @@
+<h2><a name="modified_utf_8_strings">Modified UTF-8 Strings</a></h2>
+
+<p>The JNI uses modified UTF-8 strings to represent
+various string types. Modified UTF-8 strings are the same as those
+used by the Java VM. Modified UTF-8 strings are encoded so that
+character sequences that contain only non-null ASCII characters can
+be represented using only one byte per character, but all Unicode
+characters can be represented.</p>
+<p>All characters in the range \u0001 to \u007F are represented by
+a single byte, as follows:</p>
+
+<ul>
+<li><code>0<em>xxxxxxx</em></code></li>
+</ul>
+
+
+<!-- Begin material on modified UTF-8 from JVM spec -->
+
+<!--
+
+<table border="1" cellspacing="0" width="30%" summary="">
+<tr>
+  <td>0</td>
+  <td>bits 6-0</td>
+</tr>
+</table>
+
+-->
+
+<p>The seven bits of data in the byte give the value of the
+character represented.</p>
+
+<p>The null character (<code>'\u0000'</code>) and characters in the
+range <code>'\u0080'</code> to <code>'\u07FF'</code> are
+represented by a pair of bytes x and y:</p>
+
+<ul>
+<li>x: <code>110<em>xxxxx</em></code></li>
+<li>y: <code>10<em>yyyyyy</em></code></li>
+</ul>
+<!--
+
+<table border="1" cellspacing="0" cellpadding="2" width="30%" summary="">
+<tr>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>bits 10-6</td>
+</tr>
+</table>
+
+-->
+
+
+
+<!--
+<table border="1" cellspacing="0" cellpadding="2" width="30%" summary="">
+<tr>
+  <td>1</td>
+  <td>0</td>
+  <td>bits 5-0</td>
+</tr>
+</table>
+-->
+
+<p>The bytes represent the character with the value ((x &amp;
+<code>0x1f</code>) &lt;&lt; <code>6</code>) + (y &amp;
+<code>0x3f</code>).</p>
+
+<p>Characters in the range <code>'\u0800'</code> to
+<code>'\uFFFF'</code> are represented by 3 bytes x, y, and z:</p>
+
+<ul>
+
+<li>x: <code>1110<em>xxxx</em></code></li>
+<li>y: <code>10<em>yyyyyy</em></code></li>
+<li>z: <code>10<em>zzzzzz</em></code></li>
+
+</ul>
+<!--
+<table border="1" cellspacing="0" cellpadding="2" width="30%" summary="">
+<tr>
+  <td>1</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>bits 15-12</td>
+</tr>
+</table>
+-->
+
+
+
+<!--
+<table border="1" cellspacing="0" cellpadding="2" width="30%" summary="">
+<tr>
+  <td>1</td>
+  <td>0</td>
+  <td>bits 11-6</td>
+</tr>
+</table>
+-->
+
+
+
+<!--
+<table border="1" cellspacing="0" cellpadding="2" width="30%"
+summary="">
+<tr>
+  <td>1</td>
+  <td>0</td>
+  <td>bits 5-0</td>
+</tr>
+</table>
+-->
+
+<p>The character with the value ((x &amp; <code>0xf</code>)
+&lt;&lt; <code>12</code>) + ((y &amp; <code>0x3f</code>) &lt;&lt;
+<code>6</code>) + (z &amp; <code>0x3f</code>) is represented by the
+bytes.</p>
+
+<p>Characters with code points above U+FFFF (so-called
+<em>supplementary characters</em>) are represented by separately
+encoding the two surrogate code units of their UTF-16
+representation. Each of the surrogate code units is represented by
+three bytes. This means, supplementary characters are represented
+by six bytes, <i>u</i>, <i>v</i>, <i>w</i>, <i>x</i>, <i>y</i>, and
+<i>z</i>:</p>
+
+<ul>
+
+<li>u: <code>11101101</code></li>
+<li>v: <code>1010<em>vvvv</em></code></li>
+<li>w: <code>10<em>wwwwww</em></code></li>
+<li>x: <code>11101101</code></li>
+<li>y: <code>1011<em>yyyy</em></code></li>
+<li>z: <code>10<em>zzzzzz</em></code></li>
+</ul>
+
+<!--
+<table border="1" cellspacing="0" cellpadding="2" width="30%" summary="">
+<tr>
+  <td>1</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>1</td>
+</tr>
+</table>
+-->
+
+
+
+<!--
+<table border="1" cellspacing="0" cellpadding="2" width="30%" summary="">
+<tr>
+  <td>1</td>
+  <td>0</td>
+  <td>1</td>
+  <td>0</td>
+  <td>(bits 20-16) - 1</td>
+</tr>
+</table>
+-->
+
+
+
+<!--
+<table border="1" cellspacing="0" cellpadding="2" width="30%" summary="">
+<tr>
+  <td>1</td>
+  <td>0</td>
+  <td>bits 15-10</td>
+</tr>
+</table>
+-->
+
+
+
+<!--
+<table border="1" cellspacing="0" cellpadding="2" width="30%" summary="">
+<tr>
+  <td>1</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>1</td>
+  <td>1</td>
+  <td>0</td>
+  <td>1</td>
+</tr>
+</table>
+-->
+
+
+
+<!--
+<table border="1" cellspacing="0" cellpadding="2" width="30%" summary="">
+<tr>
+  <td>1</td>
+  <td>0</td>
+  <td>1</td>
+  <td>1</td>
+  <td>bits 9-6</td>
+</tr>
+</table>
+-->
+
+
+
+<!--
+<table border="1" cellspacing="0" cellpadding="2" width="30%" summary="">
+<tr>
+  <td>1</td>
+  <td>0</td>
+  <td>bits 5-0</td>
+</tr>
+</table>
+-->
+
+<p>The character with the value
+0x10000+((v&amp;0x0f)&lt;&lt;16)+((w&amp;0x3f)&lt;&lt;10)+(y&amp;0x0f)&lt;&lt;6)+(z&amp;0x3f)
+is represented by the six bytes.</p>
+
+<p>The bytes of multibyte characters are stored in the
+<code>class</code> file in big-endian (high byte first) order.</p>
+<p>There are two differences between this format and the standard
+UTF-8 format. First, the null character <code>(char)0</code> is
+encoded using the two-byte format rather than the one-byte format.
+This means that modified UTF-8 strings never have embedded nulls.
+Second, only the one-byte, two-byte, and three-byte formats of
+standard UTF-8 are used. The Java VM does not recognize the
+four-byte format of standard UTF-8; it uses its own
+two-times-three-byte format instead.</p>
+
+<p>For more information regarding the standard UTF-8 format, see
+section <i>3.9 Unicode Encoding Forms</i> of <i>The Unicode
+Standard, Version 4.0</i>.</p>
+<!--- End material from JVM spec per eng request -->
+<p>&#160;</p>
