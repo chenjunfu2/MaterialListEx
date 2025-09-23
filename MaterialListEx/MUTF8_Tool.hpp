@@ -413,19 +413,45 @@ private:
 				INSERT_NORMAL(it);//在处理之前先插入之前被跳过的普通字符
 				//转换u8的4字节到mu8的6字节，并处理错误
 
-				U8T u8CharArr[4]{ u8Char };
+				U8T u8CharArr[4]{ u8Char };//[0] = u8Char
 
-				GET_NEXTCHAR(u8CharArr[1], (0));
+				GET_NEXTCHAR(u8CharArr[1],
+					(PUSH_FAIL_MU8CHAR));//第二次
+				if (!HAS_BITMASK(u8CharArr[1], 0b1100'0000, 0b1000'0000))//确保高2bit是10
+				{
+					//输出一个错误字符
+					PUSH_FAIL_MU8CHAR;
+					--it;//回退一次读取，尝试处理不以10开头的
+					continue;
+				}
 
+				GET_NEXTCHAR(u8CharArr[2],
+					(PUSH_FAIL_MU8CHAR, PUSH_FAIL_MU8CHAR));//第三次
+				if (!HAS_BITMASK(u8CharArr[1], 0b1100'0000, 0b1000'0000))//确保高2bit是10
+				{
+					//输出二个错误字符
+					PUSH_FAIL_MU8CHAR;
+					PUSH_FAIL_MU8CHAR;
+					--it;//回退一次读取，尝试处理不以10开头的
+					continue;
+				}
 
+				GET_NEXTCHAR(u8CharArr[3],
+					(PUSH_FAIL_MU8CHAR, PUSH_FAIL_MU8CHAR, PUSH_FAIL_MU8CHAR));//第四次
+				if (!HAS_BITMASK(u8CharArr[3], 0b1100'0000, 0b1000'0000))//确保高2bit是10
+				{
+					//输出三个错误字符
+					PUSH_FAIL_MU8CHAR;
+					PUSH_FAIL_MU8CHAR;
+					PUSH_FAIL_MU8CHAR;
+					--it;//回退一次读取，尝试处理不以10开头的
+					continue;
+				}
 
-
-
-
-
-
+				//读取成功完成
 				MU8T mu8CharArr[6]{};
-
+				UTF8SupplementaryToMUTF8(u8CharArr, mu8CharArr);
+				mu8String.append(mu8CharArr, sizeof(mu8CharArr) / sizeof(MU8T));
 			}
 			else if (IS_BITS(u8Char, 0b0000'0000))//\0字符
 			{
@@ -453,8 +479,12 @@ private:
 	template<typename T = std::basic_string<U8T>>
 	static constexpr T MU8ToU8Impl(const MU8T *mu8String, size_t szStringLength)
 	{
+#define PUSH_FAIL_U8CHAR u8String.append(mu8FailChar, sizeof(mu8FailChar) / sizeof(MU8T))
+#define INSERT_NORMAL(p) (u8String.append((const U8T*)((p) - szNormalLength), szNormalLength), szNormalLength = 0)
+
 		T u8String{};
 
+		size_t szNormalLength = 0;//普通字符的长度，用于优化批量插入
 		for (auto it = mu8String, end = mu8String + szStringLength; it != end; ++it)
 		{
 			MU8T mu8Char = *it;//第一次
@@ -468,6 +498,9 @@ private:
 		}
 
 		return u8String;
+
+#undef INSERT_NORMAL
+#undef PUSH_FAIL_U8CHAR
 	}
 
 #undef IN_RANGE
