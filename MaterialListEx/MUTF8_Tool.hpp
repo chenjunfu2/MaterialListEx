@@ -124,70 +124,66 @@ private:
 			U16T u16Char = *it;
 			if (IN_RANGE(u16Char, 0x0001, 0x007F))//单字节码点
 			{
-				MU8T mu8Char[1];
+				MU8T mu8Char[1]{};
 				EncodeMUTF8Bmp(u16Char, mu8Char);
 				mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
 			}
 			else if (IN_RANGE(u16Char, 0x0080, 0x07FF) || u16Char == 0x0000)//双字节码点，0字节特判
 			{
-				MU8T mu8Char[2];
+				MU8T mu8Char[2]{};
 				EncodeMUTF8Bmp(u16Char, mu8Char);
 				mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
 			}
 			else if (IN_RANGE(u16Char, 0x0800, 0xFFFF))//三字节码点or多字节码点
 			{
 				if (IN_RANGE(u16Char, 0xD800, 0xDBFF))//遇到高代理对
-				{
-					U16T u16HighSurrogate = u16Char;//保存
-					//读取下一个字节
+				{	
+					//判断是否存在下一个字节
 					if (++it == end)
 					{
-						u16Char = 0xFFFD;//错误，高代理后无数据
-						MU8T mu8Char[3];//转换u16未知字符
-						EncodeMUTF8Bmp(u16Char, mu8Char);
+						MU8T mu8Char[3]{};//转换u16未知字符
+						EncodeMUTF8Bmp(0xFFFD, mu8Char);//错误，高代理后无数据
 						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
 						break;
 					}
-					else
-					{
-						u16Char = *it;
-					}
 					
-					//处理低代理对
-					if (!IN_RANGE(u16Char, 0xDC00, 0xDFFF))
+					//处理高低代理对
+					U16T u16HighSurrogate = u16Char;//保存高代理
+					U16T u16LowSurrogate = *it;//读取低代理
+					if (IN_RANGE(u16LowSurrogate, 0xDC00, 0xDFFF))//判断低代理
 					{
-						u16Char = 0xFFFD;//错误，高代理后非低代理
-						MU8T mu8Char[3];//转换u16未知字符
-						EncodeMUTF8Bmp(u16Char, mu8Char);
-						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
-					}
-					else
-					{
-						U16T u16LowSurrogate = u16Char;
 						//代理对特殊处理：共6字节表示一个实际代理码点
-						MU8T mu8Char[6];
+						MU8T mu8Char[6]{};
 						EncodeMUTF8Supplementary(u16HighSurrogate, u16LowSurrogate, mu8Char);
 						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
+					}
+					else//错误
+					{
+						u16Char = 0xFFFD;//错误，高代理后非低代理
+						MU8T mu8Char[3]{};//转换u16未知字符
+						EncodeMUTF8Bmp(u16Char, mu8Char);
+						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
+
+						--it;//撤回一次刚才的读取，重新判断非低代理字节
+						continue;//重试，for会重新++it，相当于重试当前*it
 					}
 				}
 				else//高代理之前遇到低代理或其它合法3字节字符
 				{
 					if (IN_RANGE(u16Char, 0xDC00, 0xDFFF))//遇到低代理对
 					{
-						u16Char = 0xFFFD;//错误，在高代理之前遇到低代理
-						//替换u16未知字符后给下方转换
+						u16Char = 0xFFFD;//错误，在高代理之前遇到低代理，替换u16未知字符后给下方转换
 					}
 
 					//转换3字节字符
-					MU8T mu8Char[3];
+					MU8T mu8Char[3]{};
 					EncodeMUTF8Bmp(u16Char, mu8Char);
 					mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
 				}
 			}
 			else
 			{
-				//??????????????怎么命中的
-				assert(false);
+				assert(false);//??????????????怎么命中的
 			}
 		}
 
@@ -211,7 +207,7 @@ private:
 				MU8T mu8CharArr[1] = { mu8Char };
 
 				//转换
-				U16T u16Char;
+				U16T u16Char{};
 				DecodeMUTF8Bmp(mu8CharArr, u16Char);
 				u16String.push_back(u16Char);
 			}
@@ -220,103 +216,109 @@ private:
 				//先保存第一个字节
 				MU8T mu8CharArr[2] = { mu8Char };//[0]=mu8Char
 				//尝试获取下一个字节
-				GET_NEXTCHAR(mu8Char);
+				GET_NEXTCHAR(mu8CharArr[1]);
 				//判断字节合法性
-				if (!HAS_BITMASK(mu8Char, 0b1100'0000, 0b1000'0000))//高2位不是10，错误，跳过
+				if (!HAS_BITMASK(mu8CharArr[1], 0b1100'0000, 0b1000'0000))//高2位不是10，错误，跳过
 				{
 					--it;//撤回读取（避免for自动递增跳过刚才的字符）
+					u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
 					continue;//重试，因为当前字符可能是错误的，而刚才多读取的才是正确的，所以需要撤回continue重新尝试
 				}
-				//放入数组
-				mu8CharArr[1] = mu8Char;
 
 				//转换
-				U16T u16Char;
+				U16T u16Char{};
 				DecodeMUTF8Bmp(mu8CharArr, u16Char);
 				u16String.push_back(u16Char);
 			}
 			else if (HAS_BITMASK(mu8Char, 0b1111'0000, 0b1110'0000))//高4位为1110，三字节或多字节码点
 			{
 				//保存
-				MU8T mu8First = mu8Char;
+				MU8T mu8Next{};
 				//尝试获取下一个字节
-				GET_NEXTCHAR(mu8Char);
+				GET_NEXTCHAR(mu8Next);
 				//合法性判断（区分是否为代理）
 				//代理区分：因为D800开头的为高代理，必不可能作为三字节码点0b1010'xxxx出现，所以只要高4位是1010必为代理对
 				//也就是说mu8CharArr3[0]的低4bit如果是1101并且mu8Char的高4bit是1010的情况下，即三字节码点10xx'xxxx中的最高两个xx为01，
 				//把他们合起来就是1101'10xx 也就是0xD8，即u16的高代理对开始字符，而代理对在encode过程走的另一个流程，不存在与3字节码点混淆处理的情况
-				if (IS_BITS(mu8First, 0b1110'1101) && HAS_BITMASK(mu8Char, 0b1111'0000, 0b1010'0000))//代理对，必须先判断，很重要！
+				if (IS_BITS(mu8Char, 0b1110'1101) && HAS_BITMASK(mu8Next, 0b1111'0000, 0b1010'0000))//代理对，必须先判断，很重要！
 				{
-					MU8T mu8CharArr[6] = { mu8First,mu8Char };//0 1已初始化，0是固定起始值，1是高代理的高4位
+					MU8T mu8CharArr[6] = { mu8Char,mu8Next };//0 1已初始化，0是固定起始值，1是高代理的高4位
 					//继续读取后4个并验证
 
 					//下一个为高代理的低6位
-					GET_NEXTCHAR(mu8Char);
-					if (!HAS_BITMASK(mu8Char, 0b1100'0000, 0b1000'0000))
+					GET_NEXTCHAR(mu8CharArr[2]);
+					if (!HAS_BITMASK(mu8CharArr[2], 0b1100'0000, 0b1000'0000))
 					{
 						--it;//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
+						u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
 						continue;
 					}
-					mu8CharArr[2] = mu8Char;
+
 					//下一个为固定字符
-					GET_NEXTCHAR(mu8Char);
-					if (!IS_BITS(mu8Char, 0b1110'1101))
+					GET_NEXTCHAR(mu8CharArr[3]);
+					if (!IS_BITS(mu8CharArr[3], 0b1110'1101))
 					{
 						--it;//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
+						u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
 						continue;
 					}
-					mu8CharArr[3] = mu8Char;
+
 					//下一个为低代理高4位
-					GET_NEXTCHAR(mu8Char);
-					if (!HAS_BITMASK(mu8Char, 0b1111'0000, 0b1011'0000))
+					GET_NEXTCHAR(mu8CharArr[4]);
+					if (!HAS_BITMASK(mu8CharArr[4], 0b1111'0000, 0b1011'0000))
 					{
 						--it;//撤回两次读取，尽管前面已确认是0b1110'1101，但是存在111开头的合法3码点
 						--it;
+						u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
 						continue;
 					}
-					mu8CharArr[4] = mu8Char;
+
 					//读取最后一个低代理的低6位
-					GET_NEXTCHAR(mu8Char);
-					if (!HAS_BITMASK(mu8Char, 0b1100'0000, 0b1000'0000))
+					GET_NEXTCHAR(mu8CharArr[5]);
+					if (!HAS_BITMASK(mu8CharArr[5], 0b1100'0000, 0b1000'0000))
 					{
 						--it;//撤回一次读取，因为不存在而前一个已确认的101开头的合法码点，且再前一个开头为111，不存在111后跟101的3码点情况，跳过
+						u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
 						continue;
 					}
-					mu8CharArr[5] = mu8Char;
 
 					//验证全部通过，转换代理对
-					U16T u16HighSurrogate, u16LowSurrogate;
+					U16T u16HighSurrogate{}, u16LowSurrogate{};
 					DecodeMUTF8Supplementary(mu8CharArr, u16HighSurrogate, u16LowSurrogate);
 					u16String.push_back(u16HighSurrogate);
 					u16String.push_back(u16LowSurrogate);
 				}
-				else if (HAS_BITMASK(mu8Char, 0b1100'0000, 0b1000'0000))//三字节码点，排除代理对后只有这个可能
+				else if (HAS_BITMASK(mu8Next, 0b1100'0000, 0b1000'0000))//三字节码点，排除代理对后只有这个可能
 				{
 					//保存
-					MU8T mu8CharArr[3] = { mu8First,mu8Char };
-					GET_NEXTCHAR(mu8Char);//尝试获取下一字符
-					if (!HAS_BITMASK(mu8Char, 0b1100'0000, 0b1000'0000))//错误，3字节码点最后一个不是正确字符
+					MU8T mu8CharArr[3] = { mu8Char,mu8Next };//0 1已初始化
+					//尝试获取下一字符
+					GET_NEXTCHAR(mu8CharArr[2]);
+					if (!HAS_BITMASK(mu8CharArr[2], 0b1100'0000, 0b1000'0000))//错误，3字节码点最后一个不是正确字符
 					{
 						--it;//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
+						u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
 						continue;
 					}
-					mu8CharArr[2] = mu8Char;
 
 					//3位已就绪，转换
-					U16T u16Char;
+					U16T u16Char{};
 					DecodeMUTF8Bmp(mu8CharArr, u16Char);
 					u16String.push_back(u16Char);
 				}
 				else
 				{
-					--it;//撤回刚才的读取并重试
+					//撤回mu8Next的读取，因为mu8Char已经判断过到这里，证明此字节错误，
+					//如果撤回到mu8Char会导致无限错误循环，只撤回到mu8Next即可
+					--it;//撤回刚才的读取并重试，for会重新++it，相当于重试当前*it
+					u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
 					continue;
 				}
-
 			}
 			else
 			{
 				//未知，跳过并忽略，直到遇到下一个正确起始字符
+				u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
 				continue;
 			}
 		}
@@ -361,7 +363,7 @@ private:
 
 		for (auto it = mu8String, end = mu8String + szStringLength; it != end; ++it)
 		{
-
+			MU8T mu8Char = *it;
 
 
 
