@@ -511,13 +511,14 @@ private:
 
 				//把前面的都插入一下
 				INSERT_NORMAL(it);
-				//获取下一个
-				MU8T mu8CharArr[6] = { mu8Char };
 
 				//继续读取后5个并验证
+				MU8T mu8CharArr[6] = { mu8Char };//[0] = mu8Char
+
+				//获取下一个
 				GET_NEXTCHAR(mu8CharArr[1],
 					(PUSH_FAIL_U8CHAR));//第二次
-				if (!HAS_BITMASK(mu8CharArr[1], 0b1111'0000, 0b1010'0000))//代理对
+				if (!HAS_BITMASK(mu8CharArr[1], 0b1111'0000, 0b1010'0000))
 				{
 					//撤回一次读取（为什么不是二次？因为前一个字符已确认是代理对开头，跳过）
 					--it;
@@ -526,9 +527,10 @@ private:
 					continue;
 				}
 
+				//获取下一个
 				GET_NEXTCHAR(mu8CharArr[2],
 					(PUSH_FAIL_U8CHAR, PUSH_FAIL_U8CHAR));//第三次
-				if (!HAS_BITMASK(mu8CharArr[2], 0b1111'0000, 0b1010'0000))//代理对
+				if (!HAS_BITMASK(mu8CharArr[2], 0b1100'0000, 0b1000'0000))
 				{
 					//撤回一次读取（为什么不是二次？因为前一个字符已确认是10开头的尾随字符，跳过）
 					--it;
@@ -538,16 +540,55 @@ private:
 					continue;
 				}
 
+				//获取下一个
+				GET_NEXTCHAR(mu8CharArr[3],
+					(PUSH_FAIL_U8CHAR, PUSH_FAIL_U8CHAR, PUSH_FAIL_U8CHAR));//第四次
+				if (!IS_BITS(mu8CharArr[3], 0b1110'1101))
+				{
+					//撤回一次读取（为什么不是二次？因为前一个字符已确认是10开头的尾随字符，跳过）
+					--it;
+					//替换为三个utf8错误字符
+					PUSH_FAIL_U8CHAR;
+					PUSH_FAIL_U8CHAR;
+					PUSH_FAIL_U8CHAR;
+					continue;
+				}
 
+				//获取下一个
+				GET_NEXTCHAR(mu8CharArr[4],
+					(PUSH_FAIL_U8CHAR, PUSH_FAIL_U8CHAR, PUSH_FAIL_U8CHAR, PUSH_FAIL_U8CHAR));//第五次
+				if (!HAS_BITMASK(mu8CharArr[4], 0b1111'0000, 0b1011'0000))
+				{
+					//撤回二次读取，尽管前面已确认是0b1110'1101，但是存在111开头的合法3码点
+					--it;
+					--it;
+					//替换为三个utf16错误字符，因为撤回二次，本来有4个错误字节的现在只要3个
+					PUSH_FAIL_U16CHAR;
+					PUSH_FAIL_U16CHAR;
+					PUSH_FAIL_U16CHAR;
+					continue;
+				}
 
+				//获取下一个
+				GET_NEXTCHAR(mu8CharArr[5],
+					(PUSH_FAIL_U8CHAR, PUSH_FAIL_U8CHAR, PUSH_FAIL_U8CHAR, PUSH_FAIL_U8CHAR, PUSH_FAIL_U8CHAR));//第六次
+				if (!HAS_BITMASK(mu8CharArr[5], 0b1100'0000, 0b1000'0000))
+				{
+					//撤回一次读取（为什么不是二次？因为前一个字符已确认是10开头的尾随字符，跳过）
+					--it;
+					//替换为五个utf8错误字符
+					PUSH_FAIL_U8CHAR;
+					PUSH_FAIL_U8CHAR;
+					PUSH_FAIL_U8CHAR;
+					PUSH_FAIL_U8CHAR;
+					PUSH_FAIL_U8CHAR;
+					continue;
+				}
 
-
-
-
-
-
-
-
+				//到此，全部验证通过，进行转换
+				U8T u8CharArr[4]{};
+				MUTF8SupplementaryToUTF8(mu8CharArr, u8CharArr);
+				u8String.append(u8CharArr, sizeof(u8CharArr) / sizeof(U8T));
 			}
 			else if (IS_BITS(mu8Char, 0xC0))//注意以0xC0开头的，必然是2字节码，所以如果里面没有第二个字符，则必然错误
 			{
@@ -728,14 +769,74 @@ public:
 	{
 		return MU8ToU16Impl<std::basic_string<U16T>>(mu8String, szStringLength);
 	}
-};
 
+	//---------------------------------------------------------------------------------------------//
+	//---------------------------------------------------------------------------------------------//
+
+	static constexpr size_t U8ToMU8Size(const std::basic_string_view<U8T> &u8String)
+	{
+		return U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String.data(), u8String.size()).GetData();
+	}
+	static constexpr size_t U8ToMU8Size(const U8T *u8String, size_t szStringLength)
+	{
+		return U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String, szStringLength).GetData();
+	}
+	template<size_t N>
+	static consteval size_t U8ToMU8Size(const U8T(&u8String)[N])
+	{
+		size_t szStringLength =
+			N > 0 && u8String[N - 1] == u8'\0'
+			? N - 1
+			: N;
+
+		return U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String, szStringLength).GetData();
+	}
+
+	static std::basic_string<MU8T> U8ToMU8(const std::basic_string_view<U8T> &u8String)
+	{
+		return U8ToMU8Impl<std::basic_string<MU8T>>(u8String.data(), u8String.size());
+	}
+	static std::basic_string<MU8T> U8ToMU8(const U8T *u8String, size_t szStringLength)
+	{
+		return U8ToMU8Impl<std::basic_string<MU8T>>(u8String, szStringLength);
+	}
+	template<size_t szNewSize, size_t N>//size_t szNewSize = U8ToMU8Size(u8String);
+	static consteval auto U8ToMU8(const U8T(&u8String)[N])
+	{
+		size_t szStringLength =
+			N > 0 && u8String[N - 1] == u8'\0'
+			? N - 1
+			: N;
+
+		return U8ToMU8Impl<StaticString<MU8T, szNewSize>>(u8String, szStringLength).GetData();
+	}
+
+	//---------------------------------------------------------------------------------------------//
+
+	static constexpr size_t MU8ToU8Size(const std::basic_string_view<MU8T> &mu8String)
+	{
+		return MU8ToU8Impl<FakeStringCounter<U8T>>(mu8String.data(), mu8String.size()).GetData();
+	}
+	static constexpr size_t MU8ToU8Size(const MU8T *mu8String, size_t szStringLength)
+	{
+		return MU8ToU8Impl<FakeStringCounter<U8T>>(mu8String, szStringLength).GetData();
+	}
+
+	static std::basic_string<U8T> MU8ToU8(const std::basic_string_view<MU8T> &mu8String)
+	{
+		return MU8ToU8Impl<std::basic_string<U8T>>(mu8String.data(), mu8String.size());
+	}
+	static std::basic_string<U8T> MU8ToU8(const MU8T *mu8String, size_t szStringLength)
+	{
+		return MU8ToU8Impl<std::basic_string<U8T>>(mu8String, szStringLength);
+	}
+};
 
 #define U16CV2MU8(u16String) MUTF8_Tool<>::U16ToMU8(u16String)
 #define MU8CV2U16(mu8String) MUTF8_Tool<>::MU8ToU16(mu8String)
 
-//#define MU8CV2U8(mu8String) MUTF8_Tool<>::(mu8String)
-//#define U8CV2MU8(u8String) MUTF8_Tool<>::(u8String)
+#define U8CV2MU8(u8String) MUTF8_Tool<>::U8ToMU8(u8String)
+#define MU8CV2U8(mu8String) MUTF8_Tool<>::MU8ToU8(mu8String)
 
 //纯英文情况下，转换后效果不变
 //#define MU8STR(charLiteralString) (charLiteralString)

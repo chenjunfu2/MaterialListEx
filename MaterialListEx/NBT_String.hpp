@@ -108,12 +108,22 @@ public:
 
 	auto ToUTF8(void) const
 	{
-
+		return MU8CV2U8(*this);
 	}
 
 	auto ToUTF16(void) const
 	{
+		return MU8CV2U16(*this);
+	}
 
+	void FromUTF8(std::basic_string_view<chat8_t> u8String) const
+	{
+		*this = U8CV2MU8(u8String);
+	}
+
+	void FromUTF16(std::basic_string_view<chat16_t> u16String) const
+	{
+		*this = U16CV2MU8(u16String);
 	}
 };
 
