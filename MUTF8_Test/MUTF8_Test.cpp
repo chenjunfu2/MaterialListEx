@@ -35,20 +35,64 @@ std::basic_string<char16_t> generate_all_valid_utf16le()
 	return result;
 }
 
+
+void PrintHex(const char *ps, const std::basic_string_view<char> &s, const char *pe = "\n")
+{
+	printf("%s", ps);
+	for (const auto &c : s)
+	{
+		printf("0x%02X ", (uint8_t)c);
+	}
+	printf("%s", pe);
+}
+
+void PrintHex(const char *ps, const std::basic_string_view<char16_t> &s, const char *pe = "\n")
+{
+	printf("%s", ps);
+	for (const auto &c : s)
+	{
+		printf("0x%04X ", (uint16_t)c);
+	}
+	printf("%s", pe);
+}
+
+// 测试 UTF-16 → MUTF-8
+template<size_t iN, size_t eN>
+void TestU16ToMU8Impl(size_t szLine, const char16_t(&input)[iN], const char(&expected)[eN])
+{
+	auto result = MUTF8_Tool<char, char16_t, char8_t>::U16ToMU8(input, iN - 1);
+	if (result != std::basic_string_view<char>(expected, eN - 1))
+	{
+		printf("[%zu] U16ToMU8 FAILED\n", szLine);
+		PrintHex("Input   : ", input);
+		PrintHex("Expected: ", expected);
+		PrintHex("Got     : ", result);
+		printf("\n");
+	}
+}
+
+// 测试 MUTF-8 → UTF-16
+template<size_t iN, size_t eN>
+void TestMU8ToU16Impl(size_t szLine, const char(&input)[iN], const char16_t(&expected)[eN])
+{
+	auto result = MUTF8_Tool<char, char16_t, char8_t>::MU8ToU16(input, iN - 1);
+	if (result != std::basic_string_view<char16_t>(expected, eN - 1))
+	{
+		printf("[%zu] MU8ToU16 FAILED\n", szLine);
+		PrintHex("Input   : ", input);
+		PrintHex("Expected: ", expected);
+		PrintHex("Got     : ", result);
+		printf("\n");
+	}
+}
+
+#define rp_line __LINE__
+
+#define TestU16ToMU8(i,e) TestU16ToMU8Impl(rp_line,i,e)
+#define TestMU8ToU16(i,e) TestMU8ToU16Impl(rp_line,i,e)
+
 int main(void)
 {
-	//char arrTest[] =
-	//{
-	//	0xE6,0xB5,0x8B,0xE8,0xAF,0x95,
-	//};
-	//
-	//std::string sTest{ arrTest,sizeof(arrTest) / sizeof(arrTest[0]) };
-	//auto ansiString = ConvertUtf16ToAnsi(MUTF8_Tool<char, wchar_t>::MU8ToU16(sTest));
-	//printf("%s", ansiString.c_str());
-	//
-	//return 0;
-
-
 	printf("generate_all_valid_utf16le\n");
 	auto test = generate_all_valid_utf16le();
 	printf("generate_all_valid_utf16le ok\n");
@@ -78,6 +122,49 @@ int main(void)
 		printf("test ok\n");
 	}
 
+	printf("\n");
+
+
+	// UTF-16 → MUTF-8 测试
+	TestU16ToMU8(u"\u0041", "\x41");                        // 'A'
+	TestU16ToMU8(u"\u0000", "\xC0\x80");                    // NUL 特殊编码
+	TestU16ToMU8(u"\xD800", "\xEF\xBF\xBD");                // 孤立高代理
+	TestU16ToMU8(u"\xDC00", "\xEF\xBF\xBD");                // 孤立低代理
+	TestU16ToMU8(u"\xD800\u0041", "\xEF\xBF\xBD\x41");      // 高代理+普通字符
+	TestU16ToMU8(u"\u0041\xDC00", "\x41\xEF\xBF\xBD");      // 普通字符+低代理
+	TestU16ToMU8(u"\U00010000", "\xED\xA0\x80\xED\xB0\x80");// U+10000
+	TestU16ToMU8(u"\U0010FFFF", "\xED\xAF\xBF\xED\xBF\xBF");// U+10FFFF
+	TestU16ToMU8(u"\xD800\xD800", "\xEF\xBF\xBD\xEF\xBF\xBD");// 两个高代理
+
+	// 混合测试（UTF-16 → MUTF-8）
+	TestU16ToMU8(u"A\xD800" u"B\xDC00" u"C",
+		"\x41\xEF\xBF\xBD\x42\xEF\xBF\xBD\x43");   // A  [高代理→�]  B [低代理→�] C
+
+	TestU16ToMU8(u"\xD800\U00010000\xDC00",
+		"\xEF\xBF\xBD\xED\xA0\x80\xED\xB0\x80\xEF\xBF\xBD"); // 孤立高代理 → U+FFFD, 合法代理对 → 6字节, 孤立低代理 → U+FFFD
+
+	// MUTF-8 → UTF-16 测试
+	TestMU8ToU16("\x41", u"\u0041");                        // 'A'
+	TestMU8ToU16("\xC0\x80", u"\u0000");                    // 特殊 NUL
+	TestMU8ToU16("\xED\xA0\x80\xED\xB0\x80", u"\U00010000");// U+10000
+	TestMU8ToU16("\xED\xAF\xBF\xED\xBF\xBF", u"\U0010FFFF");// U+10FFFF
+	TestMU8ToU16("\xE0\x80\x80", u"\u0000");                // 过长编码
+	TestMU8ToU16("\xF4\x90\x80\x80", u"\uFFFD\uFFFD\uFFFD\uFFFD");// 超范围
+	TestMU8ToU16("\xE2\x28\xA1", u"\uFFFD\u0028\uFFFD");    // 非法字节
+	TestMU8ToU16("\x80", u"\uFFFD");                        // 孤立续字节
+	TestMU8ToU16("\xED\xA0\x41", u"\uFFFD\uFFFD\u0041");    // 断掉的代理序列
+
+	// 混合测试（MUTF-8 → UTF-16）
+	TestMU8ToU16("\x41\xED\xA0\x80\xED\xB0\x80\x42",
+		u"\u0041\U00010000\u0042"); // "A U+10000 B"
+
+	TestMU8ToU16("\x41\xED\xA0\x41\x42",
+		u"\u0041\uFFFD\uFFFD\u0041\u0042"); // "A [坏代理→�] A B"
+
+	TestMU8ToU16("\xED\xA0\x80\xED\xA0\x80",
+		u"\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"); // 两个高代理编码形式 → 两个 U+FFFD
+
+	printf("TestU16ToMU8 | TestMU8ToU16\n");
 
 	return 0;
 }

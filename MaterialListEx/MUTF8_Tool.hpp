@@ -104,8 +104,8 @@ private:
 	}
 
 private:
-//检查迭代器并获取下一个字节（如果可以，否则跳出）
-#define GET_NEXTCHAR(c) if (++it == end) { break; } else { c = *it; }
+//c=char d=do检查迭代器并获取下一个字节（如果可以，否则执行指定语句后跳出）
+#define GET_NEXTCHAR(c,d) if (++it == end) { (d);break; } else { c = *it; }
 //v=value m=mask p=pattern t=test 测试遮罩位之后的结果是否是指定值或值是否是由指定bits组成
 #define HAS_BITMASK(v,m,p) (((uint8_t)(v) & (uint8_t)(m)) == (uint8_t)(p))
 #define IS_BITS(v,t) ((uint8_t)(v) == (uint8_t)(t))
@@ -115,13 +115,17 @@ private:
 	template<typename T = std::basic_string<MU8T>>
 	static constexpr T U16ToMU8Impl(const U16T *u16String, size_t szStringLength)
 	{
-		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的mu8str
+		//用于在错误情况输出utf16错误字节0xFFFD的mu8形式
+		MU8T mu8FailChar[3]{};
+		EncodeMUTF8Bmp(0xFFFD, mu8FailChar);
+#define PUSH_FAIL_MU8CHAR mu8String.append(mu8FailChar, sizeof(mu8FailChar) / sizeof(MU8T))
 
+		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的mu8str
 		T mu8String{};//字符串结尾为0xC0 0x80而非0x00
 
 		for (auto it = u16String, end = u16String + szStringLength; it != end; ++it)
 		{
-			U16T u16Char = *it;
+			U16T u16Char = *it;//第一次
 			if (IN_RANGE(u16Char, 0x0001, 0x007F))//单字节码点
 			{
 				MU8T mu8Char[1]{};
@@ -138,41 +142,31 @@ private:
 			{
 				if (IN_RANGE(u16Char, 0xD800, 0xDBFF))//遇到高代理对
 				{	
-					//判断是否存在下一个字节
-					if (++it == end)
-					{
-						MU8T mu8Char[3]{};//转换u16未知字符
-						EncodeMUTF8Bmp(0xFFFD, mu8Char);//错误，高代理后无数据
-						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
-						break;
-					}
-					
-					//处理高低代理对
 					U16T u16HighSurrogate = u16Char;//保存高代理
-					U16T u16LowSurrogate = *it;//读取低代理
-					if (IN_RANGE(u16LowSurrogate, 0xDC00, 0xDFFF))//判断低代理
+					U16T u16LowSurrogate{};//读取低代理
+					GET_NEXTCHAR(u16LowSurrogate, PUSH_FAIL_MU8CHAR);//第二次
+					//如果上面读取提前返回，则高代理后无数据，插入转换后的u16未知字符
+					
+					//判断低代理范围
+					if (!IN_RANGE(u16LowSurrogate, 0xDC00, 0xDFFF))//错误，高代理后非低代理
 					{
-						//代理对特殊处理：共6字节表示一个实际代理码点
-						MU8T mu8Char[6]{};
-						EncodeMUTF8Supplementary(u16HighSurrogate, u16LowSurrogate, mu8Char);
-						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
-					}
-					else//错误
-					{
-						u16Char = 0xFFFD;//错误，高代理后非低代理
-						MU8T mu8Char[3]{};//转换u16未知字符
-						EncodeMUTF8Bmp(u16Char, mu8Char);
-						mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
-
 						--it;//撤回一次刚才的读取，重新判断非低代理字节
+						PUSH_FAIL_MU8CHAR;//插入u16未知字符
 						continue;//重试，for会重新++it，相当于重试当前*it
 					}
+
+					//代理对特殊处理：共6字节表示一个实际代理码点
+					MU8T mu8Char[6]{};
+					EncodeMUTF8Supplementary(u16HighSurrogate, u16LowSurrogate, mu8Char);
+					mu8String.append(mu8Char, sizeof(mu8Char) / sizeof(MU8T));
 				}
 				else//高代理之前遇到低代理或其它合法3字节字符
 				{
-					if (IN_RANGE(u16Char, 0xDC00, 0xDFFF))//遇到低代理对
+					if (IN_RANGE(u16Char, 0xDC00, 0xDFFF))//在高代理之前遇到低代理
 					{
-						u16Char = 0xFFFD;//错误，在高代理之前遇到低代理，替换u16未知字符后给下方转换
+						//不撤回读取，丢弃错误的低代理
+						PUSH_FAIL_MU8CHAR;//错误，插入u16未知字符
+						continue;//重试
 					}
 
 					//转换3字节字符
@@ -188,18 +182,22 @@ private:
 		}
 
 		return mu8String;
+
+#undef PUSH_FAIL_MU8CHAR
 	}
+
 
 	template<typename T = std::basic_string<U16T>>
 	static constexpr T MU8ToU16Impl(const MU8T *mu8String, size_t szStringLength)
 	{
-		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的u16str
+#define PUSH_FAIL_U16CHAR u16String.push_back((U16T)0xFFFD)
 
+		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的u16str
 		T u16String{};//字符串末尾为0x0000
 		
 		for (auto it = mu8String, end = mu8String + szStringLength; it != end; ++it)
 		{
-			MU8T mu8Char = *it;
+			MU8T mu8Char = *it;//第一次
 			//判断是几字节的mu8
 			if (HAS_BITMASK(mu8Char, 0b1000'0000, 0b0000'0000))//最高位为0，单字节码点
 			{
@@ -216,7 +214,7 @@ private:
 				//先保存第一个字节
 				MU8T mu8CharArr[2] = { mu8Char };//[0]=mu8Char
 				//尝试获取下一个字节
-				GET_NEXTCHAR(mu8CharArr[1]);
+				GET_NEXTCHAR(mu8CharArr[1], PUSH_FAIL_U16CHAR);//第二次
 				//判断字节合法性
 				if (!HAS_BITMASK(mu8CharArr[1], 0b1100'0000, 0b1000'0000))//高2位不是10，错误，跳过
 				{
@@ -235,7 +233,7 @@ private:
 				//保存
 				MU8T mu8Next{};
 				//尝试获取下一个字节
-				GET_NEXTCHAR(mu8Next);
+				GET_NEXTCHAR(mu8Next, PUSH_FAIL_U16CHAR);//第二次
 				//合法性判断（区分是否为代理）
 				//代理区分：因为D800开头的为高代理，必不可能作为三字节码点0b1010'xxxx出现，所以只要高4位是1010必为代理对
 				//也就是说mu8CharArr3[0]的低4bit如果是1101并且mu8Char的高4bit是1010的情况下，即三字节码点10xx'xxxx中的最高两个xx为01，
@@ -246,39 +244,60 @@ private:
 					//继续读取后4个并验证
 
 					//下一个为高代理的低6位
-					GET_NEXTCHAR(mu8CharArr[2]);
+					GET_NEXTCHAR(mu8CharArr[2],
+						(PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR));//第三次
 					if (!HAS_BITMASK(mu8CharArr[2], 0b1100'0000, 0b1000'0000))
 					{
-						--it;//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
-						u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
+						//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
+						--it;
+						//替换为两个utf16错误字符
+						PUSH_FAIL_U16CHAR;
+						PUSH_FAIL_U16CHAR;
 						continue;
 					}
 
 					//下一个为固定字符
-					GET_NEXTCHAR(mu8CharArr[3]);
+					GET_NEXTCHAR(mu8CharArr[3],
+						(PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR));//第四次
 					if (!IS_BITS(mu8CharArr[3], 0b1110'1101))
 					{
-						--it;//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
-						u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
+						//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
+						--it;
+						//替换为三个utf16错误字符
+						PUSH_FAIL_U16CHAR;
+						PUSH_FAIL_U16CHAR;
+						PUSH_FAIL_U16CHAR;
 						continue;
 					}
 
 					//下一个为低代理高4位
-					GET_NEXTCHAR(mu8CharArr[4]);
+					GET_NEXTCHAR(mu8CharArr[4],
+						(PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR));//第五次
 					if (!HAS_BITMASK(mu8CharArr[4], 0b1111'0000, 0b1011'0000))
 					{
-						--it;//撤回两次读取，尽管前面已确认是0b1110'1101，但是存在111开头的合法3码点
+						//撤回两次读取，尽管前面已确认是0b1110'1101，但是存在111开头的合法3码点
 						--it;
-						u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
+						--it;
+						//替换为三个utf16错误字符，因为撤回两次，本来有4个错误字节的现在只要3个
+						PUSH_FAIL_U16CHAR;
+						PUSH_FAIL_U16CHAR;
+						PUSH_FAIL_U16CHAR;
 						continue;
 					}
 
 					//读取最后一个低代理的低6位
-					GET_NEXTCHAR(mu8CharArr[5]);
+					GET_NEXTCHAR(mu8CharArr[5],
+						(PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR));//第六次
 					if (!HAS_BITMASK(mu8CharArr[5], 0b1100'0000, 0b1000'0000))
 					{
-						--it;//撤回一次读取，因为不存在而前一个已确认的101开头的合法码点，且再前一个开头为111，不存在111后跟101的3码点情况，跳过
-						u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
+						//撤回一次读取，因为不存在而前一个已确认的101开头的合法码点，且再前一个开头为111，不存在111后跟101的3码点情况，跳过
+						--it;
+						//替换为五个utf16错误字符
+						PUSH_FAIL_U16CHAR;
+						PUSH_FAIL_U16CHAR;
+						PUSH_FAIL_U16CHAR;
+						PUSH_FAIL_U16CHAR;
+						PUSH_FAIL_U16CHAR;
 						continue;
 					}
 
@@ -293,11 +312,15 @@ private:
 					//保存
 					MU8T mu8CharArr[3] = { mu8Char,mu8Next };//0 1已初始化
 					//尝试获取下一字符
-					GET_NEXTCHAR(mu8CharArr[2]);
+					GET_NEXTCHAR(mu8CharArr[2],
+						(PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR));//第三次
 					if (!HAS_BITMASK(mu8CharArr[2], 0b1100'0000, 0b1000'0000))//错误，3字节码点最后一个不是正确字符
 					{
-						--it;//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
-						u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
+						//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
+						--it;
+						//替换为两个utf16错误字符
+						PUSH_FAIL_U16CHAR;
+						PUSH_FAIL_U16CHAR;
 						continue;
 					}
 
@@ -310,20 +333,25 @@ private:
 				{
 					//撤回mu8Next的读取，因为mu8Char已经判断过到这里，证明此字节错误，
 					//如果撤回到mu8Char会导致无限错误循环，只撤回到mu8Next即可
-					--it;//撤回刚才的读取并重试，for会重新++it，相当于重试当前*it
-					u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
+					//撤回刚才的读取并重试，for会重新++it，相当于重试当前*it
+					--it;
+					//替换为一个utf16错误字符
+					PUSH_FAIL_U16CHAR;
 					continue;
 				}
 			}
 			else
 			{
 				//未知，跳过并忽略，直到遇到下一个正确起始字符
-				u16String.push_back((U16T)0xFFFD);//替换为utf16错误字符
+				//替换为一个utf16错误字符
+				PUSH_FAIL_U16CHAR;
 				continue;
 			}
 		}
 	
 		return u16String;
+
+#undef PUSH_FAIL_U16CHAR
 	}
 
 	/*
@@ -468,15 +496,14 @@ private:
 	};
 
 public:
-	static size_t U16ToMU8Size(const std::basic_string_view<U16T> &u16String)
+	static constexpr size_t U16ToMU8Size(const std::basic_string_view<U16T> &u16String)
 	{
 		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String.data(), u16String.size()).GetData();
 	}
-	static std::basic_string<MU8T> U16ToMU8(const std::basic_string_view<U16T> &u16String)
+	static constexpr size_t U16ToMU8Size(const U16T *u16String, size_t szStringLength)
 	{
-		return U16ToMU8Impl<std::basic_string<MU8T>>(u16String.data(), u16String.size());
+		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringLength).GetData();
 	}
-
 	template<size_t N>
 	static consteval size_t U16ToMU8Size(const U16T(&u16String)[N])
 	{
@@ -484,8 +511,17 @@ public:
 			N > 0 && u16String[N - 1] == u'\0'
 			? N - 1
 			: N;
-	
+
 		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringLength).GetData();
+	}
+
+	static std::basic_string<MU8T> U16ToMU8(const std::basic_string_view<U16T> &u16String)
+	{
+		return U16ToMU8Impl<std::basic_string<MU8T>>(u16String.data(), u16String.size());
+	}
+	static std::basic_string<MU8T> U16ToMU8(const U16T *u16String, size_t szStringLength)
+	{
+		return U16ToMU8Impl<std::basic_string<MU8T>>(u16String, szStringLength);
 	}
 	template<size_t szNewSize, size_t N>//size_t szNewSize = U16ToMU8Size(u16String);
 	static consteval auto U16ToMU8(const U16T(&u16String)[N])
@@ -498,45 +534,26 @@ public:
 		return U16ToMU8Impl<StaticString<MU8T, szNewSize>>(u16String, szStringLength).GetData();
 	}
 
-	//template<size_t N>
-	//static consteval auto U16ToMU8(const U16T(&u16String)[N])
-	//{
-	//	size_t szStringLength = 
-	//		N > 0 && u16String[N - 1] == u'\0' 
-	//		? N - 1 
-	//		: N;
-	//
-	//	constexpr size_t szNewSize = U16ToMU8Size(u16String);//此处无法通过consteval编译，修改为调用者主动从模板传入szNewSize
-	//	return U16ToMU8Impl<StaticString<MU8T, szNewSize>>(u16String, szStringLength).GetData();
-	//}
-
 	//---------------------------------------------------------------------------------------------//
 
-	static size_t MU8ToU16Size(const std::basic_string_view<MU8T> &mu8String)
+	static constexpr size_t MU8ToU16Size(const std::basic_string_view<MU8T> &mu8String)
 	{
 		return MU8ToU16Impl<FakeStringCounter<U16T>>(mu8String.data(), mu8String.size()).GetData();
 	}
+	static constexpr size_t MU8ToU16Size(const MU8T *mu8String, size_t szStringLength)
+	{
+		return MU8ToU16Impl<FakeStringCounter<U16T>>(mu8String, szStringLength).GetData();
+	}
+
 	static std::basic_string<U16T> MU8ToU16(const std::basic_string_view<MU8T> &mu8String)
 	{
 		return MU8ToU16Impl<std::basic_string<U16T>>(mu8String.data(), mu8String.size());
 	}
-
-	//friend consteval auto operator""_mu8(const char16_t *u16Str, size_t szStrSize);
+	static std::basic_string<U16T> MU8ToU16(const MU8T *mu8String, size_t szStringLength)
+	{
+		return MU8ToU16Impl<std::basic_string<U16T>>(mu8String, szStringLength);
+	}
 };
-
-//consteval auto operator""_mu8(const char16_t *u16Str, size_t szStrSize)
-//{
-//	using Type = MUTF8_Tool<char, char16_t>;
-//
-//	if (szStrSize > 0 && u16Str[szStrSize - 1] == u'\0')
-//	{
-//		--szStrSize;
-//	}
-//
-//	constexpr size_t szNewSize = Type::U16ToMU8Impl<Type::FakeStringCounter<char>>(u16Str, szStrSize).GetData();
-//
-//	return Type::U16ToMU8Impl<Type::StaticString<char, szNewSize>>(u16Str, szStrSize).GetData();
-//}
 
 
 #define U16CV2MU8(u16String) MUTF8_Tool<>::U16ToMU8(u16String)
@@ -551,11 +568,6 @@ public:
 //转换为静态字符串数组
 //在mutf-8中，任何字符串结尾\0都会被映射成0xC0 0x80，且保证串中不包含0x00，所以一定程度上可以和c-str（以0结尾）兼容
 #define CHAR2MU8STR(charLiteralString) (MUTF8_Tool<>::U16ToMU8<MUTF8_Tool<>::U16ToMU8Size(u##charLiteralString)>(u##charLiteralString))
-
-/*
-TODO:
-mu8和u8互转
-*/
 
 //英文原文
 /*
