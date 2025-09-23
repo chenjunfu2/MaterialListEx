@@ -98,14 +98,38 @@ int main(void)
 	//auto tmp1 = MUTF8_Tool<char, char16_t, char>::MU8ToU16(tmp);
 	//
 	//printf("%d\n", s == tmp1);
-	//
-	//auto tmp2 = MUTF8_Tool<char, char16_t, char>::MU8ToU8(tmp);
-	//auto tmp3 = MUTF8_Tool<char, char16_t, char>::U8ToMU8(tmp2);
-	//
-	//printf("%d\n", tmp == tmp3);
-	//
-	//
-	//return 0;
+	
+
+	const auto tmp = "\xED\xA0\xED\xB0\xED\xA0\x80\xED\xB0\x81\xED\xA0\xED\xB0\xED\xA0\x80";
+
+	auto tmp2 = MUTF8_Tool<char, char16_t, char>::MU8ToU8(tmp);
+	auto tmp3 = MUTF8_Tool<char, char16_t, char>::U8ToMU8(tmp2);
+	
+	printf("%d\n", tmp == tmp3);
+	
+	
+	return 0;
+
+	auto TestPrint = [](auto l, auto r) ->void
+	{
+		if (l != r)
+		{
+			printf("test fail\n");
+			auto min = min(l.size(), r.size());
+			for (size_t i = 0, c = 0; i < min && c < 16; ++i)
+			{
+				if (l[i] != r[i])
+				{
+					printf("[%zu]: [%d:0x%02X] != [%d:0x%02X]\n", i, l[i], l[i], r[i], r[i]);
+					++c;
+				}
+			}
+		}
+		else
+		{
+			printf("test ok\n");
+		}
+	};
 
 	printf("generate_all_valid_utf16le\n");
 	auto test = generate_all_valid_utf16le();
@@ -115,34 +139,21 @@ int main(void)
 	auto test1 = MUTF8_Tool<char, char16_t, char>::U16ToMU8(test);
 	printf("U16ToMU8 ok\n");
 
-	printf("MU8ToU8\n");
-	auto test2 = MUTF8_Tool<char,char16_t,char>::MU8ToU8(test1);
-	printf("MU8ToU8 ok\n");
-	
-	printf("U8ToMU8\n");
-	auto test3 = MUTF8_Tool<char, char16_t, char>::U8ToMU8(test2);
-	printf("U8ToMU8 ok\n");
-
 	printf("MU8ToU16\n");
-	auto test4 = MUTF8_Tool<char, char16_t, char>::MU8ToU16(test3);
+	auto test2 = MUTF8_Tool<char, char16_t, char>::MU8ToU16(test1);
 	printf("MU8ToU16 ok\n");
 
-	if (test != test4)
-	{
-		printf("test fail\n");
-		auto min = min(test.size(), test4.size());
-		for (size_t i = 0; i < min; ++i)
-		{
-			if (test[i] != test4[i])
-			{
-				printf("[%zu]: [%d] != [%d]\n", i, test[i], test4[i]);
-			}
-		}
-	}
-	else
-	{
-		printf("test ok\n");
-	}
+	TestPrint(test, test2);
+
+	printf("MU8ToU8\n");
+	auto test3 = MUTF8_Tool<char, char16_t, char>::MU8ToU8(test1);
+	printf("MU8ToU8 ok\n");
+
+	printf("U8ToMU8\n");
+	auto test4 = MUTF8_Tool<char, char16_t, char>::U8ToMU8(test3);
+	printf("U8ToMU8 ok\n");
+
+	TestPrint(test1, test4);
 
 	printf("\n");
 
