@@ -105,6 +105,16 @@ public:
 
 	MyString(const View &view) :String(view)//允许从view构造string
 	{}
+
+	auto ToUTF8(void) const
+	{
+
+	}
+
+	auto ToUTF16(void) const
+	{
+
+	}
 };
 
 

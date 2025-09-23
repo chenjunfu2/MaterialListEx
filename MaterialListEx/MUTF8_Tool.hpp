@@ -7,7 +7,7 @@
 #include <array>
 #include <algorithm>
 
-template<typename MU8T = char, typename U16T = char16_t, typename U8T = char8_t>
+template<typename MU8T = uint8_t, typename U16T = char16_t, typename U8T = char8_t>
 class MUTF8_Tool
 {
 	static_assert(sizeof(MU8T) == 1, "MU8T size must be at 1 byte");
@@ -509,15 +509,18 @@ public:
 //}
 
 
-#define CVRTMU8(u16String) MUTF8_Tool<>::U16ToMU8(u16String)
-#define CVRTU16(mu8String) MUTF8_Tool<>::MU8ToU16(mu8String)
+#define U16CV2MU8(u16String) MUTF8_Tool<>::U16ToMU8(u16String)
+#define MU8CV2U16(mu8String) MUTF8_Tool<>::MU8ToU16(mu8String)
+
+//#define MU8CV2U8(mu8String) MUTF8_Tool<>::(mu8String)
+//#define U8CV2MU8(u8String) MUTF8_Tool<>::(u8String)
 
 //纯英文情况下，转换后效果不变
 //#define MU8STR(charLiteralString) (charLiteralString)
 
 //转换为静态字符串数组
 //在mutf-8中，任何字符串结尾\0都会被映射成0xC0 0x80，且保证串中不包含0x00，所以一定程度上可以和c-str（以0结尾）兼容
-#define CHAR2MU8STR(charLiteralString) (MUTF8_Tool<char,char16_t>::U16ToMU8<MUTF8_Tool<char,char16_t>::U16ToMU8Size(u##charLiteralString)>(u##charLiteralString))
+#define CHAR2MU8STR(charLiteralString) (MUTF8_Tool<>::U16ToMU8<MUTF8_Tool<>::U16ToMU8Size(u##charLiteralString)>(u##charLiteralString))
 
 /*
 TODO:

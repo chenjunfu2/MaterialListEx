@@ -711,7 +711,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 			{
 				return false;
 			}
-			const auto &half = stBlocks.pcpdProperties->GetString("half");
+			const auto &half = stBlocks.pcpdProperties->GetString(MU8STR("half"));
 			if (half == MU8STR("lower"))
 			{
 				stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
@@ -730,16 +730,16 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 	{
 		const static std::unordered_map<NBT_Type::String, NBT_Type::String> mapCropPlant =
 		{
-			{MU8STR("minecraft:pumpkin_stem"),MU8STR("minecraft:pumpkin_seeds")},
-			{MU8STR("minecraft:attached_pumpkin_stem"),MU8STR("minecraft:pumpkin_seeds")},
-			{MU8STR("minecraft:melon_stem"),MU8STR("minecraft:melon_seeds")},
-			{MU8STR("minecraft:attached_melon_stem"),MU8STR("minecraft:melon_seeds")},
-			{MU8STR("minecraft:beetroots"),MU8STR("minecraft:beetroot_seeds")},
-			{MU8STR("minecraft:wheat"),MU8STR("minecraft:wheat_seeds")},
-			{MU8STR("minecraft:carrots"),MU8STR("minecraft:carrot")},
-			{MU8STR("minecraft:potatoes"),MU8STR("minecraft:potato")},
-			{MU8STR("minecraft:torchflower_crop"),MU8STR("minecraft:torchflower_seeds")},
-			{MU8STR("minecraft:pitcher_crop"),MU8STR("minecraft:pitcher_pod")},//需要特判处理
+			{MU8STR("minecraft:pumpkin_stem"),			MU8STR("minecraft:pumpkin_seeds")},
+			{MU8STR("minecraft:attached_pumpkin_stem"),	MU8STR("minecraft:pumpkin_seeds")},
+			{MU8STR("minecraft:melon_stem"),			MU8STR("minecraft:melon_seeds")},
+			{MU8STR("minecraft:attached_melon_stem"),	MU8STR("minecraft:melon_seeds")},
+			{MU8STR("minecraft:beetroots"),				MU8STR("minecraft:beetroot_seeds")},
+			{MU8STR("minecraft:wheat"),					MU8STR("minecraft:wheat_seeds")},
+			{MU8STR("minecraft:carrots"),				MU8STR("minecraft:carrot")},
+			{MU8STR("minecraft:potatoes"),				MU8STR("minecraft:potato")},
+			{MU8STR("minecraft:torchflower_crop"),		MU8STR("minecraft:torchflower_seeds")},
+			{MU8STR("minecraft:pitcher_crop"),			MU8STR("minecraft:pitcher_pod")},//需要特判处理
 		};
 
 		const auto it = mapCropPlant.find(*stBlocks.psBlockName);
@@ -751,7 +751,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 				{
 					return false;
 				}
-				const auto &half = stBlocks.pcpdProperties->GetString("half");
+				const auto &half = stBlocks.pcpdProperties->GetString(MU8STR("half"));
 				if (half == MU8STR("lower"))
 				{
 					stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1);
@@ -784,7 +784,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 		{
 			return;//如果没有附加标签则无需判断
 		}
-		const auto it = stBlocks.pcpdProperties->HasString("waterlogged");
+		const auto it = stBlocks.pcpdProperties->HasString(MU8STR("waterlogged"));
 		if (it != NULL)
 		{
 			if (*it == MU8STR("true"))//含水
