@@ -8,9 +8,12 @@
 #include "NBT_List.hpp"
 #include "NBT_Compound.hpp"
 
-//在这里，CHAR2MU8STR的定义与NBT_Type::String的定义都已完备，给出转换方式以使得所有静态
-//字符串初始化到NBT_Type::String，方便与标准库重载，而不是直接拿到std::array导致重载失败
-#define MU8STR(charLiteralString) (NBT_Type::String(CHAR2MU8STR(charLiteralString)))
+//在这里，CHAR2MU8STR的定义与NBT_Type::String::View的定义都已完备，给出转换方式以使得所有静态
+//字符串初始化到NBT_Type::String::View，方便与标准库重载，而不是直接拿到std::array导致重载失败
+//注意任何需要保存MU8STR而不是临时使用MU8STR的情况下，都必须使用NBT_Type::String保存，而不能使用
+//NBT_Type::String::View保存，否则msvc不会报错但是使得NBT_Type::String::View持有无效地址导致
+//程序崩溃，但是这种情况下gcc和clang都会报错只有msvc不会还能过编译，只能说这是用msvc的福报（大哭）
+#define MU8STR(charLiteralString) (NBT_Type::String::View(CHAR2MU8STR(charLiteralString)))
 
 template <bool bIsConst>
 class NBT_Node_View;

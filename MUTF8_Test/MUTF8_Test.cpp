@@ -253,5 +253,10 @@ int main(void)
 	//setlocale(LC_ALL, "zn_CN.UTF-8");
 	//printf("%s\n", MU8STR("😂🤣").c_str());
 
+	NBT_Type::String s(MU8STR("123123"));
+
+	NBT_Type::String::View sv(s);
+
+
 	return 0;
 }

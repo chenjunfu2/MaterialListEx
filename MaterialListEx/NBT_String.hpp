@@ -12,6 +12,9 @@ class NBT_Reader;
 template <typename DataType>
 class NBT_Writer;
 
+template<typename String, typename StringView>
+class MyString;
+
 template<typename StringView>
 class MyStringView : public StringView
 {
@@ -47,8 +50,11 @@ public:
 	template<size_t N>//注意，array不会CalcStringSize以删除不必要的结尾，因为预期array不包含任何结尾，以size代表长度
 	constexpr MyStringView(const std::array<typename StringView::value_type, N> &strArray) : StringView(strArray.data(), strArray.size())
 	{}
-};
 
+	template<typename String, typename StringView>
+	constexpr explicit MyStringView(const MyString<String, StringView> &myString) : StringView(myString.data(), myString.size())//允许从string显示构造view
+	{}
+};
 
 
 template<typename String, typename StringView>
@@ -94,7 +100,10 @@ public:
 	{}
 
 	template<size_t N>//注意，array不会CalcStringSize以删除不必要的结尾，因为预期array不包含任何结尾，以size代表长度
-	MyString(const std::array<typename String::value_type, N> &strArray) : String(strArray.data(), strArray.size())
+	MyString(const std::array<typename String::value_type, N> &strArray) :String(strArray.data(), strArray.size())
+	{}
+
+	MyString(const View &view) :String(view)//允许从view构造string
 	{}
 };
 
