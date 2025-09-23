@@ -495,13 +495,26 @@ private:
 
 			if (HAS_BITMASK(mu8Char, 0b1111'0000, 0b1110'0000))//高4为为1110，mu8的3字节或多字节码点
 			{
-				if (!IS_BITS(mu8Char, 0b1110'1101))//以这个开头的必然是代理对
+				//提前获取下一个
+				MU8T mu8Next{};
+				if (++it == end)
 				{
-					++szNormalLength;//否则递增普通字符
+					//把前面的都插入一下
+					INSERT_NORMAL(it);
+					PUSH_FAIL_U8CHAR;//插入错误字符
+					break;
+				}
+				mu8Next = *it;//第二次
+
+
+				//以1110'1101字节开始且下一个字节高4位是1010开头的必然是代理对
+				if (!IS_BITS(mu8Char, 0b1110'1101) || HAS_BITMASK(mu8Next, 0b1111'0000, 0b1010'0000))
+				{
+					szNormalLength += 2;//前面消耗了两个，递增两次
 					continue;//然后继续循环
 				}
 
-				//把前面的都插入一下
+				//已确认是代理对，把前面的都插入一下
 				INSERT_NORMAL(it);
 
 				//继续读取后5个并验证
@@ -584,18 +597,25 @@ private:
 			}
 			else if (IS_BITS(mu8Char, 0xC0))//注意以0xC0开头的，必然是2字节码，所以如果里面没有第二个字符，则必然错误
 			{
-				//获取下一个
+				//提前获取下一个
 				MU8T mu8Next{};
-				GET_NEXTCHAR(mu8Next,
-					(PUSH_FAIL_U8CHAR));//第二次，这里插入错误字节是符合预期的
+				if (++it == end)
+				{
+					//把前面的都插入一下
+					INSERT_NORMAL(it);
+					PUSH_FAIL_U8CHAR;//插入错误字符
+					break;
+				}
+				mu8Next = *it;//第二次
+
 				if (!IS_BITS(mu8Char, 0x80))//如果不是，说明是别的2字节模式
 				{
 					szNormalLength += 2;//普通字符数加2然后继续
 					continue;
 				}
 
-				//如果是
-				INSERT_NORMAL(it);//插入一下前面的字符
+				//已确认是0字符，插入一下前面的所有内容
+				INSERT_NORMAL(it);
 				u8String.push_back((U8T)0x00);//插入0字符
 			}
 			else

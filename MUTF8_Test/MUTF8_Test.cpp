@@ -110,7 +110,7 @@ int main(void)
 	printf("U8ToMU8 ok\n");
 
 	printf("MU8ToU16\n");
-	auto test4 = MUTF8_Tool<>::MU8ToU16(test1);
+	auto test4 = MUTF8_Tool<>::MU8ToU16(test3);
 	printf("MU8ToU16 ok\n");
 
 	if (test != test4)
