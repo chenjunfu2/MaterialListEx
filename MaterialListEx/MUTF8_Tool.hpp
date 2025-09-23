@@ -7,17 +7,19 @@
 #include <array>
 #include <algorithm>
 
-template<typename MU8T = char, typename U16T = char16_t>
+template<typename MU8T = char, typename U16T = char16_t, typename U8T = char8_t>
 class MUTF8_Tool
 {
 	static_assert(sizeof(MU8T) == 1, "MU8T size must be at 1 byte");
 	static_assert(sizeof(U16T) == 2, "U16T size must be at 2 bytes");
+	static_assert(sizeof(U8T) == 1, "U8T size must be at 1 bytes");
 
 	MUTF8_Tool(void) = delete;
 	~MUTF8_Tool(void) = delete;
 public:
 	using MU8_T = MU8T;
 	using U16_T = U16T;
+	using U8_T = U8T;
 private:
 	template<size_t szBytes>
 	static constexpr void EncodeMUTF8Bmp(const U16T u16Char, MU8T(&mu8CharArr)[szBytes])
@@ -45,7 +47,7 @@ private:
 
 	static constexpr void EncodeMUTF8Supplementary(const U16T u16HighSurrogate, const U16T u16LowSurrogate,  MU8T(&mu8CharArr)[6])
 	{
-		//取出代理对数据并组合 范围：100000-1FFFFF
+		//取出代理对数据并组合 范围：10'0000-1F'FFFF 注意虽然映射了超过10'FFFF的区域，但是u16不存在大于10'FFFF的码点，所以其高位恒为10
 		uint32_t u32RawChar = //(uint32_t)0b0000'0000'0001'0000'0000'0000'0000'0000 |//U16代理对实际编码高位 bit20 -> 1 ignore
 							  ((uint32_t)((uint16_t)u16HighSurrogate & (uint16_t)0b0000'0011'1111'1111)) << 10 |//10bit
 							  ((uint32_t)((uint16_t)u16LowSurrogate  & (uint16_t)0b0000'0011'1111'1111)) << 0;//10bit
@@ -96,7 +98,7 @@ private:
 							  ((uint16_t)((uint8_t)mu8CharArr[5] & (uint8_t)0b0011'1111)) <<  0;//6bit
 
 		//解析到高低代理
-
+		//范围10'0000-1F'FFFF注意虽然允许包括10~1F高位范围，但是u16标准规定最大值从10'0000-10'FFFF，也就是高位恒为10，但是仍然这样运算，方便
 		u16HighSurrogate = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'1111'1111'1100'0000'0000) >> 10 | (uint32_t)0b1101'1000'0000'0000);
 		u16LowSurrogate  = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1111'1111) >>  0 | (uint32_t)0b1101'1100'0000'0000);
 	}
@@ -105,7 +107,7 @@ private:
 //v=val b=beg e=end 注意范围是左右边界包含关系，而不是普通的左边界包含
 #define IN_RANGE(v,b,e) ((uint16_t)(v)>=(uint16_t)(b)&&(uint16_t)(v)<=(uint16_t)(e))
 
-	template<typename T>
+	template<typename T = std::basic_string<MU8T>>
 	static constexpr T U16ToMU8Impl(const U16T *u16String, size_t szStringLength)
 	{
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的mu8str
@@ -191,7 +193,7 @@ private:
 //检查迭代器并获取下一个字节（如果可以，否则跳出）
 #define GET_NEXTCHAR(c) if (++it == end) { break; } else { c = *it; }
 
-	template<typename T = std::basic_string<U16T>>//FakeStringCounter<U16T>
+	template<typename T = std::basic_string<U16T>>
 	static constexpr T MU8ToU16Impl(const MU8T *mu8String, size_t szStringLength)
 	{
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的u16str
@@ -321,6 +323,34 @@ private:
 		return u16String;
 	}
 #undef GET_NEXTCHAR
+
+	/*
+	Modified UTF-8 与 "标准"UTF-8 格式有两点区别：
+	第一，空字符(char)0使用双字节格式0xC0 0x80而非单字节格式0x00，
+	因此 Modified UTF-8字符串不会包含嵌入式空值；
+
+	第二，仅使用标准UTF-8的单字节、双字节和三字节格式。
+	Java虚拟机不识别标准UTF-8的四字节格式，
+	而是使用自定义的双三字节（6字节代理对）格式。
+	*/
+
+	template<typename T = std::basic_string<U8T>>
+	static constexpr T MU8ToU8Impl(const MU8T *mu8String, size_t szStringLength)
+	{
+
+
+
+	}
+
+
+
+	template<typename T = std::basic_string<MU8T>>
+	static constexpr T U8ToMU8Impl(const U8T *u8String, size_t szStringLength)
+	{
+
+
+
+	}
 private:
 	//来点魔法类，伪装成basic string，在插入的时候进行数据长度计数，忽略插入的数据，最后转换为size_t长度
 	//这样就能在最小修改的情况下用同一个函数套模板来获取转换后的长度（且100%准确），而不是重写一个例程
@@ -712,7 +742,12 @@ z:
 
 多字节字符的字节按大端序（高位字节在前）存储在class文件中。
 
-本格式与"标准"UTF-8格式有两点区别：第一，空字符(char)0使用双字节格式而非单字节格式，因此修改后的UTF-8字符串不会包含嵌入式空值；第二，仅使用标准UTF-8的单字节、双字节和三字节格式。Java虚拟机不识别标准UTF-8的四字节格式，而是使用自定义的双三字节格式。
+本格式与"标准"UTF-8格式有两点区别：
+第一，空字符(char)0使用双字节格式而非单字节格式，
+因此修改后的UTF-8字符串不会包含嵌入式空值；
+第二，仅使用标准UTF-8的单字节、双字节和三字节格式。
+Java虚拟机不识别标准UTF-8的四字节格式，
+而是使用自定义的双三字节格式。
 
 关于标准UTF-8格式的更多信息，请参阅《The Unicode Standard, Version 13.0》第3.9节"Unicode Encoding Forms"。
 */
