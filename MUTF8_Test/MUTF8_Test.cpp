@@ -93,6 +93,15 @@ void TestMU8ToU16Impl(size_t szLine, const char(&input)[iN], const char16_t(&exp
 
 int main(void)
 {
+	auto s = u"\xD000\xD001\xD002\xD003\xD004\xD005";
+
+	auto tmp = MUTF8_Tool<char>::U16ToMU8(s);
+	auto tmp2 = MUTF8_Tool<char>::MU8ToU16(tmp);
+
+	return s == tmp2;
+
+
+
 	printf("generate_all_valid_utf16le\n");
 	auto test = generate_all_valid_utf16le();
 	printf("generate_all_valid_utf16le ok\n");
@@ -101,19 +110,27 @@ int main(void)
 	auto test1 = MUTF8_Tool<>::U16ToMU8(test);
 	printf("U16ToMU8 ok\n");
 
+	//printf("MU8ToU8\n");
+	//auto test2 = MUTF8_Tool<>::MU8ToU8(test1);
+	//printf("MU8ToU8 ok\n");
+	//
+	//printf("U8ToMU8\n");
+	//auto test3 = MUTF8_Tool<>::U8ToMU8(test2);
+	//printf("U8ToMU8 ok\n");
+
 	printf("MU8ToU16\n");
-	auto test2 = MUTF8_Tool<>::MU8ToU16(test1);
+	auto test4 = MUTF8_Tool<>::MU8ToU16(test1);
 	printf("MU8ToU16 ok\n");
 
-	if (test != test2)
+	if (test != test4)
 	{
 		printf("test fail\n");
-		auto min = min(test.size(), test2.size());
+		auto min = min(test.size(), test4.size());
 		for (size_t i = 0; i < min; ++i)
 		{
-			if (test[i] != test2[i])
+			if (test[i] != test4[i])
 			{
-				printf("[%zu]: [%d] != [%d]\n", i, test[i], test2[i]);
+				printf("[%zu]: [%d] != [%d]\n", i, test[i], test4[i]);
 			}
 		}
 	}

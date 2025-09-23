@@ -261,26 +261,20 @@ private:
 			}
 			else if (HAS_BITMASK(mu8Char, 0b1111'0000, 0b1110'0000))//高4位为1110，三字节或多字节码点
 			{
+				//提前获取下一个字符，这是代理对的判断依据
+				MU8T mu8Next{};
+				GET_NEXTCHAR(mu8Next, (PUSH_FAIL_U16CHAR));//第二次
+
 				//合法性判断（区分是否为代理）
 				//代理区分：因为D800开头的为高代理，必不可能作为三字节码点0b1010'xxxx出现，所以只要高4位是1010必为代理对
 				//也就是说mu8CharArr3[0]的低4bit如果是1101并且mu8Char的高4bit是1010的情况下，即三字节码点10xx'xxxx中的最高二个xx为01，
 				//把他们合起来就是1101'10xx 也就是0xD8，即u16的高代理对开始字符，而代理对在encode过程走的另一个流程，不存在与3字节码点混淆处理的情况
-				if (IS_BITS(mu8Char, 0b1110'1101))//代理对，必须先判断，很重要！
+				if (IS_BITS(mu8Char, 0b1110'1101) && HAS_BITMASK(mu8Next, 0b1111'0000, 0b1010'0000))//代理对，必须先判断，很重要！
 				{
 					//保存到数组
-					MU8T mu8CharArr[6] = { mu8Char };//[0] = mu8Char
+					MU8T mu8CharArr[6] = { mu8Char,mu8Next };//[0] = mu8Char, [1] = mu8Next
 
-					//继续读取后5个并验证
-					GET_NEXTCHAR(mu8CharArr[1],
-						(PUSH_FAIL_U16CHAR));//第二次
-					if (!HAS_BITMASK(mu8CharArr[1], 0b1111'0000, 0b1010'0000))
-					{
-						//撤回一次读取（为什么不是二次？因为前一个字符已确认是代理对开头，跳过）
-						--it;
-						//替换错误的代理对开头为utf16错误字符
-						PUSH_FAIL_U16CHAR;
-						continue;
-					}
+					//继续读取后4个并验证
 
 					//下一个为高代理的低6位
 					GET_NEXTCHAR(mu8CharArr[2],
@@ -346,22 +340,10 @@ private:
 					u16String.push_back(u16HighSurrogate);
 					u16String.push_back(u16LowSurrogate);
 				}
-				else//三字节码点，排除代理对后只有这个可能
+				else if(HAS_BITMASK(mu8Next, 0b1100'0000, 0b1000'0000))//三字节码点，排除代理对后只有这个可能，看看是不是10开头的尾随字节
 				{
 					//保存
-					MU8T mu8CharArr[3] = { mu8Char };//[0] = mu8Char
-
-					//尝试获取下一字符
-					GET_NEXTCHAR(mu8CharArr[1],
-						(PUSH_FAIL_U16CHAR));//第二次
-					if (!HAS_BITMASK(mu8CharArr[1], 0b1100'0000, 0b1000'0000))//10开头的尾随字节
-					{
-						//撤回一次读取（为什么不是二次？因为前一个字符已确认为3字节码点开始，跳过）
-						--it;
-						//替换为一个utf16错误字符
-						PUSH_FAIL_U16CHAR;
-						continue;
-					}
+					MU8T mu8CharArr[3] = { mu8Char,mu8Next };//[0] = mu8Char, [1] = mu8Next
 
 					//尝试获取下一字符
 					GET_NEXTCHAR(mu8CharArr[2],
@@ -380,6 +362,16 @@ private:
 					U16T u16Char{};
 					DecodeMUTF8Bmp(mu8CharArr, u16Char);
 					u16String.push_back(u16Char);
+				}
+				else
+				{
+					//撤回mu8Next的读取，因为mu8Char已经判断过，能运行到这里，
+					//证明此字节错误，如果撤回到mu8Char会导致无限错误循环，
+					//只撤回到mu8Next即可，for会重新++it，相当于重试当前*it
+					--it;
+					//替换为一个utf16错误字符
+					PUSH_FAIL_U16CHAR;
+					continue;
 				}
 			}
 			else
