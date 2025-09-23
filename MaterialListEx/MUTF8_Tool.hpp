@@ -16,6 +16,11 @@ class MUTF8_Tool
 
 	MUTF8_Tool(void) = delete;
 	~MUTF8_Tool(void) = delete;
+
+	//用于在错误情况输出utf16错误字节0xFFFD和mu8、u8形式的0xEF 0xBF 0xBD
+	static inline constexpr MU8T mu8FailChar[3]{ (MU8T)0xEF, (MU8T)0xBF, (MU8T)0xBD };
+	static inline constexpr U16T u16FailChar = (U16T)0xFFFD;
+	static inline constexpr U8T u8FailChar[3]{ (MU8T)0xEF, (MU8T)0xBF, (MU8T)0xBD };
 public:
 	using MU8_T = MU8T;
 	using U16_T = U16T;
@@ -133,7 +138,7 @@ private:
 
 private:
 //c=char d=do检查迭代器并获取下一个字节（如果可以，否则执行指定语句后跳出）
-#define GET_NEXTCHAR(c,d) if (++it == end) { (d);break; } else { c = *it; }
+#define GET_NEXTCHAR(c,d) if (++it == end) { (d);break; } else { (c) = *it; }
 //v=value m=mask p=pattern t=test 测试遮罩位之后的结果是否是指定值或值是否是由指定bits组成
 #define HAS_BITMASK(v,m,p) (((uint8_t)(v) & (uint8_t)(m)) == (uint8_t)(p))
 #define IS_BITS(v,t) ((uint8_t)(v) == (uint8_t)(t))
@@ -143,9 +148,6 @@ private:
 	template<typename T = std::basic_string<MU8T>>
 	static constexpr T U16ToMU8Impl(const U16T *u16String, size_t szStringLength)
 	{
-		//用于在错误情况输出utf16错误字节0xFFFD的mu8形式
-		MU8T mu8FailChar[3]{};
-		EncodeMUTF8Bmp(0xFFFD, mu8FailChar);
 #define PUSH_FAIL_MU8CHAR mu8String.append(mu8FailChar, sizeof(mu8FailChar) / sizeof(MU8T))
 
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的mu8str
@@ -218,7 +220,7 @@ private:
 	template<typename T = std::basic_string<U16T>>
 	static constexpr T MU8ToU16Impl(const MU8T *mu8String, size_t szStringLength)
 	{
-#define PUSH_FAIL_U16CHAR u16String.push_back((U16T)0xFFFD)
+#define PUSH_FAIL_U16CHAR u16String.push_back(u16FailChar)
 
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的u16str
 		T u16String{};//字符串末尾为0x0000
@@ -395,6 +397,7 @@ private:
 	template<typename T = std::basic_string<MU8T>>
 	static constexpr T U8ToMU8Impl(const U8T *u8String, size_t szStringLength)
 	{
+#define PUSH_FAIL_MU8CHAR mu8String.append(mu8FailChar, sizeof(mu8FailChar) / sizeof(MU8T))
 #define INSERT_NORMAL(p) (mu8String.append((const MU8T*)((p) - szNormalLength), szNormalLength), szNormalLength = 0)
 		
 		//用于保存转换好的mu8String
@@ -410,6 +413,18 @@ private:
 				INSERT_NORMAL(it);//在处理之前先插入之前被跳过的普通字符
 				//转换u8的4字节到mu8的6字节，并处理错误
 
+				U8T u8CharArr[4]{ u8Char };
+
+				GET_NEXTCHAR(u8CharArr[1], (0));
+
+
+
+
+
+
+
+
+				MU8T mu8CharArr[6]{};
 
 			}
 			else if (IS_BITS(u8Char, 0b0000'0000))//\0字符
@@ -430,7 +445,9 @@ private:
 
 
 		return mu8String;
+
 #undef INSERT_NORMAL
+#undef PUSH_FAIL_MU8CHAR
 	}
 
 	template<typename T = std::basic_string<U8T>>
