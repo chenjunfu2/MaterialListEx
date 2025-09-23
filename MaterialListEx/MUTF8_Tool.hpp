@@ -107,21 +107,28 @@ private:
 	static constexpr void UTF8SupplementaryToMUTF8(const U8T(&u8CharArr)[4], MU8T(&mu8CharArr)[6])
 	{
 		/*
-		utf-8 4 bytes bit distribution:
+		4bytes utf-8 bit distribution:
 		000i'uuuu zzzz'yyyy yyxx'xxxx - 1111'0iuu 10uu'zzzz 10yy'yyyy 10xx'xxxx
 		
-		modified utf-8 6 bytes bit distribution:（注意忽略了i）
+		6bytes modified utf-8 bit distribution:（注意忽略了i）
 		000i'uuuu zzzz'yyyy yyxx'xxxx - 1110'1101 1010'uuuu 10zz'zzyy 1110'1101 1011'yyyy 10xx'xxxx
 		*/
 
-
-
+		mu8CharArr[0] = (uint8_t)0b1110'1101;//固定字节1110'1101
+		mu8CharArr[1] = (uint8_t)(((uint8_t)u8CharArr[0] & (uint8_t)0b0000'0011) << 2 | ((uint8_t)u8CharArr[1] & (uint8_t)0b0011'0000) >> 4 | (uint8_t)0b1010'0000);//拿出u8[0]的uu:1~0bit放到3~2bit，拿出u8[1]的uu:5~4bit放到1~0bit，最后补齐高4位1010，组成1010'uuuu
+		mu8CharArr[2] = (uint8_t)(((uint8_t)u8CharArr[1] & (uint8_t)0b0000'1111) << 2 | ((uint8_t)u8CharArr[2] & (uint8_t)0b0011'0000) >> 4 | (uint8_t)0b1000'0000);//拿出u8[1]的zzzz:3~0bit放到5~2bit，拿出u8[2]的yy:5~4bit放到1~0bit，最后补齐高2位10，组成10zz'zzyy
+		mu8CharArr[3] = (uint8_t)0b1110'1101;//固定字节1110'1101
+		mu8CharArr[4] = (uint8_t)(((uint8_t)u8CharArr[2] & (uint8_t)0b0000'1111) << 0 | (uint8_t)0b1011'0000);//拿出u8[2]的yyyy:3~0bit放到3~0bit，最后补齐高4位1011，组成1011'yyyy
+		mu8CharArr[5] = (uint8_t)u8CharArr[3];//最后一个字节mu8与u8完全等同，直接拷贝
 	}
 
 	static constexpr void MUTF8SupplementaryToUTF8(const MU8T(&mu8CharArr)[6], U8T(&u8CharArr)[4])
 	{
-
-
+		//mu8CharArr[0] 与 mu8CharArr[3] 忽略
+		u8CharArr[0] = (uint8_t)(((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1100) >> 2 | (uint8_t)1111'0100);//注意是补1111'0100，最后的0100中的1必须手动补上，因为u16代理对此位衡为1且mutf8会丢弃
+		u8CharArr[1] = (uint8_t)(((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'0011) << 4 | ((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1100) >> 2 | (uint8_t)1000'0000);
+		u8CharArr[2] = (uint8_t)(((uint8_t)mu8CharArr[2] & (uint8_t)0b0000'0011) << 4 | ((uint8_t)mu8CharArr[4] & (uint8_t)0b0000'1111) >> 0 | (uint8_t)1000'0000);
+		u8CharArr[3] = (uint8_t)mu8CharArr[5];//最后一个字节mu8与u8完全等同，直接拷贝
 	}
 
 private:
