@@ -367,21 +367,42 @@ private:
 	template<typename T = std::basic_string<MU8T>>
 	static constexpr T U8ToMU8Impl(const U8T *u8String, size_t szStringLength)
 	{
+#define INSERT_NORMAL(p) (mu8String.append((const MU8T*)((p) - szNormalLength), szNormalLength), szNormalLength = 0)
+		
+		//用于保存转换好的mu8String
 		T mu8String{};
 
+		size_t szNormalLength = 0;//普通字符的长度，用于优化批量插入
 		for (auto it = u8String, end = u8String + szStringLength; it != end; ++it)
 		{
 			//u8到mu8，处理u8空字符，处理4字节u8转换到6字节mu8
-			U8T u8Char = *it;
+			U8T u8Char = *it;//第一次
+			if (HAS_BITMASK(u8Char, 0b1111'1000, 0b1111'0000))//高5位为11110，utf8的4字节
+			{
+				INSERT_NORMAL(it);//在处理之前先插入之前被跳过的普通字符
+				//转换u8的4字节到mu8的6字节，并处理错误
 
 
+			}
+			else if (IS_BITS(u8Char, 0b0000'0000))//\0字符
+			{
+				INSERT_NORMAL(it);//在处理之前先插入之前被跳过的普通字符
 
-
-
-
+				MU8T mu8CharArr[2] = { (MU8T)0xC0,(MU8T)0x80 };//mu8固定0字节
+				mu8String.append(mu8CharArr, sizeof(mu8CharArr) / sizeof(MU8T));
+			}
+			else//都不是，递增普通字符长度，直到遇到特殊字符的时候插入
+			{
+				++szNormalLength;
+			}
 		}
+		//结束后再插入一次，因为for内可能完全没有进入过任何一个特殊块，
+		//且因为结束后for是从末尾退出的，所以从末尾开始作为当前指针插入
+		INSERT_NORMAL(u8String + szStringLength);
+
 
 		return mu8String;
+#undef INSERT_NORMAL
 	}
 
 	template<typename T = std::basic_string<U8T>>
@@ -391,7 +412,7 @@ private:
 
 		for (auto it = mu8String, end = mu8String + szStringLength; it != end; ++it)
 		{
-			MU8T mu8Char = *it;
+			MU8T mu8Char = *it;//第一次
 
 
 
