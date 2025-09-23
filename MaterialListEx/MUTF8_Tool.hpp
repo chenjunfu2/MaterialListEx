@@ -500,7 +500,7 @@ private:
 				if (++it == end)
 				{
 					//把前面的都插入一下
-					INSERT_NORMAL(it);
+					INSERT_NORMAL(it - 1);//注意这里的-1，因为正常是要在块语句开头执行的，这里已经超前移动了一下迭代器，回退1当前位置
 					PUSH_FAIL_U8CHAR;//插入错误字符
 					break;
 				}
@@ -508,29 +508,17 @@ private:
 
 
 				//以1110'1101字节开始且下一个字节高4位是1010开头的必然是代理对
-				if (!IS_BITS(mu8Char, 0b1110'1101) || HAS_BITMASK(mu8Next, 0b1111'0000, 0b1010'0000))
+				if (!IS_BITS(mu8Char, 0b1110'1101) || !HAS_BITMASK(mu8Next, 0b1111'0000, 0b1010'0000))
 				{
 					szNormalLength += 2;//前面消耗了两个，递增两次
 					continue;//然后继续循环
 				}
 
 				//已确认是代理对，把前面的都插入一下
-				INSERT_NORMAL(it);
+				INSERT_NORMAL(it - 1);//注意这里的-1，因为正常是要在块语句开头执行的，这里已经超前读取了一个mu8Next，回退1当前位置
 
-				//继续读取后5个并验证
-				MU8T mu8CharArr[6] = { mu8Char };//[0] = mu8Char
-
-				//获取下一个
-				GET_NEXTCHAR(mu8CharArr[1],
-					(PUSH_FAIL_U8CHAR));//第二次
-				if (!HAS_BITMASK(mu8CharArr[1], 0b1111'0000, 0b1010'0000))
-				{
-					//撤回一次读取（为什么不是二次？因为前一个字符已确认是代理对开头，跳过）
-					--it;
-					//替换错误的代理对开头为utf8错误字符
-					PUSH_FAIL_U8CHAR;
-					continue;
-				}
+				//继续读取后4个并验证
+				MU8T mu8CharArr[6] = { mu8Char, mu8Next };//[0] = mu8Char, [1] = mu8Next
 
 				//获取下一个
 				GET_NEXTCHAR(mu8CharArr[2],
@@ -602,20 +590,20 @@ private:
 				if (++it == end)
 				{
 					//把前面的都插入一下
-					INSERT_NORMAL(it);
+					INSERT_NORMAL(it - 1);
 					PUSH_FAIL_U8CHAR;//插入错误字符
 					break;
 				}
 				mu8Next = *it;//第二次
 
-				if (!IS_BITS(mu8Char, 0x80))//如果不是，说明是别的2字节模式
+				if (!IS_BITS(mu8Next, 0x80))//如果不是，说明是别的字节模式
 				{
 					szNormalLength += 2;//普通字符数加2然后继续
 					continue;
 				}
 
 				//已确认是0字符，插入一下前面的所有内容
-				INSERT_NORMAL(it);
+				INSERT_NORMAL(it - 1);//注意这里的-1，因为正常是要在块语句开头执行的，这里已经超前读取了一个mu8Next，回退1当前位置
 				u8String.push_back((U8T)0x00);//插入0字符
 			}
 			else
