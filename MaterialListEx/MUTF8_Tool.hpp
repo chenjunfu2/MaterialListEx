@@ -263,18 +263,19 @@ private:
 			{
 				//合法性判断（区分是否为代理）
 				//代理区分：因为D800开头的为高代理，必不可能作为三字节码点0b1010'xxxx出现，所以只要高4位是1010必为代理对
-				//也就是说mu8CharArr3[0]的低4bit如果是1101并且mu8Char的高4bit是1010的情况下，即三字节码点10xx'xxxx中的最高两个xx为01，
+				//也就是说mu8CharArr3[0]的低4bit如果是1101并且mu8Char的高4bit是1010的情况下，即三字节码点10xx'xxxx中的最高二个xx为01，
 				//把他们合起来就是1101'10xx 也就是0xD8，即u16的高代理对开始字符，而代理对在encode过程走的另一个流程，不存在与3字节码点混淆处理的情况
 				if (IS_BITS(mu8Char, 0b1110'1101))//代理对，必须先判断，很重要！
 				{
 					//保存到数组
 					MU8T mu8CharArr[6] = { mu8Char };//[0] = mu8Char
+
 					//继续读取后5个并验证
 					GET_NEXTCHAR(mu8CharArr[1],
 						(PUSH_FAIL_U16CHAR));//第二次
 					if (!HAS_BITMASK(mu8CharArr[1], 0b1111'0000, 0b1010'0000))
 					{
-						//撤回一次读取（为什么不是两次？因为前一个字符已确认是代理对开头，跳过）
+						//撤回一次读取（为什么不是二次？因为前一个字符已确认是代理对开头，跳过）
 						--it;
 						//替换错误的代理对开头为utf16错误字符
 						PUSH_FAIL_U16CHAR;
@@ -286,9 +287,9 @@ private:
 						(PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR));//第三次
 					if (!HAS_BITMASK(mu8CharArr[2], 0b1100'0000, 0b1000'0000))
 					{
-						//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
+						//撤回一次读取（为什么不是二次？因为前一个字符已确认是10开头的尾随字符，跳过）
 						--it;
-						//替换为两个utf16错误字符
+						//替换为二个utf16错误字符
 						PUSH_FAIL_U16CHAR;
 						PUSH_FAIL_U16CHAR;
 						continue;
@@ -299,7 +300,7 @@ private:
 						(PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR));//第四次
 					if (!IS_BITS(mu8CharArr[3], 0b1110'1101))
 					{
-						//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
+						//撤回一次读取（为什么不是二次？因为前一个字符已确认是10开头的尾随字符，跳过）
 						--it;
 						//替换为三个utf16错误字符
 						PUSH_FAIL_U16CHAR;
@@ -313,10 +314,10 @@ private:
 						(PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR));//第五次
 					if (!HAS_BITMASK(mu8CharArr[4], 0b1111'0000, 0b1011'0000))
 					{
-						//撤回两次读取，尽管前面已确认是0b1110'1101，但是存在111开头的合法3码点
+						//撤回二次读取，尽管前面已确认是0b1110'1101，但是存在111开头的合法3码点
 						--it;
 						--it;
-						//替换为三个utf16错误字符，因为撤回两次，本来有4个错误字节的现在只要3个
+						//替换为三个utf16错误字符，因为撤回二次，本来有4个错误字节的现在只要3个
 						PUSH_FAIL_U16CHAR;
 						PUSH_FAIL_U16CHAR;
 						PUSH_FAIL_U16CHAR;
@@ -328,7 +329,7 @@ private:
 						(PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR));//第六次
 					if (!HAS_BITMASK(mu8CharArr[5], 0b1100'0000, 0b1000'0000))
 					{
-						//撤回一次读取，因为不存在而前一个已确认的101开头的合法码点，且再前一个开头为111，不存在111后跟101的3码点情况，跳过
+						//撤回一次读取，因为不存在前一个已确认的101开头的合法码点，且再前一个开头为111，也就是不存在111后跟101的3码点情况，跳过
 						--it;
 						//替换为五个utf16错误字符
 						PUSH_FAIL_U16CHAR;
@@ -355,7 +356,7 @@ private:
 						(PUSH_FAIL_U16CHAR));//第二次
 					if (!HAS_BITMASK(mu8CharArr[1], 0b1100'0000, 0b1000'0000))//10开头的尾随字节
 					{
-						//撤回一次读取（为什么不是两次？因为前一个字符已确认为3字节码点开始，跳过）
+						//撤回一次读取（为什么不是二次？因为前一个字符已确认为3字节码点开始，跳过）
 						--it;
 						//替换为一个utf16错误字符
 						PUSH_FAIL_U16CHAR;
@@ -367,9 +368,9 @@ private:
 						(PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR));//第三次
 					if (!HAS_BITMASK(mu8CharArr[2], 0b1100'0000, 0b1000'0000))//错误，3字节码点最后一个不是正确字符
 					{
-						//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
+						//撤回一次读取（为什么不是二次？因为前一个字符已确认是10开头的尾随字符，跳过）
 						--it;
-						//替换为两个utf16错误字符
+						//替换为二个utf16错误字符
 						PUSH_FAIL_U16CHAR;
 						PUSH_FAIL_U16CHAR;
 						continue;
@@ -396,7 +397,7 @@ private:
 	}
 
 	/*
-	Modified UTF-8 与 "标准"UTF-8 格式有两点区别：
+	Modified UTF-8 与 "标准"UTF-8 格式有二点区别：
 	第一，空字符(char)0使用双字节格式0xC0 0x80而非单字节格式0x00，
 	因此 Modified UTF-8字符串不会包含嵌入式空值；
 
@@ -502,7 +503,7 @@ private:
 
 			if (HAS_BITMASK(mu8Char, 0b1111'0000, 0b1110'0000))//高4为为1110，mu8的3字节或多字节码点
 			{
-				if (!IS_BITS(mu8Char, 0b1110'1101))//以这个开头的必须是代理对
+				if (!IS_BITS(mu8Char, 0b1110'1101))//以这个开头的必然是代理对
 				{
 					++szNormalLength;//否则递增普通字符
 					continue;//然后继续循环
@@ -512,12 +513,39 @@ private:
 				INSERT_NORMAL(it);
 				//获取下一个
 				MU8T mu8CharArr[6] = { mu8Char };
+
+				//继续读取后5个并验证
 				GET_NEXTCHAR(mu8CharArr[1],
 					(PUSH_FAIL_U8CHAR));//第二次
-				if (HAS_BITMASK(mu8CharArr[1], 0b1111'0000, 0b1010'0000))//代理对
+				if (!HAS_BITMASK(mu8CharArr[1], 0b1111'0000, 0b1010'0000))//代理对
 				{
-
+					//撤回一次读取（为什么不是二次？因为前一个字符已确认是代理对开头，跳过）
+					--it;
+					//替换错误的代理对开头为utf8错误字符
+					PUSH_FAIL_U8CHAR;
+					continue;
 				}
+
+				GET_NEXTCHAR(mu8CharArr[2],
+					(PUSH_FAIL_U8CHAR, PUSH_FAIL_U8CHAR));//第三次
+				if (!HAS_BITMASK(mu8CharArr[2], 0b1111'0000, 0b1010'0000))//代理对
+				{
+					//撤回一次读取（为什么不是二次？因为前一个字符已确认是10开头的尾随字符，跳过）
+					--it;
+					//替换为二个utf8错误字符
+					PUSH_FAIL_U8CHAR;
+					PUSH_FAIL_U8CHAR;
+					continue;
+				}
+
+
+
+
+
+
+
+
+
 
 
 			}
@@ -779,7 +807,7 @@ y: 10yyyyyy
 z: 10zzzzzz
 值为 ((x & 0xf) << 12) + ((y & 0x3f) << 6) + (z & 0x3f) 的字符由这些字节表示。
 
-码点高于 U+FFFF 的字符（即所谓的补充字符）通过分别编码其 UTF-16 表示的两个代理码元来表示。每个代理码元由三个字节表示。这意味着，补充字符由六个字节 u、v、w、x、y 和 z 表示：
+码点高于 U+FFFF 的字符（即所谓的补充字符）通过分别编码其 UTF-16 表示的二个代理码元来表示。每个代理码元由三个字节表示。这意味着，补充字符由六个字节 u、v、w、x、y 和 z 表示：
 
 u: 11101101
 v: 1010vvvv
@@ -791,7 +819,7 @@ z: 10zzzzzz
 
 多字节字符的字节在类文件中以大端序（高位字节在前）存储。
 
-此格式与标准 UTF-8 格式有两个区别。首先，空字符 (char)0 使用双字节格式而非单字节格式进行编码。这意味着修改后的 UTF-8 字符串永远不会包含嵌入的空字符。其次，仅使用标准 UTF-8 的单字节、双字节和三字节格式。Java VM 不识别标准 UTF-8 的四字节格式；它使用自己的两次三字节格式来代替。
+此格式与标准 UTF-8 格式有二个区别。首先，空字符 (char)0 使用双字节格式而非单字节格式进行编码。这意味着修改后的 UTF-8 字符串永远不会包含嵌入的空字符。其次，仅使用标准 UTF-8 的单字节、双字节和三字节格式。Java VM 不识别标准 UTF-8 的四字节格式；它使用自己的二次三字节格式来代替。
 
 有关标准 UTF-8 格式的更多信息，请参阅 Unicode 标准 4.0 版的第 3.9 节 Unicode 编码形式。
 */
