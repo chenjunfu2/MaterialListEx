@@ -20,7 +20,7 @@ class MUTF8_Tool
 	//用于在错误情况输出utf16错误字节0xFFFD和mu8、u8形式的0xEF 0xBF 0xBD
 	static inline constexpr MU8T mu8FailChar[3]{ (MU8T)0xEF, (MU8T)0xBF, (MU8T)0xBD };
 	static inline constexpr U16T u16FailChar = (U16T)0xFFFD;
-	static inline constexpr U8T u8FailChar[3]{ (MU8T)0xEF, (MU8T)0xBF, (MU8T)0xBD };
+	static inline constexpr U8T u8FailChar[3]{ (U8T)0xEF, (U8T)0xBF, (U8T)0xBD };
 public:
 	using MU8_T = MU8T;
 	using U16_T = U16T;
@@ -244,7 +244,8 @@ private:
 				//先保存第一个字节
 				MU8T mu8CharArr[2] = { mu8Char };//[0]=mu8Char
 				//尝试获取下一个字节
-				GET_NEXTCHAR(mu8CharArr[1], PUSH_FAIL_U16CHAR);//第二次
+				GET_NEXTCHAR(mu8CharArr[1],
+					(PUSH_FAIL_U16CHAR));//第二次
 				//判断字节合法性
 				if (!HAS_BITMASK(mu8CharArr[1], 0b1100'0000, 0b1000'0000))//高2位不是10，错误，跳过
 				{
@@ -260,18 +261,25 @@ private:
 			}
 			else if (HAS_BITMASK(mu8Char, 0b1111'0000, 0b1110'0000))//高4位为1110，三字节或多字节码点
 			{
-				//保存
-				MU8T mu8Next{};
-				//尝试获取下一个字节
-				GET_NEXTCHAR(mu8Next, PUSH_FAIL_U16CHAR);//第二次
 				//合法性判断（区分是否为代理）
 				//代理区分：因为D800开头的为高代理，必不可能作为三字节码点0b1010'xxxx出现，所以只要高4位是1010必为代理对
 				//也就是说mu8CharArr3[0]的低4bit如果是1101并且mu8Char的高4bit是1010的情况下，即三字节码点10xx'xxxx中的最高两个xx为01，
 				//把他们合起来就是1101'10xx 也就是0xD8，即u16的高代理对开始字符，而代理对在encode过程走的另一个流程，不存在与3字节码点混淆处理的情况
-				if (IS_BITS(mu8Char, 0b1110'1101) && HAS_BITMASK(mu8Next, 0b1111'0000, 0b1010'0000))//代理对，必须先判断，很重要！
+				if (IS_BITS(mu8Char, 0b1110'1101))//代理对，必须先判断，很重要！
 				{
-					MU8T mu8CharArr[6] = { mu8Char,mu8Next };//0 1已初始化，0是固定起始值，1是高代理的高4位
-					//继续读取后4个并验证
+					//保存到数组
+					MU8T mu8CharArr[6] = { mu8Char };//[0] = mu8Char
+					//继续读取后5个并验证
+					GET_NEXTCHAR(mu8CharArr[1],
+						(PUSH_FAIL_U16CHAR));//第二次
+					if (!HAS_BITMASK(mu8CharArr[1], 0b1111'0000, 0b1010'0000))
+					{
+						//撤回一次读取（为什么不是两次？因为前一个字符已确认是代理对开头，跳过）
+						--it;
+						//替换错误的代理对开头为utf16错误字符
+						PUSH_FAIL_U16CHAR;
+						continue;
+					}
 
 					//下一个为高代理的低6位
 					GET_NEXTCHAR(mu8CharArr[2],
@@ -337,13 +345,26 @@ private:
 					u16String.push_back(u16HighSurrogate);
 					u16String.push_back(u16LowSurrogate);
 				}
-				else if (HAS_BITMASK(mu8Next, 0b1100'0000, 0b1000'0000))//三字节码点，排除代理对后只有这个可能
+				else//三字节码点，排除代理对后只有这个可能
 				{
 					//保存
-					MU8T mu8CharArr[3] = { mu8Char,mu8Next };//0 1已初始化
+					MU8T mu8CharArr[3] = { mu8Char };//[0] = mu8Char
+
+					//尝试获取下一字符
+					GET_NEXTCHAR(mu8CharArr[1],
+						(PUSH_FAIL_U16CHAR));//第二次
+					if (!HAS_BITMASK(mu8CharArr[1], 0b1100'0000, 0b1000'0000))//10开头的尾随字节
+					{
+						//撤回一次读取（为什么不是两次？因为前一个字符已确认为3字节码点开始，跳过）
+						--it;
+						//替换为一个utf16错误字符
+						PUSH_FAIL_U16CHAR;
+						continue;
+					}
+
 					//尝试获取下一字符
 					GET_NEXTCHAR(mu8CharArr[2],
-						(PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR));//第三次
+						(PUSH_FAIL_U16CHAR, PUSH_FAIL_U16CHAR));//第三次
 					if (!HAS_BITMASK(mu8CharArr[2], 0b1100'0000, 0b1000'0000))//错误，3字节码点最后一个不是正确字符
 					{
 						//撤回一次读取（为什么不是两次？因为前一个字符已确认高2bit为10，没有以10开头的存在，跳过）
@@ -358,16 +379,6 @@ private:
 					U16T u16Char{};
 					DecodeMUTF8Bmp(mu8CharArr, u16Char);
 					u16String.push_back(u16Char);
-				}
-				else
-				{
-					//撤回mu8Next的读取，因为mu8Char已经判断过到这里，证明此字节错误，
-					//如果撤回到mu8Char会导致无限错误循环，只撤回到mu8Next即可
-					//撤回刚才的读取并重试，for会重新++it，相当于重试当前*it
-					--it;
-					//替换为一个utf16错误字符
-					PUSH_FAIL_U16CHAR;
-					continue;
 				}
 			}
 			else
@@ -457,8 +468,8 @@ private:
 			{
 				INSERT_NORMAL(it);//在处理之前先插入之前被跳过的普通字符
 
-				MU8T mu8CharArr[2] = { (MU8T)0xC0,(MU8T)0x80 };//mu8固定0字节
-				mu8String.append(mu8CharArr, sizeof(mu8CharArr) / sizeof(MU8T));
+				MU8T mu8EmptyCharArr[2] = { (MU8T)0xC0,(MU8T)0x80 };//mu8固定0字节
+				mu8String.append(mu8EmptyCharArr, sizeof(mu8EmptyCharArr) / sizeof(MU8T));
 			}
 			else//都不是，递增普通字符长度，直到遇到特殊字符的时候插入
 			{
@@ -479,7 +490,7 @@ private:
 	template<typename T = std::basic_string<U8T>>
 	static constexpr T MU8ToU8Impl(const MU8T *mu8String, size_t szStringLength)
 	{
-#define PUSH_FAIL_U8CHAR u8String.append(mu8FailChar, sizeof(mu8FailChar) / sizeof(MU8T))
+#define PUSH_FAIL_U8CHAR u8String.append(u8FailChar, sizeof(u8FailChar) / sizeof(U8T))
 #define INSERT_NORMAL(p) (u8String.append((const U8T*)((p) - szNormalLength), szNormalLength), szNormalLength = 0)
 
 		T u8String{};
@@ -489,13 +500,50 @@ private:
 		{
 			MU8T mu8Char = *it;//第一次
 
+			if (HAS_BITMASK(mu8Char, 0b1111'0000, 0b1110'0000))//高4为为1110，mu8的3字节或多字节码点
+			{
+				if (!IS_BITS(mu8Char, 0b1110'1101))//以这个开头的必须是代理对
+				{
+					++szNormalLength;//否则递增普通字符
+					continue;//然后继续循环
+				}
+
+				//把前面的都插入一下
+				INSERT_NORMAL(it);
+				//获取下一个
+				MU8T mu8CharArr[6] = { mu8Char };
+				GET_NEXTCHAR(mu8CharArr[1],
+					(PUSH_FAIL_U8CHAR));//第二次
+				if (HAS_BITMASK(mu8CharArr[1], 0b1111'0000, 0b1010'0000))//代理对
+				{
+
+				}
 
 
+			}
+			else if (IS_BITS(mu8Char, 0xC0))//注意以0xC0开头的，必然是2字节码，所以如果里面没有第二个字符，则必然错误
+			{
+				//获取下一个
+				MU8T mu8Next{};
+				GET_NEXTCHAR(mu8Next,
+					(PUSH_FAIL_U8CHAR));//第二次，这里插入错误字节是符合预期的
+				if (!IS_BITS(mu8Char, 0x80))//如果不是，说明是别的2字节模式
+				{
+					szNormalLength += 2;//普通字符数加2然后继续
+					continue;
+				}
 
-
-
-
+				//如果是
+				INSERT_NORMAL(it);//插入一下前面的字符
+				u8String.push_back((U8T)0x00);//插入0字符
+			}
+			else
+			{
+				++szNormalLength;//普通字符，递增
+				continue;//继续
+			}
 		}
+		INSERT_NORMAL(mu8String + szStringLength);
 
 		return u8String;
 
