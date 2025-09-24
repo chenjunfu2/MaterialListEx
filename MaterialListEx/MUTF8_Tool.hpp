@@ -130,9 +130,9 @@ private:
 	static constexpr void MUTF8SupplementaryToUTF8(const MU8T(&mu8CharArr)[6], U8T(&u8CharArr)[4])
 	{
 		//mu8CharArr[0] 与 mu8CharArr[3] 忽略
-		u8CharArr[0] = (uint8_t)(((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1100) >> 2 | (uint8_t)1111'0100);//注意是补1111'0100，最后的0100中的1必须手动补上，因为u16代理对此位衡为1且mutf8会丢弃
-		u8CharArr[1] = (uint8_t)(((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'0011) << 4 | ((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1100) >> 2 | (uint8_t)1000'0000);
-		u8CharArr[2] = (uint8_t)(((uint8_t)mu8CharArr[2] & (uint8_t)0b0000'0011) << 4 | ((uint8_t)mu8CharArr[4] & (uint8_t)0b0000'1111) >> 0 | (uint8_t)1000'0000);
+		u8CharArr[0] = (uint8_t)(((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1100) >> 2 | (uint8_t)0b1111'0100);//注意是补1111'0100，最后的0100中的1必须手动补上，因为u16代理对此位衡为1且mutf8会丢弃
+		u8CharArr[1] = (uint8_t)(((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'0011) << 4 | ((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1100) >> 2 | (uint8_t)0b1000'0000);
+		u8CharArr[2] = (uint8_t)(((uint8_t)mu8CharArr[2] & (uint8_t)0b0000'0011) << 4 | ((uint8_t)mu8CharArr[4] & (uint8_t)0b0000'1111) >> 0 | (uint8_t)0b1000'0000);
 		u8CharArr[3] = (uint8_t)mu8CharArr[5];//最后一个字节mu8与u8完全等同，直接拷贝
 	}
 
@@ -485,7 +485,7 @@ private:
 	{
 #define PUSH_FAIL_U8CHAR u8String.append(u8FailChar, sizeof(u8FailChar) / sizeof(U8T))
 #define INSERT_NORMAL(p) (u8String.append((const U8T*)((p) - szNormalLength), szNormalLength), szNormalLength = 0)
-
+		//用于保存转换后的utf8
 		T u8String{};
 
 		size_t szNormalLength = 0;//普通字符的长度，用于优化批量插入
