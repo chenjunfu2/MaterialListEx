@@ -612,6 +612,7 @@ private:
 				continue;//继续
 			}
 		}
+		//最后再把for中剩余未插入的插入一下，注意这里起始位置其实是for中的end位置
 		INSERT_NORMAL(mu8String + szStringLength);
 
 		return u8String;
