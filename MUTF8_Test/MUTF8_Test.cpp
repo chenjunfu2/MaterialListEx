@@ -100,14 +100,13 @@ int main(void)
 	//printf("%d\n", s == tmp1);
 	
 
-	const auto tmp = "\xEF\xBF\xBF""\xED\xA0\x80\xED\xB0\x80""\xED\xA0\x80\xED\xB0\x81""\xED\xA0\x80\xED\xB0\x82";
-
-	auto tmp2 = MUTF8_Tool<char, char16_t, char>::MU8ToU8(tmp);
-	auto tmp3 = MUTF8_Tool<char, char16_t, char>::U8ToMU8(tmp2);
-	
-	printf("%d\n", tmp == tmp3);
-	
-	
+	//const auto tmp = "\xEF\xBF\xBF""\xED\xA0\x80\xED\xB0\x80""\xED\xA0\x80\xED\xB0\x81""\xED\xA0\x80\xED\xB0\x82";
+	//
+	//auto tmp2 = MUTF8_Tool<char, char16_t, char>::MU8ToU8(tmp);
+	//auto tmp3 = MUTF8_Tool<char, char16_t, char>::U8ToMU8(tmp2);
+	//
+	//printf("%d\n", tmp == tmp3);
+	//
 	//return 0;
 
 	auto TestPrint = [](auto l, auto r) ->void
