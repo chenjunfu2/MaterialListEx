@@ -355,7 +355,7 @@ bool Convert(const char *const pFileName)
 		szPos = sCsvPath.size() - 1;//没有后缀就从末尾开始
 	}
 
-	CSV_Tool<char8_t> csv;
+	CSV_Tool<char8_t> csv{};//此处还未初始化
 #ifndef _DEBUG
 	//找到一个合法文件名
 	int32_t i32Count = 10;//最多重试10次
