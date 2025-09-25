@@ -70,8 +70,8 @@ void PrintInfo(const T &info, const Language &lang)
 }
 
 
-template<Language::KeyType enKeyType, typename T>
-void PrintInfo(const T &info, const Language &lang, CSV_Tool &csv)
+template<Language::KeyType enKeyType, typename T, typename U>
+void PrintInfo(const T &info, const Language &lang, CSV_Tool<U> &csv)
 {
 	if (!csv)//非就绪状态重定向输出到控制台
 	{
@@ -92,7 +92,7 @@ void PrintInfo(const T &info, const Language &lang, CSV_Tool &csv)
 			csv.WriteOnce<true>(NBT_Helper::Serialize(refItem.first.cpdTag));
 		}
 
-		csv.WriteOnce<true>(std::format("{}个 = {}", refItem.second, CountFormat(refItem.second)));
+		csv.WriteOnce<true>(ConvertAnsiToUtf8(std::format("{}个 = {}", refItem.second, CountFormat(refItem.second))));
 		csv.NewLine();
 	}
 }
@@ -114,8 +114,8 @@ void PrintInfo(const MapMSL<T> &info, const Language &lang)
 }
 
 
-template<Language::KeyType enKeyType, Language::KeyType enParentKeyType, typename T>
-void PrintInfo(const MapMSL<T> &info, const Language &lang, CSV_Tool &csv)
+template<Language::KeyType enKeyType, Language::KeyType enParentKeyType, typename T, typename U>
+void PrintInfo(const MapMSL<T> &info, const Language &lang, CSV_Tool<U> &csv)
 {
 	//控制台重定向
 	if (!csv)
@@ -135,9 +135,9 @@ void PrintInfo(const MapMSL<T> &info, const Language &lang, CSV_Tool &csv)
 		csv.WriteEmpty(5);//从第五个空格开始写入
 		csv.WriteStart();//连续写入开始
 		csv.WriteContinue<true>(lang.KeyTranslate(enParentKeyType, itParent.first));
-		csv.WriteContinue<false>("(");
+		csv.WriteContinue<false>(u8"(");
 		csv.WriteContinue<true>(itParent.first.ToCharTypeUTF8());
-		csv.WriteContinue<false>(")");
+		csv.WriteContinue<false>(u8")");
 		csv.WriteStop();//连续写入结束
 		csv.NewLine();//换行
 
@@ -163,14 +163,19 @@ void PrintInfo(const MapMSL<T> &info, const Language &lang, CSV_Tool &csv)
 //	csv.NewLine();
 //}
 
-void PrintConsole(const std::string &s)
+void PrintConsole(const std::basic_string_view<char> &s)
 {
-	printf("|%s", s.c_str());
+	printf("|%s", s.data());
+}
+
+void PrintConsole(const std::basic_string_view<char8_t> &s)
+{
+	printf("|%s", (const char *)s.data());
 }
 
 
-template<bool bEscape = true, typename... Args>
-void PrintLine(CSV_Tool &csv, Args&&... args)
+template<bool bEscape = true, typename T, typename... Args>
+void PrintLine(CSV_Tool<T> &csv, Args&&... args)
 {
 	if (!csv)//非就绪状态重定向输出到控制台
 	{
@@ -182,7 +187,8 @@ void PrintLine(CSV_Tool &csv, Args&&... args)
 	csv.WriteLine(std::forward<Args>(args)...);
 }
 
-void PrintLine(CSV_Tool &csv)
+template<typename T>
+void PrintLine(CSV_Tool<T> &csv)
 {
 	if (!csv)//非就绪状态重定向输出到控制台
 	{
@@ -349,7 +355,7 @@ bool Convert(const char *const pFileName)
 		szPos = sCsvPath.size() - 1;//没有后缀就从末尾开始
 	}
 
-	CSV_Tool csv;
+	CSV_Tool<char8_t> csv;
 #ifndef _DEBUG
 	//找到一个合法文件名
 	int32_t i32Count = 10;//最多重试10次
@@ -363,7 +369,7 @@ bool Convert(const char *const pFileName)
 
 	if (i32Count > 0)//如果没次数了就别打开了，直接让它失败
 	{
-		csv.OpenFile(sCsvPath.c_str(), CSV_Tool::Write);
+		csv.OpenFile(sCsvPath.c_str(), csv.Write);
 		printf("Output file:[%s]", sCsvPath.c_str());
 	}
 #else
@@ -399,42 +405,42 @@ bool Convert(const char *const pFileName)
 	//处理所有区域
 	for (const auto &it : listRegionStats)
 	{
-		PrintLine(csv, "区域(Region)", '[' + it.sRegionName.ToCharTypeUTF8() + ']');
+		PrintLine(csv, u8"区域(Region)", u8'[' + it.sRegionName.ToUTF8() + u8']');
 	
 		//PrintLine(csv);
-		//PrintLine(csv, "类型(Type)", "[block]");
-		//PrintLine(csv, "名称(Name)", "键名(Key)", "标签(Tag)", "数量(Count)");
+		//PrintLine(csv, u8"类型(Type)", u8"[block]");
+		//PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)");
 		//PrintInfo<Language::Item, true>(it.mslBlock.listSort, lang, csv);//方块
 
 		PrintLine(csv);
-		PrintLine(csv, "类型(Type)", "[block item]");
-		PrintLine(csv, "名称(Name)", "键名(Key)", "数量(Count)");
+		PrintLine(csv, u8"类型(Type)", u8"[block item]");
+		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"数量(Count)");
 		PrintInfo<Language::Item>(it.mslBlockItem.listSort, lang, csv);//方块转物品
 
 		PrintLine(csv);
-		PrintLine(csv, "类型(Type)", "[tile entity container]");
-		PrintLine(csv, "名称(Name)", "键名(Key)", "标签(Tag)", "数量(Count)");
+		PrintLine(csv, u8"类型(Type)", u8"[tile entity container]");
+		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)");
 		PrintInfo<Language::Item>(it.mslTileEntityContainer.listSort, lang, csv);//方块实体容器
-		PrintLine(csv, "名称(Name)", "键名(Key)", "标签(Tag)", "数量(Count)", "来源(source)");
+		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)", u8"来源(source)");
 		PrintInfo<Language::Item, Language::Item>(it.mmslParentInfoTEC, lang, csv);//方块实体容器带容器名
 
 		PrintLine(csv);
-		PrintLine(csv, "类型(Type)", "[entity info]");
-		PrintLine(csv, "名称(Name)", "键名(Key)", "数量(Count)");
+		PrintLine(csv, u8"类型(Type)", u8"[entity info]");
+		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"数量(Count)");
 		PrintInfo<Language::Entity>(it.mslEntity.listSort, lang, csv);//实体
 
 		PrintLine(csv);
-		PrintLine(csv, "类型(Type)", "[entity container]");
-		PrintLine(csv, "名称(Name)", "键名(Key)", "标签(Tag)", "数量(Count)");
+		PrintLine(csv, u8"类型(Type)", u8"[entity container]");
+		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)");
 		PrintInfo<Language::Item>(it.mslEntityContainer.listSort, lang, csv);//实体容器
-		PrintLine(csv, "名称(Name)", "键名(Key)", "标签(Tag)", "数量(Count)", "来源(source)");
+		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)", u8"来源(source)");
 		PrintInfo< Language::Item, Language::Entity>(it.mmslParentInfoEC, lang, csv);//实体容器带实体名
 
 		PrintLine(csv);
-		PrintLine(csv, "类型(Type)", "[entity inventory]");
-		PrintLine(csv, "名称(Name)", "键名(Key)", "标签(Tag)", "数量(Count)");
+		PrintLine(csv, u8"类型(Type)", u8"[entity inventory]");
+		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)");
 		PrintInfo<Language::Item>(it.mslEntityInventory.listSort, lang, csv);//实体物品栏
-		PrintLine(csv, "名称(Name)", "键名(Key)", "标签(Tag)", "数量(Count)", "来源(source)");
+		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)", u8"来源(source)");
 		PrintInfo<Language::Item, Language::Entity>(it.mmslParentInfoEI, lang, csv);//实体物品栏带实体名
 
 		PrintLine(csv);

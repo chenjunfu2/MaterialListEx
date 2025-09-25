@@ -4,6 +4,7 @@
 #include <string>
 
 //目前只做了写入，不要用读取模式打开
+template<typename CHAR_T = char8_t>
 class CSV_Tool
 {
 private:
@@ -17,6 +18,7 @@ public:
 		END_ENUM,
 	};
 
+private:
 	static inline constexpr const char *const listMode[] =
 	{
 		"rb",
@@ -25,6 +27,7 @@ public:
 
 	static_assert(sizeof(listMode) / sizeof(listMode[0]) == END_ENUM);
 
+public:
 	CSV_Tool(void) = default;
 
 	CSV_Tool(const CSV_Tool &) = delete;
@@ -92,13 +95,19 @@ public:
 	}
 
 	template<bool bEscape = true>
-	void WriteOnce(const std::string &str)//带分隔符写入
+	void WriteOnce(const std::basic_string_view<CHAR_T> &str)//带分隔符写入
 	{
 		WriteEmpty();//写入分隔符
 		//写入一个单元格
 		WriteStart();
 		WriteContinue<bEscape>(str);
 		WriteStop();
+	}
+
+	template<bool bEscape = true>
+	void WriteOnce(const std::basic_string_view<char> &str)
+	{
+		WriteOnce<bEscape>(std::basic_string_view<CHAR_T>((const CHAR_T *)str.data(), str.size()));
 	}
 
 	void WriteStart()//连续写入开始
@@ -116,7 +125,7 @@ public:
 	}
 
 	template<bool bEscape = true>
-	void WriteContinue(const std::string &str)//与上一个写入合并
+	void WriteContinue(const std::basic_string_view<CHAR_T> &str)//与上一个写入合并
 	{
 		for (const auto &it : str)
 		{
@@ -132,6 +141,12 @@ public:
 		}
 	}
 
+	template<bool bEscape = true>
+	void WriteContinue(const std::basic_string_view<char> &str)
+	{
+		WriteContinue<bEscape>(std::basic_string_view<CHAR_T>((const CHAR_T *)str.data(), str.size()));
+	}
+
 	template <bool bEscape = true, typename... Args>
 	void WriteMulti(Args&&... args)
 	{
@@ -145,9 +160,14 @@ public:
 		NewLine();
 	}
 
-	void WriteRaw(const std::string &str)
+	void WriteRaw(const std::basic_string_view<CHAR_T> &str)
 	{
 		fwrite(str.data(), str.size(), 1, pFile);
+	}
+
+	void WriteRaw(const std::basic_string_view<char> &str)
+	{
+		WriteRaw(std::basic_string_view<CHAR_T>((const CHAR_T *)str.data(), str.size()));
 	}
 
 	void WriteEmpty(size_t szSlot)

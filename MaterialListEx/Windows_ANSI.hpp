@@ -47,7 +47,7 @@ std::basic_string<ANSIT> ConvertUtf16ToAnsi(const std::basic_string<U16T> &u16St
 		WC_NO_BEST_FIT_CHARS,
 		(wchar_t *)u16String.data(),
 		u16String.size(),
-		ansiString.data(),
+		(char *)ansiString.data(),
 		lengthNeeded,
 		NULL,
 		NULL
@@ -105,7 +105,7 @@ std::basic_string<U8T> ConvertUtf16ToUtf8(const std::basic_string<U16T> &u16Stri
 		WC_NO_BEST_FIT_CHARS,
 		(wchar_t *)u16String.data(),
 		u16String.size(),
-		u8String.data(),
+		(char *)u8String.data(),
 		lengthNeeded,
 		NULL,
 		NULL
@@ -154,7 +154,7 @@ std::basic_string<ANSIT> ConvertUtf8ToAnsi(const std::basic_string<U8T> &u8Strin
 		0,
 		(char *)u8String.data(),
 		u8String.size(),
-		utf16Str.data(),
+		(wchar_t *)utf16Str.data(),
 		lengthNeeded
 	);
 
@@ -182,7 +182,7 @@ std::basic_string<U8T> ConvertAnsiToUtf8(const std::basic_string<ANSIT> &ansiStr
 	const int lengthNeeded = MultiByteToWideChar(
 		CP_ACP,
 		0,
-		ansiString.data(),
+		(char *)ansiString.data(),
 		ansiString.size(),
 		NULL,
 		0
@@ -200,9 +200,9 @@ std::basic_string<U8T> ConvertAnsiToUtf8(const std::basic_string<ANSIT> &ansiStr
 	int convertedSize = MultiByteToWideChar(
 		CP_ACP,
 		0,
-		ansiString.data(),
+		(char *)ansiString.data(),
 		ansiString.size(),
-		utf16Str.data(),
+		(wchar_t *)utf16Str.data(),
 		lengthNeeded
 	);
 
