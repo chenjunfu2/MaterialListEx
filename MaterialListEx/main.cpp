@@ -14,6 +14,7 @@
 #include "CSV_Tool.hpp"
 #include "CountFormatter.hpp"
 #include "Windows_FileSystem.hpp"
+#include "Windows_ANSI.hpp"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -466,8 +467,7 @@ int main(int argc, char *argv[])
 	for (int i = 1; i < argc; ++i)//注意argc从1开始作为索引访问argv，因为argv[0]是程序自身路径
 	{
 		printf("\n[%d] ", i);
-		bool b = Convert(argv[i]);
-		if (!b)
+		if (!Convert(ConvertAnsiToUtf8<char, char>(argv[i]).c_str()))
 		{
 			printf("Convert Error, Skip\n");
 		}

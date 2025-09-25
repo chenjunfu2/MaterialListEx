@@ -276,6 +276,7 @@
     <ClInclude Include="nlohmann\thirdparty\hedley\hedley_undef.hpp" />
     <ClInclude Include="RegionProcess.h" />
     <ClInclude Include="TileEntityProcess.hpp" />
+    <ClInclude Include="Windows_ANSI.hpp" />
     <ClInclude Include="Windows_FileSystem.hpp" />
     <ClInclude Include="xxhash\xxh3.h" />
     <ClInclude Include="xxhash\xxhash.h" />
