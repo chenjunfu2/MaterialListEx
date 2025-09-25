@@ -184,10 +184,10 @@ private:
 
 	static constexpr void EncodeMUTF8Supplementary(const U16T u16HighSurrogate, const U16T u16LowSurrogate,  MU8T(&mu8CharArr)[6])
 	{
-		//取出代理对数据并组合 范围：10'0000-1F'FFFF 注意虽然映射了超过10'FFFF的区域，但是u16不存在大于10'FFFF的码点，所以其高位恒为10
-		uint32_t u32RawChar = //(uint32_t)0b0000'0000'0001'0000'0000'0000'0000'0000 |//U16代理对实际编码高位 bit20 -> 1 ignore
-							  ((uint32_t)((uint16_t)u16HighSurrogate & (uint16_t)0b0000'0011'1111'1111)) << 10 |//10bit
-							  ((uint32_t)((uint16_t)u16LowSurrogate  & (uint16_t)0b0000'0011'1111'1111)) << 0;//10bit
+		//取出代理对数据并组合 范围：1'0000-10'FFFF 注意虽然映射了1'0000-10'FFFF的区域，但是u16不存在大于10'FFFF的码点
+		uint32_t u32RawChar = (uint32_t)0b0000'0000'0000'0001'0000'0000'0000'0000 + //bit16 -> 1 注意此处为加法而非位运算
+							  (((uint32_t)((uint16_t)u16HighSurrogate & (uint16_t)0b0000'0011'1111'1111)) << 10 |//10bit
+							  ((uint32_t)((uint16_t)u16LowSurrogate  & (uint16_t)0b0000'0011'1111'1111)) << 0);//10bit
 
 		//高代理
 		mu8CharArr[0] = (uint8_t)0b1110'1101;//固定字节
@@ -226,16 +226,16 @@ private:
 	static constexpr void DecodeMUTF8Supplementary(const MU8T(&mu8CharArr)[6], U16T &u16HighSurrogate, U16T &u16LowSurrogate)
 	{
 		//忽略mu8CharArr[0]和mu8CharArr[3]（固定字节）
-		uint32_t u32RawChar = //(uint16_t)0b0000'0000'0001'0000'0000'0000'0000'0000 |//bit20->1 ignore
-												 //mu8CharArr[0] ignore
+		uint32_t u32RawChar = (					 //mu8CharArr[0] ignore
 							  ((uint16_t)((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1111)) << 16 |//4bit
 							  ((uint16_t)((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1111)) << 10 |//6bit
 												 //mu8CharArr[3] ignore
 							  ((uint16_t)((uint8_t)mu8CharArr[4] & (uint8_t)0b0000'1111)) <<  6 |//4bit
-							  ((uint16_t)((uint8_t)mu8CharArr[5] & (uint8_t)0b0011'1111)) <<  0;//6bit
+							  ((uint16_t)((uint8_t)mu8CharArr[5] & (uint8_t)0b0011'1111)) <<  0 )-//6bit
+							  (uint16_t)0b0000'0000'0000'0001'0000'0000'0000'0000;//bit16->1//注意此处为减法而非位运算
 
 		//解析到高低代理
-		//范围10'0000-1F'FFFF注意虽然允许包括10~1F高位范围，但是u16标准规定最大值从10'0000-10'FFFF，也就是高位恒为10，但是仍然这样运算，方便
+		//范围1'0000-10'FFFF
 		u16HighSurrogate = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'1111'1111'1100'0000'0000) >> 10 | (uint32_t)0b1101'1000'0000'0000);
 		u16LowSurrogate  = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1111'1111) >>  0 | (uint32_t)0b1101'1100'0000'0000);
 	}

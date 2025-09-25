@@ -113,13 +113,24 @@ int main(void)
 	setlocale(LC_ALL, "zh_CN.UTF-8");
 
 
-	auto printhex = [](auto data) -> void
+	auto HexPrint = [](auto data, size_t beg = 0, size_t end = (size_t)-1) -> void
 	{
 		uint8_t i = 0;
 		using ut = std::make_unsigned_t<std::remove_reference_t<decltype(data[0])>>;
-		for (auto it : data)
+
+		if (beg >= end || beg >= data.size())
 		{
-			printf("0x%02X ", (ut)it);
+			return;
+		}
+
+		if (end >= data.size())
+		{
+			end = data.size();
+		}
+
+		for (size_t i = beg; i < end; ++i)
+		{
+			printf("[%zu~%zu] 0x%02X ", i, i + 7, (ut)data[i]);
 			if (++i == 8)
 			{
 				printf("\n");
@@ -127,6 +138,11 @@ int main(void)
 			}
 		}
 		printf("\n");
+	};
+
+	auto BoolPrint = [](bool b, const char *pBeg = "", const char *pEnd = " ") -> void
+	{
+		printf("%s%s%s", pBeg, b ? "true" : "false", pEnd);
 	};
 
 	auto TestPrint = [](auto l, auto r) ->void
@@ -152,26 +168,29 @@ int main(void)
 		}
 	};
 
-	constexpr auto ret = U8TOMU8STR(u8"test😀😁😂🤣😃😄😅😆😗😘🥰😍😎😋😊😉😙😚☺🙂🤗🤩🤔🤨223$$在明确是常量表达式的上下文中，不需要检查是否在常量求值中，因为答案总是\"是\"");
 
+	std::basic_string_view testu8 = u8"test😀😁😂🤣😃😄😅😆😗😘🥰😍😎😋😊😉😙😚☺🙂🤗🤩🤔🤨223$$在明确是常量表达式的上下文中，不需要检查是否在常量求值中，因为答案总是\"是\"";
+	std::basic_string_view testu16 = u"test😀😁😂🤣😃😄😅😆😗😘🥰😍😎😋😊😉😙😚☺🙂🤗🤩🤔🤨223$$在明确是常量表达式的上下文中，不需要检查是否在常量求值中，因为答案总是\"是\"";
+
+	constexpr auto ret = U8TOMU8STR(u8"test😀😁😂🤣😃😄😅😆😗😘🥰😍😎😋😊😉😙😚☺🙂🤗🤩🤔🤨223$$在明确是常量表达式的上下文中，不需要检查是否在常量求值中，因为答案总是\"是\"");
+	auto ret1 = U8CV2MU8(testu8);//这个有问题
 	constexpr auto ret2 = U16TOMU8STR(u"test😀😁😂🤣😃😄😅😆😗😘🥰😍😎😋😊😉😙😚☺🙂🤗🤩🤔🤨223$$在明确是常量表达式的上下文中，不需要检查是否在常量求值中，因为答案总是\"是\"");
+	auto ret3 = U16CV2MU8(testu16);
 
 	std::basic_string_view<uint8_t> mu8_0(ret.data(), ret.size());
 	std::basic_string_view<uint8_t> mu8_1(ret2.data(), ret2.size());
 
-	//bool tmp = mu8_0 == mu8_1;
+	TestPrint(mu8_0, mu8_1);//右侧
 
-	std::basic_string_view testu8 = u8"test😀😁😂🤣😃😄😅😆😗😘🥰😍😎😋😊😉😙😚☺🙂🤗🤩🤔🤨223$$在明确是常量表达式的上下文中，不需要检查是否在常量求值中，因为答案总是\"是\"";
-	//auto testmu8 = U8CV2MU8(testu8);
-	//auto testu8_2 = MU8CV2U8(testmu8);
+	BoolPrint(ret == ret2, "ret == ret2: ", "\n");
+	BoolPrint(ret1 == ret3, "ret1 == ret3: ", "\n\n");
 
-	//printhex(testmu8);
-	//printhex(testu8_2);
-
-	//return testu8 == testu8_2;
+	BoolPrint(mu8_0 == ret1, "mu8_0 == ret1: ", "\n");
+	BoolPrint(mu8_1 == ret3, "mu8_1 == ret3: ", "\n\n");
+	
 
 	auto u16_0 = MU8CV2U16(mu8_0);
-	auto u16_1 = MU8CV2U16(mu8_1);
+	auto u16_1 = MU8CV2U16(mu8_1);//这个
 
 	auto mu8_2 = U16CV2MU8(u16_0);
 	auto mu8_3 = U16CV2MU8(u16_1);
@@ -181,15 +200,19 @@ int main(void)
 	auto u8_2 = MU8CV2U8(mu8_2);
 	auto u8_3 = MU8CV2U8(mu8_3);
 
-	bool b0 = testu8 == u8_0;
-	bool b1 = testu8 == u8_1;
-	bool b2 = testu8 == u8_2;
-	bool b3 = testu8 == u8_3;
-
-	printf("%d %d %d %d\n%s\n%s\n%s\n%s\n", b0, b1, b2, b3, u8_0.c_str(), u8_1.c_str(), u8_2.c_str(), u8_3.c_str());
+	BoolPrint(testu16 == u16_0, "testu16 == u16_0: ", "\n");
+	BoolPrint(testu16 == u16_1, "testu16 == u16_1: ", "\n\n");//这个对的
+	BoolPrint(testu8 == u8_0, "testu8 == u8_0: ", "\n");
+	BoolPrint(testu8 == u8_1, "testu8 == u8_1: ", "\n");
+	BoolPrint(testu8 == u8_2, "testu8 == u8_2: ", "\n");
+	BoolPrint(testu8 == u8_3, "testu8 == u8_3: ", "\n");
 
 	printf("\n\n");
 
+	printf("u16_0:");
+	TestPrint(testu16, u16_0);
+	printf("u16_1:");
+	TestPrint(testu16, u16_1);
 	printf("u8_0:");
 	TestPrint(testu8, u8_0);
 	printf("u8_1:");
@@ -199,11 +222,11 @@ int main(void)
 	printf("u8_3:");
 	TestPrint(testu8, u8_3);
 
-	return -1145;
+	//return -1145;
 	//U8TOMU8STR(u8"\xEF\xBF\xBF""\xED\xA0\x80\xED\xB0\x80""\xED\xA0\x80\xED\xB0\x81""\xED\xA0\x80\xED\xB0\x82");
 	//U16TOMU8STR(u"\xEF\xBF\xBF""\xED\xA0\x80\xED\xB0\x80""\xED\xA0\x80\xED\xB0\x81""\xED\xA0\x80\xED\xB0\x82");
 
-	printf("generate_all_valid_utf16le\n");
+	printf("\n\ngenerate_all_valid_utf16le\n");
 	const auto test = generate_all_valid_utf16le();
 	printf("generate_all_valid_utf16le ok\n");
 
