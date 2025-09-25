@@ -163,18 +163,18 @@ private:
 	{
 		if constexpr (szBytes == 1)
 		{
-			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0111'1111) >>  0) | (uint16_t)0b0000'0000);//0 6-0   7bit
+			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0111'1111) >>  0) | (uint16_t)0b0000'0000);//0 + 6-0   7bit
 		}
 		else if constexpr (szBytes == 2)
 		{
-			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0111'1100'0000) >>  6) | (uint16_t)0b1100'0000);//110 10-6  5bit
-			mu8CharArr[1] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0011'1111) >>  0) | (uint16_t)0b1000'0000);//10 5-0   6bit
+			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0111'1100'0000) >>  6) | (uint16_t)0b1100'0000);//110 + 10-6  5bit
+			mu8CharArr[1] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0011'1111) >>  0) | (uint16_t)0b1000'0000);//10 + 5-0   6bit
 		}
 		else if constexpr (szBytes == 3)
 		{
-			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b1111'0000'0000'0000) >> 12) | (uint16_t)0b1110'0000);//1110 15-12   4bit
-			mu8CharArr[1] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'1111'1100'0000) >>  6) | (uint16_t)0b1000'0000);//10 11-6   6bit
-			mu8CharArr[2] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0011'1111) >>  0) | (uint16_t)0b1000'0000);//10 5-0   6bit
+			mu8CharArr[0] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b1111'0000'0000'0000) >> 12) | (uint16_t)0b1110'0000);//1110 + 15-12   4bit
+			mu8CharArr[1] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'1111'1100'0000) >>  6) | (uint16_t)0b1000'0000);//10 + 11-6   6bit
+			mu8CharArr[2] = (uint8_t)((((uint16_t)u16Char & (uint16_t)0b0000'0000'0011'1111) >>  0) | (uint16_t)0b1000'0000);//10 + 5-0   6bit
 		}
 		else
 		{
@@ -184,19 +184,22 @@ private:
 
 	static constexpr void EncodeMUTF8Supplementary(const U16T u16HighSurrogate, const U16T u16LowSurrogate,  MU8T(&mu8CharArr)[6])
 	{
-		//取出代理对数据并组合 范围：1'0000-10'FFFF 注意虽然映射了1'0000-10'FFFF的区域，但是u16不存在大于10'FFFF的码点
-		uint32_t u32RawChar = (uint32_t)0b0000'0000'0000'0001'0000'0000'0000'0000 + //bit16 -> 1 注意此处为加法而非位运算
-							  (((uint32_t)((uint16_t)u16HighSurrogate & (uint16_t)0b0000'0011'1111'1111)) << 10 |//10bit
-							  ((uint32_t)((uint16_t)u16LowSurrogate  & (uint16_t)0b0000'0011'1111'1111)) << 0);//10bit
+		//取出代理对数据并组合 范围：1'0000 ~ 10'FFFF 通过u16代理对组成：高代理10位低代理10位，
+		//最后加上0x1'0000得到此范围，也就是从utf16组成的0x0'0000 ~ 0xF'FFFF + 0x1'0000得到
+		uint32_t u32RawChar = ((uint32_t)((uint16_t)u16HighSurrogate & (uint16_t)0b0000'0011'1111'1111)) << 10 |//10bit
+							  ((uint32_t)((uint16_t)u16LowSurrogate  & (uint16_t)0b0000'0011'1111'1111)) <<  0; //10bit
+
+		//因为mutf8直接存储utf16的代理对位，不进行+0x1'0000运算
+		//u32RawChar += (uint32_t)0b0000'0000'0000'0001'0000'0000'0000'0000;//bit16->1 = 0x1'0000 注意此处为加法而非位运算
 
 		//高代理
 		mu8CharArr[0] = (uint8_t)0b1110'1101;//固定字节
-		mu8CharArr[1] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'1111'0000'0000'0000'0000) >> 16) | (uint32_t)0b1010'0000);//1010 19-16(20固定为1)   4bit
-		mu8CharArr[2] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'1111'1100'0000'0000) >> 10) | (uint32_t)0b1000'0000);//10 15-10   6bit
+		mu8CharArr[1] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'1111'0000'0000'0000'0000) >> 16) | (uint32_t)0b1010'0000);//1010 + 19-16   4bit
+		mu8CharArr[2] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'1111'1100'0000'0000) >> 10) | (uint32_t)0b1000'0000);//10 + 15-10   6bit
 		//低代理
 		mu8CharArr[3] = (uint8_t)0b1110'1101;//固定字节
-		mu8CharArr[4] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1100'0000) >>  6) | (uint32_t)0b1011'0000);//1011 9-6   4bit
-		mu8CharArr[5] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0000'0011'1111) >>  0) | (uint32_t)0b1000'0000);//10 5-0   6bit
+		mu8CharArr[4] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1100'0000) >>  6) | (uint32_t)0b1011'0000);//1011 + 9-6   4bit
+		mu8CharArr[5] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0000'0011'1111) >>  0) | (uint32_t)0b1000'0000);//10 + 5-0   6bit
 	}
 
 	template<size_t szBytes>
@@ -209,13 +212,13 @@ private:
 		else if constexpr (szBytes == 2)
 		{
 			u16Char = ((uint16_t)((uint8_t)mu8CharArr[0] & (uint8_t)0b0001'1111)) << 6 |//5bit
-					  ((uint16_t)((uint8_t)mu8CharArr[1] & (uint8_t)0b0011'1111)) << 0;//6bit
+					  ((uint16_t)((uint8_t)mu8CharArr[1] & (uint8_t)0b0011'1111)) << 0; //6bit
 		}
 		else if constexpr (szBytes == 3)
 		{
 			u16Char = ((uint16_t)((uint8_t)mu8CharArr[0] & (uint8_t)0b0000'1111)) << 12 |//4bit
 					  ((uint16_t)((uint8_t)mu8CharArr[1] & (uint8_t)0b0011'1111)) <<  6 |//6bit
-					  ((uint16_t)((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1111)) <<  0;//6bit
+					  ((uint16_t)((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1111)) <<  0; //6bit
 		}
 		else
 		{
@@ -225,47 +228,69 @@ private:
 
 	static constexpr void DecodeMUTF8Supplementary(const MU8T(&mu8CharArr)[6], U16T &u16HighSurrogate, U16T &u16LowSurrogate)
 	{
-		//忽略mu8CharArr[0]和mu8CharArr[3]（固定字节）
-		uint32_t u32RawChar = (					 //mu8CharArr[0] ignore
-							  ((uint16_t)((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1111)) << 16 |//4bit
-							  ((uint16_t)((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1111)) << 10 |//6bit
-												 //mu8CharArr[3] ignore
-							  ((uint16_t)((uint8_t)mu8CharArr[4] & (uint8_t)0b0000'1111)) <<  6 |//4bit
-							  ((uint16_t)((uint8_t)mu8CharArr[5] & (uint8_t)0b0011'1111)) <<  0 )-//6bit
-							  (uint16_t)0b0000'0000'0000'0001'0000'0000'0000'0000;//bit16->1//注意此处为减法而非位运算
+		uint32_t u32RawChar = 					 //mu8CharArr[0] ignore 固定字节忽略
+							  ((uint32_t)((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1111)) << 16 |//4bit
+							  ((uint32_t)((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1111)) << 10 |//6bit
+												 //mu8CharArr[3] ignore 固定字节忽略
+							  ((uint32_t)((uint8_t)mu8CharArr[4] & (uint8_t)0b0000'1111)) <<  6 |//4bit
+							  ((uint32_t)((uint8_t)mu8CharArr[5] & (uint8_t)0b0011'1111)) <<  0 ;//6bit
+
+		//因为mutf8直接存储utf16的代理对位，不进行-0x1'0000运算
+		//u32RawChar -= (uint32_t)0b0000'0000'0000'0001'0000'0000'0000'0000;//bit16->1 = 0x1'0000 注意此处为减法而非位运算
 
 		//解析到高低代理
 		//范围1'0000-10'FFFF
-		u16HighSurrogate = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'1111'1111'1100'0000'0000) >> 10 | (uint32_t)0b1101'1000'0000'0000);
-		u16LowSurrogate  = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1111'1111) >>  0 | (uint32_t)0b1101'1100'0000'0000);
+		u16HighSurrogate = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'1111'1111'1100'0000'0000) >> 10 | (uint32_t)0b1101'1000'0000'0000);//1101'10 + 19-10   10bit
+		u16LowSurrogate  = (uint32_t)((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1111'1111) >>  0 | (uint32_t)0b1101'1100'0000'0000);//1101'11 + 9-0   10bit
 	}
 
+	/*
+		4bytes utf-8 bit distribution:（utf8直接存储utf32的映射，需要两次转换到mutf8）
+		000u'uuuu zzzz'yyyy yyxx'xxxx - 1111'0uuu 10uu'zzzz 10yy'yyyy 10xx'xxxx
+
+		6bytes modified utf-8 bit distribution:（mutf8直接存储了utf16的映射，不需要增减0x1'0000，所以要比utf8小一位）
+		0000'uuuu zzzz'yyyy yyxx'xxxx - 1110'1101 1010'uuuu 10zz'zzyy 1110'1101 1011'yyyy 10xx'xxxx
+	*/
 
 	static constexpr void UTF8SupplementaryToMUTF8(const U8T(&u8CharArr)[4], MU8T(&mu8CharArr)[6])
 	{
-		/*
-		4bytes utf-8 bit distribution:（注意utf32到utf16的时候i会被丢弃，所以理论上i是恒为0的）
-		000i'uuuu zzzz'yyyy yyxx'xxxx - 1111'0iuu 10uu'zzzz 10yy'yyyy 10xx'xxxx
-		
-		6bytes modified utf-8 bit distribution:（注意mutf8直接忽略了i不编码）
-		000i'uuuu zzzz'yyyy yyxx'xxxx - 1110'1101 1010'uuuu 10zz'zzyy 1110'1101 1011'yyyy 10xx'xxxx
-		*/
+		//先把utf8映射到utf32，减去0x1'0000，得到utf16的中间形式，再进行下一步转换
+		uint32_t u32RawChar = ((uint32_t)((uint8_t)u8CharArr[0] & (uint8_t)0b0000'0111)) << 18 |//3bit
+							  ((uint32_t)((uint8_t)u8CharArr[1] & (uint8_t)0b0011'1111)) << 12 |//6bit
+							  ((uint32_t)((uint8_t)u8CharArr[2] & (uint8_t)0b0011'1111)) <<  6 |//6bit
+							  ((uint32_t)((uint8_t)u8CharArr[3] & (uint8_t)0b0011'1111)) <<  0; //6bit
 
-		mu8CharArr[0] = (uint8_t)0b1110'1101;//固定字节1110'1101
-		mu8CharArr[1] = (uint8_t)(((uint8_t)u8CharArr[0] & (uint8_t)0b0000'0011) << 2 | ((uint8_t)u8CharArr[1] & (uint8_t)0b0011'0000) >> 4 | (uint8_t)0b1010'0000);//拿出u8[0]的uu:1~0bit放到3~2bit，拿出u8[1]的uu:5~4bit放到1~0bit，最后补齐高4位1010，组成1010'uuuu
-		mu8CharArr[2] = (uint8_t)(((uint8_t)u8CharArr[1] & (uint8_t)0b0000'1111) << 2 | ((uint8_t)u8CharArr[2] & (uint8_t)0b0011'0000) >> 4 | (uint8_t)0b1000'0000);//拿出u8[1]的zzzz:3~0bit放到5~2bit，拿出u8[2]的yy:5~4bit放到1~0bit，最后补齐高2位10，组成10zz'zzyy
-		mu8CharArr[3] = (uint8_t)0b1110'1101;//固定字节1110'1101
-		mu8CharArr[4] = (uint8_t)(((uint8_t)u8CharArr[2] & (uint8_t)0b0000'1111) << 0 | (uint8_t)0b1011'0000);//拿出u8[2]的yyyy:3~0bit放到3~0bit，最后补齐高4位1011，组成1011'yyyy
-		mu8CharArr[5] = (uint8_t)u8CharArr[3];//最后一个字节mu8与u8完全等同，直接拷贝
+		//删除位
+		u32RawChar -= (uint32_t)0b0000'0000'0000'0001'0000'0000'0000'0000;//bit16->1 = 0x1'0000 注意此处为减法而非位运算
+
+		//高代理
+		mu8CharArr[0] = (uint8_t)0b1110'1101;//固定字节
+		mu8CharArr[1] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'1111'0000'0000'0000'0000) >> 16) | (uint32_t)0b1010'0000);//1010 + 19-16   4bit
+		mu8CharArr[2] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'1111'1100'0000'0000) >> 10) | (uint32_t)0b1000'0000);//10 + 15-10   6bit
+		//低代理
+		mu8CharArr[3] = (uint8_t)0b1110'1101;//固定字节
+		mu8CharArr[4] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0011'1100'0000) >>  6) | (uint32_t)0b1011'0000);//1011 + 9-6   4bit
+		mu8CharArr[5] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0000'0011'1111) >>  0) | (uint32_t)0b1000'0000);//10 + 5-0   6bit
 	}
 
 	static constexpr void MUTF8SupplementaryToUTF8(const MU8T(&mu8CharArr)[6], U8T(&u8CharArr)[4])
 	{
-		//mu8CharArr[0] 与 mu8CharArr[3] 忽略
-		u8CharArr[0] = (uint8_t)(((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1100) >> 2 | (uint8_t)0b1111'0000);//注意是补1111'0000，而不是1111'0100，因为上面的i在utf32到utf16代理对的过程被丢弃，此位恒为0，但是不知道为什么utf8仍然保留了此位
-		u8CharArr[1] = (uint8_t)(((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'0011) << 4 | ((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1100) >> 2 | (uint8_t)0b1000'0000);
-		u8CharArr[2] = (uint8_t)(((uint8_t)mu8CharArr[2] & (uint8_t)0b0000'0011) << 4 | ((uint8_t)mu8CharArr[4] & (uint8_t)0b0000'1111) >> 0 | (uint8_t)0b1000'0000);
-		u8CharArr[3] = (uint8_t)mu8CharArr[5];//最后一个字节mu8与u8完全等同，直接拷贝
+		//先把mutf8映射到utf16组成的中间形式的utf32，再加上0x1'0000得到utf8的utf32表示形式
+		uint32_t u32RawChar = 					 //mu8CharArr[0] ignore 固定字节忽略
+							  ((uint32_t)((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1111)) << 16 |//4bit
+							  ((uint32_t)((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1111)) << 10 |//6bit
+												 //mu8CharArr[3] ignore 固定字节忽略
+							  ((uint32_t)((uint8_t)mu8CharArr[4] & (uint8_t)0b0000'1111)) <<  6 |//4bit
+							  ((uint32_t)((uint8_t)mu8CharArr[5] & (uint8_t)0b0011'1111)) <<  0 ;//6bit
+
+		//恢复位
+		u32RawChar += (uint32_t)0b0000'0000'0000'0001'0000'0000'0000'0000;//bit16->1 = 0x1'0000 注意此处为加法而非位运算
+
+		//转换到utf8
+		u8CharArr[0] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0001'1100'0000'0000'0000'0000) >> 18) | (uint32_t)0b1111'0000);//1111'0 + 20-18   3bit
+		u8CharArr[1] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0011'1111'0000'0000'0000) >> 12) | (uint32_t)0b1000'0000);//10 + 17-12   6bit
+		u8CharArr[2] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'1111'1100'0000) >>  6) | (uint32_t)0b1000'0000);//10 + 11-6   6bit
+		u8CharArr[3] = (uint8_t)(((u32RawChar & (uint32_t)0b0000'0000'0000'0000'0000'0000'0011'1111) >>  0) | (uint32_t)0b1000'0000);//10 + 5-0   6bit
 	}
 
 private:
