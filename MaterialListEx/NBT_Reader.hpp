@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdlib.h>//byte swap
 #include <type_traits>
+#include <stdarg.h>//va宏
 
 #include "NBT_Node.hpp"
 
@@ -530,7 +531,7 @@ catch(...)\
 			eRet = GetSwitch(tData, tmpNode, tagNbt, szStackDepth - 1);
 			if (eRet != AllOk)
 			{
-				STACK_TRACEBACK("GetSwitch Fail, Name: \"%s\", Type: [NBT_Type::%s]", U16ANSI(sName.ToUTF16()).c_str(), NBT_Type::GetTypeName(tagNbt));
+				STACK_TRACEBACK("GetSwitch Fail, Name: \"%s\", Type: [NBT_Type::%s]", sName.ToCharTypeUTF8().c_str(), NBT_Type::GetTypeName(tagNbt));
 				//return eRet;//注意此处不返回，进行插入，以便分析错误之前的正确数据
 			}
 
@@ -546,7 +547,7 @@ catch(...)\
 
 				//发出警告，注意警告不用eRet接返回值
 				Error(ElementExistsWarn, tData, __FUNCSIG__ ": Name: \"%s\", Type: [NBT_Type::%s] data already exist!",
-					U16ANSI(sName.ToUTF16()).c_str(), NBT_Type::GetTypeName(tagNbt));
+					sName.ToCharTypeUTF8().c_str(), NBT_Type::GetTypeName(tagNbt));
 			}
 
 			//最后判断是否出错

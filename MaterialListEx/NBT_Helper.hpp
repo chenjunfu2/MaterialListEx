@@ -170,7 +170,7 @@ private:
 			break;
 		case NBT_TAG::String:
 			{
-				printf("\"%s\"", U16ANSI(nRoot.GetData<NBT_Type::String>().ToUTF16()).c_str());
+				printf("\"%s\"", nRoot.GetData<NBT_Type::String>().ToCharTypeUTF8().c_str());
 			}
 			break;
 		case NBT_TAG::List://需要打印缩进的地方
@@ -202,7 +202,7 @@ private:
 				for (const auto &it : cpd)
 				{
 					PrintPadding(szLevel, true, true);
-					printf("\"%s\":", U16ANSI(it.first.ToUTF16()).c_str());
+					printf("\"%s\":", it.first.ToCharTypeUTF8().c_str());
 					PrintSwitch<false>(it.second, szLevel + 1);
 					printf(",");
 				}
@@ -352,7 +352,7 @@ private:
 		case NBT_TAG::String:
 			{
 				sRet += '\"';
-				sRet += nRoot.GetData<NBT_Type::String>().GetCharTypeView();
+				sRet += nRoot.GetData<NBT_Type::String>().ToCharTypeUTF8();
 				sRet += '\"';
 			}
 			break;
@@ -381,7 +381,7 @@ private:
 				for (const auto &it : cpd)
 				{
 					sRet += '\"';
-					sRet += it.first.GetCharTypeView();
+					sRet += it.first.ToCharTypeUTF8();
 					sRet += "\":";
 					SerializeSwitch<false>(it.second, sRet);
 					sRet += ',';

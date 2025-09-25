@@ -4,7 +4,6 @@
 #include <array>
 
 #include "MUTF8_Tool.hpp"
-#include "Windows_ANSI.hpp"
 
 template <typename DataType>
 class NBT_Reader;

@@ -93,9 +93,6 @@
     <ClCompile Include="xxhash\xxh_x86dispatch.c">
       <Filter>源文件\xxhash</Filter>
     </ClCompile>
-    <ClCompile Include="Windows_ANSI.hpp">
-      <Filter>头文件\nbt</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MemoryLeakCheck.hpp">

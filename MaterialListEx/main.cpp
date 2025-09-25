@@ -22,6 +22,7 @@
 #include <format>
 #include <stdexcept>
 #include <filesystem>
+#include <locale.h>
 
 //NBT一般使用GZIP压缩，也有部分使用ZLIB压缩
 
@@ -50,16 +51,16 @@ void PrintInfo(const T &info, const Language &lang)
 		if constexpr (HasCpdTag<std::decay_t<decltype(refItem.first)>>)
 		{
 			printf("%s[%s]%s:%lld = %s\n",
-				U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)).c_str(),
+				lang.KeyTranslate(enKeyType, refItem.first.sName).c_str(),
 				refItem.first.sName.c_str(),
-				U16ANSI(MUTF8_Tool<char>::MU8ToU16(NBT_Helper::Serialize(refItem.first.cpdTag))).c_str(),
+				NBT_Helper::Serialize(refItem.first.cpdTag).c_str(),
 				refItem.second,
 				CountFormat(refItem.second).c_str());
 		}
 		else//无则跳过
 		{
 			printf("%s[%s]:%lld = %s\n",
-				U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)).c_str(),
+				lang.KeyTranslate(enKeyType, refItem.first.sName).c_str(),
 				refItem.first.sName.c_str(),
 				refItem.second,
 				CountFormat(refItem.second).c_str());
@@ -81,13 +82,13 @@ void PrintInfo(const T &info, const Language &lang, CSV_Tool &csv)
 	{
 		const auto &refItem = itItem.get();
 
-		csv.WriteOnce<true>(U8ANSI(lang.KeyTranslate(enKeyType, refItem.first.sName)));
-		csv.WriteOnce<true>(U16ANSI(refItem.first.sName.ToUTF16()));
+		csv.WriteOnce<true>(lang.KeyTranslate(enKeyType, refItem.first.sName));
+		csv.WriteOnce<true>(refItem.first.sName.ToCharTypeUTF8());
 
 		//判断是否存在cpd成员，有则输出
 		if constexpr (HasCpdTag<std::decay_t<decltype(refItem.first)>>)
 		{
-			csv.WriteOnce<true>(U16ANSI(MUTF8_Tool<char>::MU8ToU16(NBT_Helper::Serialize(refItem.first.cpdTag))));
+			csv.WriteOnce<true>(NBT_Helper::Serialize(refItem.first.cpdTag));
 		}
 
 		csv.WriteOnce<true>(std::format("{}个 = {}", refItem.second, CountFormat(refItem.second)));
@@ -106,7 +107,7 @@ void PrintInfo(const MapMSL<T> &info, const Language &lang)
 			continue;
 		}
 
-		printf("%s(%s):\n", U8ANSI(lang.KeyTranslate(enParentKeyType, itParent.first)).c_str(), itParent.first.c_str());
+		printf("%s(%s):\n", lang.KeyTranslate(enParentKeyType, itParent.first).c_str(), itParent.first.c_str());
 		PrintInfo<enKeyType>(itParent.second.listSort, lang);
 	}
 }
@@ -132,9 +133,9 @@ void PrintInfo(const MapMSL<T> &info, const Language &lang, CSV_Tool &csv)
 
 		csv.WriteEmpty(5);//从第五个空格开始写入
 		csv.WriteStart();//连续写入开始
-		csv.WriteContinue<true>(U8ANSI(lang.KeyTranslate(enParentKeyType, itParent.first)));
+		csv.WriteContinue<true>(lang.KeyTranslate(enParentKeyType, itParent.first));
 		csv.WriteContinue<false>("(");
-		csv.WriteContinue<true>(U16ANSI(itParent.first.ToUTF16()));
+		csv.WriteContinue<true>(itParent.first.ToCharTypeUTF8());
 		csv.WriteContinue<false>(")");
 		csv.WriteStop();//连续写入结束
 		csv.NewLine();//换行
@@ -295,7 +296,7 @@ bool Convert(const char *const pFileName)
 	//输出名称（一般是空字符串）
 	const auto &root = *nRoot.begin();
 #ifdef _DEBUG
-	printf("root:\"%s\"\n", U16ANSI(root.first.ToUTF16()).c_str());
+	printf("root:\"%s\"\n", root.first.ToCharTypeUTF8().c_str());
 #endif
 
 	timer.Start();
@@ -397,7 +398,7 @@ bool Convert(const char *const pFileName)
 	//处理所有区域
 	for (const auto &it : listRegionStats)
 	{
-		PrintLine(csv, "区域(Region)", '[' + U16ANSI(it.sRegionName.ToUTF16()) + ']');
+		PrintLine(csv, "区域(Region)", '[' + it.sRegionName.ToCharTypeUTF8() + ']');
 	
 		//PrintLine(csv);
 		//PrintLine(csv, "类型(Type)", "[block]");
@@ -445,6 +446,12 @@ bool Convert(const char *const pFileName)
 
 int main(int argc, char *argv[])
 {
+	if (setlocale(LC_ALL, "zh_CN.UTF-8") == NULL &&
+		setlocale(LC_ALL, "en_US.UTF-8") == NULL)
+	{
+		printf("Warning: setlocale failed. Text might not display correctly.\n\n");
+	}
+
 	if (argc < 1)
 	{
 		printf("At least one input file is required\n");

@@ -181,7 +181,6 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RegionProcess.cpp" />
-    <ClCompile Include="Windows_ANSI.hpp" />
     <ClCompile Include="xxhash\xxhash.c" />
     <ClCompile Include="xxhash\xxh_x86dispatch.c" />
     <ClCompile Include="zlib\adler32.c" />
