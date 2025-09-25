@@ -25,6 +25,138 @@ public:
 	using MU8_T = MU8T;
 	using U16_T = U16T;
 	using U8_T = U8T;
+
+private:
+	//来点魔法类，伪装成basic string，在插入的时候进行数据长度计数，忽略插入的数据，最后转换为size_t长度
+	//这样就能在最小修改的情况下用同一个函数套模板来获取转换后的长度（且100%准确），而不是重写一个例程
+	template<typename T>
+	class FakeStringCounter
+	{
+	private:
+		size_t szCounter = 0;
+	public:
+		constexpr FakeStringCounter(void) = default;
+		constexpr ~FakeStringCounter(void) = default;
+
+		constexpr void clear(void) noexcept
+		{
+			szCounter = 0;
+		}
+
+		constexpr FakeStringCounter &append(const T *const, size_t szSize) noexcept
+		{
+			szCounter += szSize;
+			return *this;
+		}
+
+		template<typename U>
+		constexpr FakeStringCounter &append_cvt(const U *const, size_t szSize) noexcept
+		{
+			szCounter += szSize;//静态求值与动态求值并无区别，不做特例
+			return *this;
+		}
+
+		constexpr void push_back(const T &) noexcept
+		{
+			szCounter += 1;
+		}
+
+		constexpr size_t GetData(void) const noexcept
+		{
+			return szCounter;
+		}
+	};
+
+	//魔法类2，伪装成string，转换到静态字符串作为std::array返回
+	template<typename T, size_t N>
+	class StaticString
+	{
+	public:
+		using ARRAY_TYPE = std::array<T, N>;
+	private:
+		ARRAY_TYPE arrData{};
+		size_t szIndex = 0;
+	public:
+		constexpr StaticString(void) = default;
+		constexpr ~StaticString(void) = default;
+
+		constexpr void clear(void) noexcept
+		{
+			szIndex = 0;
+		}
+
+		constexpr StaticString &append(const T *const pData, size_t szLength) noexcept
+		{
+			if (szIndex + szLength > arrData.size())
+			{
+				return *this;
+			}
+
+			//从pData的 0 ~ szLength 拷贝到arrData的 szIndex ~ szIndex + szLength
+			std::ranges::copy(&pData[0], &pData[szLength], &arrData[szIndex]);
+			szIndex += szLength;
+
+			return *this;
+		}
+
+		template<typename U>
+		constexpr StaticString &append_cvt(const U *const pData, size_t szLength) noexcept
+		{
+			if (std::is_constant_evaluated())
+			{
+				if (szIndex + szLength > arrData.size())
+				{
+					return *this;
+				}
+
+				//静态求值按顺序转换
+				std::ranges::transform(&pData[0], &pData[szLength], &arrData[szIndex],
+					[](const U &u) -> T
+					{
+						return (T)u;
+					});
+				szIndex += szLength;
+
+				return *this;
+			}
+			else//注意虽然理论上这个函数不会在任何情况被用于动态，但是为了明确操作，仍然这么写
+			{
+				return append((const T *const)pData, szLength);//非静态直接暴力转换指针
+			}
+		}
+
+		constexpr void push_back(const T &tData) noexcept
+		{
+			if (szIndex + 1 > arrData.size())
+			{
+				return;
+			}
+
+			arrData[szIndex] = tData;
+			szIndex += 1;
+		}
+
+		constexpr ARRAY_TYPE GetData(void) const noexcept
+		{
+			return arrData;
+		}
+	};
+
+	//魔法类3，给String添加静态转换接口，与原先一致，防止报错
+	template<typename String>
+	class DynamicString : public String//注意使用继承，这样可以直接隐式转换到基类
+	{
+	public:
+		using String::String;
+
+		template<typename U>
+		DynamicString &append_cvt(const U *const pData, size_t szLength)//理论上此函数永远动态调用
+		{
+			String::append((const typename String::value_type *const)pData, szLength);
+			return *this;
+		}
+	};
+
 private:
 	template<size_t szBytes>
 	static constexpr void EncodeMUTF8Bmp(const U16T u16Char, MU8T(&mu8CharArr)[szBytes])
@@ -216,7 +348,6 @@ private:
 #undef PUSH_FAIL_MU8CHAR
 	}
 
-
 	template<typename T = std::basic_string<U16T>>
 	static constexpr T MU8ToU16Impl(const MU8T *mu8String, size_t szStringLength)
 	{
@@ -398,11 +529,11 @@ private:
 	而是使用自定义的双三字节（6字节代理对）格式。
 	*/
 
-	template<typename T = std::basic_string<MU8T>>
+	template<typename T = DynamicString<std::basic_string<MU8T>>>
 	static constexpr T U8ToMU8Impl(const U8T *u8String, size_t szStringLength)
 	{
 #define PUSH_FAIL_MU8CHAR mu8String.append(mu8FailChar, sizeof(mu8FailChar) / sizeof(MU8T))
-#define INSERT_NORMAL(p) (mu8String.append((const MU8T*)((p) - szNormalLength), szNormalLength), szNormalLength = 0)
+#define INSERT_NORMAL(p) (mu8String.append_cvt((p) - szNormalLength, szNormalLength), szNormalLength = 0)
 		
 		//用于保存转换好的mu8String
 		T mu8String{};
@@ -480,11 +611,12 @@ private:
 #undef PUSH_FAIL_MU8CHAR
 	}
 
-	template<typename T = std::basic_string<U8T>>
+	template<typename T = DynamicString<std::basic_string<U8T>>>
 	static constexpr T MU8ToU8Impl(const MU8T *mu8String, size_t szStringLength)
 	{
 #define PUSH_FAIL_U8CHAR u8String.append(u8FailChar, sizeof(u8FailChar) / sizeof(U8T))
-#define INSERT_NORMAL(p) (u8String.append((const U8T*)((p) - szNormalLength), szNormalLength), szNormalLength = 0)
+#define INSERT_NORMAL(p) (u8String.append_cvt((p) - szNormalLength, szNormalLength), szNormalLength = 0)
+
 		//用于保存转换后的utf8
 		T u8String{};
 
@@ -626,106 +758,20 @@ private:
 #undef HAS_BITMASK
 #undef GET_NEXTCHAR
 
-private:
-	//来点魔法类，伪装成basic string，在插入的时候进行数据长度计数，忽略插入的数据，最后转换为size_t长度
-	//这样就能在最小修改的情况下用同一个函数套模板来获取转换后的长度（且100%准确），而不是重写一个例程
-	template<typename T>
-	class FakeStringCounter
-	{
-	private:
-		size_t szCounter = 0;
-	public:
-		constexpr FakeStringCounter(void) = default;
-		constexpr ~FakeStringCounter(void) = default;
-
-		constexpr void clear(void) noexcept
-		{
-			szCounter = 0;
-		}
-
-		constexpr FakeStringCounter &append(const T *const, size_t szSize) noexcept
-		{
-			szCounter += szSize;
-			return *this;
-		}
-
-		constexpr void push_back(const T &) noexcept
-		{
-			szCounter += 1;
-		}
-
-		constexpr size_t GetData(void) const noexcept
-		{
-			return szCounter;
-		}
-	};
-
-	//魔法类2，伪装成string，转换到静态字符串作为std::array返回
-	template<typename T, size_t N>
-	class StaticString
-	{
-	public:
-		using ARRAY_TYPE = std::array<T, N>;
-	private:
-		ARRAY_TYPE arrData{};
-		size_t szIndex = 0;
-	public:
-		constexpr StaticString(void) = default;
-		constexpr ~StaticString(void) = default;
-
-		constexpr void clear(void) noexcept
-		{
-			szIndex = 0;
-		}
-
-		constexpr StaticString &append(const T *const pData, size_t szSize) noexcept
-		{
-			if (szIndex + szSize > arrData.size())
-			{
-				return *this;
-			}
-
-			std::ranges::copy(pData, &pData[szSize], &arrData[szIndex]);
-			szIndex += szSize;
-
-			//for (size_t i = 0; i < szSize; ++i, ++szIndex)
-			//{
-			//	arrData[szIndex] = pData[i];
-			//}
-			return *this;
-		}
-
-		constexpr void push_back(const T &tData) noexcept
-		{
-			if (szIndex + 1 > arrData.size())
-			{
-				return;
-			}
-
-			arrData[szIndex] = tData;
-			szIndex += 1;
-		}
-
-		constexpr ARRAY_TYPE GetData(void) const noexcept
-		{
-			return arrData;
-		}
-	};
-
 public:
-	static constexpr size_t U16ToMU8Size(const std::basic_string_view<U16T> &u16String)
+	static constexpr size_t U16ToMU8Length(const std::basic_string_view<U16T> &u16String)
 	{
 		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String.data(), u16String.size()).GetData();
 	}
-	static constexpr size_t U16ToMU8Size(const U16T *u16String, size_t szStringLength)
+	static constexpr size_t U16ToMU8Length(const U16T *u16String, size_t szStringLength)
 	{
 		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringLength).GetData();
 	}
 	template<size_t N>
-	static consteval size_t U16ToMU8Size(const U16T(&u16String)[N])
+	static consteval size_t U16ToMU8Length(const U16T(&u16String)[N])
 	{
 		size_t szStringLength =
-			N > 0 && u16String[N - 1] == u'\0'
+			N > 0 && u16String[N - 1] == (U16T)0x00
 			? N - 1
 			: N;
 
@@ -740,15 +786,15 @@ public:
 	{
 		return U16ToMU8Impl<std::basic_string<MU8T>>(u16String, szStringLength);
 	}
-	template<size_t szNewSize, size_t N>//size_t szNewSize = U16ToMU8Size(u16String);
+	template<size_t szNewLength, size_t N>//size_t szNewLength = U16ToMU8Length(u16String);
 	static consteval auto U16ToMU8(const U16T(&u16String)[N])
 	{
 		size_t szStringLength = 
-			N > 0 && u16String[N - 1] == u'\0'
+			N > 0 && u16String[N - 1] == (U16T)0x00
 			? N - 1 
 			: N;
 	
-		return U16ToMU8Impl<StaticString<MU8T, szNewSize>>(u16String, szStringLength).GetData();
+		return U16ToMU8Impl<StaticString<MU8T, szNewLength>>(u16String, szStringLength).GetData();
 	}
 
 	//---------------------------------------------------------------------------------------------//
@@ -772,21 +818,22 @@ public:
 	}
 
 	//---------------------------------------------------------------------------------------------//
+
 	//---------------------------------------------------------------------------------------------//
 
-	static constexpr size_t U8ToMU8Size(const std::basic_string_view<U8T> &u8String)
+	static constexpr size_t U8ToMU8Length(const std::basic_string_view<U8T> &u8String)
 	{
 		return U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String.data(), u8String.size()).GetData();
 	}
-	static constexpr size_t U8ToMU8Size(const U8T *u8String, size_t szStringLength)
+	static constexpr size_t U8ToMU8Length(const U8T *u8String, size_t szStringLength)
 	{
 		return U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String, szStringLength).GetData();
 	}
 	template<size_t N>
-	static consteval size_t U8ToMU8Size(const U8T(&u8String)[N])
+	static consteval size_t U8ToMU8Length(const U8T(&u8String)[N])
 	{
 		size_t szStringLength =
-			N > 0 && u8String[N - 1] == u8'\0'
+			N > 0 && u8String[N - 1] == (U8T)0x00
 			? N - 1
 			: N;
 
@@ -795,56 +842,55 @@ public:
 
 	static std::basic_string<MU8T> U8ToMU8(const std::basic_string_view<U8T> &u8String)
 	{
-		return U8ToMU8Impl<std::basic_string<MU8T>>(u8String.data(), u8String.size());
+		return U8ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u8String.data(), u8String.size());
 	}
 	static std::basic_string<MU8T> U8ToMU8(const U8T *u8String, size_t szStringLength)
 	{
-		return U8ToMU8Impl<std::basic_string<MU8T>>(u8String, szStringLength);
+		return U8ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u8String, szStringLength);
 	}
-	template<size_t szNewSize, size_t N>//size_t szNewSize = U8ToMU8Size(u8String);
+	template<size_t szNewLength, size_t N>//size_t szNewLength = U8ToMU8Length(u8String);
 	static consteval auto U8ToMU8(const U8T(&u8String)[N])
 	{
 		size_t szStringLength =
-			N > 0 && u8String[N - 1] == u8'\0'
+			N > 0 && u8String[N - 1] == (U8T)0x00
 			? N - 1
 			: N;
 
-		return U8ToMU8Impl<StaticString<MU8T, szNewSize>>(u8String, szStringLength).GetData();
+		return U8ToMU8Impl<StaticString<MU8T, szNewLength>>(u8String, szStringLength).GetData();
 	}
 
 	//---------------------------------------------------------------------------------------------//
 
-	static constexpr size_t MU8ToU8Size(const std::basic_string_view<MU8T> &mu8String)
+	static constexpr size_t MU8ToU8Length(const std::basic_string_view<MU8T> &mu8String)
 	{
 		return MU8ToU8Impl<FakeStringCounter<U8T>>(mu8String.data(), mu8String.size()).GetData();
 	}
-	static constexpr size_t MU8ToU8Size(const MU8T *mu8String, size_t szStringLength)
+	static constexpr size_t MU8ToU8Length(const MU8T *mu8String, size_t szStringLength)
 	{
 		return MU8ToU8Impl<FakeStringCounter<U8T>>(mu8String, szStringLength).GetData();
 	}
 
 	static std::basic_string<U8T> MU8ToU8(const std::basic_string_view<MU8T> &mu8String)
 	{
-		return MU8ToU8Impl<std::basic_string<U8T>>(mu8String.data(), mu8String.size());
+		return MU8ToU8Impl<DynamicString<std::basic_string<U8T>>>(mu8String.data(), mu8String.size());
 	}
 	static std::basic_string<U8T> MU8ToU8(const MU8T *mu8String, size_t szStringLength)
 	{
-		return MU8ToU8Impl<std::basic_string<U8T>>(mu8String, szStringLength);
+		return MU8ToU8Impl<DynamicString<std::basic_string<U8T>>>(mu8String, szStringLength);
 	}
 };
 
+//辅助调用宏
 #define U16CV2MU8(u16String) MUTF8_Tool<>::U16ToMU8(u16String)
 #define MU8CV2U16(mu8String) MUTF8_Tool<>::MU8ToU16(mu8String)
 
 #define U8CV2MU8(u8String) MUTF8_Tool<>::U8ToMU8(u8String)
 #define MU8CV2U8(mu8String) MUTF8_Tool<>::MU8ToU8(mu8String)
 
-//纯英文情况下，转换后效果不变
-//#define MU8STR(charLiteralString) (charLiteralString)
-
 //转换为静态字符串数组
 //在mutf-8中，任何字符串结尾\0都会被映射成0xC0 0x80，且保证串中不包含0x00，所以一定程度上可以和c-str（以0结尾）兼容
-#define CHAR2MU8STR(charLiteralString) (MUTF8_Tool<>::U16ToMU8<MUTF8_Tool<>::U16ToMU8Size(u##charLiteralString)>(u##charLiteralString))
+#define U16TOMU8STR(u16LiteralString) (MUTF8_Tool<>::U16ToMU8<MUTF8_Tool<>::U16ToMU8Length(u16LiteralString)>(u16LiteralString))
+#define U8TOMU8STR(u8LiteralString) (MUTF8_Tool<>::U8ToMU8<MUTF8_Tool<>::U8ToMU8Length(u8LiteralString)>(u8LiteralString))
 
 //英文原文
 /*

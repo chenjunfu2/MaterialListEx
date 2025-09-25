@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "../MaterialListEx/MUTF8_Tool.hpp"
 #include "../MaterialListEx/Windows_ANSI.hpp"
+#include <clocale>
 
 std::basic_string<char16_t> generate_all_valid_utf16le()
 {
@@ -108,6 +109,62 @@ int main(void)
 	//printf("%d\n", tmp == tmp3);
 	//
 	//return 0;
+
+	setlocale(LC_ALL, "zh_CN.UTF-8");
+
+
+	auto printhex = [](auto data) -> void
+	{
+		uint8_t i = 0;
+		using ut = std::make_unsigned_t<std::remove_reference_t<decltype(data[0])>>;
+		for (auto it : data)
+		{
+			printf("0x%02X ", (ut)it);
+			if (++i == 8)
+			{
+				printf("\n");
+				i = 0;
+			}
+		}
+		printf("\n");
+	};
+
+	constexpr auto ret = U8TOMU8STR(u8"test😀😁😂🤣😃😄😅😆😗😘🥰😍😎😋😊😉😙😚☺🙂🤗🤩🤔🤨223$$在明确是常量表达式的上下文中，不需要检查是否在常量求值中，因为答案总是\"是\"");
+
+	constexpr auto ret2 = U16TOMU8STR(u"test😀😁😂🤣😃😄😅😆😗😘🥰😍😎😋😊😉😙😚☺🙂🤗🤩🤔🤨223$$在明确是常量表达式的上下文中，不需要检查是否在常量求值中，因为答案总是\"是\"");
+
+	std::basic_string_view<uint8_t> mu8_0(ret.data(), ret.size());
+	std::basic_string_view<uint8_t> mu8_1(ret2.data(), ret2.size());
+
+	bool tmp = mu8_0 == mu8_1;
+
+	std::basic_string_view testu8 = u8"test😀😁😂🤣😃😄😅😆😗😘🥰😍😎😋😊😉😙😚☺🙂🤗🤩🤔🤨223$$在明确是常量表达式的上下文中，不需要检查是否在常量求值中，因为答案总是\"是\"";
+	auto testmu8 = U8CV2MU8(testu8);
+	auto testu8_2 = MU8CV2U8(testmu8);
+
+	printhex(testmu8);
+	printhex(testu8_2);
+
+	auto u16_0 = MU8CV2U16(mu8_0);
+	auto u16_1 = MU8CV2U16(mu8_1);
+
+	auto mu8_2 = U16CV2MU8(u16_0);
+	auto mu8_3 = U16CV2MU8(u16_1);
+
+	auto u8_0 = MU8CV2U8(mu8_0);
+	auto u8_1 = MU8CV2U8(mu8_1);
+	auto u8_2 = MU8CV2U8(mu8_2);
+	auto u8_3 = MU8CV2U8(mu8_3);
+
+	bool b0 = u8_0 == u8_1;
+	bool b1 = u8_0 == u8_2;
+	bool b2 = u8_0 == u8_3;
+
+	printf("%d %d %d\n%s\n%s\n%s\n%s\n", b0, b1, b2, u8_0.c_str(), u8_1.c_str(), u8_2.c_str(), u8_3.c_str());
+
+	return -1145;
+	//U8TOMU8STR(u8"\xEF\xBF\xBF""\xED\xA0\x80\xED\xB0\x80""\xED\xA0\x80\xED\xB0\x81""\xED\xA0\x80\xED\xB0\x82");
+	//U16TOMU8STR(u"\xEF\xBF\xBF""\xED\xA0\x80\xED\xB0\x80""\xED\xA0\x80\xED\xB0\x81""\xED\xA0\x80\xED\xB0\x82");
 
 	auto TestPrint = [](auto l, auto r) ->void
 	{
