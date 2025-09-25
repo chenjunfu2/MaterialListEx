@@ -373,7 +373,7 @@ bool Convert(const char *const pFileName)
 		printf("Output file:[%s]", sCsvPath.c_str());
 	}
 #else
-	csv.OpenFile("opt.csv", CSV_Tool::Write);
+	csv.OpenFile("opt.csv", csv.Write);
 	printf("Output file:[opt.csv]");
 #endif // !_DEBUG
 	
@@ -381,18 +381,9 @@ bool Convert(const char *const pFileName)
 	{
 		printf("CSV file open fail\n");
 	}
-	//else
-	//{
-	//	csv.WriteOnce("名称(Name)");
-	//	csv.WriteOnce("键名(Key)");
-	//	csv.WriteOnce("标签(Tag)");
-	//	csv.WriteOnce("数量(Count)");
-	//	csv.WriteOnce("类型(Type)");
-	//	csv.WriteOnce("区域(Region)");
-	//	csv.WriteOnce("来源");
-	//	csv.NewLine();
-	//}
 
+	//写入UTF-8 BOM头
+	csv.WriteRaw({ "\xEF\xBB\xBF", 3 });
 
 	timer.Start();
 	//处理是否要合并选区（如果区域只有1个那无需合并，否则合并）
