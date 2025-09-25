@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "NBT_Node.hpp"
 #include "NBT_Helper.hpp"
@@ -10,21 +10,21 @@ struct ItemInfo
 {
 	NBT_Type::String sName{};
 	NBT_Type::Compound cpdTag{};
-	uint64_t u64Hash{ DataHash() };//³õÊ¼»¯Ë³ĞòÑÏ¸ñ°´ÕÕÉùÃ÷Ë³Ğò£¬´Ë´¦ÎŞÎÊÌâ
+	uint64_t u64Hash{ DataHash() };//åˆå§‹åŒ–é¡ºåºä¸¥æ ¼æŒ‰ç…§å£°æ˜é¡ºåºï¼Œæ­¤å¤„æ— é—®é¢˜
 
 public:
 	uint64_t DataHash(void)
 	{
 		constexpr static NBT_Hash::HASH_T HASH_SEED = 0xDE35'B92A'7F41'806C;
 
-		if (cpdTag.Empty())//tagÎª¿ÕÖ»¼ÆËãÃû³Æ
+		if (cpdTag.Empty())//tagä¸ºç©ºåªè®¡ç®—åç§°
 		{
 			return NBT_Hash::Hash(sName.data(), sName.size(), HASH_SEED);
 		}
-		else//²»Îª¿ÕÔò¼ÆËãtag
+		else//ä¸ä¸ºç©ºåˆ™è®¡ç®—tag
 		{
 			return NBT_Helper::Hash(cpdTag, HASH_SEED,
-				[this](NBT_Hash &nbtHash) -> void//ÔÚtagÖ®Ç°¼ÓÈëÃû³Æ
+				[this](NBT_Hash &nbtHash) -> void//åœ¨tagä¹‹å‰åŠ å…¥åç§°
 				{
 					nbtHash.Update(this->sName.data(), this->sName.size());
 				});
@@ -41,14 +41,14 @@ public:
 	{
 		return	_l.u64Hash	==	_r.u64Hash	&&
 				_l.sName	==	_r.sName	&&
-				_l.cpdTag	==	_r.cpdTag;//¿ªÏú×î´ó·Å×îºó
+				_l.cpdTag	==	_r.cpdTag;//å¼€é”€æœ€å¤§æ”¾æœ€å
 	}
 
 	static bool NoEqual(const ItemInfo &_l, const ItemInfo &_r) noexcept
 	{
 		return	_l.u64Hash	!=	_r.u64Hash	||
 				_l.sName	!=	_r.sName	||
-				_l.cpdTag	!=	_r.cpdTag;//¿ªÏú×î´ó·Å×îºó
+				_l.cpdTag	!=	_r.cpdTag;//å¼€é”€æœ€å¤§æ”¾æœ€å
 	}
 
 	bool operator==(const ItemInfo &_r) const noexcept
@@ -64,23 +64,23 @@ public:
 	template<bool bRawCompare = false>
 	std::partial_ordering operator<=>(const ItemInfo &_r) const noexcept
 	{
-		if constexpr (!bRawCompare)//Èç¹ûÊÇbRawCompareÄÇÃ´Ìø¹ı¹şÏ£±È½Ï
+		if constexpr (!bRawCompare)//å¦‚æœæ˜¯bRawCompareé‚£ä¹ˆè·³è¿‡å“ˆå¸Œæ¯”è¾ƒ
 		{
-			//ÏÈ°´ÕÕ¹şÏ£Ğò
+			//å…ˆæŒ‰ç…§å“ˆå¸Œåº
 			if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
 			{
 				return tmp;
 			}
 		}
 
-		//ºó°´ÕÕÃû³ÆĞò
+		//åæŒ‰ç…§åç§°åº
 		if (auto tmp = (sName <=> _r.sName); tmp != 0)
 		{
 			return tmp;
 		}
 
-		//¶¼ÏàÍ¬×îºó°´ÕÕTagĞò
-		return cpdTag <=> _r.cpdTag;//¿ªÏú×î´ó·Å×îºó
+		//éƒ½ç›¸åŒæœ€åæŒ‰ç…§Tagåº
+		return cpdTag <=> _r.cpdTag;//å¼€é”€æœ€å¤§æ”¾æœ€å
 	}
 };
 
@@ -126,26 +126,26 @@ public:
 	template<bool bRawCompare = false>
 	std::strong_ordering operator<=>(const NoTagItemInfo &_r) const noexcept
 	{
-		if constexpr (!bRawCompare)//Èç¹ûÊÇbRawCompareÄÇÃ´Ìø¹ı¹şÏ£±È½Ï
+		if constexpr (!bRawCompare)//å¦‚æœæ˜¯bRawCompareé‚£ä¹ˆè·³è¿‡å“ˆå¸Œæ¯”è¾ƒ
 		{
-			//ÏÈ°´ÕÕ¹şÏ£Ğò
+			//å…ˆæŒ‰ç…§å“ˆå¸Œåº
 			if (auto tmp = (u64Hash <=> _r.u64Hash); tmp != 0)
 			{
 				return tmp;
 			}
 		}
 
-		//ºó°´ÕÕÃû³ÆĞò
+		//åæŒ‰ç…§åç§°åº
 		return sName <=> _r.sName;
 	}
 };
 
 /*
-ÎïÆ·ĞèÒª½âÎöÒ©¼ı¡¢Ò©Ë®¡¢¸½Ä§¡¢ÃÕÖ®ìÀ²Ë¡¢ÑÌ»¨»ğ¼ıµÈ¼¶ÑùÊ½£¬ÆìÖÄÑùÊ½µÈÒÑÖª¿É¶ÁNBTĞÅÏ¢½øĞĞ¸ñÊ½»¯Êä³ö
-¾ö¶¨°Ñ·½¿éÊµÌå¶ÔÓÚÎïÆ·µÄ´¦ÀíÂß¼­ÒÆ¶¯µ½´Ë£¬ÕâÑùÊµÌåÄÚÎïÆ·´¦ÀíÒ²»á×ßÕâÀï
-Í»È»ÏëÆğÀ´Ò»¸öÖØ´óÎÊÌâ£¬Èç¹û´øÓĞÈİÆ÷ĞÅÏ¢µÄÎïÆ·¶ÑµşÁË£¬Count²»Îª1£¬ÔòÀïÃæËùº¬ÓĞµÄËùÓĞ¶«Î÷µÄÊıÁ¿¶¼µÃ³ËÒÔËüµÄ¶Ñµş±¶ÂÊ£¡
+ç‰©å“éœ€è¦è§£æè¯ç®­ã€è¯æ°´ã€é™„é­”ã€è°œä¹‹ç‚–èœã€çƒŸèŠ±ç«ç®­ç­‰çº§æ ·å¼ï¼Œæ——å¸œæ ·å¼ç­‰å·²çŸ¥å¯è¯»NBTä¿¡æ¯è¿›è¡Œæ ¼å¼åŒ–è¾“å‡º
+å†³å®šæŠŠæ–¹å—å®ä½“å¯¹äºç‰©å“çš„å¤„ç†é€»è¾‘ç§»åŠ¨åˆ°æ­¤ï¼Œè¿™æ ·å®ä½“å†…ç‰©å“å¤„ç†ä¹Ÿä¼šèµ°è¿™é‡Œ
+çªç„¶æƒ³èµ·æ¥ä¸€ä¸ªé‡å¤§é—®é¢˜ï¼Œå¦‚æœå¸¦æœ‰å®¹å™¨ä¿¡æ¯çš„ç‰©å“å †å äº†ï¼ŒCountä¸ä¸º1ï¼Œåˆ™é‡Œé¢æ‰€å«æœ‰çš„æ‰€æœ‰ä¸œè¥¿çš„æ•°é‡éƒ½å¾—ä¹˜ä»¥å®ƒçš„å †å å€ç‡ï¼
 
-Ö»¶Ô²¿·Ö´øÓĞÈİÆ÷ÊµÌåĞÅÏ¢µÄÊµÌåµİ¹é½â°ü£ºÇ±Ó°ºĞ£¬ÊÕÄÉ´ü
+åªå¯¹éƒ¨åˆ†å¸¦æœ‰å®¹å™¨å®ä½“ä¿¡æ¯çš„å®ä½“é€’å½’è§£åŒ…ï¼šæ½œå½±ç›’ï¼Œæ”¶çº³è¢‹
 
 */
 class ItemProcess
@@ -156,30 +156,30 @@ public:
 
 	struct ItemStack
 	{
-		NBT_Type::String sItemName{};//ÎïÆ·Ãû
-		NBT_Type::Compound cpdItemTag{};//ÎïÆ·±êÇ©
-		uint64_t u64ItemCount = 0;//ÎïÆ·¼ÆÊıÆ÷
+		NBT_Type::String sItemName{};//ç‰©å“å
+		NBT_Type::Compound cpdItemTag{};//ç‰©å“æ ‡ç­¾
+		uint64_t u64ItemCount = 0;//ç‰©å“è®¡æ•°å™¨
 	};
 
 	using ItemStackList = std::vector<ItemStack>;
 
 	struct NoTagItem
 	{
-		NBT_Type::String sItemName{};//ÎïÆ·Ãû
-		uint64_t u64Counter = 0;//ÎïÆ·¼ÆÊıÆ÷
+		NBT_Type::String sItemName{};//ç‰©å“å
+		uint64_t u64Counter = 0;//ç‰©å“è®¡æ•°å™¨
 	};
 
 	using NoTagItemList = std::vector<NoTagItem>;
 
 public:
 	/*
-	ÓĞÒ»¸öÖØ´óÎÊÌâ£¬Èç¹ûÕâ¸öÊµÌå¶ÑµşÁË£¬count²»Îª1£¬²¢ÇÒÕâ¸öÊµÌåÊÇÈİÆ÷£¬ÔòÀïÃæËùº¬ÓĞµÄËùÓĞ¶«Î÷¶¼µÃ³ËÒÔËüµÄ¶Ñµş±¶ÂÊ£¡
+	æœ‰ä¸€ä¸ªé‡å¤§é—®é¢˜ï¼Œå¦‚æœè¿™ä¸ªå®ä½“å †å äº†ï¼Œcountä¸ä¸º1ï¼Œå¹¶ä¸”è¿™ä¸ªå®ä½“æ˜¯å®¹å™¨ï¼Œåˆ™é‡Œé¢æ‰€å«æœ‰çš„æ‰€æœ‰ä¸œè¥¿éƒ½å¾—ä¹˜ä»¥å®ƒçš„å †å å€ç‡ï¼
 	*/
-	//ÒªÇóÓÃ»§·ÅÆúÔ­Ê¼listItemStackµÄËùÓĞÈ¨
+	//è¦æ±‚ç”¨æˆ·æ”¾å¼ƒåŸå§‹listItemStackçš„æ‰€æœ‰æƒ
 	static ItemStackList ItemStackListUnpackContainer(ItemStackList &&listItemStack, size_t szStackDepth = 64)
 	{
 		ItemStackList ret;
-		ret.reserve(listItemStack.size());//ÌáÇ°À©Èİ£¨µ«ÊÇ½â°üµÄÇé¿öÏÂ¿ÉÄÜ»¹»áÌí¼ÓĞÂµÄ¶«Î÷£©
+		ret.reserve(listItemStack.size());//æå‰æ‰©å®¹ï¼ˆä½†æ˜¯è§£åŒ…çš„æƒ…å†µä¸‹å¯èƒ½è¿˜ä¼šæ·»åŠ æ–°çš„ä¸œè¥¿ï¼‰
 		for (auto &it : listItemStack)
 		{
 			ItemStackUnpackContainer(std::move(it), ret, szStackDepth);
@@ -209,60 +209,60 @@ public:
 		{
 			sName == NULL ? NBT_Type::String{} : std::move(*sName),
 			cpdTag == NULL ? NBT_Type::Compound{} : std::move(*cpdTag),
-			byteCount == NULL ? uint64_t{} : (uint64_t)(uint8_t)*byteCount//ÄÚÖÃÀàĞÍÖ±½Ó¿½±´£¬ÒÆ¶¯¸öP
+			byteCount == NULL ? uint64_t{} : (uint64_t)(uint8_t)*byteCount//å†…ç½®ç±»å‹ç›´æ¥æ‹·è´ï¼Œç§»åŠ¨ä¸ªP
 		};
 	}
 
-	//TODO:´Ó·½¿éÊµÌåÄÇ±ß°ÑÂß¼­ÄÃÀ´£¬È»ºóĞŞ¸ÄÇøÓò´¦Àí£¬Ê¹µÃitem´¦ÀíÔÚÃ¿¸öµ¥¶ÀµÄ×ª»»ºóµ÷ÓÃÒ»´Î£¨·½¿é¿ÉÌø¹ı£¬²»´æÔÚtag£©
+	//TODO:ä»æ–¹å—å®ä½“é‚£è¾¹æŠŠé€»è¾‘æ‹¿æ¥ï¼Œç„¶åä¿®æ”¹åŒºåŸŸå¤„ç†ï¼Œä½¿å¾—itemå¤„ç†åœ¨æ¯ä¸ªå•ç‹¬çš„è½¬æ¢åè°ƒç”¨ä¸€æ¬¡ï¼ˆæ–¹å—å¯è·³è¿‡ï¼Œä¸å­˜åœ¨tagï¼‰
 private:
 	/*
-		Ö»½â°üÒÑÖª·½¿é£¨¸÷ÖÖÇ±Ó°ºĞ+ÊÕÄÉ´ü£©³ı´ËÖ®ÍâÈ«²¿ÅÅ³ı
-		ÎªÊ²Ã´²»½â°ü´ønbtµÄ·½¿éÊµÌå£¿ÒòÎªÕâ¶«Î÷Ö»ÄÜÍ¨¹ıÖ¸ÁîºÍ´´Ôì»ñµÃ£¬Ã»°ì·¨¸ú
-		Õı³£ÈİÆ÷Ò»Ñù·Å½øÈ¥£¬²¢ÇÒºÜ¶à·½¿éÊµÌå´æ´¢µÄÊ±ºò²»´ø·½¿éÊµÌåid£¬µÃ¸ù¾İÃû×Ö×ª»»
-		·Ç³£Âé·³£¬²¢ÇÒÈç¹ûÎÒÕâÃ´×öÁË£¬ÄÇÃ´´ønbtÈİÆ÷µÄÊµÌå£¨±ÈÈçÂ©¶·¿ó³µÕâÖÖ£©
-		ÎªÁËÓë·½¿éÊµÌåÒ»ÑùÒ²ĞèÒª½â£¬ÉõÖÁË¢¹Öµ°ÊÇÈİÆ÷ÊµÌåµÄÇé¿öÏÂÒ²¿ÉÒÔº¬ÎïÆ·£¬ÄÇÊÇ²»ÊÇÒ²Òª½â£¿
-		Ô½À´Ô½¸´ÔÓÁË£¬¶øÕâÖÖ¶«Î÷ÉõÖÁÖ»ÄÜÍ¨¹ıÖ¸Áî»ñµÃ£¬ÍêÈ«Ã»±ØÒª´¦Àí£¬Ö±½Ó±£ÁôÔ­¸ñÊ½´ønbtÊä³ö¼´¿É
+		åªè§£åŒ…å·²çŸ¥æ–¹å—ï¼ˆå„ç§æ½œå½±ç›’+æ”¶çº³è¢‹ï¼‰é™¤æ­¤ä¹‹å¤–å…¨éƒ¨æ’é™¤
+		ä¸ºä»€ä¹ˆä¸è§£åŒ…å¸¦nbtçš„æ–¹å—å®ä½“ï¼Ÿå› ä¸ºè¿™ä¸œè¥¿åªèƒ½é€šè¿‡æŒ‡ä»¤å’Œåˆ›é€ è·å¾—ï¼Œæ²¡åŠæ³•è·Ÿ
+		æ­£å¸¸å®¹å™¨ä¸€æ ·æ”¾è¿›å»ï¼Œå¹¶ä¸”å¾ˆå¤šæ–¹å—å®ä½“å­˜å‚¨çš„æ—¶å€™ä¸å¸¦æ–¹å—å®ä½“idï¼Œå¾—æ ¹æ®åå­—è½¬æ¢
+		éå¸¸éº»çƒ¦ï¼Œå¹¶ä¸”å¦‚æœæˆ‘è¿™ä¹ˆåšäº†ï¼Œé‚£ä¹ˆå¸¦nbtå®¹å™¨çš„å®ä½“ï¼ˆæ¯”å¦‚æ¼æ–—çŸ¿è½¦è¿™ç§ï¼‰
+		ä¸ºäº†ä¸æ–¹å—å®ä½“ä¸€æ ·ä¹Ÿéœ€è¦è§£ï¼Œç”šè‡³åˆ·æ€ªè›‹æ˜¯å®¹å™¨å®ä½“çš„æƒ…å†µä¸‹ä¹Ÿå¯ä»¥å«ç‰©å“ï¼Œé‚£æ˜¯ä¸æ˜¯ä¹Ÿè¦è§£ï¼Ÿ
+		è¶Šæ¥è¶Šå¤æ‚äº†ï¼Œè€Œè¿™ç§ä¸œè¥¿ç”šè‡³åªèƒ½é€šè¿‡æŒ‡ä»¤è·å¾—ï¼Œå®Œå…¨æ²¡å¿…è¦å¤„ç†ï¼Œç›´æ¥ä¿ç•™åŸæ ¼å¼å¸¦nbtè¾“å‡ºå³å¯
 	*/
 
 	static void ItemStackUnpackContainer(ItemStack &&stItemStack, ItemStackList &listItemStack, size_t szStackDepth)
 	{
 		if (szStackDepth <= 0)
 		{
-			return;//Õ»Éî¶È³¬ÁË£¬Ö±½Ó·µ»Ø
+			return;//æ ˆæ·±åº¦è¶…äº†ï¼Œç›´æ¥è¿”å›
 		}
 
-		if (stItemStack.cpdItemTag.Empty())//¸ù±¾Ã»ÓĞtag£¬ÏÂÃæ²»ÓÃÅĞ¶ÏÁË
+		if (stItemStack.cpdItemTag.Empty())//æ ¹æœ¬æ²¡æœ‰tagï¼Œä¸‹é¢ä¸ç”¨åˆ¤æ–­äº†
 		{
 			goto push_return;
 		}
 
-		//ÓĞtagµÄÇé¿öÏÂ¿´¿´ÊÇ²»ÊÇĞèÒª½â°üµÄÈİÆ÷£¬ÊÇ¾Íµİ¹é½â£¬·ñÔò·µ»Ø
-		//ÒòÎªÇ±Ó°ºĞÓĞn¶àÖÖÑÕÉ«£¬¶¼ÊÇÇ°×ºĞÎÊ½£¬ËùÒÔÅĞ¶Ïºó×ºÈ·¶¨ÊÇ²»ÊÇÇ±Ó°ºĞ
-		//ÎªÊ²Ã´²»ÅĞ¶Ï·½¿éÊµÌåid£¬²»»áÓĞÕâÃ´¶à±äÖÖ£¿ÄãÎÊÎÒÎÒÎÊË­£¬Âé½«³éÏóµÄºÜ£¬ÓĞµÄ·½¿éÊµÌå¸ù±¾²»¸øÄã´øid
+		//æœ‰tagçš„æƒ…å†µä¸‹çœ‹çœ‹æ˜¯ä¸æ˜¯éœ€è¦è§£åŒ…çš„å®¹å™¨ï¼Œæ˜¯å°±é€’å½’è§£ï¼Œå¦åˆ™è¿”å›
+		//å› ä¸ºæ½œå½±ç›’æœ‰nå¤šç§é¢œè‰²ï¼Œéƒ½æ˜¯å‰ç¼€å½¢å¼ï¼Œæ‰€ä»¥åˆ¤æ–­åç¼€ç¡®å®šæ˜¯ä¸æ˜¯æ½œå½±ç›’
+		//ä¸ºä»€ä¹ˆä¸åˆ¤æ–­æ–¹å—å®ä½“idï¼Œä¸ä¼šæœ‰è¿™ä¹ˆå¤šå˜ç§ï¼Ÿä½ é—®æˆ‘æˆ‘é—®è°ï¼Œéº»å°†æŠ½è±¡çš„å¾ˆï¼Œæœ‰çš„æ–¹å—å®ä½“æ ¹æœ¬ä¸ç»™ä½ å¸¦id
 		if (stItemStack.sItemName.ends_with(MU8STR("shulker_box")))
 		{
-			//²éÕÒtagÄÚÓĞÃ»ÓĞBlockEntityTag£¬Ã»ÓĞÔò²åÈë·µ»Ø
+			//æŸ¥æ‰¾tagå†…æœ‰æ²¡æœ‰BlockEntityTagï¼Œæ²¡æœ‰åˆ™æ’å…¥è¿”å›
 			auto pcpdBlockEntityTag = stItemStack.cpdItemTag.HasCompound(MU8STR("BlockEntityTag"));
 			if (pcpdBlockEntityTag == NULL)
 			{
 				goto push_return;
 			}
 
-			//ÏÖÔÚÕÒÄÚ²¿µÄItems£¨Ç±Ó°ºĞÄÚ²¿Ö»ÄÜÊÇÕâ¸ö£¬²»ÓÃÏëÁË£©
-			auto pcpdItems = pcpdBlockEntityTag->Search(MU8STR("Items"));//ÕâÀï²»ÓÃHasXXX¶øÊÇSearchÊÇÎªÁË²»½â°ü³öÀàĞÍ£¬¼æÈİTraversalItems²ÎÊı
-			TraversalItems(pcpdItems, listItemStack, stItemStack.u64ItemCount, szStackDepth);//»ñÈ¡µ±Ç°ÈİÆ÷µÄÎïÆ·¸öÊı×÷ÎªÈİÆ÷ÄÚËùÓĞÎïÆ·µÄ±¶ÂÊ
+			//ç°åœ¨æ‰¾å†…éƒ¨çš„Itemsï¼ˆæ½œå½±ç›’å†…éƒ¨åªèƒ½æ˜¯è¿™ä¸ªï¼Œä¸ç”¨æƒ³äº†ï¼‰
+			auto pcpdItems = pcpdBlockEntityTag->Search(MU8STR("Items"));//è¿™é‡Œä¸ç”¨HasXXXè€Œæ˜¯Searchæ˜¯ä¸ºäº†ä¸è§£åŒ…å‡ºç±»å‹ï¼Œå…¼å®¹TraversalItemså‚æ•°
+			TraversalItems(pcpdItems, listItemStack, stItemStack.u64ItemCount, szStackDepth);//è·å–å½“å‰å®¹å™¨çš„ç‰©å“ä¸ªæ•°ä½œä¸ºå®¹å™¨å†…æ‰€æœ‰ç‰©å“çš„å€ç‡
 		}
-		else if (stItemStack.sItemName == MU8STR("minecraft:bundle"))//ÊÕÄÉ´üÌØÊâ´¦Àí
+		else if (stItemStack.sItemName == MU8STR("minecraft:bundle"))//æ”¶çº³è¢‹ç‰¹æ®Šå¤„ç†
 		{
-			//Ö±½ÓÕÒµ½Items
-			auto plistItems = stItemStack.cpdItemTag.Search(MU8STR("Items"));//ÕâÀï²»ÓÃHasXXX¶øÊÇSearchÊÇÎªÁË²»½â°ü³öÀàĞÍ£¬¼æÈİTraversalItems²ÎÊı
+			//ç›´æ¥æ‰¾åˆ°Items
+			auto plistItems = stItemStack.cpdItemTag.Search(MU8STR("Items"));//è¿™é‡Œä¸ç”¨HasXXXè€Œæ˜¯Searchæ˜¯ä¸ºäº†ä¸è§£åŒ…å‡ºç±»å‹ï¼Œå…¼å®¹TraversalItemså‚æ•°
 			TraversalItems(plistItems, listItemStack, stItemStack.u64ItemCount, szStackDepth);
 		}
-		//else {} //ÉÏÃæ¼¸¸ö¶¼²»ÊÇ£¬ÎŞĞè½â°ü£¬Ö±½Ó²åÈë¾ÍĞĞ
+		//else {} //ä¸Šé¢å‡ ä¸ªéƒ½ä¸æ˜¯ï¼Œæ— éœ€è§£åŒ…ï¼Œç›´æ¥æ’å…¥å°±è¡Œ
 
 		
 	push_return:
-		//²»ÂÛÈçºÎ¶¼Òª½øĞĞ²åÈë£¬Èç¹ûÇ°Ãæ½øĞĞÁË½â°üÄÇÃ´²åÈëµÄÎïÆ·µÄnbt»á±ä¶Ì£¬·ñÔòÖ±½Ó²åÈë
+		//ä¸è®ºå¦‚ä½•éƒ½è¦è¿›è¡Œæ’å…¥ï¼Œå¦‚æœå‰é¢è¿›è¡Œäº†è§£åŒ…é‚£ä¹ˆæ’å…¥çš„ç‰©å“çš„nbtä¼šå˜çŸ­ï¼Œå¦åˆ™ç›´æ¥æ’å…¥
 		listItemStack.push_back(std::move(stItemStack));
 		return;
 	}
@@ -271,36 +271,36 @@ private:
 	{
 		if (pItems == NULL)
 		{
-			return;//Îª¿ÕÖ±½Ó·µ»Ø
+			return;//ä¸ºç©ºç›´æ¥è¿”å›
 		}
 
-		//ÅĞ¶ÏÀàĞÍ
+		//åˆ¤æ–­ç±»å‹
 		auto tag = pItems->GetTag();
 		if (tag == NBT_TAG::Compound)
 		{
 			auto &tmp = pItems->GetCompound();
 			ItemStack tmpItem = ItemCompoundToItemStack(std::move(tmp));
-			pItems->GetCompound().Clear();//Çå¿Õ£¨ÄÚ²¿Êı¾İÒÑ¾­×ªÒÆËùÓĞÈ¨£¬²»Ó¦¸ÃÔÙÊ¹ÓÃ£©
+			pItems->GetCompound().Clear();//æ¸…ç©ºï¼ˆå†…éƒ¨æ•°æ®å·²ç»è½¬ç§»æ‰€æœ‰æƒï¼Œä¸åº”è¯¥å†ä½¿ç”¨ï¼‰
 
-			//¶ÔÄÚ²¿µÄÎïÆ·³ËÒÔ±¶ÂÊËõ·Å
+			//å¯¹å†…éƒ¨çš„ç‰©å“ä¹˜ä»¥å€ç‡ç¼©æ”¾
 			tmpItem.u64ItemCount *= u64Scale;
-			ItemStackUnpackContainer(std::move(tmpItem), listItemStack, szStackDepth - 1);//µİ¹é - 1
+			ItemStackUnpackContainer(std::move(tmpItem), listItemStack, szStackDepth - 1);//é€’å½’ - 1
 		}
 		else if (tag == NBT_TAG::List)
 		{
 			auto &tmp = pItems->GetList();
-			for (auto &it : tmp)//±éÀúlist
+			for (auto &it : tmp)//éå†list
 			{
 				ItemStack tmpItem = ItemCompoundToItemStack(std::move(it.GetCompound()));
-				//ÕâÀïÏÈ²»ÇåÀí
-				//¶ÔÄÚ²¿µÄÎïÆ·³ËÒÔ±¶ÂÊËõ·Å
+				//è¿™é‡Œå…ˆä¸æ¸…ç†
+				//å¯¹å†…éƒ¨çš„ç‰©å“ä¹˜ä»¥å€ç‡ç¼©æ”¾
 				tmpItem.u64ItemCount *= u64Scale;
-				ItemStackUnpackContainer(std::move(tmpItem), listItemStack, szStackDepth - 1);//µİ¹é - 1
+				ItemStackUnpackContainer(std::move(tmpItem), listItemStack, szStackDepth - 1);//é€’å½’ - 1
 			}
-			//×îºóÍ³Ò»Çå¿Õ
-			tmp.Clear();//Çå¿Õ£¨ÄÚ²¿Êı¾İÒÑ¾­×ªÒÆËùÓĞÈ¨£¬²»Ó¦¸ÃÔÙÊ¹ÓÃ£©
+			//æœ€åç»Ÿä¸€æ¸…ç©º
+			tmp.Clear();//æ¸…ç©ºï¼ˆå†…éƒ¨æ•°æ®å·²ç»è½¬ç§»æ‰€æœ‰æƒï¼Œä¸åº”è¯¥å†ä½¿ç”¨ï¼‰
 		}
-		//else {}//ºöÂÔ
+		//else {}//å¿½ç•¥
 
 		return;
 	}

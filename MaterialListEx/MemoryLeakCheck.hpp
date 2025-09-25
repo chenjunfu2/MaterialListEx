@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #ifdef _DEBUG
 #define new new( _NORMAL_BLOCK , __FILE__ , __LINE__ )
@@ -17,7 +17,7 @@ public:
 	}
 	~_SetCheckStatus(void)
 	{
-		//_CrtDumpMemoryLeaks();³ÌÐò½áÎ²µ÷ÓÃ£¬ÓÐ_CRTDBG_LEAK_CHECK_DF±êÖ¾»á×Ô¶¯µ÷ÓÃ¿ÉÒÔÊ¡ÂÔ£¬ÒòÎªÐèÒªÔÚËùÓÐÎö¹¹º¯Êýºó½øÐÐ¼ì²é
+		//_CrtDumpMemoryLeaks();ç¨‹åºç»“å°¾è°ƒç”¨ï¼Œæœ‰_CRTDBG_LEAK_CHECK_DFæ ‡å¿—ä¼šè‡ªåŠ¨è°ƒç”¨å¯ä»¥çœç•¥ï¼Œå› ä¸ºéœ€è¦åœ¨æ‰€æœ‰æžæž„å‡½æ•°åŽè¿›è¡Œæ£€æŸ¥
 	}
 }g_SetCheckStatus{};
 #endif

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <stdint.h>
 #include <variant>
@@ -27,21 +27,21 @@ public:
 	using Float_Raw = uint32_t;
 	using Double_Raw = uint64_t;
 
-	using End			= std::monostate;//ÎŞ×´Ì¬
+	using End			= std::monostate;//æ— çŠ¶æ€
 	using Byte			= int8_t;
 	using Short			= int16_t;
 	using Int			= int32_t;
 	using Long			= int64_t;
-	using Float			= std::conditional_t<(sizeof(float) == sizeof(Float_Raw)), float, Float_Raw>;//Í¨¹ı±àÒëÆÚÈ·ÈÏÀàĞÍ´óĞ¡À´Ñ¡ÔñÕıÈ·µÄÀàĞÍ£¬ÓÅÏÈ¸¡µãÀàĞÍ£¬Èç¹ûÊ§°ÜÔòÌæ»»Îª¶ÔÓ¦µÄ¿ÉÓÃÀàĞÍ
+	using Float			= std::conditional_t<(sizeof(float) == sizeof(Float_Raw)), float, Float_Raw>;//é€šè¿‡ç¼–è¯‘æœŸç¡®è®¤ç±»å‹å¤§å°æ¥é€‰æ‹©æ­£ç¡®çš„ç±»å‹ï¼Œä¼˜å…ˆæµ®ç‚¹ç±»å‹ï¼Œå¦‚æœå¤±è´¥åˆ™æ›¿æ¢ä¸ºå¯¹åº”çš„å¯ç”¨ç±»å‹
 	using Double		= std::conditional_t<(sizeof(double) == sizeof(Double_Raw)), double, Double_Raw>;
 	using ByteArray		= MyArray<std::vector<Byte>>;
 	using IntArray		= MyArray<std::vector<Int>>;
 	using LongArray		= MyArray<std::vector<Long>>;
 	using String		= MyString<std::basic_string<uint8_t>, std::basic_string_view<uint8_t>>;//Java MUTF-8 String
-	using List			= MyList<std::vector<NBT_Node>>;//´æ´¢Ò»ÏµÁĞÍ¬ÀàĞÍ±êÇ©µÄÓĞĞ§¸ºÔØ£¨ÎŞ±êÇ© ID »òÃû³Æ£©//Ô­ÏÈÎªlist£¬ÒòÎªmcÄÚlistÒ²Í¨¹ıÏÂ±ê·ÃÎÊ£¬¸ÄÎªvectorÄ£Äâ
-	using Compound		= MyCompound<std::unordered_map<String, NBT_Node>>;//¹ÒÔÚĞòÁĞÏÂµÄÄÚÈİ¶¼Í¨¹ımap°ó¶¨Ãû³Æ
+	using List			= MyList<std::vector<NBT_Node>>;//å­˜å‚¨ä¸€ç³»åˆ—åŒç±»å‹æ ‡ç­¾çš„æœ‰æ•ˆè´Ÿè½½ï¼ˆæ— æ ‡ç­¾ ID æˆ–åç§°ï¼‰//åŸå…ˆä¸ºlistï¼Œå› ä¸ºmcå†…listä¹Ÿé€šè¿‡ä¸‹æ ‡è®¿é—®ï¼Œæ”¹ä¸ºvectoræ¨¡æ‹Ÿ
+	using Compound		= MyCompound<std::unordered_map<String, NBT_Node>>;//æŒ‚åœ¨åºåˆ—ä¸‹çš„å†…å®¹éƒ½é€šè¿‡mapç»‘å®šåç§°
 
-	//ÀàĞÍÁĞ±í
+	//ç±»å‹åˆ—è¡¨
 	template<typename... Ts> struct _TypeList{};
 	using TypeList = _TypeList
 	<
@@ -78,7 +78,7 @@ private:
 		"Compound",
 	};
 public:
-	constexpr static inline const char *GetTypeName(NBT_TAG tag) noexcept//ÔËĞĞÊ±ÀàĞÍÅĞ¶Ï£¬ÔÊĞí¾²Ì¬
+	constexpr static inline const char *GetTypeName(NBT_TAG tag) noexcept//è¿è¡Œæ—¶ç±»å‹åˆ¤æ–­ï¼Œå…è®¸é™æ€
 	{
 		if (tag >= NBT_TAG::ENUM_END)
 		{
@@ -89,7 +89,7 @@ public:
 		return cstrTypeName[tagRaw];
 	}
 
-	//²¿·Ö½á¹¹µÄLengthÀàĞÍ
+	//éƒ¨åˆ†ç»“æ„çš„Lengthç±»å‹
 	using ArrayLength = int32_t;
 	using StringLength = uint16_t;
 	using ListLength = int32_t;
@@ -103,7 +103,7 @@ public:
 	constexpr static inline ListLength ListLength_Max = INT32_MAX;
 	constexpr static inline ListLength ListLength_Min = INT32_MIN;
 
-	//ÄÚÖÃÕûÊıÀàĞÍÉÏÏÂÏŞ
+	//å†…ç½®æ•´æ•°ç±»å‹ä¸Šä¸‹é™
 	constexpr static inline Byte Byte_Max = INT8_MAX;
 	constexpr static inline Byte Byte_Min = INT8_MIN;
 
@@ -116,7 +116,7 @@ public:
 	constexpr static inline Long Long_Max = INT64_MAX;
 	constexpr static inline Long Long_Min = INT64_MIN;
 
-	//ÀàĞÍ´æÔÚ¼ì²é
+	//ç±»å‹å­˜åœ¨æ£€æŸ¥
 	template <typename T, typename List>
 	struct IsValidType;
 
@@ -127,9 +127,9 @@ public:
 	template <typename T>
 	static constexpr bool IsValidType_V = IsValidType<T, TypeList>::value;
 
-	//ÀàĞÍË÷Òı²éÑ¯
+	//ç±»å‹ç´¢å¼•æŸ¥è¯¢
 	template <typename T, typename... Ts>
-	static consteval NBT_TAG_RAW_TYPE TypeTagHelper()//consteval±ØĞë±àÒëÆÚÇóÖµ
+	static consteval NBT_TAG_RAW_TYPE TypeTagHelper()//constevalå¿…é¡»ç¼–è¯‘æœŸæ±‚å€¼
 	{
 		NBT_TAG_RAW_TYPE tagIndex = 0;
 		bool bFound = ((std::is_same_v<T, Ts> ? true : (++tagIndex, false)) || ...);
@@ -148,7 +148,7 @@ public:
 	template <typename T>
 	static constexpr NBT_TAG TypeTag_V = (NBT_TAG)TypeTagImpl<T, TypeList>::value;
 
-	//ÀàĞÍÁĞ±í´óĞ¡
+	//ç±»å‹åˆ—è¡¨å¤§å°
 	template <typename List>
 	struct TypeListSize;
 
@@ -160,11 +160,11 @@ public:
 
 	static constexpr size_t TypeListSize_V = TypeListSize<TypeList>::value;
 
-	//enumÓëË÷Òı´óĞ¡¼ì²é
+	//enumä¸ç´¢å¼•å¤§å°æ£€æŸ¥
 	static_assert(TypeListSize_V == NBT_TAG::ENUM_END, "Enumeration does not match the number of types in the mutator");
 
 
-	//´ÓNBT_TAGµ½ÀàĞÍµÄÓ³Éä
+	//ä»NBT_TAGåˆ°ç±»å‹çš„æ˜ å°„
 	template <NBT_TAG Tag>
 	struct TagToType;
 
@@ -186,23 +186,23 @@ public:
 	template <NBT_TAG Tag>
 	using TagToType_T = typename TagToType<Tag>::type;
 
-	//Ó³Éä¸¡µãÊıµ½·½±ã¶ÁĞ´µÄrawÀàĞÍ
+	//æ˜ å°„æµ®ç‚¹æ•°åˆ°æ–¹ä¾¿è¯»å†™çš„rawç±»å‹
 	template<typename T>
 	struct BuiltinRawType
 	{
 		using Type = T;
-		static_assert(IsValidType_V<T> && std::is_integral_v<T>, "Not a legal type!");//Å×³ö±àÒë´íÎó
+		static_assert(IsValidType_V<T> && std::is_integral_v<T>, "Not a legal type!");//æŠ›å‡ºç¼–è¯‘é”™è¯¯
 	};
 
 	template<>
-	struct BuiltinRawType<Float>//¸¡µãÊıÓ³Éä
+	struct BuiltinRawType<Float>//æµ®ç‚¹æ•°æ˜ å°„
 	{
 		using Type = Float_Raw;
 		static_assert(sizeof(Type) == sizeof(Float), "Type size does not match!");
 	};
 
 	template<>
-	struct BuiltinRawType<Double>//¸¡µãÊıÓ³Éä
+	struct BuiltinRawType<Double>//æµ®ç‚¹æ•°æ˜ å°„
 	{
 		using Type = Double_Raw;
 		static_assert(sizeof(Type) == sizeof(Double), "Type size does not match!");

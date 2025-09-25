@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <algorithm>
 #include <vector>
@@ -18,17 +18,17 @@ struct MapSortList
 	using MapPair = Map::value_type;
 	using MyMap = Map;
 
-	//mapÓÃÓÚ²éÖØÍ³¼Æ£¬²»ĞèÒªÕæµÄÓÃkeyÀ´²éÕÒ£¬ËùÒÔkeyÊÇÊ²Ã´ÎŞËùÎ½
-	Map map{};//´´½¨·½¿é×´Ì¬µ½ÎïÆ·Ó³Éämap
-	//Í¨¹ıvector´´½¨mapµÄÔªËØÅÅĞò£¨´æ´¢pairÒıÓÃ£©std::reference_wrapper<>
+	//mapç”¨äºæŸ¥é‡ç»Ÿè®¡ï¼Œä¸éœ€è¦çœŸçš„ç”¨keyæ¥æŸ¥æ‰¾ï¼Œæ‰€ä»¥keyæ˜¯ä»€ä¹ˆæ— æ‰€è°“
+	Map map{};//åˆ›å»ºæ–¹å—çŠ¶æ€åˆ°ç‰©å“æ˜ å°„map
+	//é€šè¿‡vectoråˆ›å»ºmapçš„å…ƒç´ æ’åºï¼ˆå­˜å‚¨pairå¼•ç”¨ï¼‰std::reference_wrapper<>
 	std::vector<std::reference_wrapper<MapPair>> listSort{};
 
-	//ÒòÎªÄÚ²¿»¥ÎªÒıÓÃ¹ØÏµ£¬½ûÖ¹¿½±´
+	//å› ä¸ºå†…éƒ¨äº’ä¸ºå¼•ç”¨å…³ç³»ï¼Œç¦æ­¢æ‹·è´
 	MapSortList(const MapSortList &) = delete;
 	MapSortList &operator=(const MapSortList &) = delete;
 
-	//±ØĞëÌá¹©´ËnoexceptÒÆ¶¯¹¹Ôì£¬·ñÔòvectorÔÚÀ©Èİ¹ı³Ì»á½øĞĞ¿½±´
-	//µ¼ÖÂMapSortList´æ´¢µÄmapµü´úÆ÷µÄvector³ÉÔ±Ê§Ğ§£¬´Ó¶øÒı·¢Òì³£
+	//å¿…é¡»æä¾›æ­¤noexceptç§»åŠ¨æ„é€ ï¼Œå¦åˆ™vectoråœ¨æ‰©å®¹è¿‡ç¨‹ä¼šè¿›è¡Œæ‹·è´
+	//å¯¼è‡´MapSortListå­˜å‚¨çš„mapè¿­ä»£å™¨çš„vectoræˆå‘˜å¤±æ•ˆï¼Œä»è€Œå¼•å‘å¼‚å¸¸
 	MapSortList(MapSortList &&) = default;
 	MapSortList &operator=(MapSortList &&) = default;
 
@@ -38,13 +38,13 @@ struct MapSortList
 
 	static bool SortCmp(MapPair &l, MapPair &r)
 	{
-		if (l.second == r.second)//ÊıÁ¿ÏàµÈÇé¿öÏÂ°´keyÅÅĞò
+		if (l.second == r.second)//æ•°é‡ç›¸ç­‰æƒ…å†µä¸‹æŒ‰keyæ’åº
 		{
-			return (l.first.operator<=><true>(r.first)) < 0;//ÉıĞò
+			return (l.first.operator<=><true>(r.first)) < 0;//å‡åº
 		}
-		else//·ñÔòvalÅÅĞò
+		else//å¦åˆ™valæ’åº
 		{
-			return l.second > r.second;//½µĞò
+			return l.second > r.second;//é™åº
 		}
 	}
 
@@ -55,14 +55,14 @@ struct MapSortList
 	
 	void SortElement(void)
 	{
-		//ÌáÇ°À©Èİ¼õÉÙ²åÈë¿ªÏú
+		//æå‰æ‰©å®¹å‡å°‘æ’å…¥å¼€é”€
 		listSort.reserve(map.size());
-		listSort.assign(map.begin(), map.end());//µü´úÆ÷·¶Î§²åÈë
-		//¶ÔÎïÆ·°´ÊıÁ¿½øĞĞÅÅĞò
+		listSort.assign(map.begin(), map.end());//è¿­ä»£å™¨èŒƒå›´æ’å…¥
+		//å¯¹ç‰©å“æŒ‰æ•°é‡è¿›è¡Œæ’åº
 		std::sort(listSort.begin(), listSort.end(), SortCmp);
 	}
 
-	void Merge(const MapSortList<Map> &src)//ºÏ²¢
+	void Merge(const MapSortList<Map> &src)//åˆå¹¶
 	{
 		for (const auto &[srcKey, srcVal] : src.map)
 		{
@@ -81,9 +81,9 @@ public:
 	typename MapVal::hasher h{};
 	typename MapVal::key_equal e{};
 public:
-	//¼Ì³Ğ»ùÀà¹¹Ôì
+	//ç»§æ‰¿åŸºç±»æ„é€ 
 	using Map::Map;
-	//×Ô¶¨Òå¹¹Ôì
+	//è‡ªå®šä¹‰æ„é€ 
 	MapMSL(size_t _s, typename MapVal::hasher _h, typename MapVal::key_equal _e) : s(_s), h(_h), e(_e)
 	{}
 
@@ -99,7 +99,7 @@ public:
 
 	void SortElement(void)
 	{
-		for (auto &[key, val] : *this)//±éÀú»ùÀà²¢µ÷ÓÃÃ¿¸öÔªËØµÄSortElement
+		for (auto &[key, val] : *this)//éå†åŸºç±»å¹¶è°ƒç”¨æ¯ä¸ªå…ƒç´ çš„SortElement
 		{
 			val.SortElement();
 		}
@@ -107,7 +107,7 @@ public:
 
 	void Merge(const MapMSL<Map> &src)
 	{
-		for (const auto &[srcKey, srcVal] : src)//°ÑÁíÒ»¸ömapºÏ²¢½øÀ´
+		for (const auto &[srcKey, srcVal] : src)//æŠŠå¦ä¸€ä¸ªmapåˆå¹¶è¿›æ¥
 		{
 			this->operator[](srcKey).Merge(srcVal);
 		}
@@ -118,7 +118,7 @@ struct RegionStats
 {
 	NBT_Type::String sRegionName{};
 
-//¼ò»¯ÉùÃ÷
+//ç®€åŒ–å£°æ˜
 #define MAPSORTLIST_TYPE(key,val) \
 MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Equal)>>
 
@@ -128,31 +128,31 @@ MAPSORTLIST_TYPE(key,val) name{ {size, &key::Hash, &key::Equal} }
 #define MAPMAPSORTLIST(key,val,size,name) \
 MapMSL<std::map<NBT_Type::String, MAPSORTLIST_TYPE(key, val)>> name{size, &key::Hash, &key::Equal}
 
-	//·½¿é£¨Ô­±¾ĞÎÊ½£©
+	//æ–¹å—ï¼ˆåŸæœ¬å½¢å¼ï¼‰
 	//MAPSORTLIST(BlockInfo, uint64_t, 128, mslBlock);
 
-	//·½¿é£¨×ª»»µ½ÎïÆ·ĞÎÊ½£©
+	//æ–¹å—ï¼ˆè½¬æ¢åˆ°ç‰©å“å½¢å¼ï¼‰
 	MAPSORTLIST(NoTagItemInfo, uint64_t, 128, mslBlockItem);
 	
-	//·½¿éÊµÌå£¨Ô­±¾ĞÎÊ½£©ÏÈ²»×ö
+	//æ–¹å—å®ä½“ï¼ˆåŸæœ¬å½¢å¼ï¼‰å…ˆä¸åš
 	//MAPSORTLIST(TileEntityInfo, uint64_t, 128, mslTileEntity);
 
-	//·½¿éÊµÌåÈİÆ÷
+	//æ–¹å—å®ä½“å®¹å™¨
 	MAPSORTLIST(ItemInfo, uint64_t, 128, mslTileEntityContainer);
 	MAPMAPSORTLIST(ItemInfo, uint64_t, 128, mmslParentInfoTEC);
 
-	//ÊµÌå£¨Ô­±¾ĞÎÊ½£©
+	//å®ä½“ï¼ˆåŸæœ¬å½¢å¼ï¼‰
 	MAPSORTLIST(EntityInfo, uint64_t, 128, mslEntity);
 
-	//ÊµÌå£¨×ª»»µ½ÎïÆ·ĞÎÊ½£©ÏÈ²»×ö
+	//å®ä½“ï¼ˆè½¬æ¢åˆ°ç‰©å“å½¢å¼ï¼‰å…ˆä¸åš
 	//MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityItem);
-	//Èç¹û×öÕâ¸ö£¬ÄÇÃ´ÒªÔÚÊµÌåÈİÆ÷ÄÚÅÅ³ıµôÂäÎï£¬È»ºó°ÑµôÂäÎï×ª»»µ½ÕâÀïÃæ
+	//å¦‚æœåšè¿™ä¸ªï¼Œé‚£ä¹ˆè¦åœ¨å®ä½“å®¹å™¨å†…æ’é™¤æ‰è½ç‰©ï¼Œç„¶åæŠŠæ‰è½ç‰©è½¬æ¢åˆ°è¿™é‡Œé¢
 
-	//ÊµÌåÈİÆ÷
+	//å®ä½“å®¹å™¨
 	MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityContainer);
 	MAPMAPSORTLIST(ItemInfo, uint64_t, 128, mmslParentInfoEC);
 
-	//ÊµÌåÎïÆ·À¸
+	//å®ä½“ç‰©å“æ 
 	MAPSORTLIST(ItemInfo, uint64_t, 128, mslEntityInventory);
 	MAPMAPSORTLIST(ItemInfo, uint64_t, 128, mmslParentInfoEI);
 
@@ -193,5 +193,5 @@ using RegionStatsList = std::vector<RegionStats>;
 
 RegionStatsList RegionProcess(const NBT_Type::Compound &cpRegions);
 
-//ºÏ²¢ËùÓĞÑ¡Çø
+//åˆå¹¶æ‰€æœ‰é€‰åŒº
 RegionStats MergeRegionStatsList(const RegionStatsList &listRegionStats);

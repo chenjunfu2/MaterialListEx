@@ -1,4 +1,4 @@
-#pragma once
+Ôªø#pragma once
 
 #include <chrono>
 
@@ -27,7 +27,7 @@ public:
 		return std::chrono::duration_cast<T>(tpStop - tpStart);
 	}
 
-	//¥Ú”° ±≤Ó
+	//ÊâìÂç∞Êó∂Â∑Æ
 	void PrintElapsed(const char *const cpBegInfo = "", const char *const cpEndInfo = "\n")
 	{
 		printf("%s%.6lfms%s", cpBegInfo, (long double)Diff<std::chrono::nanoseconds>().count() * 1E-6, cpEndInfo);

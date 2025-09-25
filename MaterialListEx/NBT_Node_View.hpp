@@ -1,16 +1,16 @@
-#pragma once
+ï»¿#pragma once
 
 #include "NBT_Node.hpp"
 
-//ÓÃ·¨ºÍNBT_NodeÒ»ÖÂ£¬µ«ÊÇÖ»³ÖÓĞ¹¹ÔìÊ±´«Èë¶ÔÏóµÄÖ¸Õë£¬ÇÒ²»³ÖÓĞ¶ÔÏó
-//¶ÔÏóËæÊ±¿ÉÏú»Ù£¬Èç¹ûÏú»ÙºóÊ¹ÓÃ³ÖÓĞÏú»Ù¶ÔÏóµÄviewÔòĞĞÎªÎ´¶¨Òå£¬ÓÃ»§×ÔĞĞ¸ºÔğ
-//¹¹Ôì´«ÈënullptrÖ¸ÕëÇÒ½øĞĞÊ¹ÓÃÔòºó¹û×Ô¸º
+//ç”¨æ³•å’ŒNBT_Nodeä¸€è‡´ï¼Œä½†æ˜¯åªæŒæœ‰æ„é€ æ—¶ä¼ å…¥å¯¹è±¡çš„æŒ‡é’ˆï¼Œä¸”ä¸æŒæœ‰å¯¹è±¡
+//å¯¹è±¡éšæ—¶å¯é”€æ¯ï¼Œå¦‚æœé”€æ¯åä½¿ç”¨æŒæœ‰é”€æ¯å¯¹è±¡çš„viewåˆ™è¡Œä¸ºæœªå®šä¹‰ï¼Œç”¨æˆ·è‡ªè¡Œè´Ÿè´£
+//æ„é€ ä¼ å…¥nullptræŒ‡é’ˆä¸”è¿›è¡Œä½¿ç”¨åˆ™åæœè‡ªè´Ÿ
 
 template <bool bIsConst>
 class NBT_Node_View
 {
 	template <bool bIsConst>
-	friend class NBT_Node_View;//ĞèÒªÉèÖÃ×Ô¼ºÎªÓÑÔª£¬ÕâÑù²»Í¬Ä£°åµÄÀàÊµÀıÖ®¼ä²ÅÄÜÏà»¥·ÃÎÊ
+	friend class NBT_Node_View;//éœ€è¦è®¾ç½®è‡ªå·±ä¸ºå‹å…ƒï¼Œè¿™æ ·ä¸åŒæ¨¡æ¿çš„ç±»å®ä¾‹ä¹‹é—´æ‰èƒ½ç›¸äº’è®¿é—®
 private:
 	template <typename T>
 	struct AddConstIf
@@ -27,7 +27,7 @@ private:
 	template <typename... Ts>
 	struct TypeListPointerToVariant<NBT_Type::_TypeList<Ts...>>
 	{
-		using type = std::variant<PtrType<Ts>...>;//Õ¹¿ª³ÉÖ¸ÕëÀàĞÍ
+		using type = std::variant<PtrType<Ts>...>;//å±•å¼€æˆæŒ‡é’ˆç±»å‹
 	};
 
 	using VariantData = TypeListPointerToVariant<NBT_Type::TypeList>::type;
@@ -36,7 +36,7 @@ private:
 public:
 	static inline constexpr bool is_const = bIsConst;
 
-	// Í¨ÓÃ¹¹Ôìº¯Êı£¨±ØĞë·ÇconstÇé¿ö£©
+	// é€šç”¨æ„é€ å‡½æ•°ï¼ˆå¿…é¡»éconstæƒ…å†µï¼‰
 	template <typename T>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && !bIsConst)
 	NBT_Node_View(T &value) : data(&value)
@@ -44,7 +44,7 @@ public:
 		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT node view");
 	}
 
-	// Í¨ÓÃ¹¹Ôìº¯Êı
+	// é€šç”¨æ„é€ å‡½æ•°
 	template <typename T>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)
 	NBT_Node_View(const T &value) : data(&value)
@@ -52,8 +52,8 @@ public:
 		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT node view");
 	}
 
-	//´ÓNBT_Node¹¹Ôì£¨±ØĞë·ÇconstÇé¿ö£©
-	template <typename = void>//requiresÕ¼Î»Ä£°å
+	//ä»NBT_Nodeæ„é€ ï¼ˆå¿…é¡»éconstæƒ…å†µï¼‰
+	template <typename = void>//requireså ä½æ¨¡æ¿
 	requires(!bIsConst)
 	NBT_Node_View(NBT_Node &node)
 	{
@@ -63,7 +63,7 @@ public:
 			}, node.data);
 	}
 
-	//´ÓNBT_Node¹¹Ôì
+	//ä»NBT_Nodeæ„é€ 
 	NBT_Node_View(const NBT_Node &node)
 	{
 		std::visit([this](auto &arg)
@@ -72,30 +72,30 @@ public:
 			}, node.data);
 	}
 
-	// ÔÊĞí´Ó·Ç const ÊÓÍ¼ÒşÊ½×ª»»µ½ const ÊÓÍ¼
-	template <typename = void>//requiresÕ¼Î»Ä£°å
+	// å…è®¸ä»é const è§†å›¾éšå¼è½¬æ¢åˆ° const è§†å›¾
+	template <typename = void>//requireså ä½æ¨¡æ¿
 	requires(bIsConst)
 	NBT_Node_View(const NBT_Node_View<false> &other)
 	{
 		std::visit([this](auto &arg)
 			{
-				this->data = arg;//´Ë´¦argÎª·ÇconstÖ¸Õë
+				this->data = arg;//æ­¤å¤„argä¸ºéconstæŒ‡é’ˆ
 			}, other.data);
 	}
 
 private:
-	// Òş²ØÄ¬ÈÏ¹¹Ôì£¨TAG_End£©
+	// éšè—é»˜è®¤æ„é€ ï¼ˆTAG_Endï¼‰
 	NBT_Node_View() = default;
 public:
 
-	// ×Ô¶¯Îö¹¹ÓÉvariant´¦Àí
+	// è‡ªåŠ¨ææ„ç”±variantå¤„ç†
 	~NBT_Node_View() = default;
 
-	//¿½±´¹¹Ôì
+	//æ‹·è´æ„é€ 
 	NBT_Node_View(const NBT_Node_View &_NBT_Node_View) : data(_NBT_Node_View.data)
 	{}
 
-	//ÒÆ¶¯¹¹Ôì
+	//ç§»åŠ¨æ„é€ 
 	NBT_Node_View(NBT_Node_View &&_NBT_Node_View) noexcept : data(std::move(_NBT_Node_View.data))
 	{}
 
@@ -154,13 +154,13 @@ public:
 			}, this->data, _Right.data);
 	}
 
-	//»ñÈ¡±êÇ©ÀàĞÍ
+	//è·å–æ ‡ç­¾ç±»å‹
 	NBT_TAG GetTag() const noexcept
 	{
-		return (NBT_TAG)data.index();//·µ»Øµ±Ç°´æ´¢ÀàĞÍµÄindex£¨0»ùË÷Òı£¬ÓëNBT_TAG enumÒ»Ò»¶ÔÓ¦£©
+		return (NBT_TAG)data.index();//è¿”å›å½“å‰å­˜å‚¨ç±»å‹çš„indexï¼ˆ0åŸºç´¢å¼•ï¼Œä¸NBT_TAG enumä¸€ä¸€å¯¹åº”ï¼‰
 	}
 
-	//ÀàĞÍ°²È«·ÃÎÊ
+	//ç±»å‹å®‰å…¨è®¿é—®
 	template<typename T>
 	const T &GetData() const
 	{
@@ -174,19 +174,19 @@ public:
 		return *std::get<PtrType<T>>(data);
 	}
 
-	// ÀàĞÍ¼ì²é
+	// ç±»å‹æ£€æŸ¥
 	template<typename T>
 	bool TypeHolds() const
 	{
 		return std::holds_alternative<PtrType<T>>(data);
 	}
 
-	//Õë¶ÔÃ¿ÖÖÀàĞÍÖØÔØÒ»¸ö·½±ãµÄº¯Êı
+	//é’ˆå¯¹æ¯ç§ç±»å‹é‡è½½ä¸€ä¸ªæ–¹ä¾¿çš„å‡½æ•°
 	/*
-		´¿ÀàĞÍÃûº¯Êı£ºÖ±½Ó»ñÈ¡´ËÀàĞÍ£¬²»×öÈÎºÎ¼ì²é£¬ÓÉ±ê×¼¿âstd::get¾ßÌåÊµÏÖ¾ö¶¨
-		Is¿ªÍ·µÄÀàĞÍÃûº¯Êı£ºÅĞ¶Ïµ±Ç°NBT_NodeÊÇ·ñÎª´ËÀàĞÍ
-		´¿ÀàĞÍÃûº¯Êı´ø²ÎÊı°æ±¾£º²éÕÒµ±Ç°CompoundÖ¸¶¨µÄName²¢×ª»»µ½ÀàĞÍÒıÓÃ·µ»Ø£¬²»×ö¼ì²é£¬¾ßÌåÓÉ±ê×¼¿âÊµÏÖ¶¨Òå
-		Has¿ªÍ·µÄÀàĞÍÃûº¯Êı´ø²ÎÊı°æ±¾£º²éÕÒµ±Ç°CompoundÊÇ·ñÓĞÌØ¶¨NameµÄTag£¬²¢·µ»Ø´ËNameµÄTag£¨×ª»»µ½Ö¸¶¨ÀàĞÍ£©µÄÖ¸Õë
+		çº¯ç±»å‹åå‡½æ•°ï¼šç›´æ¥è·å–æ­¤ç±»å‹ï¼Œä¸åšä»»ä½•æ£€æŸ¥ï¼Œç”±æ ‡å‡†åº“std::getå…·ä½“å®ç°å†³å®š
+		Iså¼€å¤´çš„ç±»å‹åå‡½æ•°ï¼šåˆ¤æ–­å½“å‰NBT_Nodeæ˜¯å¦ä¸ºæ­¤ç±»å‹
+		çº¯ç±»å‹åå‡½æ•°å¸¦å‚æ•°ç‰ˆæœ¬ï¼šæŸ¥æ‰¾å½“å‰CompoundæŒ‡å®šçš„Nameå¹¶è½¬æ¢åˆ°ç±»å‹å¼•ç”¨è¿”å›ï¼Œä¸åšæ£€æŸ¥ï¼Œå…·ä½“ç”±æ ‡å‡†åº“å®ç°å®šä¹‰
+		Haså¼€å¤´çš„ç±»å‹åå‡½æ•°å¸¦å‚æ•°ç‰ˆæœ¬ï¼šæŸ¥æ‰¾å½“å‰Compoundæ˜¯å¦æœ‰ç‰¹å®šNameçš„Tagï¼Œå¹¶è¿”å›æ­¤Nameçš„Tagï¼ˆè½¬æ¢åˆ°æŒ‡å®šç±»å‹ï¼‰çš„æŒ‡é’ˆ
 	*/
 #define TYPE_GET_FUNC(type)\
 const NBT_Type::##type &Get##type() const\

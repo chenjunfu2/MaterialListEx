@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "NBT_Node.hpp"
 #include "NBT_Node_View.hpp"
@@ -16,7 +16,7 @@ class NBT_Helper
 public:
 	static void Print(const NBT_Node_View<true> nRoot, bool bPadding = true, bool bNewLine = true)
 	{
-		size_t szLevelStart = bPadding ? 0 : (size_t)-1;//Ìø¹ı´òÓ¡
+		size_t szLevelStart = bPadding ? 0 : (size_t)-1;//è·³è¿‡æ‰“å°
 
 		PrintSwitch(nRoot, 0);
 		if (bNewLine)
@@ -39,7 +39,7 @@ public:
 
 	using DefaultFuncType = std::decay_t<decltype(DefaultFunc)>;
 
-	template<typename TB = DefaultFuncType, typename TA = DefaultFuncType>//Á½¸öº¯Êı£¬·Ö±ğÔÚÇ°ºóµ÷ÓÃ£¬¿ÉÒÔÓÃÓÚ²åÈë¹şÏ£Êı¾İ
+	template<typename TB = DefaultFuncType, typename TA = DefaultFuncType>//ä¸¤ä¸ªå‡½æ•°ï¼Œåˆ†åˆ«åœ¨å‰åè°ƒç”¨ï¼Œå¯ä»¥ç”¨äºæ’å…¥å“ˆå¸Œæ•°æ®
 	static NBT_Hash::HASH_T Hash(const NBT_Node_View<true> nRoot, NBT_Hash nbtHash, TB funBefore = DefaultFunc, TA funAfter = DefaultFunc)
 	{
 		funBefore(nbtHash);
@@ -48,16 +48,16 @@ public:
 
 		return nbtHash.Digest();
 
-		//µ÷ÓÃ¿ÉĞĞĞÔ¼ì²â
+		//è°ƒç”¨å¯è¡Œæ€§æ£€æµ‹
 		static_assert(std::is_invocable_v<TB, decltype(nbtHash)&>, "TB is not a callable object or parameter type mismatch.");
 		static_assert(std::is_invocable_v<TA, decltype(nbtHash)&>, "TA is not a callable object or parameter type mismatch.");
 	}
 private:
-	constexpr const static inline char *const LevelPadding = "    ";//Ä¬ÈÏ¶ÔÆë
+	constexpr const static inline char *const LevelPadding = "    ";//é»˜è®¤å¯¹é½
 
-	static void PrintPadding(size_t szLevel, bool bSubLevel, bool bNewLine)//bSubLevel»áÈÃËõ½ø¶àÒ»²ã
+	static void PrintPadding(size_t szLevel, bool bSubLevel, bool bNewLine)//bSubLevelä¼šè®©ç¼©è¿›å¤šä¸€å±‚
 	{
-		if (szLevel == (size_t)-1)//Ìø¹ı´òÓ¡
+		if (szLevel == (size_t)-1)//è·³è¿‡æ‰“å°
 		{
 			return;
 		}
@@ -78,8 +78,8 @@ private:
 		}
 	}
 
-	//Ê×´Îµ÷ÓÃÄ¬ÈÏÎªtrue£¬¶ş´Îµ÷ÓÃ¿ªÊ¼ÄÚ²¿Ö÷¶¯±äÎªfalse
-	template<bool bRoot = true>//Ê×´ÎÊ¹ÓÃNBT_Node_View½â°ü£¬ºóĞøÖ±½ÓÊ¹ÓÃNBT_NodeÒıÓÃÃâ³ı¶îÍâ³õÊ¼»¯¿ªÏú
+	//é¦–æ¬¡è°ƒç”¨é»˜è®¤ä¸ºtrueï¼ŒäºŒæ¬¡è°ƒç”¨å¼€å§‹å†…éƒ¨ä¸»åŠ¨å˜ä¸ºfalse
+	template<bool bRoot = true>//é¦–æ¬¡ä½¿ç”¨NBT_Node_Viewè§£åŒ…ï¼Œåç»­ç›´æ¥ä½¿ç”¨NBT_Nodeå¼•ç”¨å…é™¤é¢å¤–åˆå§‹åŒ–å¼€é”€
 	static void PrintSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, size_t szLevel)
 	{
 		auto tag = nRoot.GetTag();
@@ -173,10 +173,10 @@ private:
 				printf("\"%s\"", nRoot.GetData<NBT_Type::String>().ToCharTypeUTF8().c_str());
 			}
 			break;
-		case NBT_TAG::List://ĞèÒª´òÓ¡Ëõ½øµÄµØ·½
+		case NBT_TAG::List://éœ€è¦æ‰“å°ç¼©è¿›çš„åœ°æ–¹
 			{
 				const auto &list = nRoot.GetData<NBT_Type::List>();
-				PrintPadding(szLevel, false, !bRoot);//²»ÊÇ¸ù²¿Ôò´òÓ¡¿ªÍ·»»ĞĞ
+				PrintPadding(szLevel, false, !bRoot);//ä¸æ˜¯æ ¹éƒ¨åˆ™æ‰“å°å¼€å¤´æ¢è¡Œ
 				printf("[");
 				for (const auto &it : list)
 				{
@@ -187,16 +187,16 @@ private:
 
 				if (list.Size() != 0)
 				{
-					printf("\b \b");//Çå³ı×îºóÒ»¸ö¶ººÅ
-					PrintPadding(szLevel, false, true);//¿ÕÁĞ±íÎŞĞè»»ĞĞÒÔ¼°¶ÔÆë
+					printf("\b \b");//æ¸…é™¤æœ€åä¸€ä¸ªé€—å·
+					PrintPadding(szLevel, false, true);//ç©ºåˆ—è¡¨æ— éœ€æ¢è¡Œä»¥åŠå¯¹é½
 				}
 				printf("]");
 			}
 			break;
-		case NBT_TAG::Compound://ĞèÒª´òÓ¡Ëõ½øµÄµØ·½
+		case NBT_TAG::Compound://éœ€è¦æ‰“å°ç¼©è¿›çš„åœ°æ–¹
 			{
 				const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
-				PrintPadding(szLevel, false, !bRoot);//²»ÊÇ¸ù²¿Ôò´òÓ¡¿ªÍ·»»ĞĞ
+				PrintPadding(szLevel, false, !bRoot);//ä¸æ˜¯æ ¹éƒ¨åˆ™æ‰“å°å¼€å¤´æ¢è¡Œ
 				printf("{");
 
 				for (const auto &it : cpd)
@@ -209,8 +209,8 @@ private:
 
 				if (cpd.Size() != 0)
 				{
-					printf("\b \b");//Çå³ı×îºóÒ»¸ö¶ººÅ
-					PrintPadding(szLevel, false, true);//¿Õ¼¯ºÏÎŞĞè»»ĞĞÒÔ¼°¶ÔÆë
+					printf("\b \b");//æ¸…é™¤æœ€åä¸€ä¸ªé€—å·
+					PrintPadding(szLevel, false, true);//ç©ºé›†åˆæ— éœ€æ¢è¡Œä»¥åŠå¯¹é½
 				}
 				printf("}");
 			}
@@ -230,28 +230,28 @@ private:
 		static_assert(std::is_arithmetic_v<T>, "T must be an arithmetic type");
 		static constexpr char hex_chars[] = "0123456789ABCDEF";
 
-		//°´¹Ì¶¨×Ö½ÚĞò´¦Àí
+		//æŒ‰å›ºå®šå­—èŠ‚åºå¤„ç†
 		const unsigned char *bytes = (const unsigned char *)&value;
 		if constexpr (std::endian::native == std::endian::little)
 		{
 			for (size_t i = sizeof(T); i-- > 0; )
 			{
-				result += hex_chars[(bytes[i] >> 4) & 0x0F];//¸ß4
-				result += hex_chars[(bytes[i] >> 0) & 0x0F];//µÍ4
+				result += hex_chars[(bytes[i] >> 4) & 0x0F];//é«˜4
+				result += hex_chars[(bytes[i] >> 0) & 0x0F];//ä½4
 			}
 		}
 		else
 		{
 			for (size_t i = 0; i < sizeof(T); ++i)
 			{
-				result += hex_chars[(bytes[i] >> 4) & 0x0F];//¸ß4
-				result += hex_chars[(bytes[i] >> 0) & 0x0F];//µÍ4
+				result += hex_chars[(bytes[i] >> 4) & 0x0F];//é«˜4
+				result += hex_chars[(bytes[i] >> 0) & 0x0F];//ä½4
 			}
 		}
 	}
 
-	//Ê×´Îµ÷ÓÃÄ¬ÈÏÎªtrue£¬¶ş´Îµ÷ÓÃ¿ªÊ¼ÄÚ²¿Ö÷¶¯±äÎªfalse
-	template<bool bRoot = true>//Ê×´ÎÊ¹ÓÃNBT_Node_View½â°ü£¬ºóĞøÖ±½ÓÊ¹ÓÃNBT_NodeÒıÓÃÃâ³ı¶îÍâ³õÊ¼»¯¿ªÏú
+	//é¦–æ¬¡è°ƒç”¨é»˜è®¤ä¸ºtrueï¼ŒäºŒæ¬¡è°ƒç”¨å¼€å§‹å†…éƒ¨ä¸»åŠ¨å˜ä¸ºfalse
+	template<bool bRoot = true>//é¦–æ¬¡ä½¿ç”¨NBT_Node_Viewè§£åŒ…ï¼Œåç»­ç›´æ¥ä½¿ç”¨NBT_Nodeå¼•ç”¨å…é™¤é¢å¤–åˆå§‹åŒ–å¼€é”€
 	static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, std::string &sRet)
 	{
 		auto tag = nRoot.GetTag();
@@ -309,7 +309,7 @@ private:
 				}
 				if (arr.size() != 0)
 				{
-					sRet.pop_back();//É¾µô×îºóÒ»¸ö¶ººÅ
+					sRet.pop_back();//åˆ æ‰æœ€åä¸€ä¸ªé€—å·
 				}
 	
 				sRet += ']';
@@ -326,7 +326,7 @@ private:
 				}
 				if (arr.size() != 0)
 				{
-					sRet.pop_back();//É¾µô×îºóÒ»¸ö¶ººÅ
+					sRet.pop_back();//åˆ æ‰æœ€åä¸€ä¸ªé€—å·
 				}
 	
 				sRet += ']';
@@ -343,7 +343,7 @@ private:
 				}
 				if (arr.size() != 0)
 				{
-					sRet.pop_back();//É¾µô×îºóÒ»¸ö¶ººÅ
+					sRet.pop_back();//åˆ æ‰æœ€åä¸€ä¸ªé€—å·
 				}
 	
 				sRet += ']';
@@ -368,12 +368,12 @@ private:
 	
 				if (list.Size() != 0)
 				{
-					sRet.pop_back();//É¾µô×îºóÒ»¸ö¶ººÅ
+					sRet.pop_back();//åˆ æ‰æœ€åä¸€ä¸ªé€—å·
 				}
 				sRet += ']';
 			}
 			break;
-		case NBT_TAG::Compound://ĞèÒª´òÓ¡Ëõ½øµÄµØ·½
+		case NBT_TAG::Compound://éœ€è¦æ‰“å°ç¼©è¿›çš„åœ°æ–¹
 			{
 				const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
 				sRet += '{';
@@ -389,7 +389,7 @@ private:
 	
 				if (cpd.Size() != 0)
 				{
-					sRet.pop_back();//É¾µô×îºóÒ»¸ö¶ººÅ
+					sRet.pop_back();//åˆ æ‰æœ€åä¸€ä¸ªé€—å·
 				}
 				sRet += '}';
 			}
@@ -405,23 +405,23 @@ private:
 	}
 
 private:
-	template<bool bRoot = true>//Ê×´ÎÊ¹ÓÃNBT_Node_View½â°ü£¬ºóĞøÖ±½ÓÊ¹ÓÃNBT_NodeÒıÓÃÃâ³ı¶îÍâ³õÊ¼»¯¿ªÏú
+	template<bool bRoot = true>//é¦–æ¬¡ä½¿ç”¨NBT_Node_Viewè§£åŒ…ï¼Œåç»­ç›´æ¥ä½¿ç”¨NBT_Nodeå¼•ç”¨å…é™¤é¢å¤–åˆå§‹åŒ–å¼€é”€
 	static void HashSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, NBT_Hash &nbtHash)
 	{
 		auto tag = nRoot.GetTag();
 
-		//°Ñtag±¾Éí×÷ÎªÊı¾İ
+		//æŠŠtagæœ¬èº«ä½œä¸ºæ•°æ®
 		{
 			const auto &tmp = tag;
 			nbtHash.Update(tmp);
 		}
 
-		//ÔÙ¶Á³öÊµ¼ÊÄÚÈİ×÷ÎªÊı¾İ
+		//å†è¯»å‡ºå®é™…å†…å®¹ä½œä¸ºæ•°æ®
 		switch (tag)
 		{
 		case NBT_TAG::End:
 			{
-				//endÀàĞÍÎŞ¸ºÔØ£¬ËùÒÔÊ²Ã´Ò²²»×ö
+				//endç±»å‹æ— è´Ÿè½½ï¼Œæ‰€ä»¥ä»€ä¹ˆä¹Ÿä¸åš
 			}
 			break;
 		case NBT_TAG::Byte:
@@ -505,7 +505,7 @@ private:
 				}
 			}
 			break;
-		case NBT_TAG::Compound://ĞèÒª´òÓ¡Ëõ½øµÄµØ·½
+		case NBT_TAG::Compound://éœ€è¦æ‰“å°ç¼©è¿›çš„åœ°æ–¹
 			{
 				const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
 				for (const auto &it : cpd)

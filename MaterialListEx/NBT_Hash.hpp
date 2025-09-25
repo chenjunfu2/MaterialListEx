@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <xxhash.h>
 #include <type_traits>

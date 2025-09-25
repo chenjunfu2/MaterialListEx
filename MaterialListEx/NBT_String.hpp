@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <string>
 #include <array>
@@ -26,12 +26,12 @@ private:
 			N -= 1;
 		}
 
-		//×¢ÒâÕâÀï²»·µ»Ø£¬ÈÔÈ»ÒªÅĞ¶ÏÊÇ·ñÊÇmu8str
-		//ÒòÎªÒ»¸öc·ç¸ñ×Ö·û´®ÈÔÈ»¿ÉÒÔÒÔmu8strĞÎÊ½³õÊ¼»¯
-		//µ¼ÖÂ¼È°üº¬Ä©Î²0Ò²°üº¬mu8½áÎ²
+		//æ³¨æ„è¿™é‡Œä¸è¿”å›ï¼Œä»ç„¶è¦åˆ¤æ–­æ˜¯å¦æ˜¯mu8str
+		//å› ä¸ºä¸€ä¸ªcé£æ ¼å­—ç¬¦ä¸²ä»ç„¶å¯ä»¥ä»¥mu8strå½¢å¼åˆå§‹åŒ–
+		//å¯¼è‡´æ—¢åŒ…å«æœ«å°¾0ä¹ŸåŒ…å«mu8ç»“å°¾
 
 		//mutf8 string - 0xC0 0x80
-		if (N >= 2 && ltrStr[N - 1] == 0x80 && ltrStr[N - 2] == 0xC0)//ÕâÀïÈÔÈ»ÓÃN£¬ÒòÎªÇ°Ãæ¿ÉÄÜÒÑ¾­µİ¼õ£¬ÕâÑù¾ÍÄÜÕıÈ··ÃÎÊ
+		if (N >= 2 && ltrStr[N - 1] == 0x80 && ltrStr[N - 2] == 0xC0)//è¿™é‡Œä»ç„¶ç”¨Nï¼Œå› ä¸ºå‰é¢å¯èƒ½å·²ç»é€’å‡ï¼Œè¿™æ ·å°±èƒ½æ­£ç¡®è®¿é—®
 		{
 			N -= 2;
 		}
@@ -42,22 +42,22 @@ private:
 public:
 	using StringView::StringView;
 
-	template<size_t N>//c·ç¸ñ×Ö·û´®orÊı×é
+	template<size_t N>//cé£æ ¼å­—ç¬¦ä¸²oræ•°ç»„
 	constexpr MyStringView(const typename StringView::value_type(&ltrStr)[N]) :StringView(ltrStr, CalcStringViewSize(ltrStr, N))
 	{}
 
-	template<size_t N>//×¢Òâ£¬array²»»áCalcStringSizeÒÔÉ¾³ı²»±ØÒªµÄ½áÎ²£¬ÒòÎªÔ¤ÆÚarray²»°üº¬ÈÎºÎ½áÎ²£¬ÒÔsize´ú±í³¤¶È
+	template<size_t N>//æ³¨æ„ï¼Œarrayä¸ä¼šCalcStringSizeä»¥åˆ é™¤ä¸å¿…è¦çš„ç»“å°¾ï¼Œå› ä¸ºé¢„æœŸarrayä¸åŒ…å«ä»»ä½•ç»“å°¾ï¼Œä»¥sizeä»£è¡¨é•¿åº¦
 	constexpr MyStringView(const std::array<typename StringView::value_type, N> &strArray) : StringView(strArray.data(), strArray.size())
 	{}
 
 	template<typename String, typename StringView>
-	constexpr explicit MyStringView(const MyString<String, StringView> &myString) : StringView(myString.data(), myString.size())//ÔÊĞí´ÓstringÏÔÊ¾¹¹Ôìview
+	constexpr explicit MyStringView(const MyString<String, StringView> &myString) : StringView(myString.data(), myString.size())//å…è®¸ä»stringæ˜¾ç¤ºæ„é€ view
 	{}
 };
 
 
 template<typename String, typename StringView>
-class MyString :public String//ÔİÊ±²»¿¼ÂÇ±£»¤¼Ì³Ğ
+class MyString :public String//æš‚æ—¶ä¸è€ƒè™‘ä¿æŠ¤ç»§æ‰¿
 {
 	template <typename DataType>
 	friend class NBT_Reader;
@@ -74,12 +74,12 @@ private:
 			N -= 1;
 		}
 
-		//×¢ÒâÕâÀï²»·µ»Ø£¬ÈÔÈ»ÒªÅĞ¶ÏÊÇ·ñÊÇmu8str
-		//ÒòÎªÒ»¸öc·ç¸ñ×Ö·û´®ÈÔÈ»¿ÉÒÔÒÔmu8strĞÎÊ½³õÊ¼»¯
-		//µ¼ÖÂ¼È°üº¬Ä©Î²0Ò²°üº¬mu8½áÎ²
+		//æ³¨æ„è¿™é‡Œä¸è¿”å›ï¼Œä»ç„¶è¦åˆ¤æ–­æ˜¯å¦æ˜¯mu8str
+		//å› ä¸ºä¸€ä¸ªcé£æ ¼å­—ç¬¦ä¸²ä»ç„¶å¯ä»¥ä»¥mu8strå½¢å¼åˆå§‹åŒ–
+		//å¯¼è‡´æ—¢åŒ…å«æœ«å°¾0ä¹ŸåŒ…å«mu8ç»“å°¾
 
 		//mutf8 string - 0xC0 0x80
-		if (N >= 2 && ltrStr[N - 1] == 0x80 && ltrStr[N - 2] == 0xC0)//ÕâÀïÈÔÈ»ÓÃN£¬ÒòÎªÇ°Ãæ¿ÉÄÜÒÑ¾­µİ¼õ£¬ÕâÑù¾ÍÄÜÕıÈ··ÃÎÊ
+		if (N >= 2 && ltrStr[N - 1] == 0x80 && ltrStr[N - 2] == 0xC0)//è¿™é‡Œä»ç„¶ç”¨Nï¼Œå› ä¸ºå‰é¢å¯èƒ½å·²ç»é€’å‡ï¼Œè¿™æ ·å°±èƒ½æ­£ç¡®è®¿é—®
 		{
 			N -= 2;
 		}
@@ -88,24 +88,24 @@ private:
 	}
 
 public:
-	//viewÀàĞÍ
+	//viewç±»å‹
 	using View = MyStringView<StringView>;
 
-	//¼Ì³Ğ»ùÀà¹¹Ôì
+	//ç»§æ‰¿åŸºç±»æ„é€ 
 	using String::String;
 
-	template<size_t N>//c·ç¸ñ×Ö·û´®orÊı×é
+	template<size_t N>//cé£æ ¼å­—ç¬¦ä¸²oræ•°ç»„
 	MyString(const typename String::value_type(&ltrStr)[N]) :String(ltrStr, CalcStringSize(ltrStr, N))
 	{}
 
-	template<size_t N>//×¢Òâ£¬array²»»áCalcStringSizeÒÔÉ¾³ı²»±ØÒªµÄ½áÎ²£¬ÒòÎªÔ¤ÆÚarray²»°üº¬ÈÎºÎ½áÎ²£¬ÒÔsize´ú±í³¤¶È
+	template<size_t N>//æ³¨æ„ï¼Œarrayä¸ä¼šCalcStringSizeä»¥åˆ é™¤ä¸å¿…è¦çš„ç»“å°¾ï¼Œå› ä¸ºé¢„æœŸarrayä¸åŒ…å«ä»»ä½•ç»“å°¾ï¼Œä»¥sizeä»£è¡¨é•¿åº¦
 	MyString(const std::array<typename String::value_type, N> &strArray) :String(strArray.data(), strArray.size())
 	{}
 
-	MyString(const View &view) :String(view)//ÔÊĞí´Óview¹¹Ôìstring
+	MyString(const View &view) :String(view)//å…è®¸ä»viewæ„é€ string
 	{}
 
-	//Ö±½Ó»ñÈ¡charÀàĞÍµÄÊÓÍ¼
+	//ç›´æ¥è·å–charç±»å‹çš„è§†å›¾
 	std::basic_string_view<char> GetCharTypeView(void) const
 	{
 		return std::basic_string_view<char>((const char *)String::data(), String::size());
@@ -113,7 +113,7 @@ public:
 
 	auto ToCharTypeUTF8(void) const
 	{
-		return MUTF8_Tool<typename String::value_type, char16_t, char>::MU8ToU8(*this);//char8_t¸ÄÎªchar
+		return MUTF8_Tool<typename String::value_type, char16_t, char>::MU8ToU8(*this);//char8_tæ”¹ä¸ºchar
 	}
 
 	auto ToUTF8(void) const
@@ -128,7 +128,7 @@ public:
 
 	void FromCharTypeUTF8(std::basic_string_view<char> u8String)
 	{
-		*this = std::move(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u8String));//char8_t¸ÄÎªchar
+		*this = std::move(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u8String));//char8_tæ”¹ä¸ºchar
 	}
 
 	void FromUTF8(std::basic_string_view<char8_t> u8String)
@@ -143,7 +143,7 @@ public:
 };
 
 
-//ÔÚstdÃüÃû¿Õ¼äÖĞÌí¼Ó´ËÀàµÄhashÒÔ±ãunordered_mapµÈ×Ô¶¯»ñÈ¡
+//åœ¨stdå‘½åç©ºé—´ä¸­æ·»åŠ æ­¤ç±»çš„hashä»¥ä¾¿unordered_mapç­‰è‡ªåŠ¨è·å–
 namespace std
 {
 	template<typename T, typename StringView>

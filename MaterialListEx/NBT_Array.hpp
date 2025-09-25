@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <vector>
 
@@ -9,7 +9,7 @@ template <typename DataType>
 class NBT_Writer;
 
 template<typename Array>
-class MyArray :public Array//ÔİÊ±²»¿¼ÂÇ±£»¤¼Ì³Ğ
+class MyArray :public Array//æš‚æ—¶ä¸è€ƒè™‘ä¿æŠ¤ç»§æ‰¿
 {
 	template <typename DataType>
 	friend class NBT_Reader;
@@ -17,6 +17,6 @@ class MyArray :public Array//ÔİÊ±²»¿¼ÂÇ±£»¤¼Ì³Ğ
 	template <typename DataType>
 	friend class NBT_Writer;
 public:
-	//¼Ì³Ğ»ùÀà¹¹Ôì
+	//ç»§æ‰¿åŸºç±»æ„é€ 
 	using Array::Array;
 };

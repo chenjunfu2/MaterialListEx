@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <stdint.h>
 #include <compare>
@@ -6,7 +6,7 @@
 using NBT_TAG_RAW_TYPE = uint8_t;
 enum class NBT_TAG : NBT_TAG_RAW_TYPE
 {
-	End = 0,	//½áÊøÏî
+	End = 0,	//ç»“æŸé¡¹
 	Byte,		//int8_t
 	Short,		//int16_t
 	Int,		//int32_t
@@ -14,15 +14,15 @@ enum class NBT_TAG : NBT_TAG_RAW_TYPE
 	Float,		//float 4byte
 	Double,		//double 8byte
 	ByteArray,	//std::vector<int8_t>
-	String,		//std::string->ÓĞ³¤¶ÈÊı¾İ£¬ÇÒÎª·Ç0ÖÕÖ¹×Ö·û´®!!
+	String,		//std::string->æœ‰é•¿åº¦æ•°æ®ï¼Œä¸”ä¸ºé0ç»ˆæ­¢å­—ç¬¦ä¸²!!
 	List,		//std::list<NBT_Node>->vector
-	Compound,	//std::map<std::string, NBT_Node>->×Ö·û´®ÎªNBTÏîÃû³Æ
+	Compound,	//std::map<std::string, NBT_Node>->å­—ç¬¦ä¸²ä¸ºNBTé¡¹åç§°
 	IntArray,	//std::vector<int32_t>
 	LongArray,	//std::vector<int64_t>
-	ENUM_END,	//½áÊø±ê¼Ç£¬ÓÃÓÚ¼ÆËãenumÔªËØ¸öÊı
+	ENUM_END,	//ç»“æŸæ ‡è®°ï¼Œç”¨äºè®¡ç®—enumå…ƒç´ ä¸ªæ•°
 };
 
-//ÔËËã·ûÖØÔØ
+//è¿ç®—ç¬¦é‡è½½
 
 template<typename T>
 constexpr bool operator==(T l, NBT_TAG r)

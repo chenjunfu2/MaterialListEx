@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <unordered_map>
 #include <compare>
@@ -37,7 +37,7 @@ class MyCompound :protected Compound//Compound is Map
 	template <typename DataType>
 	friend class NBT_Writer;
 private:
-	//×ÜÊÇÔÊĞí²åÈënbt end£¬µ«ÊÇÔÚĞ´³öÎÄ¼şÊ±»áºöÂÔendÀàĞÍ
+	//æ€»æ˜¯å…è®¸æ’å…¥nbt endï¼Œä½†æ˜¯åœ¨å†™å‡ºæ–‡ä»¶æ—¶ä¼šå¿½ç•¥endç±»å‹
 	//template<typename V>
 	//bool TestType(V vTagVal)
 	//{
@@ -51,7 +51,7 @@ private:
 	//	}
 	//}
 public:
-	//ÍêÃÀ×ª·¢¡¢³õÊ¼»¯ÁĞ±í´úÀí¹¹Ôì
+	//å®Œç¾è½¬å‘ã€åˆå§‹åŒ–åˆ—è¡¨ä»£ç†æ„é€ 
 	template<typename... Args>
 	MyCompound(Args&&... args) : Compound(std::forward<Args>(args)...)
 	{}
@@ -59,18 +59,18 @@ public:
 	MyCompound(std::initializer_list<typename Compound::value_type> init) : Compound(init)
 	{}
 
-	//ÎŞ²Î¹¹ÔìÎö¹¹
+	//æ— å‚æ„é€ ææ„
 	MyCompound(void) = default;
 	~MyCompound(void) = default;
 
-	//ÒÆ¶¯¿½±´¹¹Ôì
+	//ç§»åŠ¨æ‹·è´æ„é€ 
 	MyCompound(MyCompound &&_Move) noexcept :Compound(std::move(_Move))
 	{}
 
 	MyCompound(const MyCompound &_Copy) noexcept :Compound(_Copy)
 	{}
 
-	//¸³Öµ
+	//èµ‹å€¼
 	MyCompound &operator=(MyCompound &&_Move) noexcept
 	{
 		Compound::operator=(std::move(_Move));
@@ -84,13 +84,13 @@ public:
 	}
 
 
-	//·µ»ØÄÚ²¿Êı¾İ£¨¸¸Àà£©
+	//è¿”å›å†…éƒ¨æ•°æ®ï¼ˆçˆ¶ç±»ï¼‰
 	const Compound &GetData(void) const noexcept
 	{
 		return *this;
 	}
 
-	//ÔËËã·ûÖØÔØ
+	//è¿ç®—ç¬¦é‡è½½
 	bool operator==(const MyCompound &_Right) const noexcept
 	{
 		return (const Compound &)*this == (const Compound &)_Right;
@@ -111,16 +111,16 @@ public:
 		{
 			if (operator==(_Right))
 			{
-				return std::partial_ordering::equivalent;//ÏàµÈ·µ»ØÏàµÈ
+				return std::partial_ordering::equivalent;//ç›¸ç­‰è¿”å›ç›¸ç­‰
 			}
 			else
 			{
-				return std::partial_ordering::unordered;//·ñÔò·µ»Ø²»¿É±È½Ï
+				return std::partial_ordering::unordered;//å¦åˆ™è¿”å›ä¸å¯æ¯”è¾ƒ
 			}
 		}
 	}
 
-	//±©Â¶¸¸Àà½Ó¿Ú
+	//æš´éœ²çˆ¶ç±»æ¥å£
 	using Compound::begin;
 	using Compound::end;
 	using Compound::cbegin;
@@ -132,7 +132,7 @@ public:
 	//using Compound::crbegin;
 	//using Compound::crend;
 	
-	//´æÔÚÔòÓ³Éä
+	//å­˜åœ¨åˆ™æ˜ å°„
 	//-------------------- rbegin --------------------
 	auto rbegin() requires HasRBegin<Compound> {return Compound::rbegin();}
 	auto rbegin() const requires HasRBegin<Compound> {return Compound::rbegin();}
@@ -144,7 +144,7 @@ public:
 	
 	
 
-	//¼ò»¯map²éÑ¯
+	//ç®€åŒ–mapæŸ¥è¯¢
 	typename Compound::mapped_type &Get(const typename Compound::key_type &sTagName)
 	{
 		return Compound::at(sTagName);
@@ -167,13 +167,13 @@ public:
 		return find == Compound::end() ? NULL : &((*find).second);
 	}
 
-	//¼ò»¯map²åÈë
-	//Ê¹ÓÃÍêÃÀ×ª·¢£¬²»¶ªÊ§ÒıÓÃ¡¢ÓÒÖµĞÅÏ¢
+	//ç®€åŒ–mapæ’å…¥
+	//ä½¿ç”¨å®Œç¾è½¬å‘ï¼Œä¸ä¸¢å¤±å¼•ç”¨ã€å³å€¼ä¿¡æ¯
 	template <typename K, typename V>
 	std::pair<typename Compound::iterator, bool> Put(K &&sTagName, V &&vTagVal)
 		requires std::constructible_from<typename Compound::key_type, K &&> && std::constructible_from<typename Compound::mapped_type, V &&>
 	{
-		//×ÜÊÇÔÊĞí²åÈënbt end£¬µ«ÊÇÔÚĞ´³öÎÄ¼şÊ±»áºöÂÔendÀàĞÍ
+		//æ€»æ˜¯å…è®¸æ’å…¥nbt endï¼Œä½†æ˜¯åœ¨å†™å‡ºæ–‡ä»¶æ—¶ä¼šå¿½ç•¥endç±»å‹
 		//if (!TestType(vTagVal))
 		//{
 		//	return std::pair{ Compound::end(),false };
@@ -184,7 +184,7 @@ public:
 
 	std::pair<typename Compound::iterator, bool> Put(const typename Compound::value_type &mapValue)
 	{
-		//×ÜÊÇÔÊĞí²åÈënbt end£¬µ«ÊÇÔÚĞ´³öÎÄ¼şÊ±»áºöÂÔendÀàĞÍ
+		//æ€»æ˜¯å…è®¸æ’å…¥nbt endï¼Œä½†æ˜¯åœ¨å†™å‡ºæ–‡ä»¶æ—¶ä¼šå¿½ç•¥endç±»å‹
 		//if (!TestType(mapValue.second.GetTag()))
 		//{
 		//	return std::pair{ Compound::end(),false };
@@ -195,7 +195,7 @@ public:
 
 	std::pair<typename Compound::iterator, bool> Put(typename Compound::value_type &&mapValue)
 	{
-		//×ÜÊÇÔÊĞí²åÈënbt end£¬µ«ÊÇÔÚĞ´³öÎÄ¼şÊ±»áºöÂÔendÀàĞÍ
+		//æ€»æ˜¯å…è®¸æ’å…¥nbt endï¼Œä½†æ˜¯åœ¨å†™å‡ºæ–‡ä»¶æ—¶ä¼šå¿½ç•¥endç±»å‹
 		//if (!TestType(mapValue.second.GetTag()))
 		//{
 		//	return std::pair{ Compound::end(),false };
@@ -204,10 +204,10 @@ public:
 		return Compound::insert(std::move(mapValue));
 	}
 
-	//¼ò»¯É¾³ı
+	//ç®€åŒ–åˆ é™¤
 	bool Remove(const typename Compound::key_type &sTagName)
 	{
-		return Compound::erase(sTagName) != 0;//·µ»Ø1¼´Îª³É¹¦£¬·ñÔòÎª0£¬±ê×¼¿â£º·µ»ØÖµÎªÉ¾³ıµÄÔªËØÊı£¨0 »ò 1£©¡£
+		return Compound::erase(sTagName) != 0;//è¿”å›1å³ä¸ºæˆåŠŸï¼Œå¦åˆ™ä¸º0ï¼Œæ ‡å‡†åº“ï¼šè¿”å›å€¼ä¸ºåˆ é™¤çš„å…ƒç´ æ•°ï¼ˆ0 æˆ– 1ï¼‰ã€‚
 	}
 
 	void Clear(void)
@@ -215,7 +215,7 @@ public:
 		Compound::clear();
 	}
 
-	//¹¦ÄÜº¯Êı
+	//åŠŸèƒ½å‡½æ•°
 	bool Empty(void) const noexcept
 	{
 		return Compound::empty();
@@ -226,7 +226,7 @@ public:
 		return Compound::size();
 	}
 
-	//¼ò»¯ÅĞ¶Ï
+	//ç®€åŒ–åˆ¤æ–­
 	bool Contains(const typename Compound::key_type &sTagName) const noexcept
 	{
 		return Compound::contains(sTagName);

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <compare>
 
@@ -8,11 +8,11 @@
 #include "NBT_List.hpp"
 #include "NBT_Compound.hpp"
 
-//ÔÚÕâÀï£¬CHAR2MU8STRµÄ¶¨ÒåÓëNBT_Type::String::ViewµÄ¶¨Òå¶¼ÒÑÍê±¸£¬¸ø³ö×ª»»·½Ê½ÒÔÊ¹µÃËùÓĞ¾²Ì¬
-//×Ö·û´®³õÊ¼»¯µ½NBT_Type::String::View£¬·½±ãÓë±ê×¼¿âÖØÔØ£¬¶ø²»ÊÇÖ±½ÓÄÃµ½std::arrayµ¼ÖÂÖØÔØÊ§°Ü
-//×¢ÒâÈÎºÎĞèÒª±£´æMU8STR¶ø²»ÊÇÁÙÊ±Ê¹ÓÃMU8STRµÄÇé¿öÏÂ£¬¶¼±ØĞëÊ¹ÓÃNBT_Type::String±£´æ£¬¶ø²»ÄÜÊ¹ÓÃ
-//NBT_Type::String::View±£´æ£¬·ñÔòmsvc²»»á±¨´íµ«ÊÇÊ¹µÃNBT_Type::String::View³ÖÓĞÎŞĞ§µØÖ·µ¼ÖÂ
-//³ÌĞò±ÀÀ££¬µ«ÊÇÕâÖÖÇé¿öÏÂgccºÍclang¶¼»á±¨´íÖ»ÓĞmsvc²»»á»¹ÄÜ¹ı±àÒë£¬Ö»ÄÜËµÕâÊÇÓÃmsvcµÄ¸£±¨£¨´ó¿Ş£©
+//åœ¨è¿™é‡Œï¼ŒCHAR2MU8STRçš„å®šä¹‰ä¸NBT_Type::String::Viewçš„å®šä¹‰éƒ½å·²å®Œå¤‡ï¼Œç»™å‡ºè½¬æ¢æ–¹å¼ä»¥ä½¿å¾—æ‰€æœ‰é™æ€
+//å­—ç¬¦ä¸²åˆå§‹åŒ–åˆ°NBT_Type::String::Viewï¼Œæ–¹ä¾¿ä¸æ ‡å‡†åº“é‡è½½ï¼Œè€Œä¸æ˜¯ç›´æ¥æ‹¿åˆ°std::arrayå¯¼è‡´é‡è½½å¤±è´¥
+//æ³¨æ„ä»»ä½•éœ€è¦ä¿å­˜MU8STRè€Œä¸æ˜¯ä¸´æ—¶ä½¿ç”¨MU8STRçš„æƒ…å†µä¸‹ï¼Œéƒ½å¿…é¡»ä½¿ç”¨NBT_Type::Stringä¿å­˜ï¼Œè€Œä¸èƒ½ä½¿ç”¨
+//NBT_Type::String::Viewä¿å­˜ï¼Œå¦åˆ™msvcä¸ä¼šæŠ¥é”™ä½†æ˜¯ä½¿å¾—NBT_Type::String::ViewæŒæœ‰æ— æ•ˆåœ°å€å¯¼è‡´
+//ç¨‹åºå´©æºƒï¼Œä½†æ˜¯è¿™ç§æƒ…å†µä¸‹gccå’Œclangéƒ½ä¼šæŠ¥é”™åªæœ‰msvcä¸ä¼šè¿˜èƒ½è¿‡ç¼–è¯‘ï¼Œåªèƒ½è¯´è¿™æ˜¯ç”¨msvcçš„ç¦æŠ¥ï¼ˆå¤§å“­ï¼‰
 #define MU8STR(charLiteralString) (NBT_Type::String::View(U8TOMU8STR(u8##charLiteralString)))
 
 template <bool bIsConst>
@@ -36,7 +36,7 @@ private:
 
 	VariantData data;
 public:
-	//ÏÔÊ½¹¹Ôì£¨Í¨¹ıin_place_type_t£©
+	//æ˜¾å¼æ„é€ ï¼ˆé€šè¿‡in_place_type_tï¼‰
 	template <typename T, typename... Args>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
 	explicit NBT_Node(std::in_place_type_t<T>, Args&&... args) : data(std::in_place_type<T>, std::forward<Args>(args)...)
@@ -44,7 +44,7 @@ public:
 		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
 	}
 
-	//ÏÔÊ½ÁĞ±í¹¹Ôì£¨Í¨¹ıin_place_type_t£©
+	//æ˜¾å¼åˆ—è¡¨æ„é€ ï¼ˆé€šè¿‡in_place_type_tï¼‰
 	template <typename T, typename U, typename... Args>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
 	explicit NBT_Node(std::in_place_type_t<T>, std::initializer_list<U> init) : data(std::in_place_type<T>, init)
@@ -52,7 +52,7 @@ public:
 		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
 	}
 
-	//Í¨ÓÃ¹¹Ôì
+	//é€šç”¨æ„é€ 
 	template <typename T>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
 	NBT_Node(T &&value) noexcept : data(std::forward<T>(value))
@@ -60,7 +60,7 @@ public:
 		static_assert(std::is_constructible_v<VariantData, decltype(value)>, "Invalid constructor arguments for NBT_Node");
 	}
 
-	//Ô­Î»·ÅÖÃ
+	//åŸä½æ”¾ç½®
 	template <typename T, typename... Args>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
 	T &emplace(Args&&... args)
@@ -70,7 +70,7 @@ public:
 		return data.emplace<T>(std::forward<Args>(args)...);
 	}
 
-	//Í¨ÓÃ¸³Öµ
+	//é€šç”¨èµ‹å€¼
 	template<typename T>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V <std::decay_t<T>>)
 	NBT_Node &operator=(T &&value) noexcept
@@ -81,11 +81,11 @@ public:
 		return *this;
 	}
 
-	// Ä¬ÈÏ¹¹Ôì£¨TAG_End£©
+	// é»˜è®¤æ„é€ ï¼ˆTAG_Endï¼‰
 	NBT_Node() : data(NBT_Type::End{})
 	{}
 
-	// ×Ô¶¯Îö¹¹ÓÉvariant´¦Àí
+	// è‡ªåŠ¨ææ„ç”±variantå¤„ç†
 	~NBT_Node() = default;
 
 	NBT_Node(const NBT_Node &_NBT_Node) : data(_NBT_Node.data)
@@ -121,20 +121,20 @@ public:
 		return data <=> _Right.data;
 	}
 
-	//Çå³ıËùÓĞÊı¾İ
+	//æ¸…é™¤æ‰€æœ‰æ•°æ®
 	void Clear(void)
 	{
 		data.emplace<NBT_Type::End>(NBT_Type::End{});
 	}
 
-	//»ñÈ¡±êÇ©ÀàĞÍ
+	//è·å–æ ‡ç­¾ç±»å‹
 	NBT_TAG GetTag() const noexcept
 	{
-		return (NBT_TAG)data.index();//·µ»Øµ±Ç°´æ´¢ÀàĞÍµÄindex£¨0»ùË÷Òı£¬ÓëNBT_TAG enumÒ»Ò»¶ÔÓ¦£©
+		return (NBT_TAG)data.index();//è¿”å›å½“å‰å­˜å‚¨ç±»å‹çš„indexï¼ˆ0åŸºç´¢å¼•ï¼Œä¸NBT_TAG enumä¸€ä¸€å¯¹åº”ï¼‰
 	}
 
 
-	//ÀàĞÍ°²È«·ÃÎÊ
+	//ç±»å‹å®‰å…¨è®¿é—®
 	template<typename T>
 	const T &GetData() const
 	{
@@ -147,19 +147,19 @@ public:
 		return std::get<T>(data);
 	}
 
-	// ÀàĞÍ¼ì²é
+	// ç±»å‹æ£€æŸ¥
 	template<typename T>
 	bool TypeHolds() const
 	{
 		return std::holds_alternative<T>(data);
 	}
 
-	//Õë¶ÔÃ¿ÖÖÀàĞÍÖØÔØÒ»¸ö·½±ãµÄº¯Êı
+	//é’ˆå¯¹æ¯ç§ç±»å‹é‡è½½ä¸€ä¸ªæ–¹ä¾¿çš„å‡½æ•°
 	/*
-		´¿ÀàĞÍÃûº¯Êı£ºÖ±½Ó»ñÈ¡´ËÀàĞÍ£¬²»×öÈÎºÎ¼ì²é£¬ÓÉ±ê×¼¿âstd::get¾ßÌåÊµÏÖ¾ö¶¨
-		Is¿ªÍ·µÄÀàĞÍÃûº¯Êı£ºÅĞ¶Ïµ±Ç°NBT_NodeÊÇ·ñÎª´ËÀàĞÍ
-		´¿ÀàĞÍÃûº¯Êı´ø²ÎÊı°æ±¾£º²éÕÒµ±Ç°CompoundÖ¸¶¨µÄName²¢×ª»»µ½ÀàĞÍÒıÓÃ·µ»Ø£¬²»×ö¼ì²é£¬¾ßÌåÓÉ±ê×¼¿âÊµÏÖ¶¨Òå
-		Has¿ªÍ·µÄÀàĞÍÃûº¯Êı´ø²ÎÊı°æ±¾£º²éÕÒµ±Ç°CompoundÊÇ·ñÓĞÌØ¶¨NameµÄTag£¬²¢·µ»Ø´ËNameµÄTag£¨×ª»»µ½Ö¸¶¨ÀàĞÍ£©µÄÖ¸Õë
+		çº¯ç±»å‹åå‡½æ•°ï¼šç›´æ¥è·å–æ­¤ç±»å‹ï¼Œä¸åšä»»ä½•æ£€æŸ¥ï¼Œç”±æ ‡å‡†åº“std::getå…·ä½“å®ç°å†³å®š
+		Iså¼€å¤´çš„ç±»å‹åå‡½æ•°ï¼šåˆ¤æ–­å½“å‰NBT_Nodeæ˜¯å¦ä¸ºæ­¤ç±»å‹
+		çº¯ç±»å‹åå‡½æ•°å¸¦å‚æ•°ç‰ˆæœ¬ï¼šæŸ¥æ‰¾å½“å‰CompoundæŒ‡å®šçš„Nameå¹¶è½¬æ¢åˆ°ç±»å‹å¼•ç”¨è¿”å›ï¼Œä¸åšæ£€æŸ¥ï¼Œå…·ä½“ç”±æ ‡å‡†åº“å®ç°å®šä¹‰
+		Haså¼€å¤´çš„ç±»å‹åå‡½æ•°å¸¦å‚æ•°ç‰ˆæœ¬ï¼šæŸ¥æ‰¾å½“å‰Compoundæ˜¯å¦æœ‰ç‰¹å®šNameçš„Tagï¼Œå¹¶è¿”å›æ­¤Nameçš„Tagï¼ˆè½¬æ¢åˆ°æŒ‡å®šç±»å‹ï¼‰çš„æŒ‡é’ˆ
 	*/
 #define TYPE_GET_FUNC(type)\
 const NBT_Type::##type &Get##type() const\
@@ -206,14 +206,14 @@ friend const NBT_Type::##type &Get##type(const NBT_Node & node)\
 
 /*
 TODO:
-¸øNBTListÓëNBTCompoundÌí¼ÓÒ»¸ö¸½¼Ó×Ö¶Î
-ÍùÀïÃæ²åÈëÊı¾İµÄÊ±ºò£¬»á¸ù¾İÊı¾İµÄ´óĞ¡¼ÆËã
-³önbtµÄ´óĞ¡ºÏ²¢µ½×ÔÉí£¬É¾³ıµÄÊ±ºòÈ¥µô
-ÕâÑùÔÚĞ´³öµÄÊ±ºò¿ÉÒÔÔ¤·ÖÅä£¬¶ø²»ÊÇ±»¶¯µÄ´¥·¢
-ÈİÆ÷µÄÀ©Èİ¿½±´£¬Ôö¼ÓĞ´³öĞÔÄÜ
+ç»™NBTListä¸NBTCompoundæ·»åŠ ä¸€ä¸ªé™„åŠ å­—æ®µ
+å¾€é‡Œé¢æ’å…¥æ•°æ®çš„æ—¶å€™ï¼Œä¼šæ ¹æ®æ•°æ®çš„å¤§å°è®¡ç®—
+å‡ºnbtçš„å¤§å°åˆå¹¶åˆ°è‡ªèº«ï¼Œåˆ é™¤çš„æ—¶å€™å»æ‰
+è¿™æ ·åœ¨å†™å‡ºçš„æ—¶å€™å¯ä»¥é¢„åˆ†é…ï¼Œè€Œä¸æ˜¯è¢«åŠ¨çš„è§¦å‘
+å®¹å™¨çš„æ‰©å®¹æ‹·è´ï¼Œå¢åŠ å†™å‡ºæ€§èƒ½
 
 
-¶Ônbt¶ÁĞ´¡¢¹¤¾ßµÄ±¨´íÌá¹©Ò»¸öÊä³öÁ÷Ä£°å£¬ÔÊĞíÓÃ»§×Ô¶¨ÒåÊä³ö
-¶Ônbt toolµÄ´òÓ¡Êä³ö£¬Ò²Ìá¹©Ò»¸öÄ£°åÔÊĞíÓÃ»§×Ô¶¨ÒåµÈ
+å¯¹nbtè¯»å†™ã€å·¥å…·çš„æŠ¥é”™æä¾›ä¸€ä¸ªè¾“å‡ºæµæ¨¡æ¿ï¼Œå…è®¸ç”¨æˆ·è‡ªå®šä¹‰è¾“å‡º
+å¯¹nbt toolçš„æ‰“å°è¾“å‡ºï¼Œä¹Ÿæä¾›ä¸€ä¸ªæ¨¡æ¿å…è®¸ç”¨æˆ·è‡ªå®šä¹‰ç­‰
 
 */

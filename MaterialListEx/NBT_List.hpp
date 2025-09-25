@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <vector>
 #include <compare>
@@ -23,15 +23,15 @@ class MyList :protected List
 	template <typename DataType>
 	friend class NBT_Writer;
 private:
-	//ÁĞ±íÔªËØÀàĞÍ£¨Ö»ÄÜÒ»ÖÖÔªËØ£©
+	//åˆ—è¡¨å…ƒç´ ç±»å‹ï¼ˆåªèƒ½ä¸€ç§å…ƒç´ ï¼‰
 	NBT_TAG enElementTag = NBT_TAG::End;
-	//´Ë±äÁ¿½öÓÃÓÚ¹æÔ¼ÁĞ±íÔªËØÀàĞÍ£¬ÎŞĞè²ÎÓë±È½ÏÓëhash£¬µ«ÊÇĞèÒª²ÎÓë¹¹ÔìÓëÒÆ¶¯
+	//æ­¤å˜é‡ä»…ç”¨äºè§„çº¦åˆ—è¡¨å…ƒç´ ç±»å‹ï¼Œæ— éœ€å‚ä¸æ¯”è¾ƒä¸hashï¼Œä½†æ˜¯éœ€è¦å‚ä¸æ„é€ ä¸ç§»åŠ¨
 private:
 	bool TestTagAndSetType(NBT_TAG enTargetTag)
 	{
 		if (enTargetTag == NBT_TAG::End)
 		{
-			return false;//²»ÄÜ²åÈë¿ÕÖµ£¬¾Üµô
+			return false;//ä¸èƒ½æ’å…¥ç©ºå€¼ï¼Œæ‹’æ‰
 		}
 
 		if (enElementTag == NBT_TAG::End)
@@ -77,15 +77,15 @@ private:
 		}
 	}
 public:
-	//ÌáÊ¾ĞÔ±êÇ©£¬ÓÃÓÚÈ¡Ïû¹¹Ôìº¯ÊıµÄ¼ì²â
+	//æç¤ºæ€§æ ‡ç­¾ï¼Œç”¨äºå–æ¶ˆæ„é€ å‡½æ•°çš„æ£€æµ‹
 	struct NoCheck_T
 	{
 		explicit constexpr NoCheck_T() noexcept = default;
 	};
-	//·½±ãÓÃ»§´«ÈëµÄ²ÎÊı
+	//æ–¹ä¾¿ç”¨æˆ·ä¼ å…¥çš„å‚æ•°
 	constexpr static inline const NoCheck_T NoCheck{};
 
-	//ÍêÃÀ×ª·¢¡¢³õÊ¼»¯ÁĞ±í´úÀí¹¹Ôì
+	//å®Œç¾è½¬å‘ã€åˆå§‹åŒ–åˆ—è¡¨ä»£ç†æ„é€ 
 	template<typename... Args>
 	MyList(NBT_TAG _enElementTag, Args&&... args) :List(std::forward<Args>(args)...), enElementTag(_enElementTag)
 	{
@@ -122,14 +122,14 @@ public:
 	MyList(NoCheck_T, std::initializer_list<typename List::value_type> init) : List(init), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
 	{}
 
-	//ÎŞ²Î¹¹ÔìÎö¹¹
+	//æ— å‚æ„é€ ææ„
 	MyList(void) = default;
 	~MyList(void)
 	{
 		Clear();
 	}
 
-	//ÒÆ¶¯¿½±´¹¹Ôì
+	//ç§»åŠ¨æ‹·è´æ„é€ 
 	MyList(MyList &&_Move) noexcept
 		:List(std::move(_Move)),
 		 enElementTag(std::move(_Move.enElementTag))
@@ -141,7 +141,7 @@ public:
 		enElementTag(_Copy.enElementTag)
 	{}
 
-	//¸³Öµ
+	//èµ‹å€¼
 	MyList &operator=(MyList &&_Move) noexcept
 	{
 		List::operator=(std::move(_Move));
@@ -160,13 +160,13 @@ public:
 		return *this;
 	}
 
-	//·µ»ØÄÚ²¿Êı¾İ£¨¸¸Àà£©
+	//è¿”å›å†…éƒ¨æ•°æ®ï¼ˆçˆ¶ç±»ï¼‰
 	const List &GetData(void) const noexcept
 	{
 		return *this;
 	}
 
-	//ÔËËã·ûÖØÔØ
+	//è¿ç®—ç¬¦é‡è½½
 	bool operator==(const MyList &_Right) const noexcept
 	{
 		return enElementTag == _Right.enElementTag &&
@@ -189,7 +189,7 @@ public:
 		return (const List &)*this <=> (const List &)_Right;
 	}
 
-	//±©Â¶¸¸Àà½Ó¿Ú
+	//æš´éœ²çˆ¶ç±»æ¥å£
 	using List::begin;
 	using List::end;
 	using List::cbegin;
@@ -198,9 +198,9 @@ public:
 	using List::rend;
 	using List::crbegin;
 	using List::crend;
-	using List::operator[];//ËùÓĞÊ¹ÓÃ·µ»ØÒıÓÃµÄapi²¢ĞŞ¸ÄlistÄÚ²¿variantÀàĞÍµÄ²Ù×÷¶¼ÊÇÎ´¶¨ÒåĞĞÎª
+	using List::operator[];//æ‰€æœ‰ä½¿ç”¨è¿”å›å¼•ç”¨çš„apiå¹¶ä¿®æ”¹listå†…éƒ¨variantç±»å‹çš„æ“ä½œéƒ½æ˜¯æœªå®šä¹‰è¡Œä¸º
 
-	//×Ô¶¨Òå²Ù×÷
+	//è‡ªå®šä¹‰æ“ä½œ
 	template <bool bNoCheck = false>
 	std::conditional_t<bNoCheck, void, bool> SetTag(NBT_TAG tagNewValue)
 	{
@@ -225,8 +225,8 @@ public:
 		return enElementTag;
 	}
 
-	//¼ò»¯list²éÑ¯
-	//ËùÓĞÊ¹ÓÃ·µ»ØÒıÓÃµÄapi²¢ĞŞ¸ÄlistÄÚ²¿variantÀàĞÍµÄ²Ù×÷¶¼ÊÇÎ´¶¨ÒåĞĞÎª
+	//ç®€åŒ–listæŸ¥è¯¢
+	//æ‰€æœ‰ä½¿ç”¨è¿”å›å¼•ç”¨çš„apiå¹¶ä¿®æ”¹listå†…éƒ¨variantç±»å‹çš„æ“ä½œéƒ½æ˜¯æœªå®šä¹‰è¡Œä¸º
 	typename List::value_type &Get(const typename List::size_type &szPos)
 	{
 		return List::at(szPos);
@@ -257,7 +257,7 @@ public:
 		return List::back();
 	}
 
-	//¼ò»¯list²åÈë
+	//ç®€åŒ–listæ’å…¥
 	template <bool bNoCheck = false, typename V>
 	std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Add(size_t szPos, V &&vTagVal)
 	{
@@ -273,7 +273,7 @@ public:
 			}
 		}
 
-		//²åÈë
+		//æ’å…¥
 		typename List::iterator itRet = List::emplace(List::begin() + szPos, std::forward<V>(vTagVal));
 
 		if (!bNoCheck)
@@ -297,7 +297,7 @@ public:
 			}
 		}
 
-		//²åÈë
+		//æ’å…¥
 		List::emplace_back(std::forward<V>(vTagVal));
 
 		if constexpr (!bNoCheck)
@@ -337,7 +337,7 @@ public:
 		}
 	}
 
-	//¼ò»¯É¾³ı
+	//ç®€åŒ–åˆ é™¤
 	template <bool bNoCheck = false>
 	std::conditional_t<bNoCheck, void, bool> Remove(size_t szPos)
 	{
@@ -349,11 +349,11 @@ public:
 			}
 		}
 
-		List::erase(List::begin() + szPos);//Õâ¸öÃ»±ØÒª·µ»Ø½á¹û£¬Ö±½Ó¶ªÆú
+		List::erase(List::begin() + szPos);//è¿™ä¸ªæ²¡å¿…è¦è¿”å›ç»“æœï¼Œç›´æ¥ä¸¢å¼ƒ
 
 		if (Empty())
 		{
-			enElementTag = NBT_TAG::End;//Çå³ıÀàĞÍ
+			enElementTag = NBT_TAG::End;//æ¸…é™¤ç±»å‹
 		}
 
 		if constexpr (!bNoCheck)
@@ -368,7 +368,7 @@ public:
 		enElementTag = NBT_TAG::End;
 	}
 
-	//¹¦ÄÜº¯Êı
+	//åŠŸèƒ½å‡½æ•°
 	bool Empty(void) const noexcept
 	{
 		return List::empty();

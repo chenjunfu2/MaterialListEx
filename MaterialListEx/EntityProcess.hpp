@@ -1,11 +1,11 @@
-#pragma once
+ï»¿#pragma once
 
 #include "NBT_Node.hpp"
 #include "ItemProcess.hpp"
 
 #include <compare>
 
-//Ä¿Ç°ÊµÌåĞÅÏ¢Ö»ÓĞÃû×Ö£¬ºÜ·ûºÏÎŞtagÎïÆ·Çé¿ö£¬Ö±½ÓÆğ¸ö±ğÃû
+//ç›®å‰å®ä½“ä¿¡æ¯åªæœ‰åå­—ï¼Œå¾ˆç¬¦åˆæ— tagç‰©å“æƒ…å†µï¼Œç›´æ¥èµ·ä¸ªåˆ«å
 using EntityInfo = NoTagItemInfo;
 
 class EntityProcess
@@ -14,7 +14,7 @@ public:
 	EntityProcess() = delete;
 	~EntityProcess() = delete;
 
-	//5~6ÎªÈİÆ÷£¬Ê£ÏÂµÄÎªÎïÆ·À¸
+	//5~6ä¸ºå®¹å™¨ï¼Œå‰©ä¸‹çš„ä¸ºç‰©å“æ 
 	static constexpr size_t szContainerIndexBeg = 5;
 	static inline const NBT_Type::String sSlotTagName[] =
 	{
@@ -27,9 +27,9 @@ public:
 		MU8STR("Items"),//5
 		MU8STR("Item"),
 		//MU8STR(""),
-	};//´ËÊı×é²»ÄÜÂÒ¸Ä£¬ÓĞË÷ÒıÇ¿Ïà¹Ø£¡
+	};//æ­¤æ•°ç»„ä¸èƒ½ä¹±æ”¹ï¼Œæœ‰ç´¢å¼•å¼ºç›¸å…³ï¼
 
-	//µôÂäÎïºÍÎïÆ·Õ¹Ê¾¿òÕâĞ©¶¼ËãItem£¬»á×ßÊµÌåÈİÆ÷´¦Àí£¬·ûºÏÒªÇó£¬ÎŞĞèÌØÅĞ
+	//æ‰è½ç‰©å’Œç‰©å“å±•ç¤ºæ¡†è¿™äº›éƒ½ç®—Itemï¼Œä¼šèµ°å®ä½“å®¹å™¨å¤„ç†ï¼Œç¬¦åˆè¦æ±‚ï¼Œæ— éœ€ç‰¹åˆ¤
 
 	struct EntityItemSlot
 	{
@@ -53,19 +53,19 @@ public:
 
 private:
 	/*	
-	ÂíµÄ°°ÊÇÍ¨¹ıSaddleItemµÄcompoundÀïÃæµÄÎïÆ·¾ö¶¨µÄ£¬¶øÖí¡¢³à×ãÊŞÕâĞ©ÕâÔòÊÇÍ¨¹ıSaddleµÄbool±êÇ©¾ö¶¨µÄ
-	µÃ½øĞĞÌØÅĞ£¬È»ºó½«bool×ª»»µ½°°ÎïÆ·½øĞĞÍ³¼Æ
+	é©¬çš„éæ˜¯é€šè¿‡SaddleItemçš„compoundé‡Œé¢çš„ç‰©å“å†³å®šçš„ï¼Œè€ŒçŒªã€èµ¤è¶³å…½è¿™äº›è¿™åˆ™æ˜¯é€šè¿‡Saddleçš„boolæ ‡ç­¾å†³å®šçš„
+	å¾—è¿›è¡Œç‰¹åˆ¤ï¼Œç„¶åå°†boolè½¬æ¢åˆ°éç‰©å“è¿›è¡Œç»Ÿè®¡
 	
-	Èç¹ûÊµÌåÓĞ´øË©Éş£¬Ôò´æÔÚLeashÕâ¸öcompound±êÇ©£¬ÄÚ²¿ÓĞË©Éş×ø±ê»òÕßÊÇÀ­×ÅËûµÄÊµÌåµÄuuid£¬×ÜÖ®²»Îª¿Õ£¬ÕâÖÖÇé¿öÏÂ×ª»»ÎªË©Éş
+	å¦‚æœå®ä½“æœ‰å¸¦æ‹´ç»³ï¼Œåˆ™å­˜åœ¨Leashè¿™ä¸ªcompoundæ ‡ç­¾ï¼Œå†…éƒ¨æœ‰æ‹´ç»³åæ ‡æˆ–è€…æ˜¯æ‹‰ç€ä»–çš„å®ä½“çš„uuidï¼Œæ€»ä¹‹ä¸ä¸ºç©ºï¼Œè¿™ç§æƒ…å†µä¸‹è½¬æ¢ä¸ºæ‹´ç»³
 	*/
-	//²éÕÒ²¢×ª»»ÄÇĞ©ÌØÊâµÄÊı¾İÖµµ½ÎïÆ·
+	//æŸ¥æ‰¾å¹¶è½¬æ¢é‚£äº›ç‰¹æ®Šçš„æ•°æ®å€¼åˆ°ç‰©å“
 	static void ExtractSpecial(std::vector<EntityItemSlot> &listSlot, const NBT_Type::Compound& cpdEntity)
 	{
-		//ÏÈ¶ÔÁ½¸ö½øĞĞ²éÕÒ£¬È»ºóÅĞ¶Ï
+		//å…ˆå¯¹ä¸¤ä¸ªè¿›è¡ŒæŸ¥æ‰¾ï¼Œç„¶ååˆ¤æ–­
 		const auto pSaddle = cpdEntity.HasByte(MU8STR("Saddle"));
 		const auto pLeash = cpdEntity.HasCompound(MU8STR("Leash"));
 
-		//ÉùÃ÷Á½¸ö¾²Ì¬µÄ³ÉÔ±£¬ÈÃEntityStatsµÄÖ¸ÕëÖ¸ÏòËü£¬Î±×°³ÉÕı³£¶ÁÈ¡µÄÊı¾İ£¨²»»á±»¸ÄĞ´£©
+		//å£°æ˜ä¸¤ä¸ªé™æ€çš„æˆå‘˜ï¼Œè®©EntityStatsçš„æŒ‡é’ˆæŒ‡å‘å®ƒï¼Œä¼ªè£…æˆæ­£å¸¸è¯»å–çš„æ•°æ®ï¼ˆä¸ä¼šè¢«æ”¹å†™ï¼‰
 		using CP = std::pair<const NBT_Type::String, NBT_Node>;
 		static const NBT_Node slotSaddleItem
 		{
@@ -84,16 +84,16 @@ private:
 			}
 		};
 
-		//ÓĞ°°£¬¼ÓÒ»¸ö
-		if (pSaddle != NULL && *pSaddle != 0)//ÒÔbyte´æ´¢µÄboolÖµ²»Îª0
+		//æœ‰éï¼ŒåŠ ä¸€ä¸ª
+		if (pSaddle != NULL && *pSaddle != 0)//ä»¥byteå­˜å‚¨çš„boolå€¼ä¸ä¸º0
 		{
-			listSlot.emplace_back(3, &slotSaddleItem);//ÕâÀïµÄ3¾ÍÊÇÉÏÃæÊı×éµÄ°°Î»ÖÃ
+			listSlot.emplace_back(3, &slotSaddleItem);//è¿™é‡Œçš„3å°±æ˜¯ä¸Šé¢æ•°ç»„çš„éä½ç½®
 		}
 
-		//ÓĞË©ÉşĞÅÏ¢²¢ÇÒĞÅÏ¢·Ç¿Õ£¨Ö»Òª·Ç¿Õ¼´¿É£¬ÊÇÊ²Ã´£¨±ÈÈç×ø±ê»òÕßÇ£À­¶ÔÏóuuid£©¶¼²»ÖØÒª£©£¬¼ÓÒ»¸ö
-		if (pLeash != NULL && pLeash->Size() != 0)//ÒòÎªË©ÉşÖ»ÔÚÄ¿±ê¶ÔÏó´æ´¢£¬À­Ë©ÉşµÄÖ÷Ìå²»´æ´¢£¬²»»áÖØ¸´¼ÆËã
+		//æœ‰æ‹´ç»³ä¿¡æ¯å¹¶ä¸”ä¿¡æ¯éç©ºï¼ˆåªè¦éç©ºå³å¯ï¼Œæ˜¯ä»€ä¹ˆï¼ˆæ¯”å¦‚åæ ‡æˆ–è€…ç‰µæ‹‰å¯¹è±¡uuidï¼‰éƒ½ä¸é‡è¦ï¼‰ï¼ŒåŠ ä¸€ä¸ª
+		if (pLeash != NULL && pLeash->Size() != 0)//å› ä¸ºæ‹´ç»³åªåœ¨ç›®æ ‡å¯¹è±¡å­˜å‚¨ï¼Œæ‹‰æ‹´ç»³çš„ä¸»ä½“ä¸å­˜å‚¨ï¼Œä¸ä¼šé‡å¤è®¡ç®—
 		{
-			listSlot.emplace_back(2, &slotLeadItem);//ÒòÎªË©Éş²»ÊôÓÚÈÎºÎÒ»¸öÊµÌåÎïÆ·À¸ÀàĞÍ£¬ËùÒÔ¼òµ¥¹éÊôµ½ÎïÆ·À¸£¨2£©
+			listSlot.emplace_back(2, &slotLeadItem);//å› ä¸ºæ‹´ç»³ä¸å±äºä»»ä½•ä¸€ä¸ªå®ä½“ç‰©å“æ ç±»å‹ï¼Œæ‰€ä»¥ç®€å•å½’å±åˆ°ç‰©å“æ ï¼ˆ2ï¼‰
 		}
 
 	}
@@ -101,45 +101,45 @@ private:
 public:
 	static EntityStatsList GetEntityStats(const NBT_Type::Compound &RgCompound)
 	{
-		//»ñÈ¡ÊµÌåÁĞ±í
+		//è·å–å®ä½“åˆ—è¡¨
 		const auto &listEntity = RgCompound.GetList(MU8STR("Entities"));
 		
-		//±éÀú£¬²¢ÔÚÃ¿¸öÊµÌåcompoundÏÂ²éÑ¯ËùÓĞ¹Ø¼ü×Ö½øĞĞ·ÖÀà
+		//éå†ï¼Œå¹¶åœ¨æ¯ä¸ªå®ä½“compoundä¸‹æŸ¥è¯¢æ‰€æœ‰å…³é”®å­—è¿›è¡Œåˆ†ç±»
 		EntityStatsList listEntityStatsList{};
-		listEntityStatsList.reserve(listEntity.Size());//ÌáÇ°À©Èİ
-		//±éÀúÊµÌå
+		listEntityStatsList.reserve(listEntity.Size());//æå‰æ‰©å®¹
+		//éå†å®ä½“
 		for (const auto &it : listEntity)
 		{
-			//×ª»»ÀàĞÍ
+			//è½¬æ¢ç±»å‹
 			const auto &curEntity = GetCompound(it);
 			
-			//ÔÚÃ¿¸öentityÄÚ²éÕÒËùÓĞ¿ÉÄÜ³öÏÖµÄ¿ÉÒÔÈİÄÉÎïÆ·µÄtag
-			EntityStats stEntityStats{ &curEntity.GetString(MU8STR("id")) };//ÏÈ»ñÈ¡ÊµÌåÃû×Ö
-			//×ª»»ÌØÊâµÄÊµÌåidÊı¾İÖµµ½ÎïÆ·
+			//åœ¨æ¯ä¸ªentityå†…æŸ¥æ‰¾æ‰€æœ‰å¯èƒ½å‡ºç°çš„å¯ä»¥å®¹çº³ç‰©å“çš„tag
+			EntityStats stEntityStats{ &curEntity.GetString(MU8STR("id")) };//å…ˆè·å–å®ä½“åå­—
+			//è½¬æ¢ç‰¹æ®Šçš„å®ä½“idæ•°æ®å€¼åˆ°ç‰©å“
 			ExtractSpecial(stEntityStats.listSlot, curEntity);
 
-			//±éÀúËùÓĞ¿ÉÒÔ´æ·ÅÎïÆ·µÄ¸ñ×ÓÃû×Ö
+			//éå†æ‰€æœ‰å¯ä»¥å­˜æ”¾ç‰©å“çš„æ ¼å­åå­—
 			for (const auto &itTag : sSlotTagName)
 			{
-				const auto pSearch = curEntity.Search(itTag);//²¢ÔÚÊµÌåcompoundÄÚ²éÑ¯£¬Èç¹ûÕÒµ½´ú±í´æÔÚ
+				const auto pSearch = curEntity.Search(itTag);//å¹¶åœ¨å®ä½“compoundå†…æŸ¥è¯¢ï¼Œå¦‚æœæ‰¾åˆ°ä»£è¡¨å­˜åœ¨
 				if (pSearch == NULL)
 				{
-					continue;//Ã»ÓĞÕâ¸ötag£¬Ìø¹ı
+					continue;//æ²¡æœ‰è¿™ä¸ªtagï¼Œè·³è¿‡
 				}
 
-				//°ÑÕÒµ½µÄÎïÆ·À¸¼¯ºÏ·ÅÈë¼¯ºÏÁĞ±í
-				stEntityStats.listSlot.emplace_back((&itTag - sSlotTagName), pSearch);//Æ«ÒÆµØÖ·¼õÈ¥»ùµØÖ·»ñÈ¡ÏÂ±ê
+				//æŠŠæ‰¾åˆ°çš„ç‰©å“æ é›†åˆæ”¾å…¥é›†åˆåˆ—è¡¨
+				stEntityStats.listSlot.emplace_back((&itTag - sSlotTagName), pSearch);//åç§»åœ°å€å‡å»åŸºåœ°å€è·å–ä¸‹æ ‡
 			}
 			
-			//×îºó°Ñ´øÓĞÒ»¸öÊµÌåËùÓĞÎïÆ·À¸µÄĞÅÏ¢·ÅÁĞ±í
+			//æœ€åæŠŠå¸¦æœ‰ä¸€ä¸ªå®ä½“æ‰€æœ‰ç‰©å“æ çš„ä¿¡æ¯æ”¾åˆ—è¡¨
 			listEntityStatsList.push_back(std::move(stEntityStats));
 		}
 
-		//·µ»Ø¸øµ÷ÓÃÕß£¬ÒÔ¹©ÏÂÒ»²½´¦Àí
+		//è¿”å›ç»™è°ƒç”¨è€…ï¼Œä»¥ä¾›ä¸‹ä¸€æ­¥å¤„ç†
 		return listEntityStatsList;
 	}
 
-	//Õâ¸öÕæµÄÊÇÎÒĞ´µ½ÏÖÔÚ×î¼òµ¥µÄÒ»¸öº¯ÊıÁË£¨°ö²º×¡£©
+	//è¿™ä¸ªçœŸçš„æ˜¯æˆ‘å†™åˆ°ç°åœ¨æœ€ç®€å•çš„ä¸€ä¸ªå‡½æ•°äº†ï¼ˆèšŒåŸ ä½ï¼‰
 	static EntityInfo EntityStatsToEntityInfo(const EntityStats &stEntityStats)
 	{
 		return EntityInfo
@@ -149,29 +149,29 @@ public:
 	}
 
 	/*
-	ÏÂÃæµÄÄ¿Ç°²»´¦Àí£¬ÒòÎªÒ»°ãÇé¿öÏÂ³ı·Ç¹ÊÒâÖ¸ÁîË¢·ñÔò¶¼ÊÇÕı³£µôÂäµÄÖØÁ¦·½¿é
-	²İÁË£¬µôÂäµÄ·½¿éÕâ¸öÊµÌå£¬Èç¹ûÄÚ²¿ÓĞ±êÇ©£¬²¢ÇÒÊÇ·½¿éÊµÌå£¬nbt±êÇ©¾ÓÈ»ÊÇ½Ğblockentity¶ø²»ÊÇtileentity£¬
-	¶øÇÒ»¹ÓĞblockstate£¬¹À¼ÆµÃ×ßblockprocess´úÀí´¦Àí×ª»»
-	×¢ÒâÈç¹ûÊÇ·½¿éÕ¹Ê¾ÊµÌå£¬»á´æÔÚblock_state
+	ä¸‹é¢çš„ç›®å‰ä¸å¤„ç†ï¼Œå› ä¸ºä¸€èˆ¬æƒ…å†µä¸‹é™¤éæ•…æ„æŒ‡ä»¤åˆ·å¦åˆ™éƒ½æ˜¯æ­£å¸¸æ‰è½çš„é‡åŠ›æ–¹å—
+	è‰äº†ï¼Œæ‰è½çš„æ–¹å—è¿™ä¸ªå®ä½“ï¼Œå¦‚æœå†…éƒ¨æœ‰æ ‡ç­¾ï¼Œå¹¶ä¸”æ˜¯æ–¹å—å®ä½“ï¼Œnbtæ ‡ç­¾å±…ç„¶æ˜¯å«blockentityè€Œä¸æ˜¯tileentityï¼Œ
+	è€Œä¸”è¿˜æœ‰blockstateï¼Œä¼°è®¡å¾—èµ°blockprocessä»£ç†å¤„ç†è½¬æ¢
+	æ³¨æ„å¦‚æœæ˜¯æ–¹å—å±•ç¤ºå®ä½“ï¼Œä¼šå­˜åœ¨block_state
 	*/
-	//static ItemStackList EntityStatsToItemStack(const EntityStats &stEntityStats)//´ú°ì
+	//static ItemStackList EntityStatsToItemStack(const EntityStats &stEntityStats)//ä»£åŠ
 	//{
 	//
 	//}
 
 
 /*
-	ĞèÒª°ÑÄÇĞ©ÎïÆ·Õ¹Ê¾ÊµÌå¡¢·½¿éÕ¹Ê¾ÊµÌåµÈµÄÄÚ²¿nbt tagÅÅ³ıµô£¬ÒòÎª²¢²»ÊÇ¿ÉÒÔÈûÎïÆ·½øÈ¥ĞÎ³É£¬¶øÊÇÖ»ÄÜÃüÁîË¢³öµÄ
+	éœ€è¦æŠŠé‚£äº›ç‰©å“å±•ç¤ºå®ä½“ã€æ–¹å—å±•ç¤ºå®ä½“ç­‰çš„å†…éƒ¨nbt tagæ’é™¤æ‰ï¼Œå› ä¸ºå¹¶ä¸æ˜¯å¯ä»¥å¡ç‰©å“è¿›å»å½¢æˆï¼Œè€Œæ˜¯åªèƒ½å‘½ä»¤åˆ·å‡ºçš„
 
-	²¿·ÖÊµÌåĞèÒª×ª»»ÎªÎïÆ·ĞÎÊ½£¬²»ÄÜ×ª»»µÄÖ±½ÓÏÔÊ¾ÊµÌåĞÅÏ¢->´Ë´¦´ú°ì£¬ËùÓĞÎïÆ·ÔİÊ±ÏÈÈ«²¿Êä³öÊµÌåĞÅÏ¢
-	±ÈÈçÂ©¶·¿ó³µ¡¢¿ø¼×¼Ü¡¢µôÂäÎï¡¢ÎïÆ·Õ¹Ê¾¿òµÈ
+	éƒ¨åˆ†å®ä½“éœ€è¦è½¬æ¢ä¸ºç‰©å“å½¢å¼ï¼Œä¸èƒ½è½¬æ¢çš„ç›´æ¥æ˜¾ç¤ºå®ä½“ä¿¡æ¯->æ­¤å¤„ä»£åŠï¼Œæ‰€æœ‰ç‰©å“æš‚æ—¶å…ˆå…¨éƒ¨è¾“å‡ºå®ä½“ä¿¡æ¯
+	æ¯”å¦‚æ¼æ–—çŸ¿è½¦ã€ç›”ç”²æ¶ã€æ‰è½ç‰©ã€ç‰©å“å±•ç¤ºæ¡†ç­‰
 */
 
 	static EntitySlot EntityStatsToEntitySlot(const EntityStats &stEntityStats)
 	{
-		if (*stEntityStats.psEntityName == MU8STR("minecraft:item_display"))//Ìø¹ı
+		if (*stEntityStats.psEntityName == MU8STR("minecraft:item_display"))//è·³è¿‡
 		{
-			return {};//¿Õ
+			return {};//ç©º
 		}
 
 		EntitySlot stEntitySlot{};
@@ -179,24 +179,24 @@ public:
 		{
 			ItemProcess::ItemStackList *pCurList{};
 
-			//ËµÃ÷ÊÇÎïÆ·À¸
+			//è¯´æ˜æ˜¯ç‰©å“æ 
 			if (it.szSlotTagNameIndex < szContainerIndexBeg)
 			{
 				pCurList = &stEntitySlot.listInventory;
 			}
-			else//ËµÃ÷ÊÇÈİÆ÷
+			else//è¯´æ˜æ˜¯å®¹å™¨
 			{
 				pCurList = &stEntitySlot.listContainer;
 			}
 			
 
-			//»ñÈ¡tagºó¸ù¾İÊµ¼ÊÀàĞÍ½øĞĞ½âÎö
+			//è·å–tagåæ ¹æ®å®é™…ç±»å‹è¿›è¡Œè§£æ
 			const auto tag = it.pItems->GetTag();
 			if (tag == NBT_TAG::Compound)
 			{
 				if (it.pItems->GetCompound().Empty())
 				{
-					continue;//¿Õtag£¬Ìø¹ı
+					continue;//ç©ºtagï¼Œè·³è¿‡
 				}
 				pCurList->push_back(ItemProcess::ItemCompoundToItemStack(it.pItems->GetCompound()));
 			}
@@ -207,7 +207,7 @@ public:
 				{
 					if (cur.GetCompound().Empty())
 					{
-						continue;//¿Õtag£¬Ìø¹ı
+						continue;//ç©ºtagï¼Œè·³è¿‡
 					}
 					pCurList->push_back(ItemProcess::ItemCompoundToItemStack(cur.GetCompound()));
 				}

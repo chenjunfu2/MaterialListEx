@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "NBT_Node.hpp"
 #include "ItemProcess.hpp"
@@ -20,14 +20,14 @@ public:
 	using TileEntityContainerStatsList = std::vector<TileEntityContainerStats>;
 	
 private:
-	//´¦Àí¶àÖÖ¼¯ºÏÊı¾İÇé¿ö²¢Ó³Éäµ½TileEntityContainerStats
+	//å¤„ç†å¤šç§é›†åˆæ•°æ®æƒ…å†µå¹¶æ˜ å°„åˆ°TileEntityContainerStats
 	static bool MapTileEntityContainerStats(const NBT_Type::Compound &teCompound, TileEntityContainerStats &teStats)
 	{
 		/*
-			ÓĞºÃ¼¸ÖÖÇé¿ö£ºitem-Compound¡¢Items-List¡¢ÌØÊâÃû³Æ-Compound
+			æœ‰å¥½å‡ ç§æƒ…å†µï¼šitem-Compoundã€Items-Listã€ç‰¹æ®Šåç§°-Compound
 		*/
 
-		//³¢ÊÔÑ°ÕÒItems£¨ÆÕÍ¨¶à¸ñÈİÆ÷£©
+		//å°è¯•å¯»æ‰¾Itemsï¼ˆæ™®é€šå¤šæ ¼å®¹å™¨ï¼‰
 		if (const auto pItems = teCompound.Search(MU8STR("Items"));
 			pItems != NULL && pItems->IsList())
 		{
@@ -35,8 +35,8 @@ private:
 			return true;
 		}
 
-		//³¢ÊÔ´¦ÀíÌØÊâ·½¿é
-		//ÓÃÓÚÓ³ÉäÌØÊâµÄ·½¿éÊµÌåÈİÆ÷ÀïÎïÆ·µÄÃû×Ö
+		//å°è¯•å¤„ç†ç‰¹æ®Šæ–¹å—
+		//ç”¨äºæ˜ å°„ç‰¹æ®Šçš„æ–¹å—å®ä½“å®¹å™¨é‡Œç‰©å“çš„åå­—
 		const static std::unordered_map<NBT_Type::String, NBT_Type::String> mapContainerTagName =
 		{
 			{MU8STR("minecraft:jukebox"),MU8STR("RecordItem")},
@@ -44,26 +44,26 @@ private:
 			{MU8STR("minecraft:brushable_block"),MU8STR("item")},
 		};
 
-		if (teStats.psTileEntityName == NULL)//Èç¹ûÃû³ÆÎª¿Õ£¬ÔòÌø¹ı
+		if (teStats.psTileEntityName == NULL)//å¦‚æœåç§°ä¸ºç©ºï¼Œåˆ™è·³è¿‡
 		{
 			return false;
 		}
 
-		//²éÕÒ·½¿éÊµÌåidÊÇ·ñÔÚmapÖĞ
+		//æŸ¥æ‰¾æ–¹å—å®ä½“idæ˜¯å¦åœ¨mapä¸­
 		const auto findIt = mapContainerTagName.find(*teStats.psTileEntityName);
-		if (findIt == mapContainerTagName.end())//²»ÔÚ£¬²»ÊÇ¿ÉÒÔ´æ·ÅÎïÆ·µÄÈİÆ÷£¬Ìø¹ı
+		if (findIt == mapContainerTagName.end())//ä¸åœ¨ï¼Œä¸æ˜¯å¯ä»¥å­˜æ”¾ç‰©å“çš„å®¹å™¨ï¼Œè·³è¿‡
 		{
-			return false;//Ìø¹ı´Ë·½¿éÊµÌå
+			return false;//è·³è¿‡æ­¤æ–¹å—å®ä½“
 		}
 
-		//Í¨¹ıÓ³ÉäÃû²éÕÒ¶ÔÓ¦ÎïÆ·´æ´¢Î»ÖÃ
+		//é€šè¿‡æ˜ å°„åæŸ¥æ‰¾å¯¹åº”ç‰©å“å­˜å‚¨ä½ç½®
 		const auto pSearch = teCompound.Search(findIt->second);
-		if (pSearch == NULL)//²éÕÒÊ§°Ü
+		if (pSearch == NULL)//æŸ¥æ‰¾å¤±è´¥
 		{
-			return false;//Ìø¹ı´Ë·½¿éÊµÌå
+			return false;//è·³è¿‡æ­¤æ–¹å—å®ä½“
 		}
 
-		//·ÅÈë½á¹¹ÄÚ
+		//æ”¾å…¥ç»“æ„å†…
 		teStats.pItems = pSearch;
 		return true;
 	}
@@ -71,19 +71,19 @@ private:
 public:
 	static TileEntityContainerStatsList GetTileEntityContainerStats(const NBT_Type::Compound &RgCompound)
 	{
-		//»ñÈ¡·½¿éÊµÌåÁĞ±í
+		//è·å–æ–¹å—å®ä½“åˆ—è¡¨
 		const auto &listTileEntity = RgCompound.GetList(MU8STR("TileEntities"));
 		TileEntityContainerStatsList listTileEntityStats{};
-		listTileEntityStats.reserve(listTileEntity.Size());//ÌáÇ°À©Èİ
+		listTileEntityStats.reserve(listTileEntity.Size());//æå‰æ‰©å®¹
 
 		for (const auto &it : listTileEntity)
 		{
 			const auto &cur = GetCompound(it);
 
-			//TODO:Èç¹ûcur.HasString(MU8STR("id"))Ã»ÓĞ·½¿éÊµÌåid£¬
-			//ÔòÍ¨¹ı·½¿é->·½¿éÊµÌåÓ³Éä±í²éÕÒ£¬ÕÒ²»µ½ÔòÎªNULL
-			//²éÕÒ³É¹¦»òÊ§°ÜºóÔÙ´´½¨teStats
-			//ÌØ±ğµÄ£¬Ö»²éÕÒ¿ÉÒÔ´æ·ÅÎïÆ·µÄ·½¿éÊµÌåÈİÆ÷£¬ÆäÓà¶ªÆú
+			//TODO:å¦‚æœcur.HasString(MU8STR("id"))æ²¡æœ‰æ–¹å—å®ä½“idï¼Œ
+			//åˆ™é€šè¿‡æ–¹å—->æ–¹å—å®ä½“æ˜ å°„è¡¨æŸ¥æ‰¾ï¼Œæ‰¾ä¸åˆ°åˆ™ä¸ºNULL
+			//æŸ¥æ‰¾æˆåŠŸæˆ–å¤±è´¥åå†åˆ›å»ºteStats
+			//ç‰¹åˆ«çš„ï¼ŒåªæŸ¥æ‰¾å¯ä»¥å­˜æ”¾ç‰©å“çš„æ–¹å—å®ä½“å®¹å™¨ï¼Œå…¶ä½™ä¸¢å¼ƒ
 			TileEntityContainerStats teStats{ cur.HasString(MU8STR("id")) };
 			if (MapTileEntityContainerStats(cur, teStats))
 			{
@@ -99,22 +99,22 @@ public:
 		ItemProcess::ItemStackList listItemStack{};
 
 		auto tag = stContainerStats.pItems->GetTag();
-		if (tag == NBT_TAG::Compound)//Ö»ÓĞÒ»¸ñÎïÆ·
+		if (tag == NBT_TAG::Compound)//åªæœ‰ä¸€æ ¼ç‰©å“
 		{
 			if (stContainerStats.pItems->GetCompound().Empty())
 			{
-				return listItemStack;//¿Õ£¬Ö±½Ó·µ»Ø
+				return listItemStack;//ç©ºï¼Œç›´æ¥è¿”å›
 			}
 			listItemStack.push_back(ItemProcess::ItemCompoundToItemStack(stContainerStats.pItems->GetCompound()));
 		}
-		else if (tag == NBT_TAG::List)//¶à¸ñÎïÆ·ÁĞ±í
+		else if (tag == NBT_TAG::List)//å¤šæ ¼ç‰©å“åˆ—è¡¨
 		{
 			const auto &tmp = stContainerStats.pItems->GetList();
 			for (const auto &it : tmp)
 			{
 				if (it.GetCompound().Empty())
 				{
-					continue;//¿Õ£¬´¦ÀíÏÂÒ»¸ö
+					continue;//ç©ºï¼Œå¤„ç†ä¸‹ä¸€ä¸ª
 				}
 				listItemStack.push_back(ItemProcess::ItemCompoundToItemStack(it.GetCompound()));
 			}

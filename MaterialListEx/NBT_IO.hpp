@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <stdio.h>
 #include <stdint.h>
@@ -31,14 +31,14 @@ public:
 			return false;
 		}
 
-		//»ñÈ¡ÎÄ¼ş´óĞ¡²¢Ğ´³ö
+		//è·å–æ–‡ä»¶å¤§å°å¹¶å†™å‡º
 		uint64_t qwFileSize = u8Data.size();
 		if (fwrite(u8Data.data(), sizeof(u8Data[0]), qwFileSize, pFile) != qwFileSize)
 		{
 			return false;
 		}
 
-		//Íê³É£¬¹Ø±ÕÎÄ¼ş
+		//å®Œæˆï¼Œå…³é—­æ–‡ä»¶
 		fclose(pFile);
 		pFile = NULL;
 
@@ -52,22 +52,22 @@ public:
 		{
 			return false;
 		}
-		//»ñÈ¡ÎÄ¼ş´óĞ¡
+		//è·å–æ–‡ä»¶å¤§å°
 		if (_fseeki64(pFile, 0, SEEK_END) != 0)
 		{
 			return false;
 		}
 		uint64_t qwFileSize = _ftelli64(pFile);
-		//»Øµ½ÎÄ¼ş¿ªÍ·
+		//å›åˆ°æ–‡ä»¶å¼€å¤´
 		rewind(pFile);
 
-		//Ö±½Ó¸øÊı¾İÈûstringÀï
-		u8Data.resize(qwFileSize);//ÉèÖÃ³¤¶È c++23ÓÃresize_and_overwrite
-		if (fread(u8Data.data(), sizeof(u8Data[0]), qwFileSize, pFile) != qwFileSize)//Ö±½Ó¶ÁÈëdata
+		//ç›´æ¥ç»™æ•°æ®å¡stringé‡Œ
+		u8Data.resize(qwFileSize);//è®¾ç½®é•¿åº¦ c++23ç”¨resize_and_overwrite
+		if (fread(u8Data.data(), sizeof(u8Data[0]), qwFileSize, pFile) != qwFileSize)//ç›´æ¥è¯»å…¥data
 		{
 			return false;
 		}
-		//Íê³É£¬¹Ø±ÕÎÄ¼ş
+		//å®Œæˆï¼Œå…³é—­æ–‡ä»¶
 		fclose(pFile);
 		pFile = NULL;
 
@@ -76,10 +76,10 @@ public:
 
 	static bool IsFileExist(const std::string &sFileName)
 	{
-		std::error_code ec;//ÅĞ¶ÏÕâ¶«Î÷ÊÇ²»ÊÇtrueÈ·¶¨ÓĞÃ»ÓĞerror
+		std::error_code ec;//åˆ¤æ–­è¿™ä¸œè¥¿æ˜¯ä¸æ˜¯trueç¡®å®šæœ‰æ²¡æœ‰error
 		bool bExists = std::filesystem::exists(sFileName, ec);
 
-		return !ec && bExists;//Ã»ÓĞ´íÎó²¢ÇÒ´æÔÚ
+		return !ec && bExists;//æ²¡æœ‰é”™è¯¯å¹¶ä¸”å­˜åœ¨
 	}
 
 	static bool DecompressIfZipped(std::basic_string<uint8_t> &u8Data)

@@ -1,9 +1,9 @@
-#pragma once
+ï»¿#pragma once
 #include <stdio.h>
 #include <stdint.h>
 #include <string>
 
-//Ä¿Ç°Ö»×öÁËĞ´Èë£¬²»ÒªÓÃ¶ÁÈ¡Ä£Ê½´ò¿ª
+//ç›®å‰åªåšäº†å†™å…¥ï¼Œä¸è¦ç”¨è¯»å–æ¨¡å¼æ‰“å¼€
 class CSV_Tool
 {
 private:
@@ -29,7 +29,7 @@ public:
 
 	CSV_Tool(const CSV_Tool &) = delete;
 	CSV_Tool(CSV_Tool &&_Copy) noexcept :
-		pFile(_Copy.pFile),//ÒòÎªÊÇ¹¹Ôì¿ÉÒÔÖ±½Ó¸³Öµ£¬²»ÓÃÏÈ¹Ø±ÕÔ­ÏÈµÄ
+		pFile(_Copy.pFile),//å› ä¸ºæ˜¯æ„é€ å¯ä»¥ç›´æ¥èµ‹å€¼ï¼Œä¸ç”¨å…ˆå…³é—­åŸå…ˆçš„
 		bNewLine(_Copy.bNewLine)
 	{
 		_Copy.pFile = NULL;
@@ -40,7 +40,7 @@ public:
 	{}
 
 	CSV_Tool(const char *const pcFileName, RW_Mode enMode) :
-		pFile(fopen(pcFileName, listMode[enMode])),//ÒòÎªÊÇ¹¹Ôì¿ÉÒÔÖ±½Ó¸³Öµ£¬²»ÓÃÏÈ¹Ø±ÕÔ­ÏÈµÄ
+		pFile(fopen(pcFileName, listMode[enMode])),//å› ä¸ºæ˜¯æ„é€ å¯ä»¥ç›´æ¥èµ‹å€¼ï¼Œä¸ç”¨å…ˆå…³é—­åŸå…ˆçš„
 		bNewLine(true)
 	{}
 
@@ -52,7 +52,7 @@ public:
 	CSV_Tool &operator=(const CSV_Tool &) = delete;
 	CSV_Tool &operator=(CSV_Tool &&_Copy) noexcept
 	{
-		CloseFile();//ÇĞ¼ÇÏÈ¹Ø±ÕÎÄ¼ş£¬Õâ²»ÊÇ¹¹Ôì£¬Ö®Ç°¿ÉÄÜ´æÔÚÒÑ´ò¿ªµÄÎÄ¼ş
+		CloseFile();//åˆ‡è®°å…ˆå…³é—­æ–‡ä»¶ï¼Œè¿™ä¸æ˜¯æ„é€ ï¼Œä¹‹å‰å¯èƒ½å­˜åœ¨å·²æ‰“å¼€çš„æ–‡ä»¶
 		pFile = _Copy.pFile;
 		bNewLine = _Copy.bNewLine;
 		_Copy.pFile = NULL;
@@ -88,41 +88,41 @@ public:
 
 	void Flush(void)
 	{
-		fflush(pFile);//Ë¢ĞÂÒ»ÏÂĞ´Èë´ÅÅÌ
+		fflush(pFile);//åˆ·æ–°ä¸€ä¸‹å†™å…¥ç£ç›˜
 	}
 
 	template<bool bEscape = true>
-	void WriteOnce(const std::string &str)//´ø·Ö¸ô·ûĞ´Èë
+	void WriteOnce(const std::string &str)//å¸¦åˆ†éš”ç¬¦å†™å…¥
 	{
-		WriteEmpty();//Ğ´Èë·Ö¸ô·û
-		//Ğ´ÈëÒ»¸öµ¥Ôª¸ñ
+		WriteEmpty();//å†™å…¥åˆ†éš”ç¬¦
+		//å†™å…¥ä¸€ä¸ªå•å…ƒæ ¼
 		WriteStart();
 		WriteContinue<bEscape>(str);
 		WriteStop();
 	}
 
-	void WriteStart()//Á¬ĞøĞ´Èë¿ªÊ¼
+	void WriteStart()//è¿ç»­å†™å…¥å¼€å§‹
 	{
 		if (bNewLine)
 		{
-			bNewLine = false;//ÏÂÒ»´ÎĞ´Èë¾Í²»ÊÇĞÂĞĞÁË
+			bNewLine = false;//ä¸‹ä¸€æ¬¡å†™å…¥å°±ä¸æ˜¯æ–°è¡Œäº†
 		}
 		fputc('\"', pFile);
 	}
 
-	void WriteStop()//Á¬ĞøĞ´Èë½áÊø
+	void WriteStop()//è¿ç»­å†™å…¥ç»“æŸ
 	{
 		fputc('\"', pFile);
 	}
 
 	template<bool bEscape = true>
-	void WriteContinue(const std::string &str)//ÓëÉÏÒ»¸öĞ´ÈëºÏ²¢
+	void WriteContinue(const std::string &str)//ä¸ä¸Šä¸€ä¸ªå†™å…¥åˆå¹¶
 	{
 		for (const auto &it : str)
 		{
 			if constexpr (bEscape)
 			{
-				if (it == '\"')//×ªÒåÆäÖĞµÄ"Îª""
+				if (it == '\"')//è½¬ä¹‰å…¶ä¸­çš„"ä¸º""
 				{
 					fputc('\"', pFile);
 				}
@@ -160,21 +160,21 @@ public:
 	
 	void WriteEmpty(void)
 	{
-		if (!bNewLine)//²»ÊÇĞÂĞĞ¿ªÍ·£¬Êä³öÒ»¸ö¶ººÅ
+		if (!bNewLine)//ä¸æ˜¯æ–°è¡Œå¼€å¤´ï¼Œè¾“å‡ºä¸€ä¸ªé€—å·
 		{
 			fputc(',', pFile);
 		}
 		else
 		{
-			bNewLine = false;//ÏÂÒ»´ÎÊä³ö¾Í²»ÊÇĞÂĞĞÁË
+			bNewLine = false;//ä¸‹ä¸€æ¬¡è¾“å‡ºå°±ä¸æ˜¯æ–°è¡Œäº†
 		}
 	}
 
 	void NewLine(void)
 	{
-		//Ğ´ÈëCRLF
+		//å†™å…¥CRLF
 		fputc('\r', pFile);
 		fputc('\n', pFile);
-		bNewLine = true;//ÉèÖÃĞÂĞĞÎªtrue
+		bNewLine = true;//è®¾ç½®æ–°è¡Œä¸ºtrue
 	}
 };

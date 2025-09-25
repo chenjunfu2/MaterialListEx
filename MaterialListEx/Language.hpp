@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 /*Json*/
 #include <nlohmann\json.hpp>
 using Json = nlohmann::json;
@@ -27,7 +27,7 @@ public:
 			return false;
 		}
 		
-		//´ÓÓïÑÔÎÄ¼ş´´½¨json¶ÔÏó
+		//ä»è¯­è¨€æ–‡ä»¶åˆ›å»ºjsonå¯¹è±¡
 		bool bRet = true;
 		try
 		{
@@ -35,7 +35,7 @@ public:
 		}
 		catch (const Json::parse_error &e)
 		{
-			// Êä³öÒì³£ÏêÏ¸ĞÅÏ¢
+			// è¾“å‡ºå¼‚å¸¸è¯¦ç»†ä¿¡æ¯
 			printf("JSON parse error: %s\nError Pos: [%zu]\n", e.what(), e.byte);
 			bRet = false;
 		}
@@ -44,9 +44,9 @@ public:
 		return bRet;
 	}
 
-	void PrintPrefixes(void) const//´Ëº¯Êı´úÂëÓÉAI±àĞ´
+	void PrintPrefixes(void) const//æ­¤å‡½æ•°ä»£ç ç”±AIç¼–å†™
 	{
-		std::set<std::string> printedPrefixes; // ÓÃÓÚ¼ÇÂ¼ÒÑ´òÓ¡µÄÇ°×º
+		std::set<std::string> printedPrefixes; // ç”¨äºè®°å½•å·²æ‰“å°çš„å‰ç¼€
 
 		for (auto &element : data.items())
 		{
@@ -55,7 +55,7 @@ public:
 
 			if (dotPos == std::string::npos)
 			{
-				// Èç¹û¼üÖĞÃ»ÓĞµãºÅ£¬Õû¸ö¼ü×÷ÎªÇ°×º
+				// å¦‚æœé”®ä¸­æ²¡æœ‰ç‚¹å·ï¼Œæ•´ä¸ªé”®ä½œä¸ºå‰ç¼€
 				if (printedPrefixes.find(key) == printedPrefixes.end())
 				{
 					printf("%s\n", key.c_str());
@@ -64,10 +64,10 @@ public:
 			}
 			else
 			{
-				// ÌáÈ¡µÚÒ»¸öµãºÅÇ°µÄ²¿·Ö×÷ÎªÇ°×º
+				// æå–ç¬¬ä¸€ä¸ªç‚¹å·å‰çš„éƒ¨åˆ†ä½œä¸ºå‰ç¼€
 				std::string prefix = key.substr(0, dotPos);
 
-				// Èç¹û´ËÇ°×ºÎ´´òÓ¡¹ı£¬Ôò´òÓ¡²¢¼ÇÂ¼
+				// å¦‚æœæ­¤å‰ç¼€æœªæ‰“å°è¿‡ï¼Œåˆ™æ‰“å°å¹¶è®°å½•
 				if (printedPrefixes.find(prefix) == printedPrefixes.end())
 				{
 					printf("%s\n", prefix.c_str());
@@ -91,7 +91,7 @@ public:
 	{
 		static const std::string sKeyTypePrefix[] =
 		{
-			"",//Î´ÖªÁô¿Õ
+			"",//æœªçŸ¥ç•™ç©º
 			"block.",
 			"entity.",
 			"item.",
@@ -106,27 +106,27 @@ public:
 
 		static_assert(sizeof(sKeyTypePrefix) / sizeof(sKeyTypePrefix[0]) == ENUM_END);
 
-		//²ğ½âsKeyName²¢ÓësKeyTypePrefix[enKeyType]×éºÏ
+		//æ‹†è§£sKeyNameå¹¶ä¸sKeyTypePrefix[enKeyType]ç»„åˆ
 
-		//°ÑÃû³Æ¿Õ¼äµÄ:×ª»»³É.
-		std::string sJsonKey = sKeyName.ToCharTypeUTF8();//×ª»»µ½charÀàĞÍ²¢¿½±´
+		//æŠŠåç§°ç©ºé—´çš„:è½¬æ¢æˆ.
+		std::string sJsonKey = sKeyName.ToCharTypeUTF8();//è½¬æ¢åˆ°charç±»å‹å¹¶æ‹·è´
 		std::replace(sJsonKey.begin(), sJsonKey.end(), ':', '.');
 
 	re_find:
 		auto itFind = data.find(sKeyTypePrefix[enKeyType] + sJsonKey);
 		if (itFind == data.end())
 		{
-			//ÊÇ¿ÕµÄÇé¿öÏÂÅĞ¶ÏÊÇ²»ÊÇitem£¬ÊÇµÄ»°ĞèÒªÔÙ²éÒ»´Îblock
-			if (enKeyType == Item)//ÒòÎª·½¿éÎïÆ·ÔÚblockÄÚ
+			//æ˜¯ç©ºçš„æƒ…å†µä¸‹åˆ¤æ–­æ˜¯ä¸æ˜¯itemï¼Œæ˜¯çš„è¯éœ€è¦å†æŸ¥ä¸€æ¬¡block
+			if (enKeyType == Item)//å› ä¸ºæ–¹å—ç‰©å“åœ¨blockå†…
 			{
-				enKeyType = Block;//¸Ä³É·½¿é£¨ÏÂ´Î²»»áÔÙÃüÖĞ´Ëif£©
-				goto re_find;//ÖØĞÂ³¢ÊÔ
+				enKeyType = Block;//æ”¹æˆæ–¹å—ï¼ˆä¸‹æ¬¡ä¸ä¼šå†å‘½ä¸­æ­¤ifï¼‰
+				goto re_find;//é‡æ–°å°è¯•
 			}
 
 			return EmptyStr;
 		}
 
-		//·µ»Ø²éÕÒ½á¹û
+		//è¿”å›æŸ¥æ‰¾ç»“æœ
 		return itFind.value().get_ref<const std::string &>();
 	}
 

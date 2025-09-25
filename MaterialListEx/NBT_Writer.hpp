@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <new>//bad alloc
 #include <bit>//std::bit_cast
@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stdlib.h>//byte swap
 #include <type_traits>
-#include <stdarg.h>//vaºê
+#include <stdarg.h>//vaå®
 
 #include "NBT_Node.hpp"
 
@@ -77,23 +77,23 @@ class NBT_Writer
 	NBT_Writer(void) = delete;
 	~NBT_Writer(void) = delete;
 
-	using OutputStream = MyOutputStream<DataType>;//Á÷ÀàĞÍ
+	using OutputStream = MyOutputStream<DataType>;//æµç±»å‹
 private:
 	enum ErrCode : uint8_t
 	{
-		AllOk = 0,//Ã»ÓĞÎÊÌâ
+		AllOk = 0,//æ²¡æœ‰é—®é¢˜
 
-		UnknownError,//ÆäËû´íÎó
-		StdException,//±ê×¼Òì³£
-		OutOfMemoryError,//ÄÚ´æ²»×ã´íÎó
-		ListElementTypeError,//ÁĞ±íÔªËØÀàĞÍ´íÎó£¨´úÂëÎÊÌâ£©
-		StackDepthExceeded,//µ÷ÓÃÕ»Éî¶È¹ıÉî£¨´úÂëÎÊÌâ£©
-		StringTooLongError,//×Ö·û´®¹ı³¤´íÎó
-		ArrayTooLongError,//Êı×é¹ı³¤´íÎó
-		ListTooLongError,//ÁĞ±í¹ı³¤´íÎó
-		NbtTypeTagError,//NBT±êÇ©ÀàĞÍ´íÎó
+		UnknownError,//å…¶ä»–é”™è¯¯
+		StdException,//æ ‡å‡†å¼‚å¸¸
+		OutOfMemoryError,//å†…å­˜ä¸è¶³é”™è¯¯
+		ListElementTypeError,//åˆ—è¡¨å…ƒç´ ç±»å‹é”™è¯¯ï¼ˆä»£ç é—®é¢˜ï¼‰
+		StackDepthExceeded,//è°ƒç”¨æ ˆæ·±åº¦è¿‡æ·±ï¼ˆä»£ç é—®é¢˜ï¼‰
+		StringTooLongError,//å­—ç¬¦ä¸²è¿‡é•¿é”™è¯¯
+		ArrayTooLongError,//æ•°ç»„è¿‡é•¿é”™è¯¯
+		ListTooLongError,//åˆ—è¡¨è¿‡é•¿é”™è¯¯
+		NbtTypeTagError,//NBTæ ‡ç­¾ç±»å‹é”™è¯¯
 
-		ERRCODE_END,//½áÊø±ê¼Ç
+		ERRCODE_END,//ç»“æŸæ ‡è®°
 	};
 
 	constexpr static inline const char *const errReason[] =
@@ -111,7 +111,7 @@ private:
 		"NbtTypeTagError",
 	};
 
-	//¼ÇµÃÍ¬²½Êı×é£¡
+	//è®°å¾—åŒæ­¥æ•°ç»„ï¼
 	static_assert(sizeof(errReason) / sizeof(errReason[0]) == (ERRCODE_END), "errReason array out sync");
 
 	enum WarnCode : uint8_t
@@ -123,33 +123,33 @@ private:
 		WARNCODE_END,
 	};
 
-	constexpr static inline const char *const warnReason[] =//Õı³£Êı×é£¬Ö±½ÓÓÃWarnCode·ÃÎÊ
+	constexpr static inline const char *const warnReason[] =//æ­£å¸¸æ•°ç»„ï¼Œç›´æ¥ç”¨WarnCodeè®¿é—®
 	{
 		"NoWarn",
 
 		"EndElementIgnoreWarn",
 	};
 
-	//¼ÇµÃÍ¬²½Êı×é£¡
+	//è®°å¾—åŒæ­¥æ•°ç»„ï¼
 	static_assert(sizeof(warnReason) / sizeof(warnReason[0]) == WARNCODE_END, "warnReason array out sync");
 
-	//error´¦Àí
-	//Ê¹ÓÃ±ä²ÎĞÎ²Î±í+vprintf´úÀí¸´ÔÓÊä³ö£¬¸ø³ö¸ü¶àÀ©Õ¹ĞÅÏ¢
-	//Ö÷¶¯¼ì²éÒı·¢µÄ´íÎó£¬Ö÷¶¯µ÷ÓÃeRet = Error±¨¸æ£¬È»ºó´¥·¢STACK_TRACEBACK£¬×îºó·µ»ØeRetµ½ÉÏÒ»¼¶
-	//ÉÏÒ»¼¶·µ»ØµÄ´íÎóÍ¨¹ıif (eRet != AllOk)ÅĞ¶ÏµÄ£¬Ö±½Ó´¥·¢STACK_TRACEBACKºó·µ»ØeRetµ½ÉÏÒ»¼¶
-	//Èç¹ûÊÇ¾¯¸æÖµ£¬Ôò²»·µ»ØÖµ
+	//errorå¤„ç†
+	//ä½¿ç”¨å˜å‚å½¢å‚è¡¨+vprintfä»£ç†å¤æ‚è¾“å‡ºï¼Œç»™å‡ºæ›´å¤šæ‰©å±•ä¿¡æ¯
+	//ä¸»åŠ¨æ£€æŸ¥å¼•å‘çš„é”™è¯¯ï¼Œä¸»åŠ¨è°ƒç”¨eRet = ErroræŠ¥å‘Šï¼Œç„¶åè§¦å‘STACK_TRACEBACKï¼Œæœ€åè¿”å›eRetåˆ°ä¸Šä¸€çº§
+	//ä¸Šä¸€çº§è¿”å›çš„é”™è¯¯é€šè¿‡if (eRet != AllOk)åˆ¤æ–­çš„ï¼Œç›´æ¥è§¦å‘STACK_TRACEBACKåè¿”å›eRetåˆ°ä¸Šä¸€çº§
+	//å¦‚æœæ˜¯è­¦å‘Šå€¼ï¼Œåˆ™ä¸è¿”å›å€¼
 	template <typename T>
 	requires(std::is_same_v<T, ErrCode> || std::is_same_v<T, WarnCode>)
-	static std::conditional_t<std::is_same_v<T, ErrCode>, ErrCode, void> _cdecl Error(const T &code, const OutputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...) noexcept//gccÊ¹ÓÃ__attribute__((format))£¬msvcÊ¹ÓÃ_Printf_format_string_
+	static std::conditional_t<std::is_same_v<T, ErrCode>, ErrCode, void> _cdecl Error(const T &code, const OutputStream &tData, _Printf_format_string_ const char *const cpExtraInfo = NULL, ...) noexcept//gccä½¿ç”¨__attribute__((format))ï¼Œmsvcä½¿ç”¨_Printf_format_string_
 	{
-		//´òÓ¡´íÎóÔ­Òò
+		//æ‰“å°é”™è¯¯åŸå› 
 		if constexpr (std::is_same_v<T, ErrCode>)
 		{
 			if (code >= ERRCODE_END)
 			{
 				return code;
 			}
-			//ÉÏ·½if±£Ö¤code²»»áÒç³ö
+			//ä¸Šæ–¹ifä¿è¯codeä¸ä¼šæº¢å‡º
 			printf("Read Err[%d]: \"%s\"\n", code, errReason[code]);
 		}
 		else if constexpr (std::is_same_v<T, WarnCode>)
@@ -158,7 +158,7 @@ private:
 			{
 				return;
 			}
-			//ÉÏ·½if±£Ö¤code²»»áÒç³ö
+			//ä¸Šæ–¹ifä¿è¯codeä¸ä¼šæº¢å‡º
 			printf("Read Warn[%d]: \"%s\"\n", code, warnReason[code]);
 		}
 		else
@@ -166,23 +166,23 @@ private:
 			static_assert(false, "Unknown [T code] Type!");
 		}
 
-		//´òÓ¡À©Õ¹ĞÅÏ¢
+		//æ‰“å°æ‰©å±•ä¿¡æ¯
 		if (cpExtraInfo != NULL)
 		{
 			printf("Extra Info:\"");
-			va_list args;//±ä³¤ĞÎ²Î
+			va_list args;//å˜é•¿å½¢å‚
 			va_start(args, cpExtraInfo);
 			vprintf(cpExtraInfo, args);
 			va_end(args);
 			printf("\"\n");
 		}
 
-		//Èç¹û¿ÉÒÔ£¬Ô¤ÀÀszCurrentÇ°n¸ö×Ö·û£¬·ñÔò²ÃÇĞµ½±ß½ç
-#define VIEW_PRE (8 * 8 + 8)//ÏòÇ°
-		size_t rangeBeg = (tData.Size() > VIEW_PRE) ? (tData.Size() - VIEW_PRE) : (0);//ÉÏ±ß½ç²ÃÇĞ
-		size_t rangeEnd = tData.Size();//ÏÂ±ß½ç²ÃÇĞ
+		//å¦‚æœå¯ä»¥ï¼Œé¢„è§ˆszCurrentå‰nä¸ªå­—ç¬¦ï¼Œå¦åˆ™è£åˆ‡åˆ°è¾¹ç•Œ
+#define VIEW_PRE (8 * 8 + 8)//å‘å‰
+		size_t rangeBeg = (tData.Size() > VIEW_PRE) ? (tData.Size() - VIEW_PRE) : (0);//ä¸Šè¾¹ç•Œè£åˆ‡
+		size_t rangeEnd = tData.Size();//ä¸‹è¾¹ç•Œè£åˆ‡
 #undef VIEW_PRE
-		//Êä³öĞÅÏ¢
+		//è¾“å‡ºä¿¡æ¯
 		printf
 		(
 			"Data Review:\n"\
@@ -194,12 +194,12 @@ private:
 			(uint64_t)rangeEnd, rangeEnd
 		);
 
-		//´òÊı¾İ
+		//æ‰“æ•°æ®
 		for (size_t i = rangeBeg; i < rangeEnd; ++i)
 		{
-			if ((i - rangeBeg) % 8 == 0)//Êä³öµØÖ·
+			if ((i - rangeBeg) % 8 == 0)//è¾“å‡ºåœ°å€
 			{
-				if (i != rangeBeg)//³ıÈ¥µÚÒ»¸öÃ¿8¸ö»»ĞĞ
+				if (i != rangeBeg)//é™¤å»ç¬¬ä¸€ä¸ªæ¯8ä¸ªæ¢è¡Œ
 				{
 					printf("\n");
 				}
@@ -209,7 +209,7 @@ private:
 			printf(" %02X ", (uint8_t)tData[i]);
 		}
 
-		//Êä³öÌáÊ¾ĞÅÏ¢
+		//è¾“å‡ºæç¤ºä¿¡æ¯
 		if constexpr (std::is_same_v<T, ErrCode>)
 		{
 			printf("\nSkip err and return...\n\n");
@@ -223,14 +223,14 @@ private:
 			static_assert(false, "Unknown [T code] Type!");
 		}
 
-		//¾¯¸æ²»·µ»ØÖµ
+		//è­¦å‘Šä¸è¿”å›å€¼
 		if constexpr (std::is_same_v<T, ErrCode>)
 		{
 			return code;
 		}
 	}
 
-#define _RP___FUNCSIG__ __FUNCSIG__//ÓÃÓÚ±àÒë¹ı³Ì¶ş´ÎÌæ»»´ïµ½º¯ÊıÄÚ²¿
+#define _RP___FUNCSIG__ __FUNCSIG__//ç”¨äºç¼–è¯‘è¿‡ç¨‹äºŒæ¬¡æ›¿æ¢è¾¾åˆ°å‡½æ•°å†…éƒ¨
 
 #define _RP___LINE__ _RP_STRLING(__LINE__)
 #define _RP_STRLING(l) STRLING(l)
@@ -278,7 +278,7 @@ catch(...)\
 	MYCATCH;
 	}
 
-	//Ğ´³ö´ó¶ËĞòÖµ
+	//å†™å‡ºå¤§ç«¯åºå€¼
 	template<typename T>
 	requires std::integral<T>
 	static inline ErrCode WriteBigEndian(OutputStream &tData, const T &tVal) noexcept
@@ -305,27 +305,27 @@ catch(...)\
 		}
 		else//other
 		{
-			//Í³Ò»µ½ÎŞ·ûºÅÀàĞÍ£¬·ÀÖ¹ÓĞ·ûºÅÓÒÒÆ´íÎó
+			//ç»Ÿä¸€åˆ°æ— ç¬¦å·ç±»å‹ï¼Œé˜²æ­¢æœ‰ç¬¦å·å³ç§»é”™è¯¯
 			using UT = typename std::make_unsigned<T>::type;
 			static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
 
-			//»º³åÇø£¬Ğ´Èë
+			//ç¼“å†²åŒºï¼Œå†™å…¥
 			uint8_t u8BigEndianBuffer[sizeof(T)] = { 0 };
 
-			//¾²Ì¬Õ¹¿ª£¨Ìæ´úfor£©£¬Ğ´Èë»º³åÇø
+			//é™æ€å±•å¼€ï¼ˆæ›¿ä»£forï¼‰ï¼Œå†™å…¥ç¼“å†²åŒº
 			[&] <size_t... Is>(std::index_sequence<Is...>) -> void
 			{
-				UT tmpVal = (UT)tVal;//ÁÙÊ±Á¿»º´æ£¬±ÜÃâ±àÒëÆ÷Ò»Ö±Éú³ÉÒıÓÃ·ÃÎÊÔì³É¿ªÏú
+				UT tmpVal = (UT)tVal;//ä¸´æ—¶é‡ç¼“å­˜ï¼Œé¿å…ç¼–è¯‘å™¨ä¸€ç›´ç”Ÿæˆå¼•ç”¨è®¿é—®é€ æˆå¼€é”€
 				((u8BigEndianBuffer[Is] = (uint8_t)(tmpVal >> (8 * (sizeof(T) - Is - 1)))), ...);
 
-				//»º³åÇø·¶Î§Ğ´Èëµ½tData
+				//ç¼“å†²åŒºèŒƒå›´å†™å…¥åˆ°tData
 				tData.PutRange(u8BigEndianBuffer, sizeof(u8BigEndianBuffer));
 			}(std::make_index_sequence<sizeof(T)>{});
 
-			//ÓëÉÏÃæ²Ù×÷µÈ¼Ûµ«ĞÔÄÜ½ÏµÍµÄĞ´·¨£¬±£ÁôÒÔÓÃÓÚÔö¼Ó¿É¶ÁĞÔ
+			//ä¸ä¸Šé¢æ“ä½œç­‰ä»·ä½†æ€§èƒ½è¾ƒä½çš„å†™æ³•ï¼Œä¿ç•™ä»¥ç”¨äºå¢åŠ å¯è¯»æ€§
 			//for (size_t i = sizeof(T); i > 0; --i)
 			//{
-			//	tData.PutOnce((uint8_t)(((UT)tVal) >> (8 * (i - 1))));//ÒÀ´ÎÌáÈ¡
+			//	tData.PutOnce((uint8_t)(((UT)tVal) >> (8 * (i - 1))));//ä¾æ¬¡æå–
 			//}
 		}
 
@@ -338,10 +338,10 @@ catch(...)\
 	MYTRY;
 		ErrCode eRet = AllOk;
 
-		//»ñÈ¡string³¤¶È
+		//è·å–stringé•¿åº¦
 		size_t szStringLength = sName.size();
 
-		//¼ì²é´óĞ¡ÊÇ·ñ·ûºÏÉÏÏŞ
+		//æ£€æŸ¥å¤§å°æ˜¯å¦ç¬¦åˆä¸Šé™
 		if (szStringLength > (size_t)NBT_Type::StringLength_Max)
 		{
 			eRet = Error(StringTooLongError, tData, __FUNCSIG__ ": szStringLength[%zu] > StringLength_Max[%zu]",
@@ -350,7 +350,7 @@ catch(...)\
 			return eRet;
 		}
 
-		//Êä³öÃû³Æ³¤¶È
+		//è¾“å‡ºåç§°é•¿åº¦
 		NBT_Type::StringLength wNameLength = (uint16_t)szStringLength;
 		eRet = WriteBigEndian(tData, wNameLength);
 		if (eRet < AllOk)
@@ -359,14 +359,14 @@ catch(...)\
 			return eRet;
 		}
 
-		//Êä³öÃû³Æ
-		eRet = CheckReserve(tData, szStringLength * sizeof(sName[0]));//ÌáÇ°·ÖÅä
+		//è¾“å‡ºåç§°
+		eRet = CheckReserve(tData, szStringLength * sizeof(sName[0]));//æå‰åˆ†é…
 		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("CheckReserve Fail, Check Size: [%zu]", szStringLength * sizeof(sName[0]));
 			return eRet;
 		}
-		//·¶Î§Ğ´Èë
+		//èŒƒå›´å†™å…¥
 		tData.PutRange((const typename DataType::value_type *)sName.data(), szStringLength);
 
 		return eRet;
@@ -378,8 +378,8 @@ catch(...)\
 	{
 		ErrCode eRet = AllOk;
 
-		//»ñÈ¡Ô­Ê¼ÀàĞÍ£¬È»ºó×ª»»µ½rawÀàĞÍ×¼±¸Ğ´³ö
-		using RAW_DATA_T = NBT_Type::BuiltinRawType_T<T>;//Ô­Ê¼ÀàĞÍÓ³Éä
+		//è·å–åŸå§‹ç±»å‹ï¼Œç„¶åè½¬æ¢åˆ°rawç±»å‹å‡†å¤‡å†™å‡º
+		using RAW_DATA_T = NBT_Type::BuiltinRawType_T<T>;//åŸå§‹ç±»å‹æ˜ å°„
 		RAW_DATA_T tTmpRawData = std::bit_cast<RAW_DATA_T>(tBuiltIn);
 
 		eRet = WriteBigEndian(tData, tTmpRawData);
@@ -397,8 +397,8 @@ catch(...)\
 	{
 		ErrCode eRet = AllOk;
 
-		//»ñÈ¡Êı×é´óĞ¡ÅĞ¶ÏÊÇ·ñ³¬¹ıÒªÇóÉÏÏŞ
-		//Ò²¾ÍÊÇ4×Ö½ÚÓĞ·ûºÅÕûÊıÉÏÏŞ
+		//è·å–æ•°ç»„å¤§å°åˆ¤æ–­æ˜¯å¦è¶…è¿‡è¦æ±‚ä¸Šé™
+		//ä¹Ÿå°±æ˜¯4å­—èŠ‚æœ‰ç¬¦å·æ•´æ•°ä¸Šé™
 		size_t szArrayLength = tArray.size();
 		if (szArrayLength > (size_t)NBT_Type::ArrayLength_Max)
 		{
@@ -408,7 +408,7 @@ catch(...)\
 			return eRet;
 		}
 
-		//»ñÈ¡Êµ¼ÊĞ´³ö´óĞ¡
+		//è·å–å®é™…å†™å‡ºå¤§å°
 		NBT_Type::ArrayLength iArrayLength = (NBT_Type::ArrayLength)szArrayLength;
 		eRet = WriteBigEndian(tData, iArrayLength);
 		if (eRet < AllOk)
@@ -417,8 +417,8 @@ catch(...)\
 			return eRet;
 		}
 
-		//Ğ´³öÔªËØ
-		eRet = CheckReserve(tData, iArrayLength * sizeof(tArray[0]));//ÌáÇ°·ÖÅä
+		//å†™å‡ºå…ƒç´ 
+		eRet = CheckReserve(tData, iArrayLength * sizeof(tArray[0]));//æå‰åˆ†é…
 		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("CheckReserve Fail, Check Size: [%zu]", iArrayLength * sizeof(tArray[0]));
@@ -439,29 +439,29 @@ catch(...)\
 		return eRet;
 	}
 
-	//Èç¹ûÊÇ·Ç¸ù²¿£¬²»»áÊä³ö¶îÍâµÄCompound_End
+	//å¦‚æœæ˜¯éæ ¹éƒ¨ï¼Œä¸ä¼šè¾“å‡ºé¢å¤–çš„Compound_End
 	template<bool bRoot>
 	static ErrCode PutCompoundType(OutputStream &tData, const NBT_Type::Compound &tCompound, size_t szStackDepth) noexcept
 	{
 		ErrCode eRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
 		
-		//×¢ÒâcompoundÊÇÎªÊı²»¶àµÄÃ»ÓĞÔªËØÊıÁ¿ÏŞÖÆµÄ½á¹¹
-		//´Ë´¦ÎŞĞè¼ì²é´óĞ¡£¬ÇÒÎŞĞèĞ´³ö´óĞ¡
+		//æ³¨æ„compoundæ˜¯ä¸ºæ•°ä¸å¤šçš„æ²¡æœ‰å…ƒç´ æ•°é‡é™åˆ¶çš„ç»“æ„
+		//æ­¤å¤„æ— éœ€æ£€æŸ¥å¤§å°ï¼Œä¸”æ— éœ€å†™å‡ºå¤§å°
 		for (const auto &[sName, nodeNbt] : tCompound)
 		{
 			NBT_TAG curTag = nodeNbt.GetTag();
 
-			//¼¯ºÏÖĞÈç¹û´æÔÚnbt endÀàĞÍµÄÔªËØ£¬É¾³ı¶ø²»Êä³ö
+			//é›†åˆä¸­å¦‚æœå­˜åœ¨nbt endç±»å‹çš„å…ƒç´ ï¼Œåˆ é™¤è€Œä¸è¾“å‡º
 			if (curTag == NBT_TAG::End)
 			{
-				//EndÔªËØ±»ºöÂÔ¾¯¸æ£¨¾¯¸æ²»·µ»Ø´íÎóÂë£©
+				//Endå…ƒç´ è¢«å¿½ç•¥è­¦å‘Šï¼ˆè­¦å‘Šä¸è¿”å›é”™è¯¯ç ï¼‰
 				Error(EndElementIgnoreWarn, tData, __FUNCSIG__ ": Name: \"%s\", type is [NBT_Type::End], ignored!",
 					U16ANSI(CVRTU16(sName)).c_str());
 				continue;
 			}
 
-			//ÏÈĞ´³ötag
+			//å…ˆå†™å‡ºtag
 			eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)curTag);
 			if (eRet != AllOk)
 			{
@@ -469,7 +469,7 @@ catch(...)\
 				return eRet;
 			}
 
-			//È»ºóĞ´³öname
+			//ç„¶åå†™å‡ºname
 			eRet = PutName(tData, sName);
 			if (eRet != AllOk)
 			{
@@ -477,7 +477,7 @@ catch(...)\
 				return eRet;
 			}
 
-			//×îºó¸ù¾İtagÀàĞÍĞ´³öÊı¾İ
+			//æœ€åæ ¹æ®tagç±»å‹å†™å‡ºæ•°æ®
 			eRet = PutSwitch(tData, nodeNbt, curTag, szStackDepth - 1);
 			if (eRet != AllOk)
 			{
@@ -489,7 +489,7 @@ catch(...)\
 
 		if constexpr (!bRoot)
 		{
-			//×¢ÒâCompoundÀàĞÍÓĞÒ»¸öNBT_TAG::End½áÎ²£¬Èç¹ûĞ´³ö´íÎóÔòÔÚÇ°Ãæ·µ»Ø£¬²»·ÅÖÃ½áÎ²
+			//æ³¨æ„Compoundç±»å‹æœ‰ä¸€ä¸ªNBT_TAG::Endç»“å°¾ï¼Œå¦‚æœå†™å‡ºé”™è¯¯åˆ™åœ¨å‰é¢è¿”å›ï¼Œä¸æ”¾ç½®ç»“å°¾
 			eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)NBT_TAG::End);
 			if (eRet != AllOk)
 			{
@@ -505,10 +505,10 @@ catch(...)\
 	{
 		ErrCode eRet = AllOk;
 
-		eRet = PutName(tData, tString);//½èÓÃPutNameÊµÏÖ£¬ÒòÎªstring×ßµÄnameÏàÍ¬²Ù×÷
+		eRet = PutName(tData, tString);//å€Ÿç”¨PutNameå®ç°ï¼Œå› ä¸ºstringèµ°çš„nameç›¸åŒæ“ä½œ
 		if (eRet < AllOk)
 		{
-			STACK_TRACEBACK("PutString");//ÒòÎªÊÇ½èÓÃÊµÏÖ£¬ËùÒÔÕâÀïĞ¡Ğ¡µÄ¸Ä¸öÃû£¬·ÀÖ¹±¨´íNameÎóµ¼ÈË
+			STACK_TRACEBACK("PutString");//å› ä¸ºæ˜¯å€Ÿç”¨å®ç°ï¼Œæ‰€ä»¥è¿™é‡Œå°å°çš„æ”¹ä¸ªåï¼Œé˜²æ­¢æŠ¥é”™Nameè¯¯å¯¼äºº
 			return eRet;
 		}
 
@@ -520,9 +520,9 @@ catch(...)\
 		ErrCode eRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
 
-		//¼ì²é
+		//æ£€æŸ¥
 		size_t szListLength = tList.size();
-		if (szListLength > (size_t)NBT_Type::ListLength_Max)//´óÓÚµÄÇé¿öÏÂÇ¿ÖÆ¸³Öµ»áµ¼ÖÂÑÏÖØÎÊÌâ£¬Ö»ÄÜ·µ»Ø´íÎó
+		if (szListLength > (size_t)NBT_Type::ListLength_Max)//å¤§äºçš„æƒ…å†µä¸‹å¼ºåˆ¶èµ‹å€¼ä¼šå¯¼è‡´ä¸¥é‡é—®é¢˜ï¼Œåªèƒ½è¿”å›é”™è¯¯
 		{
 			eRet = Error(ListTooLongError, tData, __FUNCSIG__ ": szListLength[%zu] > ListLength_Max[%zu]",
 				szListLength, (size_t)NBT_Type::ListLength_Max);
@@ -530,10 +530,10 @@ catch(...)\
 			return eRet;
 		}
 
-		//×ª»»ÎªĞ´Èë´óĞ¡
+		//è½¬æ¢ä¸ºå†™å…¥å¤§å°
 		NBT_Type::ListLength iListLength = (NBT_Type::ListLength)szListLength;
 
-		//ÅĞ¶Ï£º³¤¶È²»Îª0µ«ÊÇÓµÓĞ¿Õ±êÇ©
+		//åˆ¤æ–­ï¼šé•¿åº¦ä¸ä¸º0ä½†æ˜¯æ‹¥æœ‰ç©ºæ ‡ç­¾
 		NBT_TAG enListValueTag = tList.enElementTag;
 		if (enListValueTag == NBT_TAG::End && iListLength != 0)
 		{
@@ -543,10 +543,10 @@ catch(...)\
 			return eRet;
 		}
 
-		//»ñÈ¡ÁĞ±í±êÇ©£¬Èç¹ûÁĞ±í³¤¶ÈÎª0£¬ÔòÇ¿ÖÆ¸ÄÎª¿Õ±êÇ©
+		//è·å–åˆ—è¡¨æ ‡ç­¾ï¼Œå¦‚æœåˆ—è¡¨é•¿åº¦ä¸º0ï¼Œåˆ™å¼ºåˆ¶æ”¹ä¸ºç©ºæ ‡ç­¾
 		NBT_TAG enListElementTag = iListLength == 0 ? NBT_TAG::End : enListValueTag;
 
-		//Ğ´³ö±êÇ©
+		//å†™å‡ºæ ‡ç­¾
 		eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)enListElementTag);
 		if (eRet < AllOk)
 		{
@@ -554,7 +554,7 @@ catch(...)\
 			return eRet;
 		}
 
-		//Ğ´³ö³¤¶È
+		//å†™å‡ºé•¿åº¦
 		eRet = WriteBigEndian(tData, iListLength);
 		if (eRet < AllOk)
 		{
@@ -562,15 +562,15 @@ catch(...)\
 			return eRet;
 		}
 
-		//Ğ´³öÁĞ±í£¨µİ¹é£©
-		//Ğ´³öÊ±ÅĞ¶ÏÔªËØ±êÇ©ÓëenListElementTag²»Ò»ÖÂµÄ´íÎó
+		//å†™å‡ºåˆ—è¡¨ï¼ˆé€’å½’ï¼‰
+		//å†™å‡ºæ—¶åˆ¤æ–­å…ƒç´ æ ‡ç­¾ä¸enListElementTagä¸ä¸€è‡´çš„é”™è¯¯
 		for (NBT_Type::ListLength i = 0; i < iListLength; ++i)
 		{
-			//»ñÈ¡ÔªËØÓëÀàĞÍ
+			//è·å–å…ƒç´ ä¸ç±»å‹
 			const NBT_Node &tmpNode = tList[i];
 			NBT_TAG curTag = tmpNode.GetTag();
 
-			//¶ÔÓÚÃ¿¸öÔªËØ£¬¼ì²éÀàĞÍÊÇ·ñÓëÁĞ±í´æ´¢Ò»ÖÂ
+			//å¯¹äºæ¯ä¸ªå…ƒç´ ï¼Œæ£€æŸ¥ç±»å‹æ˜¯å¦ä¸åˆ—è¡¨å­˜å‚¨ä¸€è‡´
 			if (curTag != enListElementTag)
 			{
 				eRet = Error(ListElementTypeError, tData, __FUNCSIG__ ": Expected type [NBT_Type::%s][0x%02X(%d)] in list, but found type [NBT_Type::%s][0x%02X(%d)]",
@@ -580,8 +580,8 @@ catch(...)\
 				return eRet;
 			}
 
-			//Ò»ÖÂ£¬ºÜºÃ£¬ÄÇÃ´Êä³ö
-			//ÁĞ±íÎŞÃû×Ö£¬ÎŞĞèÖØ¸´tag£¬Ö»ĞèÊä³öÊı¾İ
+			//ä¸€è‡´ï¼Œå¾ˆå¥½ï¼Œé‚£ä¹ˆè¾“å‡º
+			//åˆ—è¡¨æ— åå­—ï¼Œæ— éœ€é‡å¤tagï¼Œåªéœ€è¾“å‡ºæ•°æ®
 			eRet = PutSwitch(tData, tmpNode, enListElementTag, szStackDepth - 1);
 			if (eRet != AllOk)
 			{
@@ -641,19 +641,19 @@ catch(...)\
 				eRet = PutArrayType<CurType>(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
-		case NBT_TAG::String://ÀàĞÍÎ¨Ò»£¬·ÇÄ£°åº¯Êı
+		case NBT_TAG::String://ç±»å‹å”¯ä¸€ï¼Œéæ¨¡æ¿å‡½æ•°
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::String>;
 				eRet = PutStringType(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
-		case NBT_TAG::List://¿ÉÄÜµİ¹é£¬ĞèÒª´¦ÀíszStackDepth
+		case NBT_TAG::List://å¯èƒ½é€’å½’ï¼Œéœ€è¦å¤„ç†szStackDepth
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::List>;
 				eRet = PutListType(tData, nodeNbt.GetData<CurType>(), szStackDepth);
 			}
 			break;
-		case NBT_TAG::Compound://¿ÉÄÜµİ¹é£¬ĞèÒª´¦ÀíszStackDepth
+		case NBT_TAG::Compound://å¯èƒ½é€’å½’ï¼Œéœ€è¦å¤„ç†szStackDepth
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Compound>;
 				eRet = PutCompoundType<false>(tData, nodeNbt.GetData<CurType>(), szStackDepth);
@@ -671,20 +671,20 @@ catch(...)\
 				eRet = PutArrayType<CurType>(tData, nodeNbt.GetData<CurType>());
 			}
 			break;
-		case NBT_TAG::End://×¢Òâend±êÇ©¾ø¶Ô²»¿ÉÒÔ½øÀ´
+		case NBT_TAG::End://æ³¨æ„endæ ‡ç­¾ç»å¯¹ä¸å¯ä»¥è¿›æ¥
 			{
 				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch error: Unexpected Type Tag NBT_TAG::End[0x00(0)]");
 			}
 			break;
-		default://Êı¾İ³ö´í
+		default://æ•°æ®å‡ºé”™
 			{
 				eRet = Error(NbtTypeTagError, tData, __FUNCSIG__ ": NBT Tag switch error: Unknown Type Tag[0x%02X(%d)]",
-					(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);//´Ë´¦²»½øĞĞÌáÇ°·µ»Ø£¬ÍùºóÄ¬ÈÏ·µ»Ø´¦Àí
+					(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);//æ­¤å¤„ä¸è¿›è¡Œæå‰è¿”å›ï¼Œå¾€åé»˜è®¤è¿”å›å¤„ç†
 			}
 			break;
 		}
 
-		if (eRet != AllOk)//Èç¹û³ö´í£¬´òÒ»ÏÂÕ»»ØËİ
+		if (eRet != AllOk)//å¦‚æœå‡ºé”™ï¼Œæ‰“ä¸€ä¸‹æ ˆå›æº¯
 		{
 			STACK_TRACEBACK("Tag[0x%02X(%d)] write error!",
 				(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);
@@ -694,20 +694,20 @@ catch(...)\
 	}
 
 public:
-	//Êä³öµ½tDataÖĞ£¬²¿·Ö¹¦ÄÜºÍÔ­Àí²ÎÕÕReadNBT´¦µÄ×¢ÊÍ£¬szDataStartIndexÔÚ´Ë´¦¿ÉÒÔ¶ÔÒ»¸ötDataÍ¨¹ı²»Í¬µÄtCompoundºÍszDataStartIndex = tData.size()
-	//À´µ÷ÓÃÒÔ´ïµ½°Ñ¶à¸ö²»Í¬µÄnbtÊä³öµ½Í¬Ò»¸ötDataÄÚµÄ¹¦ÄÜ
+	//è¾“å‡ºåˆ°tDataä¸­ï¼Œéƒ¨åˆ†åŠŸèƒ½å’ŒåŸç†å‚ç…§ReadNBTå¤„çš„æ³¨é‡Šï¼ŒszDataStartIndexåœ¨æ­¤å¤„å¯ä»¥å¯¹ä¸€ä¸ªtDataé€šè¿‡ä¸åŒçš„tCompoundå’ŒszDataStartIndex = tData.size()
+	//æ¥è°ƒç”¨ä»¥è¾¾åˆ°æŠŠå¤šä¸ªä¸åŒçš„nbtè¾“å‡ºåˆ°åŒä¸€ä¸ªtDataå†…çš„åŠŸèƒ½
 	static bool WriteNBT(DataType &tData, const NBT_Type::Compound &tCompound, size_t szDataStartIndex = 0, size_t szStackDepth = 512) noexcept
 	{
 	MYTRY;
-		//³õÊ¼»¯Êı¾İÁ÷¶ÔÏó
+		//åˆå§‹åŒ–æ•°æ®æµå¯¹è±¡
 		OutputStream OptStream(tData, szDataStartIndex);
 
-		//Êä³ö×î´óÕ»Éî¶È
+		//è¾“å‡ºæœ€å¤§æ ˆæ·±åº¦
 		//printf("Max Stack Depth [%zu]\n", szStackDepth);
 
-		//¿ªÊ¼µİ¹éÊä³ö
+		//å¼€å§‹é€’å½’è¾“å‡º
 		return PutCompoundType<true>(OptStream, tCompound, szStackDepth) == AllOk;
-	MYCATCH;//ÒÔ·ÀÍòÒ»»¹ÊÇĞèÒª²¶»ñÒ»ÏÂ
+	MYCATCH;//ä»¥é˜²ä¸‡ä¸€è¿˜æ˜¯éœ€è¦æ•è·ä¸€ä¸‹
 	}
 
 

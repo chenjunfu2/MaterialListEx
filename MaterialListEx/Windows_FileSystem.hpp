@@ -1,9 +1,9 @@
-#pragma once
+ï»¿#pragma once
 #include <filesystem>
 #include <stdlib.h>
 
-std::filesystem::path GetCurrentModulePath()//»ñÈ¡³ÌĞòÂ·¾¶Ãû³Æ£¬È»ºó²ÃÇĞµô³ÌĞòÃû£¬»ñÈ¡¸¸Â·¾¶
+std::filesystem::path GetCurrentModulePath()//è·å–ç¨‹åºè·¯å¾„åç§°ï¼Œç„¶åè£åˆ‡æ‰ç¨‹åºåï¼Œè·å–çˆ¶è·¯å¾„
 {
-	std::filesystem::path sPath{ _pgmptr };//ÄãmsvcÌØÓĞµÄ_pgmptr¾ÍÊÇµ±Ç°³ÌĞòÂ·¾¶
+	std::filesystem::path sPath{ _pgmptr };//ä½ msvcç‰¹æœ‰çš„_pgmptrå°±æ˜¯å½“å‰ç¨‹åºè·¯å¾„
 	return sPath.parent_path();
 }
