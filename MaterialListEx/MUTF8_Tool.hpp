@@ -244,10 +244,10 @@ private:
 	static constexpr void UTF8SupplementaryToMUTF8(const U8T(&u8CharArr)[4], MU8T(&mu8CharArr)[6])
 	{
 		/*
-		4bytes utf-8 bit distribution:
+		4bytes utf-8 bit distribution:（注意utf32到utf16的时候i会被丢弃，所以理论上i是恒为0的）
 		000i'uuuu zzzz'yyyy yyxx'xxxx - 1111'0iuu 10uu'zzzz 10yy'yyyy 10xx'xxxx
 		
-		6bytes modified utf-8 bit distribution:（注意忽略了i）
+		6bytes modified utf-8 bit distribution:（注意mutf8直接忽略了i不编码）
 		000i'uuuu zzzz'yyyy yyxx'xxxx - 1110'1101 1010'uuuu 10zz'zzyy 1110'1101 1011'yyyy 10xx'xxxx
 		*/
 
@@ -262,7 +262,7 @@ private:
 	static constexpr void MUTF8SupplementaryToUTF8(const MU8T(&mu8CharArr)[6], U8T(&u8CharArr)[4])
 	{
 		//mu8CharArr[0] 与 mu8CharArr[3] 忽略
-		u8CharArr[0] = (uint8_t)(((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1100) >> 2 | (uint8_t)0b1111'0100);//注意是补1111'0100，最后的0100中的1必须手动补上，因为u16代理对此位衡为1且mutf8会丢弃
+		u8CharArr[0] = (uint8_t)(((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'1100) >> 2 | (uint8_t)0b1111'0000);//注意是补1111'0000，而不是1111'0100，因为上面的i在utf32到utf16代理对的过程被丢弃，此位恒为0，但是不知道为什么utf8仍然保留了此位
 		u8CharArr[1] = (uint8_t)(((uint8_t)mu8CharArr[1] & (uint8_t)0b0000'0011) << 4 | ((uint8_t)mu8CharArr[2] & (uint8_t)0b0011'1100) >> 2 | (uint8_t)0b1000'0000);
 		u8CharArr[2] = (uint8_t)(((uint8_t)mu8CharArr[2] & (uint8_t)0b0000'0011) << 4 | ((uint8_t)mu8CharArr[4] & (uint8_t)0b0000'1111) >> 0 | (uint8_t)0b1000'0000);
 		u8CharArr[3] = (uint8_t)mu8CharArr[5];//最后一个字节mu8与u8完全等同，直接拷贝
