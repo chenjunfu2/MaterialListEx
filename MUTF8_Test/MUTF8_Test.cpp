@@ -173,14 +173,14 @@ int main(void)
 	std::basic_string_view testu16 = u"test😀😁😂🤣😃😄😅😆😗😘🥰😍😎😋😊😉😙😚☺🙂🤗🤩🤔🤨223$$在明确是常量表达式的上下文中，不需要检查是否在常量求值中，因为答案总是\"是\"";
 
 	constexpr auto ret = U8TOMU8STR(u8"test😀😁😂🤣😃😄😅😆😗😘🥰😍😎😋😊😉😙😚☺🙂🤗🤩🤔🤨223$$在明确是常量表达式的上下文中，不需要检查是否在常量求值中，因为答案总是\"是\"");
-	auto ret1 = U8CV2MU8(testu8);//这个有问题
+	auto ret1 = U8CV2MU8(testu8);
 	constexpr auto ret2 = U16TOMU8STR(u"test😀😁😂🤣😃😄😅😆😗😘🥰😍😎😋😊😉😙😚☺🙂🤗🤩🤔🤨223$$在明确是常量表达式的上下文中，不需要检查是否在常量求值中，因为答案总是\"是\"");
 	auto ret3 = U16CV2MU8(testu16);
 
 	std::basic_string_view<uint8_t> mu8_0(ret.data(), ret.size());
 	std::basic_string_view<uint8_t> mu8_1(ret2.data(), ret2.size());
 
-	TestPrint(mu8_0, mu8_1);//右侧
+	TestPrint(mu8_0, mu8_1);
 
 	BoolPrint(ret == ret2, "ret == ret2: ", "\n");
 	BoolPrint(ret1 == ret3, "ret1 == ret3: ", "\n\n");
@@ -190,7 +190,7 @@ int main(void)
 	
 
 	auto u16_0 = MU8CV2U16(mu8_0);
-	auto u16_1 = MU8CV2U16(mu8_1);//这个
+	auto u16_1 = MU8CV2U16(mu8_1);
 
 	auto mu8_2 = U16CV2MU8(u16_0);
 	auto mu8_3 = U16CV2MU8(u16_1);
@@ -201,7 +201,7 @@ int main(void)
 	auto u8_3 = MU8CV2U8(mu8_3);
 
 	BoolPrint(testu16 == u16_0, "testu16 == u16_0: ", "\n");
-	BoolPrint(testu16 == u16_1, "testu16 == u16_1: ", "\n\n");//这个对的
+	BoolPrint(testu16 == u16_1, "testu16 == u16_1: ", "\n\n");
 	BoolPrint(testu8 == u8_0, "testu8 == u8_0: ", "\n");
 	BoolPrint(testu8 == u8_1, "testu8 == u8_1: ", "\n");
 	BoolPrint(testu8 == u8_2, "testu8 == u8_2: ", "\n");
