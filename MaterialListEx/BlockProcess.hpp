@@ -78,15 +78,7 @@ public:
 
 			BlockStats bsTemp{};
 			bsTemp.psBlockName = &itBlockCompound.GetString(MU8STR("Name"));
-			const auto find = itBlockCompound.HasCompound(MU8STR("Properties"));//检查方块是否有额外属性
-			if (find != NULL)
-			{
-				bsTemp.pcpdProperties = find;
-			}
-			else
-			{
-				bsTemp.pcpdProperties = NULL;
-			}
+			bsTemp.pcpdProperties = itBlockCompound.HasCompound(MU8STR("Properties"));//检查方块是否有额外属性
 
 			listBlockStats.emplace_back(std::move(bsTemp));
 		}
@@ -142,7 +134,7 @@ public:
 		无物品形式方块\两格方块处理（门、床、活塞）（注：多格植物额外处理）\
 		墙上的方块\
 		不同种类花盆（杜鹃id有例外要注意）\炼药锅（不同内容物不同id）\带蜡烛的蛋糕转换为蛋糕+蜡烛\
-		绊线到线\气泡柱转换为水\耕地、土径转为泥土\
+		绊线到线\气泡柱转换为水\耕地、土径转为泥土\红石线到红石粉
 		水、岩浆等流体处理\半砖处理\
 		同一格内多个物品数量的方块转换（雪\海龟蛋\海泡菜\蜡烛\樱花簇）\
 		同一格内多面生长方块转换（藤蔓，发光地衣，幽匿脉络）\
@@ -172,7 +164,6 @@ public:
 			CvrtMultiPartPlant(stBlocks, stItemsList) ||		//多格植株处理
 			CvrtDoublePartPlant(stBlocks, stItemsList) ||		//两格植株处理
 			CvrtCropPlant(stBlocks, stItemsList) ||				//作物植株处理
-
 			false;//此处false只是为了统一格式：让函数调用后统一加||不报错，不改变最终执行结果
 
 		//特殊方块、复合方块，多格方块，含水方块转换，所有的转换只会转换特殊状态，如果本身就和物品名形式一致则跳过，所以函数最后如果所有转换都没生效则为正常物品
