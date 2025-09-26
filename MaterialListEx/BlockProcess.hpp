@@ -37,7 +37,7 @@ public:
 		/*----------------区域大小计算、调色板获取----------------*/
 		//获取区域偏移
 		const auto &Position = RgCompound.GetCompound(MU8STR("Position"));
-		const BlockPos reginoPos =
+		const BlockPos regionPos =
 		{
 			.x = Position.GetInt(MU8STR("x")),
 			.y = Position.GetInt(MU8STR("y")),
@@ -52,9 +52,9 @@ public:
 			.z = Size.GetInt(MU8STR("z")),
 		};
 		//计算区域实际大小
-		const BlockPos posEndRel = getRelativeEndPositionFromAreaSize(regionSize).add(reginoPos);
-		const BlockPos posMin = getMinCorner(reginoPos, posEndRel);
-		const BlockPos posMax = getMaxCorner(reginoPos, posEndRel);
+		const BlockPos posEndRel = getRelativeEndPositionFromAreaSize(regionSize).add(regionPos);
+		const BlockPos posMin = getMinCorner(regionPos, posEndRel);
+		const BlockPos posMax = getMaxCorner(regionPos, posEndRel);
 		const BlockPos size = posMax.sub(posMin).add({ 1,1,1 });
 
 		//printf("RegionSize: [%d, %d, %d]\n", size.x, size.y, size.z);
