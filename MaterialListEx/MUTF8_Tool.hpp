@@ -87,7 +87,7 @@ private:
 
 		constexpr StaticString &append(const T *const pData, size_t szLength) noexcept
 		{
-			if (szIndex + szLength > arrData.size())
+			if (szLength == 0 || szLength > arrData.size() - szIndex)//减法避免溢出，注意这里不是大等于而是大于，否则会导致拷贝差1错误
 			{
 				return *this;
 			}
@@ -104,7 +104,7 @@ private:
 		{
 			if (std::is_constant_evaluated())
 			{
-				if (szIndex + szLength > arrData.size())
+				if (szLength == 0 || szLength > arrData.size() - szIndex)
 				{
 					return *this;
 				}
@@ -127,7 +127,7 @@ private:
 
 		constexpr void push_back(const T &tData) noexcept
 		{
-			if (szIndex + 1 > arrData.size())
+			if (1 > arrData.size() - szIndex)
 			{
 				return;
 			}
@@ -331,7 +331,7 @@ private:
 				{	
 					U16T u16HighSurrogate = u16Char;//保存高代理
 					U16T u16LowSurrogate{};//读取低代理
-					GET_NEXTCHAR(u16LowSurrogate, PUSH_FAIL_MU8CHAR);//第二次
+					GET_NEXTCHAR(u16LowSurrogate, (PUSH_FAIL_MU8CHAR));//第二次
 					//如果上面读取提前返回，则高代理后无数据，插入转换后的u16未知字符
 					
 					//判断低代理范围
@@ -400,8 +400,7 @@ private:
 				//先保存第一个字节
 				MU8T mu8CharArr[2] = { mu8Char };//[0]=mu8Char
 				//尝试获取下一个字节
-				GET_NEXTCHAR(mu8CharArr[1],
-					(PUSH_FAIL_U16CHAR));//第二次
+				GET_NEXTCHAR(mu8CharArr[1], (PUSH_FAIL_U16CHAR));//第二次
 				//判断字节合法性
 				if (!HAS_BITMASK(mu8CharArr[1], 0b1100'0000, 0b1000'0000))//高2位不是10，错误，跳过
 				{
@@ -575,8 +574,7 @@ private:
 
 				U8T u8CharArr[4]{ u8Char };//[0] = u8Char
 
-				GET_NEXTCHAR(u8CharArr[1],
-					(PUSH_FAIL_MU8CHAR));//第二次
+				GET_NEXTCHAR(u8CharArr[1], (PUSH_FAIL_MU8CHAR));//第二次
 				if (!HAS_BITMASK(u8CharArr[1], 0b1100'0000, 0b1000'0000))//确保高2bit是10
 				{
 					//输出一个错误字符
