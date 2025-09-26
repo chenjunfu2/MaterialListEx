@@ -587,7 +587,7 @@ private:
 
 				GET_NEXTCHAR(u8CharArr[2],
 					(PUSH_FAIL_MU8CHAR, PUSH_FAIL_MU8CHAR));//第三次
-				if (!HAS_BITMASK(u8CharArr[1], 0b1100'0000, 0b1000'0000))//确保高2bit是10
+				if (!HAS_BITMASK(u8CharArr[2], 0b1100'0000, 0b1000'0000))//确保高2bit是10
 				{
 					//输出二个错误字符
 					PUSH_FAIL_MU8CHAR;
