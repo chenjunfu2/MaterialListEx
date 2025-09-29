@@ -42,7 +42,10 @@ public:
 	using Compound		= MyCompound<std::unordered_map<String, NBT_Node>>;//挂在序列下的内容都通过map绑定名称
 
 	//类型列表
-	template<typename... Ts> struct _TypeList{};
+	template<typename... Ts>
+	struct _TypeList{};
+
+	//定义
 	using TypeList = _TypeList
 	<
 		End,
@@ -77,6 +80,7 @@ private:
 		"List",
 		"Compound",
 	};
+
 public:
 	constexpr static inline const char *GetTypeName(NBT_TAG tag) noexcept//运行时类型判断，允许静态
 	{
