@@ -2,13 +2,13 @@
 
 #include <new>//std::bad_alloc
 #include <bit>//std::bit_cast
-#include <string>
-#include <stdint.h>
+#include <string>//字节流
+#include <stdint.h>//类型定义
 #include <stdlib.h>//byte swap
-#include <type_traits>
+#include <type_traits>//类型约束
 #include <format>//格式化
 
-#include "NBT_Node.hpp"
+#include "NBT_Node.hpp"//nbt类型
 
 //请尽可能使用basic_string_view来减少开销
 //因为string的[]运算符访问有坑，每次都会判断是否是优化模式导致问题，所以存储data指针直接访问以加速

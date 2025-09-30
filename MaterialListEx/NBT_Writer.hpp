@@ -1,14 +1,14 @@
 ﻿#pragma once
 
-#include <new>//bad alloc
+#include <new>//std::bad_alloc
 #include <bit>//std::bit_cast
-#include <string>
-#include <stdint.h>
+#include <string>//字节流
+#include <stdint.h>//类型定义
 #include <stdlib.h>//byte swap
-#include <type_traits>
+#include <type_traits>//类型约束
 #include <format>//格式化
 
-#include "NBT_Node.hpp"
+#include "NBT_Node.hpp"//nbt类型
 
 template <typename T = std::basic_string<uint8_t>>
 class MyOutputStream
