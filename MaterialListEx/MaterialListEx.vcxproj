@@ -217,6 +217,7 @@
     <ClInclude Include="MUTF8_Tool.hpp" />
     <ClInclude Include="NBT_Array.hpp" />
     <ClInclude Include="NBT_Compound.hpp" />
+    <ClInclude Include="NBT_Endian.hpp" />
     <ClInclude Include="NBT_Hash.hpp" />
     <ClInclude Include="NBT_Helper.hpp" />
     <ClInclude Include="NBT_IO.hpp" />
