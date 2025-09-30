@@ -111,28 +111,6 @@ public:
 };
 
 
-#ifdef _MSC_VER
-#if _MSC_VER >= 1935 //msvc 19.35+ 支持标准 format_string
-	#define FMT_STR format_string
-#else
-	#define FMT_STR _Fmt_string //旧版本 MSVC
-#endif
-#else
-	#define FMT_STR format_string //GCC、Clang 等使用标准库版本
-#endif
-
-class ErrInfo
-{
-public:
-	template<typename... Args>
-	void operator()(const std::FMT_STR<Args...> fmt, Args&&... args)
-	{
-		auto tmp = std::format(std::move(fmt), std::forward<Args>(args)...);
-		fwrite(tmp.data(), sizeof(*tmp.data()), tmp.size(), stderr);
-	}
-};
-
-
 template <typename DataType = std::basic_string_view<uint8_t>>
 class NBT_Reader//请尽可能使用basic_string_view
 {
@@ -193,6 +171,38 @@ private:
 	//记得同步数组！
 	static_assert(sizeof(warnReason) / sizeof(warnReason[0]) == WARNCODE_END, "warnReason array out sync");
 
+#ifdef _MSC_VER
+#if _MSC_VER >= 1935 //msvc 19.35+ 支持标准 format_string
+#define FMT_STR format_string
+#else
+#define FMT_STR _Fmt_string //旧版本 MSVC
+#endif
+#else
+#define FMT_STR format_string //GCC、Clang 等使用标准库版本
+#endif
+
+	class ErrInfo
+	{
+	public:
+		template<typename... Args>
+		void operator()(const std::FMT_STR<Args...> fmt, Args&&... args) noexcept
+		{
+			try
+			{
+				auto tmp = std::format(std::move(fmt), std::forward<Args>(args)...);
+				fwrite(tmp.data(), sizeof(*tmp.data()), tmp.size(), stderr);
+			}
+			catch (const std::exception &e)
+			{
+				printf("ErrInfo Exception: \"%s\"\n", e.what());
+			}
+			catch (...)
+			{
+				printf("ErrInfo Exception: \"Unknown Error\"\n");
+			}
+		}
+	};
+
 	//error处理
 	//使用变参形参表+vprintf代理复杂输出，给出更多扩展信息
 	//主动检查引发的错误，主动调用eRet = Error报告，然后触发STACK_TRACEBACK，最后返回eRet到上一级
@@ -200,7 +210,14 @@ private:
 	//如果是警告值，则不返回值
 	template <typename T, typename ErrInfoFunc, typename... Args>
 	requires(std::is_same_v<T, ErrCode> || std::is_same_v<T, WarnCode>)
-	static std::conditional_t<std::is_same_v<T, ErrCode>, ErrCode, void> _cdecl Error(const T &code, const InputStream &tData, ErrInfoFunc &funcErrInfo, const std::FMT_STR<Args...> fmt, Args&&... args) noexcept//gcc使用__attribute__((format))，msvc使用_Printf_format_string_
+	static std::conditional_t<std::is_same_v<T, ErrCode>, ErrCode, void> Error
+		(
+			const T &code,
+			const InputStream &tData,
+			ErrInfoFunc &funcErrInfo,
+			const std::FMT_STR<Args...> fmt,
+			Args&&... args
+		) noexcept
 	{
 		//打印错误原因
 		if constexpr (std::is_same_v<T, ErrCode>)
@@ -294,6 +311,8 @@ private:
 			return code;
 		}
 	}
+
+#undef FMT_STR
 
 #define _RP___FUNCSIG__ __FUNCSIG__//用于编译过程二次替换达到函数内部
 
