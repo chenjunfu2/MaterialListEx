@@ -1,7 +1,9 @@
 #pragma once
 
-#include <bit>
-#include <stdint.h>
+#include <bit>//字节序
+#include <stdint.h>//定义
+#include <utility>//std::index_sequence
+#include <type_traits>//std::make_unsigned
 
 #if defined(_MSC_VER)
 #define COMPILER_MSVC 1
@@ -46,7 +48,7 @@ public:
 	constexpr static T ByteSwapAny(T data) noexcept
 	{
 		//必须是2的倍数才能正确执行byteswap
-		static_assert(sizeof(T) % 2 == 0 || sizeof(T) == 1, "The size of T is not a multiple of 2");
+		static_assert(sizeof(T) % 2 == 0 || sizeof(T) == 1, "The size of T is not a multiple of 2 or equal to 1");
 
 		//如果大小是1直接返回
 		if constexpr (sizeof(T) == 1)
@@ -117,128 +119,80 @@ public:
 #endif
 	}
 
+	template<typename T>
+	constexpr static T AutoByteSwap(T data) noexcept
+	{
+		//如果是已知大小，优先走重载，因为重载更有可能是指令集支持的高效实现
+		//否则走位操作实现，效率更低但是兼容性更好
+		if constexpr (sizeof(T) == sizeof(uint8_t))
+		{
+			return data;
+		}
+		else if constexpr (sizeof(T) == sizeof(uint16_t))
+		{
+			return (T)ByteSwap16((uint16_t)data);
+		}
+		else if constexpr (sizeof(T) == sizeof(uint32_t))
+		{
+			return (T)ByteSwap32((uint32_t)data);
+		}
+		else if constexpr (sizeof(T) == sizeof(uint64_t))
+		{
+			return (T)ByteSwap64((uint64_t)data);
+		}
+		else
+		{
+			return ByteSwapAny(data);
+		}
+	}
+
 	//------------------------------------------------------//
 
-	static uint16_t ToBig16(uint16_t data) noexcept
+	template<typename T>
+	static T NativeToBigAny(T data) noexcept
 	{
-		if constexpr (IsBigEndian())
+		if constexpr (IsBigEndian())//当前也是big
 		{
 			return data;
 		}
 
-		return ByteSwap16(data);
-	}
-
-	static uint32_t ToBig32(uint32_t data) noexcept
-	{
-		if constexpr (IsBigEndian())
-		{
-			return data;
-		}
-
-		return ByteSwap32(data);
-	}
-
-	static uint64_t ToBig64(uint64_t data) noexcept
-	{
-		if constexpr (IsBigEndian())
-		{
-			return data;
-		}
-
-		return ByteSwap64(data);
+		//当前是little，little转换到big
+		return AutoByteSwap(data);
 	}
 
 	template<typename T>
-	static T ToBigAny(T data) noexcept
+	static T NativeToLittleAny(T data) noexcept
 	{
-		if constexpr (IsBigEndian())
+		if constexpr (IsLittleEndian())//当前也是little
 		{
 			return data;
 		}
 
-		if constexpr (sizeof(T) == sizeof(uint8_t))
-		{
-			return data;
-		}
-		else if constexpr (sizeof(T) == sizeof(uint16_t))
-		{
-			return ByteSwap16(data);
-		}
-		else if constexpr (sizeof(T) == sizeof(uint32_t))
-		{
-			return ByteSwap32(data);
-		}
-		else if constexpr (sizeof(T) == sizeof(uint64_t))
-		{
-			return ByteSwap64(data);
-		}
-		else
-		{
-			return ByteSwapAny(data);
-		}
-	}
-
-	//-----------------------------------//
-
-	static uint16_t ToLittle16(uint16_t data) noexcept
-	{
-		if constexpr (IsLittleEndian())
-		{
-			return data;
-		}
-
-		return ByteSwap16(data);
-	}
-
-	static uint32_t ToLittle32(uint32_t data) noexcept
-	{
-		if constexpr (IsLittleEndian())
-		{
-			return data;
-		}
-
-		return ByteSwap32(data);
-	}
-
-	static uint64_t ToLittle64(uint64_t data) noexcept
-	{
-		if constexpr (IsLittleEndian())
-		{
-			return data;
-		}
-
-		return ByteSwap64(data);
+		//当前是big，big转换到little
+		return AutoByteSwap(data);
 	}
 
 	template<typename T>
-	static T ToLittleAny(T data) noexcept
+	static T BigToNativeAny(T data) noexcept
 	{
-		if constexpr (IsLittleEndian())
+		if constexpr (IsBigEndian())//当前也是big
 		{
 			return data;
 		}
 
-		if constexpr (sizeof(T) == sizeof(uint8_t))
-		{
-			return data;
-		}
-		else if constexpr (sizeof(T) == sizeof(uint16_t))
-		{
-			return ByteSwap16(data);
-		}
-		else if constexpr (sizeof(T) == sizeof(uint32_t))
-		{
-			return ByteSwap32(data);
-		}
-		else if constexpr (sizeof(T) == sizeof(uint64_t))
-		{
-			return ByteSwap64(data);
-		}
-		else
-		{
-			return ByteSwapAny(data);
-		}
+		//当前是little，big转换到little
+		return AutoByteSwap(data);
 	}
 
+	template<typename T>
+	static T LittleToNativeAny(T data) noexcept
+	{
+		if constexpr (IsLittleEndian())//当前也是little
+		{
+			return data;
+		}
+
+		//当前是big，little转换到big
+		return AutoByteSwap(data);
+	}
 };

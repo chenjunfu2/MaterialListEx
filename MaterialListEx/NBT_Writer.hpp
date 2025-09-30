@@ -9,6 +9,7 @@
 #include <format>//格式化
 
 #include "NBT_Node.hpp"//nbt类型
+#include "NBT_Endian.hpp"//字节序
 
 template <typename T = std::basic_string<uint8_t>>
 class MyOutputStream
@@ -320,51 +321,8 @@ catch(...)\
 	static inline ErrCode WriteBigEndian(OutputStream &tData, const T &tVal, ErrInfoFunc &funcErrInfo) noexcept
 	{
 	MYTRY;
-		if constexpr (sizeof(T) == sizeof(uint8_t))
-		{
-			tData.PutOnce((uint8_t)tVal);
-		}
-		else if constexpr (sizeof(T) == sizeof(uint16_t))
-		{
-			uint16_t tmp = _byteswap_ushort((uint16_t)tVal);
-			tData.PutRange((const uint8_t*)&tmp, sizeof(tmp));
-		}
-		else if constexpr (sizeof(T) == sizeof(uint32_t))
-		{
-			uint32_t tmp = _byteswap_ulong((uint32_t)tVal);
-			tData.PutRange((const uint8_t *)&tmp, sizeof(tmp));
-		}
-		else if constexpr (sizeof(T) == sizeof(uint64_t))
-		{
-			uint64_t tmp = _byteswap_uint64((uint64_t)tVal);
-			tData.PutRange((const uint8_t *)&tmp, sizeof(tmp));
-		}
-		else//other
-		{
-			//统一到无符号类型，防止有符号右移错误
-			using UT = typename std::make_unsigned<T>::type;
-			static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
-
-			//缓冲区，写入
-			uint8_t u8BigEndianBuffer[sizeof(T)] = { 0 };
-
-			//静态展开（替代for），写入缓冲区
-			[&] <size_t... Is>(std::index_sequence<Is...>) -> void
-			{
-				UT tmpVal = (UT)tVal;//临时量缓存，避免编译器一直生成引用访问造成开销
-				((u8BigEndianBuffer[Is] = (uint8_t)(tmpVal >> (8 * (sizeof(T) - Is - 1)))), ...);
-
-				//缓冲区范围写入到tData
-				tData.PutRange(u8BigEndianBuffer, sizeof(u8BigEndianBuffer));
-			}(std::make_index_sequence<sizeof(T)>{});
-
-			//与上面操作等价但性能较低的写法，保留以用于增加可读性
-			//for (size_t i = sizeof(T); i > 0; --i)
-			//{
-			//	tData.PutOnce((uint8_t)(((UT)tVal) >> (8 * (i - 1))));//依次提取
-			//}
-		}
-
+		auto BigEndianVal = NBT_Endian::NativeToBigAny(tVal);
+		tData.PutRange((const uint8_t *)&BigEndianVal, sizeof(BigEndianVal));
 		return AllOk;
 	MYCATCH;
 	}

@@ -9,6 +9,7 @@
 #include <format>//格式化
 
 #include "NBT_Node.hpp"//nbt类型
+#include "NBT_Endian.hpp"//字节序
 
 //请尽可能使用basic_string_view来减少开销
 //因为string的[]运算符访问有坑，每次都会判断是否是优化模式导致问题，所以存储data指针直接访问以加速
@@ -369,54 +370,9 @@ catch(...)\
 			}
 		}
 
-		if constexpr (sizeof(T) == sizeof(uint8_t))
-		{
-			tVal = (T)(uint8_t)tData.GetNext();
-		}
-		else if constexpr (sizeof(T) == sizeof(uint16_t))
-		{
-			uint16_t tmp{};
-			tData.GetRange((uint8_t *)&tmp, sizeof(tmp));
-			tVal = (T)(uint16_t)_byteswap_ushort(tmp);
-		}
-		else if constexpr (sizeof(T) == sizeof(uint32_t))
-		{
-			uint32_t tmp{};
-			tData.GetRange((uint8_t *)&tmp, sizeof(tmp));
-			tVal = (T)(uint32_t)_byteswap_ulong(tmp);
-		}
-		else if constexpr (sizeof(T) == sizeof(uint64_t))
-		{
-			uint64_t tmp{};
-			tData.GetRange((uint8_t *)&tmp, sizeof(tmp));
-			tVal = (T)(uint64_t)_byteswap_uint64(tmp);
-		}
-		else//other
-		{
-			//统一到无符号类型
-			using UT = typename std::make_unsigned<T>::type;
-			static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
-
-			//缓冲区，读取
-			uint8_t u8BigEndianBuffer[sizeof(T)] = { 0 };
-			tData.GetRange(u8BigEndianBuffer, sizeof(u8BigEndianBuffer));
-
-			//静态展开（替代for）
-			[&] <size_t... Is>(std::index_sequence<Is...>) -> void
-			{
-				UT tmpVal = 0;//临时量缓存，避免编译器一直生成引用访问造成开销
-				((tmpVal |= ((UT)u8BigEndianBuffer[Is]) << (8 * (sizeof(T) - Is - 1))), ...);//模板展开位操作
-
-				//读取完成赋值给tVal
-				tVal = (T)tmpVal;
-			}(std::make_index_sequence<sizeof(T)>{});
-
-			//与上面操作等价但性能较低的写法，保留以用于增加可读性
-			//for (size_t i = sizeof(T); i > 0; --i)
-			//{
-			//	tVal |= ((UT)(uint8_t)tData.GetNext()) << (8 * (i - 1));//每次移动刚才提取的地位到高位，然后继续提取
-			//}
-		}
+		T BigEndianVal{};
+		tData.GetRange((uint8_t *)&BigEndianVal, sizeof(BigEndianVal));
+		tVal = NBT_Endian::BigToNativeAny(BigEndianVal);
 
 		if constexpr (!bNoCheck)
 		{
