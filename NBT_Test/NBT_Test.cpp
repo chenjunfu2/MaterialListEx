@@ -151,7 +151,7 @@ return 0;
 */
 //#define WRITE_TO_FILE
 
-int maingg(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	if (argc != 2)
 	{
@@ -495,7 +495,7 @@ int main0(int argc, char *argv[])
 }
 
 
-int main(void)
+int mainhh(void)
 {
 	NBT_Type::Compound cpd{};
 

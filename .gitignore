@@ -368,6 +368,7 @@ FodyWeavers.xsd
 git代理.txt
 MaterialListEx/other/
 MaterialListEx/*.TMP
+MaterialListEx/*.bak
 MaterialListEx/*.nbt
 MaterialListEx/*.litematic
 MaterialListEx/*.url
@@ -375,6 +376,7 @@ MaterialListEx/*.csv
 MaterialListEx/*.exe
 NBT_Test/other/
 NBT_Test/*.TMP
+NBT_Test/*.bak
 NBT_Test/*.nbt
 NBT_Test/*.litematic
 NBT_Test/*.url

@@ -206,7 +206,7 @@ private:
 		}
 
 		//打印扩展信息
-		funcErrInfo("Extra Info:\"");
+		funcErrInfo("Extra Info: \"");
 		funcErrInfo(std::move(fmt), std::forward<Args>(args)...);
 		funcErrInfo("\"\n\n");
 
