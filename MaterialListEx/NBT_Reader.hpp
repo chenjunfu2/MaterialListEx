@@ -226,7 +226,7 @@ private:
 				return code;
 			}
 			//上方if保证code不会溢出
-			funcErrInfo("Read Err[{}]: \"{}\"\n", (uint8_t)code, errReason[code]);
+			funcErrInfo("Read Err[{}]: {}\n", (uint8_t)code, errReason[code]);
 		}
 		else if constexpr (std::is_same_v<T, WarnCode>)
 		{
@@ -235,7 +235,7 @@ private:
 				return;
 			}
 			//上方if保证code不会溢出
-			funcErrInfo("Read Warn[{}]: \"{}\"\n", (uint8_t)code, warnReason[code]);
+			funcErrInfo("Read Warn[{}]: {}\n", (uint8_t)code, warnReason[code]);
 		}
 		else
 		{
@@ -260,7 +260,7 @@ private:
 			"Data Review:\n"\
 			"Current: 0x{:02X}({})\n"\
 			"Data Size: 0x{:02X}({})\n"\
-			"Data[0x{:02X}({}),0x{:02X}({})):\n",
+			"Data Range: [0x{:02X}({}),0x{:02X}({})):\n",
 
 			(uint64_t)tData.Index(), tData.Index(),
 			(uint64_t)tData.Size(), tData.Size(),
