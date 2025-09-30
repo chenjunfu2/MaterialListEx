@@ -74,11 +74,11 @@ private:
 		"Float",
 		"Double",
 		"ByteArray",
-		"IntArray",
-		"LongArray",
 		"String",
 		"List",
 		"Compound",
+		"IntArray",
+		"LongArray",
 	};
 
 public:

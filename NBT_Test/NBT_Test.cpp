@@ -151,7 +151,7 @@ return 0;
 */
 //#define WRITE_TO_FILE
 
-int main(int argc, char *argv[])
+int maingg(int argc, char *argv[])
 {
 	if (argc != 2)
 	{
@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
 	printf("\ndataOriginal ReadNBT To cpdOriginal Start\n");
 	ct.Start();
 	NBT_Type::Compound cpdOriginal{};
-	if (!NBT_Reader<std::basic_string_view<uint8_t>>::ReadNBT(cpdOriginal, dataOriginal))
+	if (!NBT_Reader<>::ReadNBT(cpdOriginal, dataOriginal))
 	{
 		printf("[Line:%d]dataOriginal ReadNBT To cpdOriginal Fail\n", __LINE__);
 		return -1;
@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 	auto &dataNew = dataOriginal;//起个别名继续用，不删除内存减少重复分配开销
 	printf("\ndataOriginal WriteNBT To dataNew Start\n");
 	ct.Start();
-	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(dataNew, cpdOriginal))
+	if (!NBT_Writer<>::WriteNBT(dataNew, cpdOriginal))
 	{
 		printf("[Line:%d]dataOriginal WriteNBT To dataNew Fail\n", __LINE__);
 		return -1;
@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
 	NBT_Type::Compound cpdNew{};
 	printf("\ndataNew ReadNBT To cpdNew Start\n");
 	ct.Start();
-	if (!NBT_Reader<std::basic_string_view<uint8_t>>::ReadNBT(cpdNew, dataNew))
+	if (!NBT_Reader<>::ReadNBT(cpdNew, dataNew))
 	{
 		printf("[Line:%d]dataNew ReadNBT To cpdNew Fail\n", __LINE__);
 		return -1;
@@ -319,7 +319,7 @@ int main0(int argc, char *argv[])
 	std::basic_string<uint8_t> tR{};
 	NBT_Type::Compound cpd;
 	if (!NBT_IO::ReadFile("TestNbt.nbt", tR) ||
-		!NBT_Reader<std::basic_string_view<uint8_t>>::ReadNBT(cpd, tR))
+		!NBT_Reader<>::ReadNBT(cpd, tR))
 	{
 		printf("TestNbt Read Fail!\nData before the error was encountered:\n");
 	}
@@ -384,7 +384,7 @@ int main0(int argc, char *argv[])
 
 	//NBT_IO::IsFileExist("TestNbt.nbt");
 	std::basic_string<uint8_t> tData{};
-	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(tData, NBT_Type::Compound{ {MU8STR(""),std::move(test)} }) ||//构造一个空名称compound
+	if (!NBT_Writer<>::WriteNBT(tData, NBT_Type::Compound{ {MU8STR(""),std::move(test)} }) ||//构造一个空名称compound
 		!NBT_IO::WriteFile("TestNbt.nbt", tData))
 	{
 		printf("write fail\n");
@@ -492,4 +492,33 @@ int main0(int argc, char *argv[])
 
 	return 0;
 	*/
+}
+
+
+int main(void)
+{
+	NBT_Type::Compound cpd{};
+
+	NBT_Type::List lst{};
+
+	lst.AddBackByte(1);
+	lst.AddBackByte(2);
+	lst.AddBackByte(3);
+	lst.AddBackInt<true>(4);
+
+
+	cpd.Put(MU8STR("list"), std::move(lst));
+
+	std::basic_string<uint8_t> data{};
+	if (!NBT_Writer<>::WriteNBT(data, cpd))
+	{
+		return -1;
+	}
+
+	for (const auto &it : data)
+	{
+		printf("%02X ", it);
+	}
+
+	return 0;
 }

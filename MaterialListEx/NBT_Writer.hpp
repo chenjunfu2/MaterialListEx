@@ -208,7 +208,7 @@ private:
 		//打印扩展信息
 		funcErrInfo("Extra Info:\"");
 		funcErrInfo(std::move(fmt), std::forward<Args>(args)...);
-		funcErrInfo("\"\n");
+		funcErrInfo("\"\n\n");
 
 		//如果可以，预览szCurrent前n个字符，否则裁切到边界
 #define VIEW_PRE (8 * 8 + 8)//向前
@@ -265,17 +265,17 @@ private:
 
 #undef FMT_STR
 
-#define _RP___FUNCSIG__ __FUNCSIG__//用于编译过程二次替换达到函数内部
+#define _RP___FUNCTION__ __FUNCTION__//用于编译过程二次替换达到函数内部
 
 #define _RP___LINE__ _RP_STRLING(__LINE__)
 #define _RP_STRLING(l) STRLING(l)
 #define STRLING(l) #l
 
-#define STACK_TRACEBACK(fmt, ...) funcErrInfo("In [" _RP___FUNCSIG__ "] Line:[" _RP___LINE__ "]: \n"##fmt "\n\n", ##__VA_ARGS__);
+#define STACK_TRACEBACK(fmt, ...) funcErrInfo("In [" _RP___FUNCTION__ "] Line:[" _RP___LINE__ "]: \n"##fmt "\n\n", ##__VA_ARGS__);
 #define CHECK_STACK_DEPTH(Depth) \
 if((Depth) <= 0)\
 {\
-	eRet = Error(StackDepthExceeded, tData, funcErrInfo, _RP___FUNCSIG__ ": NBT nesting depth exceeded maximum call stack limit");\
+	eRet = Error(StackDepthExceeded, tData, funcErrInfo, _RP___FUNCTION__ ": NBT nesting depth exceeded maximum call stack limit");\
 	STACK_TRACEBACK("(Depth) <= 0");\
 	return eRet;\
 }\
@@ -288,19 +288,19 @@ try\
 }\
 catch(const std::bad_alloc &e)\
 {\
-	ErrCode eRet = Error(OutOfMemoryError, tData, funcErrInfo, _RP___FUNCSIG__ ": Info:[{}]", e.what());\
+	ErrCode eRet = Error(OutOfMemoryError, tData, funcErrInfo, _RP___FUNCTION__ ": Info:[{}]", e.what());\
 	STACK_TRACEBACK("catch(std::bad_alloc)");\
 	return eRet;\
 }\
 catch(const std::exception &e)\
 {\
-	ErrCode eRet = Error(StdException, tData, funcErrInfo, _RP___FUNCSIG__ ": Info:[{}]", e.what());\
+	ErrCode eRet = Error(StdException, tData, funcErrInfo, _RP___FUNCTION__ ": Info:[{}]", e.what());\
 	STACK_TRACEBACK("catch(std::exception)");\
 	return eRet;\
 }\
 catch(...)\
 {\
-	ErrCode eRet =  Error(UnknownError, tData, funcErrInfo, _RP___FUNCSIG__ ": Info:[Unknown Exception]");\
+	ErrCode eRet =  Error(UnknownError, tData, funcErrInfo, _RP___FUNCTION__ ": Info:[Unknown Exception]");\
 	STACK_TRACEBACK("catch(...)");\
 	return eRet;\
 }
@@ -381,7 +381,7 @@ catch(...)\
 		//检查大小是否符合上限
 		if (szStringLength > (size_t)NBT_Type::StringLength_Max)
 		{
-			eRet = Error(StringTooLongError, tData, funcErrInfo, __FUNCSIG__ ": szStringLength[{}] > StringLength_Max[{}]",
+			eRet = Error(StringTooLongError, tData, funcErrInfo, __FUNCTION__ ":\nszStringLength[{}] > StringLength_Max[{}]",
 				szStringLength, (size_t)NBT_Type::StringLength_Max);
 			STACK_TRACEBACK("szStringLength Test");
 			return eRet;
@@ -439,7 +439,7 @@ catch(...)\
 		size_t szArrayLength = tArray.size();
 		if (szArrayLength > (size_t)NBT_Type::ArrayLength_Max)
 		{
-			eRet = Error(ArrayTooLongError, tData, funcErrInfo, __FUNCSIG__ ": szArrayLength[{}] > ArrayLength_Max[{}]",
+			eRet = Error(ArrayTooLongError, tData, funcErrInfo, __FUNCTION__ ":\nszArrayLength[{}] > ArrayLength_Max[{}]",
 				szArrayLength, (size_t)NBT_Type::ArrayLength_Max);
 			STACK_TRACEBACK("szArrayLength Test");
 			return eRet;
@@ -493,7 +493,7 @@ catch(...)\
 			if (curTag == NBT_TAG::End)
 			{
 				//End元素被忽略警告（警告不返回错误码）
-				Error(EndElementIgnoreWarn, tData, funcErrInfo, __FUNCSIG__ ": Name: \"{}\", type is [NBT_Type::End], ignored!",
+				Error(EndElementIgnoreWarn, tData, funcErrInfo, __FUNCTION__ ":\nName: \"{}\", type is [NBT_Type::End], ignored!",
 					sName.ToCharTypeUTF8());
 				continue;
 			}
@@ -563,7 +563,7 @@ catch(...)\
 		size_t szListLength = tList.size();
 		if (szListLength > (size_t)NBT_Type::ListLength_Max)//大于的情况下强制赋值会导致严重问题，只能返回错误
 		{
-			eRet = Error(ListTooLongError, tData, funcErrInfo, __FUNCSIG__ ": szListLength[{}] > ListLength_Max[{}]",
+			eRet = Error(ListTooLongError, tData, funcErrInfo, __FUNCTION__ ":\nszListLength[{}] > ListLength_Max[{}]",
 				szListLength, (size_t)NBT_Type::ListLength_Max);
 			STACK_TRACEBACK("szListLength Test");
 			return eRet;
@@ -576,7 +576,7 @@ catch(...)\
 		NBT_TAG enListValueTag = tList.enElementTag;
 		if (enListValueTag == NBT_TAG::End && iListLength != 0)
 		{
-			eRet = Error(ListElementTypeError, tData, funcErrInfo, __FUNCSIG__ ": The list with TAG_End[0x00] tag must be empty, but [{}] elements were found",
+			eRet = Error(ListElementTypeError, tData, funcErrInfo, __FUNCTION__ ":\nThe list with TAG_End[0x00] tag must be empty, but [{}] elements were found",
 				iListLength);
 			STACK_TRACEBACK("iListLength And enListValueTag Test");
 			return eRet;
@@ -612,7 +612,7 @@ catch(...)\
 			//对于每个元素，检查类型是否与列表存储一致
 			if (curTag != enListElementTag)
 			{
-				eRet = Error(ListElementTypeError, tData, funcErrInfo, __FUNCSIG__ ": Expected type [NBT_Type::{}][0x{:02X}({})] in list, but found type [NBT_Type::{}][0x{:02X}({})]",
+				eRet = Error(ListElementTypeError, tData, funcErrInfo, __FUNCTION__ ":\nExpected type [NBT_Type::{}][0x{:02X}({})] in list, but found type [NBT_Type::{}][0x{:02X}({})]",
 				NBT_Type::GetTypeName(enListElementTag), (NBT_TAG_RAW_TYPE)enListElementTag, (NBT_TAG_RAW_TYPE)enListElementTag,
 				NBT_Type::GetTypeName(curTag), (NBT_TAG_RAW_TYPE)curTag, (NBT_TAG_RAW_TYPE)curTag);
 				STACK_TRACEBACK("curTag Test");
@@ -713,12 +713,12 @@ catch(...)\
 			break;
 		case NBT_TAG::End://注意end标签绝对不可以进来
 			{
-				eRet = Error(NbtTypeTagError, tData, funcErrInfo, __FUNCSIG__ ": NBT Tag switch error: Unexpected Type Tag NBT_TAG::End[0x00(0)]");
+				eRet = Error(NbtTypeTagError, tData, funcErrInfo, __FUNCTION__ ":\nNBT Tag switch error: Unexpected Type Tag NBT_TAG::End[0x00(0)]");
 			}
 			break;
 		default://数据出错
 			{
-				eRet = Error(NbtTypeTagError, tData, funcErrInfo, __FUNCSIG__ ": NBT Tag switch error: Unknown Type Tag[0x{:02X}({})]",
+				eRet = Error(NbtTypeTagError, tData, funcErrInfo, __FUNCTION__ ":\nNBT Tag switch error: Unknown Type Tag[0x{:02X}({})]",
 					(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);//此处不进行提前返回，往后默认返回处理
 			}
 			break;
@@ -759,5 +759,5 @@ public:
 #undef STRLING
 #undef _RP_STRLING
 #undef _RP___LINE__
-#undef _RP___FUNCSIG__
+#undef _RP___FUNCTION__
 };
