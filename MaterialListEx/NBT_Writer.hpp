@@ -457,7 +457,7 @@ catch(...)\
 			{
 				//End元素被忽略警告（警告不返回错误码）
 				Error(EndElementIgnoreWarn, tData, __FUNCSIG__ ": Name: \"%s\", type is [NBT_Type::End], ignored!",
-					U16ANSI(CVRTU16(sName)).c_str());
+					sName.ToCharTypeUTF8().c_str());
 				continue;
 			}
 
@@ -482,7 +482,7 @@ catch(...)\
 			if (eRet != AllOk)
 			{
 				STACK_TRACEBACK("PutSwitch Fail, Name: \"%s\", Type: [NBT_Type::%s]",
-					U16ANSI(CVRTU16(sName)).c_str(), NBT_Type::GetTypeName(curTag));
+					sName.ToCharTypeUTF8().c_str(), NBT_Type::GetTypeName(curTag));
 				return eRet;
 			}
 		}

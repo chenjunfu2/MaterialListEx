@@ -334,17 +334,17 @@ int main0(int argc, char *argv[])
 
 	NBT_Type::Compound &test = nn0.GetCompound();
 	//NBT_Type::Compound &test = GetCompound(nn0);
-	test.PutEnd("testend", {});
-	test.PutString("str0", "0000000");
-	test.PutByte("byte1", 1);
-	test.PutShort("short2", 2);
-	test.PutInt("int3", 3);
-	test.PutLong("long4", 4);
-	test.PutFloat("float5", 5.0f);
-	test.PutDouble("double6", 6.0);
+	test.PutEnd(MU8STR("testend"), {});
+	test.PutString(MU8STR("str0"), MU8STR("0000000"));
+	test.PutByte(MU8STR("byte1"), 1);
+	test.PutShort(MU8STR("short2"), 2);
+	test.PutInt(MU8STR("int3"), 3);
+	test.PutLong(MU8STR("long4"), 4);
+	test.PutFloat(MU8STR("float5"), 5.0f);
+	test.PutDouble(MU8STR("double6"), 6.0);
 
 	//NBT_Type::List &list = nn1.GetList();
-	NBT_Type::List &list = GetList(nn1);
+	NBT_Type::List & list = GetList(nn1);
 	list.AddBack(NBT_Type::End{});
 	list.AddBack((NBT_Type::Int)1);
 	list.AddBack((NBT_Type::Int)9);
@@ -354,19 +354,19 @@ int main0(int argc, char *argv[])
 	list.AddBack((NBT_Type::Int)0);
 	list.AddBack(NBT_Type::End{});
 
-	test.Put("list7", std::move(list));
+	test.Put(MU8STR("list7"), std::move(list));
 
-	test.PutCompound("compound8", test);
-	
-	test.PutByteArray("byte array9", { (NBT_Type::Byte)'a',(NBT_Type::Byte)'b',(NBT_Type::Byte)'c',(NBT_Type::Byte)255,(NBT_Type::Byte)0 });
-	test.PutIntArray("int array10", { 192,168,0,1,6666,555,99999999,2147483647,(NBT_Type::Int)2147483647 + 1 });
-	test.PutLongArray("long array11", { 0,0,0,0,-1,-1,-9,1'1451'4191'9810,233 });
-	
+	test.PutCompound(MU8STR("compound8"), test);
+
+	test.PutByteArray(MU8STR("byte array9"), { (NBT_Type::Byte)'a',(NBT_Type::Byte)'b',(NBT_Type::Byte)'c',(NBT_Type::Byte)255,(NBT_Type::Byte)0 });
+	test.PutIntArray(MU8STR("int array10"), { 192,168,0,1,6666,555,99999999,2147483647,(NBT_Type::Int)2147483647 + 1 });
+	test.PutLongArray(MU8STR("long array11"), { 0,0,0,0,-1,-1,-9,1'1451'4191'9810,233 });
+
 
 	list.AddBack(std::move(test));
-	list.AddBack(NBT_Type::Compound{ {"yeee",NBT_Type::String("eeeey")} });
+	list.AddBack(NBT_Type::Compound{ {MU8STR("yeee"),NBT_Type::String(MU8STR("eeeey"))} });
 
-	test.PutList("root", std::move(list));
+	test.PutList(MU8STR("root"), std::move(list));
 
 	//putchar('\n');
 	//PrintBool(test.Contains("test"));
@@ -384,7 +384,7 @@ int main0(int argc, char *argv[])
 
 	//NBT_IO::IsFileExist("TestNbt.nbt");
 	std::basic_string<uint8_t> tData{};
-	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(tData, NBT_Type::Compound{ {"",std::move(test)} }) ||//构造一个空名称compound
+	if (!NBT_Writer<std::basic_string<uint8_t>>::WriteNBT(tData, NBT_Type::Compound{ {MU8STR(""),std::move(test)} }) ||//构造一个空名称compound
 		!NBT_IO::WriteFile("TestNbt.nbt", tData))
 	{
 		printf("write fail\n");
