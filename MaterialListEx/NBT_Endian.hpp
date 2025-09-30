@@ -67,13 +67,13 @@ public:
 		//¡Ÿ ±Ωªªª¡ø
 		UT tmp = 0;
 
-		//(Is < sizeof(T) / 2)«∞∞Î£¨◊Û“∆
+		//(i < sizeof(T) / 2)«∞∞Î£¨◊Û“∆
 		[&] <size_t... i>(std::index_sequence<i...>) -> void
 		{
 			((tmp |= ((UT)data & ((UT)0xFF << (8 * i))) << 8 * (szSize - (i * 2) - 1)), ...);
 		}(std::make_index_sequence<szHalf>{});
 
-		//(Is >= sizeof(T) / 2)∫Û∞Î£¨”““∆
+		//(i + szHalf >= sizeof(T) / 2)∫Û∞Î£¨”““∆
 		[&] <size_t... i>(std::index_sequence<i...>) -> void
 		{
 			((tmp |= ((UT)data & ((UT)0xFF << (8 * (i + szHalf)))) >> 8 * (i * 2 + 1)), ...);
