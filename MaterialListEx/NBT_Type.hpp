@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <stdint.h>
+#include <stddef.h>//size_t
 #include <variant>
 #include <vector>
 #include <unordered_map>

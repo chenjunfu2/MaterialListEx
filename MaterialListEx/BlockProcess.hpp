@@ -5,6 +5,7 @@
 #include "ItemProcess.hpp"
 
 #include <stdint.h>
+#include <stddef.h>//size_t
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>

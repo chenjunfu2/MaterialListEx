@@ -4,6 +4,7 @@
 #include <bit>//std::bit_cast
 #include <string>//字节流
 #include <stdint.h>//类型定义
+#include <stddef.h>//size_t
 #include <stdlib.h>//byte swap
 #include <type_traits>//类型约束
 #include <format>//格式化

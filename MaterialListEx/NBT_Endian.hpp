@@ -2,6 +2,7 @@
 
 #include <bit>//×Ö½ÚÐò
 #include <stdint.h>//¶¨Òå
+#include <stddef.h>//size_t
 #include <utility>//std::index_sequence
 #include <type_traits>//std::make_unsigned
 

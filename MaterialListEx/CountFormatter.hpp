@@ -1,5 +1,6 @@
 ﻿#include <string>
 #include <stdint.h>
+#include <stddef.h>//size_t
 
 class CountFormatter
 {

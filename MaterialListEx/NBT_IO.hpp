@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stddef.h>//size_t
 #include <string>
 #include <filesystem>
 

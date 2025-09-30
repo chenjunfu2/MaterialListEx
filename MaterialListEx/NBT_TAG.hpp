@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <stdint.h>
+#include <stddef.h>//size_t
 #include <compare>
 
 using NBT_TAG_RAW_TYPE = uint8_t;

@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <assert.h>
 #include <stdint.h>
+#include <stddef.h>//size_t
 #include <array>
 #include <algorithm>
 

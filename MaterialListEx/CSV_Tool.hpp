@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <stdio.h>
 #include <stdint.h>
+#include <stddef.h>//size_t
 #include <string>
 
 //目前只做了写入，不要用读取模式打开
