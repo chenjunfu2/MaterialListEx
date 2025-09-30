@@ -1,10 +1,10 @@
 ﻿#pragma once
 
-#include "NBT_Node.hpp"
-#include "NBT_Helper.hpp"
-
 #include <xxhash.h>
 #include <compare>
+
+#include "NBT_Node.hpp"
+#include "NBT_Helper.hpp"
 
 struct ItemInfo
 {
