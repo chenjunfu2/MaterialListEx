@@ -34,6 +34,9 @@
     <Filter Include="头文件\nbt">
       <UniqueIdentifier>{62819415-0b29-4375-9d53-d4c304c04636}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\nbt\detail">
+      <UniqueIdentifier>{313a0e5d-507a-41c0-959f-228edc717597}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -323,19 +326,7 @@
     <ClInclude Include="CountFormatter.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="NBT_Array.hpp">
-      <Filter>头文件\nbt</Filter>
-    </ClInclude>
-    <ClInclude Include="MUTF8_Tool.hpp">
-      <Filter>头文件\nbt</Filter>
-    </ClInclude>
-    <ClInclude Include="NBT_Compound.hpp">
-      <Filter>头文件\nbt</Filter>
-    </ClInclude>
     <ClInclude Include="NBT_Helper.hpp">
-      <Filter>头文件\nbt</Filter>
-    </ClInclude>
-    <ClInclude Include="NBT_List.hpp">
       <Filter>头文件\nbt</Filter>
     </ClInclude>
     <ClInclude Include="NBT_Node.hpp">
@@ -347,23 +338,11 @@
     <ClInclude Include="NBT_Reader.hpp">
       <Filter>头文件\nbt</Filter>
     </ClInclude>
-    <ClInclude Include="NBT_String.hpp">
-      <Filter>头文件\nbt</Filter>
-    </ClInclude>
-    <ClInclude Include="NBT_TAG.hpp">
-      <Filter>头文件\nbt</Filter>
-    </ClInclude>
     <ClInclude Include="NBT_Writer.hpp">
       <Filter>头文件\nbt</Filter>
     </ClInclude>
     <ClInclude Include="Windows_FileSystem.hpp">
       <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="NBT_Type.hpp">
-      <Filter>头文件\nbt</Filter>
-    </ClInclude>
-    <ClInclude Include="NBT_Hash.hpp">
-      <Filter>头文件\nbt</Filter>
     </ClInclude>
     <ClInclude Include="NBT_IO.hpp">
       <Filter>头文件\nbt</Filter>
@@ -371,7 +350,34 @@
     <ClInclude Include="Windows_ANSI.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="MUTF8_Tool.hpp">
+      <Filter>头文件\nbt\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_Array.hpp">
+      <Filter>头文件\nbt\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_Compound.hpp">
+      <Filter>头文件\nbt\detail</Filter>
+    </ClInclude>
     <ClInclude Include="NBT_Endian.hpp">
+      <Filter>头文件\nbt\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_Hash.hpp">
+      <Filter>头文件\nbt\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_List.hpp">
+      <Filter>头文件\nbt\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_TAG.hpp">
+      <Filter>头文件\nbt\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_String.hpp">
+      <Filter>头文件\nbt\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_Type.hpp">
+      <Filter>头文件\nbt\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="NBT_All.hpp">
       <Filter>头文件\nbt</Filter>
     </ClInclude>
   </ItemGroup>

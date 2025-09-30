@@ -2,7 +2,9 @@
 
 #include <compare>
 
+#include "NBT_TAG.hpp"
 #include "NBT_Type.hpp"
+
 #include "NBT_Array.hpp"
 #include "NBT_String.hpp"
 #include "NBT_List.hpp"

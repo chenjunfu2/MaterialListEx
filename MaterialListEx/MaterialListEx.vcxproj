@@ -215,6 +215,7 @@
     <ClInclude Include="Language.hpp" />
     <ClInclude Include="MemoryLeakCheck.hpp" />
     <ClInclude Include="MUTF8_Tool.hpp" />
+    <ClInclude Include="NBT_All.hpp" />
     <ClInclude Include="NBT_Array.hpp" />
     <ClInclude Include="NBT_Compound.hpp" />
     <ClInclude Include="NBT_Endian.hpp" />

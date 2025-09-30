@@ -11,14 +11,10 @@
 
 #define USE_GZIPZLIB
 #define USE_XXHASH
+#include "NBT_All.hpp"
 
-#include "NBT_Node.hpp"
-#include "NBT_Helper.hpp"
-#include "NBT_Reader.hpp"
-#include "NBT_Writer.hpp"
 #include "BlockProcess.hpp"
 #include "TileEntityProcess.hpp"
-#include "NBT_IO.hpp"
 #include "RegionProcess.h"
 #include "CodeTimer.hpp"
 
