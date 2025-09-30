@@ -1,13 +1,14 @@
 ﻿#pragma once
 
-#include "NBT_Node.hpp"
-#include "NBT_Node_View.hpp"
-#include "NBT_Hash.hpp"
-
+#include <bit>
 #include <concepts>
 
-#include <bit>
-//#include <xxhash.h>
+#include "NBT_Node.hpp"
+#include "NBT_Node_View.hpp"
+
+#ifdef USE_XXHASH
+#include "NBT_Hash.hpp"
+#endif
 
 class NBT_Helper
 {
@@ -32,6 +33,7 @@ public:
 		return sRet;
 	}
 
+#ifdef USE_XXHASH
 	static void DefaultFunc(NBT_Hash &)
 	{
 		return;
@@ -52,6 +54,8 @@ public:
 		static_assert(std::is_invocable_v<TB, decltype(nbtHash)&>, "TB is not a callable object or parameter type mismatch.");
 		static_assert(std::is_invocable_v<TA, decltype(nbtHash)&>, "TA is not a callable object or parameter type mismatch.");
 	}
+#endif
+
 private:
 	constexpr const static inline char *const LevelPadding = "    ";//默认对齐
 
@@ -404,7 +408,7 @@ private:
 		}
 	}
 
-private:
+#ifdef USE_XXHASH
 	template<bool bRoot = true>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
 	static void HashSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, NBT_Hash &nbtHash)
 	{
@@ -521,6 +525,6 @@ private:
 			break;
 		}
 	}
-
+#endif
 
 };

@@ -6,6 +6,8 @@
 #include <string>
 #include <filesystem>
 
+#ifdef USE_GZIPZLIB
+
 /*zlib*/
 #define ZLIB_CONST
 #include <zlib.h>
@@ -18,6 +20,8 @@
 #include <utils.hpp>
 #include <version.hpp>
 /*gzip*/
+
+#endif
 
 class NBT_IO
 {
@@ -83,6 +87,8 @@ public:
 		return !ec && bExists;//没有错误并且存在
 	}
 
+#ifdef USE_GZIPZLIB
+
 	static bool DecompressIfZipped(std::basic_string<uint8_t> &u8Data)
 	{
 		if (!gzip::is_compressed((const char *)u8Data.data(), u8Data.size()))
@@ -114,4 +120,6 @@ public:
 
 		return true;
 	}
+
+#endif
 };

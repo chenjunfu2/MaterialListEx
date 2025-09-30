@@ -1,5 +1,17 @@
 ﻿//#include "MemoryLeakCheck.hpp"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string>
+#include <functional>
+#include <format>
+#include <stdexcept>
+#include <filesystem>
+#include <locale.h>
+
+#define USE_GZIPZLIB
+#define USE_XXHASH
+
 #include "NBT_Node.hpp"
 #include "NBT_Helper.hpp"
 #include "NBT_Reader.hpp"
@@ -15,15 +27,6 @@
 #include "CountFormatter.hpp"
 #include "Windows_FileSystem.hpp"
 #include "Windows_ANSI.hpp"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
-#include <functional>
-#include <format>
-#include <stdexcept>
-#include <filesystem>
-#include <locale.h>
 
 //NBT一般使用GZIP压缩，也有部分使用ZLIB压缩
 
