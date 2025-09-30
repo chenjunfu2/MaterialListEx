@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <stdlib.h>//byte swap
 #include <type_traits>
-#include <stdarg.h>//va宏
 #include <format>//格式化
 
 #include "NBT_Node.hpp"
