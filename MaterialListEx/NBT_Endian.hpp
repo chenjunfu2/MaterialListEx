@@ -77,6 +77,7 @@ public:
 			((tmp |= ((UT)data & ((UT)0xFF << (8 * (i + szHalf)))) >> 8 * (i * 2 + 1)), ...);
 		}(std::make_index_sequence<szHalf>{});
 
+		//转换回原先的类型并返回
 		return (T)tmp;
 	}
 
