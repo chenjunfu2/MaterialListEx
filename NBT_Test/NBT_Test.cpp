@@ -1,8 +1,6 @@
-﻿#include "..\MaterialListEx\NBT_Node.hpp"
-#include "..\MaterialListEx\NBT_Reader.hpp"
-#include "..\MaterialListEx\NBT_Writer.hpp"
-#include "..\MaterialListEx\NBT_Helper.hpp"
-#include "..\MaterialListEx\NBT_IO.hpp"
+﻿#define USE_GZIPZLIB
+#define USE_XXHASH
+#include "..\MaterialListEx\NBT_All.hpp"
 #include "..\MaterialListEx\CodeTimer.hpp"
 
 #include <stdio.h>
