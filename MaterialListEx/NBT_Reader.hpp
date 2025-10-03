@@ -6,6 +6,7 @@
 #include <stdint.h>//类型定义
 #include <stddef.h>//size_t
 #include <stdlib.h>//byte swap
+#include <string.h>//memcpy
 #include <type_traits>//类型约束
 #include <format>//格式化
 
@@ -24,9 +25,11 @@ public:
 	private:
 		const T &tData = {};
 		size_t szIndex = 0;
+
 	public:
 		using StreamType = T;
 		using ValueType = typename T::value_type;
+		static_assert(sizeof(ValueType) == 1, "Error ValueType Size");
 
 		//禁止用户使用临时值构造
 		MyInputStream(const T &&_tData, size_t szStartIdx = 0) = delete;
@@ -52,7 +55,7 @@ public:
 
 		void GetRange(void *pDest, size_t szSize) noexcept
 		{
-			std::memcpy(pDest, &tData[szIndex], szSize);
+			memcpy(pDest, &tData[szIndex], szSize);
 			szIndex += szSize;
 		}
 

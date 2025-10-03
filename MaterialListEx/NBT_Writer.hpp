@@ -6,6 +6,7 @@
 #include <stdint.h>//类型定义
 #include <stddef.h>//size_t
 #include <stdlib.h>//byte swap
+#include <string.h>//memcpy
 #include <type_traits>//类型约束
 #include <format>//格式化
 
@@ -23,9 +24,11 @@ public:
 	{
 	private:
 		T &tData;
+
 	public:
 		using StreamType = T;
 		using ValueType = typename T::value_type;
+		static_assert(sizeof(ValueType) == 1, "Error ValueType Size");
 
 		//引用天生无法使用临时值构造，无需担心临时值构造导致的悬空引用
 		MyOutputStream(T &_tData, size_t szStartIdx = 0) :tData(_tData)
@@ -48,7 +51,12 @@ public:
 
 		void PutRange(const ValueType *pData, size_t szSize)
 		{
-			tData.insert(tData.end(), &pData[0], &pData[szSize]);
+			//tData.insert(tData.end(), &pData[0], &pData[szSize]);
+
+			//使用更高效的实现，而不是迭代器写入
+			size_t szCurSize = tData.size();
+			tData.resize(szCurSize + szSize);
+			memcpy(&tData.data()[szCurSize], &pData[0], szSize);
 		}
 
 		void AddReserve(size_t szAddSize)
