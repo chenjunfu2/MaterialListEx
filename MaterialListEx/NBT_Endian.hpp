@@ -4,7 +4,7 @@
 #include <stdint.h>//定义
 #include <stddef.h>//size_t
 #include <utility>//std::index_sequence
-#include <type_traits>//std::make_unsigned
+#include <type_traits>//std::make_unsigned_t
 
 #if defined(_MSC_VER)
 #define COMPILER_MSVC 1
@@ -59,7 +59,7 @@ public:
 		}
 
 		//统一到无符号类型
-		using UT = typename std::make_unsigned<T>::type;
+		using UT = std::make_unsigned_t<T>;
 		static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
 
 		//获取静态大小
