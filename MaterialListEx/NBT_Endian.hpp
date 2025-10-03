@@ -46,6 +46,7 @@ private:
 
 public:
 	template<typename T>
+	requires std::integral<T>
 	constexpr static T ByteSwapAny(T data) noexcept
 	{
 		//必须是2的倍数才能正确执行byteswap
@@ -121,6 +122,7 @@ public:
 	}
 
 	template<typename T>
+	requires std::integral<T>
 	constexpr static T AutoByteSwap(T data) noexcept
 	{
 		//如果是已知大小，优先走重载，因为重载更有可能是指令集支持的高效实现
@@ -150,6 +152,7 @@ public:
 	//------------------------------------------------------//
 
 	template<typename T>
+	requires std::integral<T>
 	static T NativeToBigAny(T data) noexcept
 	{
 		if constexpr (IsBigEndian())//当前也是big
@@ -162,6 +165,7 @@ public:
 	}
 
 	template<typename T>
+	requires std::integral<T>
 	static T NativeToLittleAny(T data) noexcept
 	{
 		if constexpr (IsLittleEndian())//当前也是little
@@ -174,6 +178,7 @@ public:
 	}
 
 	template<typename T>
+	requires std::integral<T>
 	static T BigToNativeAny(T data) noexcept
 	{
 		if constexpr (IsBigEndian())//当前也是big
@@ -186,6 +191,7 @@ public:
 	}
 
 	template<typename T>
+	requires std::integral<T>
 	static T LittleToNativeAny(T data) noexcept
 	{
 		if constexpr (IsLittleEndian())//当前也是little
