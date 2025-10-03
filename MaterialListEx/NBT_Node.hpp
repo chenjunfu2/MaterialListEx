@@ -24,6 +24,7 @@ class NBT_Node
 {
 	template <bool bIsConst>
 	friend class NBT_Node_View;
+
 private:
 	template <typename T>
 	struct TypeListToVariant;

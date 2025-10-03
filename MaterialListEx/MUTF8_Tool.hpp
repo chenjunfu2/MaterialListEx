@@ -22,6 +22,7 @@ class MUTF8_Tool
 	static inline constexpr MU8T mu8FailChar[3]{ (MU8T)0xEF, (MU8T)0xBF, (MU8T)0xBD };
 	static inline constexpr U16T u16FailChar = (U16T)0xFFFD;
 	static inline constexpr U8T u8FailChar[3]{ (U8T)0xEF, (U8T)0xBF, (U8T)0xBD };
+
 public:
 	using MU8_T = MU8T;
 	using U16_T = U16T;

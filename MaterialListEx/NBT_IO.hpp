@@ -27,6 +27,7 @@ class NBT_IO
 {
 	NBT_IO(void) = delete;
 	~NBT_IO(void) = delete;
+
 public:
 	template<typename T = std::vector<uint8_t>>
 	static bool WriteFile(const char *const pcFileName, const T &tData)

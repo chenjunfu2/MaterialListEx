@@ -24,6 +24,7 @@ class NBT_Type
 {
 	NBT_Type(void) = delete;
 	~NBT_Type(void) = delete;
+
 public:
 	using Float_Raw = uint32_t;
 	using Double_Raw = uint64_t;

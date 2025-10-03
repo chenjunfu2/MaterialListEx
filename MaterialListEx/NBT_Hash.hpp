@@ -8,9 +8,11 @@ class NBT_Hash
 public:
 	using HASH_T = XXH64_hash_t;
 	static_assert(std::is_same_v<HASH_T, uint64_t>, "Hash type does not match the required type.");
+
 private:
 	using STATE_T = XXH64_state_t;
 	STATE_T *pHashState = nullptr;
+
 public:
 	NBT_Hash(const HASH_T &tHashSeed) :pHashState(XXH64_createState())
 	{

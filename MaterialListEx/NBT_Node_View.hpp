@@ -11,6 +11,7 @@ class NBT_Node_View
 {
 	template <bool bIsConst>
 	friend class NBT_Node_View;//需要设置自己为友元，这样不同模板的类实例之间才能相互访问
+
 private:
 	template <typename T>
 	struct AddConstIf

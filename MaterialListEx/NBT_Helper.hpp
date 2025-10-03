@@ -14,6 +14,7 @@ class NBT_Helper
 {
 	NBT_Helper() = delete;
 	~NBT_Helper() = delete;
+
 public:
 	static void Print(const NBT_Node_View<true> nRoot, bool bPadding = true, bool bNewLine = true)
 	{
