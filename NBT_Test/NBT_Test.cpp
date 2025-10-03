@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 	printf("Test Start:\n");
 
 	//从文件中读入
-	std::basic_string<uint8_t> dataOriginal{};
+	std::vector<uint8_t> dataOriginal{};
 	printf("\ndataOriginal ReadFile Start\n");
 	ct.Start();
 	if (!NBT_IO::ReadFile(pInputFileName, dataOriginal))
@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
 	printf("\ndataOriginal ReadNBT To cpdOriginal Start\n");
 	ct.Start();
 	NBT_Type::Compound cpdOriginal{};
-	if (!NBT_Reader<>::ReadNBT(cpdOriginal, dataOriginal))
+	if (!NBT_Reader::ReadNBT(cpdOriginal, { dataOriginal }))
 	{
 		printf("[Line:%d]dataOriginal ReadNBT To cpdOriginal Fail\n", __LINE__);
 		return -1;
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 	auto &dataNew = dataOriginal;//起个别名继续用，不删除内存减少重复分配开销
 	printf("\ndataOriginal WriteNBT To dataNew Start\n");
 	ct.Start();
-	if (!NBT_Writer<>::WriteNBT(dataNew, cpdOriginal))
+	if (!NBT_Writer::WriteNBT({ dataNew }, cpdOriginal))
 	{
 		printf("[Line:%d]dataOriginal WriteNBT To dataNew Fail\n", __LINE__);
 		return -1;
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
 	NBT_Type::Compound cpdNew{};
 	printf("\ndataNew ReadNBT To cpdNew Start\n");
 	ct.Start();
-	if (!NBT_Reader<>::ReadNBT(cpdNew, dataNew))
+	if (!NBT_Reader::ReadNBT(cpdNew, { dataNew }))
 	{
 		printf("[Line:%d]dataNew ReadNBT To cpdNew Fail\n", __LINE__);
 		return -1;
@@ -314,10 +314,10 @@ int main(int argc, char *argv[])
 
 int main0(int argc, char *argv[])
 {
-	std::basic_string<uint8_t> tR{};
+	std::vector<uint8_t> tR{};
 	NBT_Type::Compound cpd;
 	if (!NBT_IO::ReadFile("TestNbt.nbt", tR) ||
-		!NBT_Reader<>::ReadNBT(cpd, tR))
+		!NBT_Reader::ReadNBT(cpd, { tR }))
 	{
 		printf("TestNbt Read Fail!\nData before the error was encountered:\n");
 	}
@@ -381,8 +381,8 @@ int main0(int argc, char *argv[])
 	NBT_Helper::Print(test);
 
 	//NBT_IO::IsFileExist("TestNbt.nbt");
-	std::basic_string<uint8_t> tData{};
-	if (!NBT_Writer<>::WriteNBT(tData, NBT_Type::Compound{ {MU8STR(""),std::move(test)} }) ||//构造一个空名称compound
+	std::vector<uint8_t> tData{};
+	if (!NBT_Writer::WriteNBT({ tData }, NBT_Type::Compound{ {MU8STR(""),std::move(test)} }) ||//构造一个空名称compound
 		!NBT_IO::WriteFile("TestNbt.nbt", tData))
 	{
 		printf("write fail\n");
@@ -507,8 +507,8 @@ int mainhh(void)
 
 	cpd.Put(MU8STR("list"), std::move(lst));
 
-	std::basic_string<uint8_t> data{};
-	if (!NBT_Writer<>::WriteNBT(data, cpd))
+	std::vector<uint8_t> data{};
+	if (!NBT_Writer::WriteNBT({ data }, cpd))
 	{
 		return -1;
 	}

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <vector>
 #include <functional>
 #include <format>
 #include <stdexcept>
@@ -205,7 +206,7 @@ bool Convert(const char *const pFileName)
 	CodeTimer timer;
 	printf("Current file:[%s]\n", pFileName);
 
-	std::basic_string<uint8_t> sNbtData;
+	std::vector<uint8_t> sNbtData;
 	timer.Start();
 	if (!NBT_IO::ReadFile(pFileName, sNbtData))
 	{
@@ -219,7 +220,7 @@ bool Convert(const char *const pFileName)
 
 	 if (gzip::is_compressed((char*)sNbtData.data(), sNbtData.size()))//如果nbt已压缩，解压，否则保持原样
 	 {
-		 std::basic_string<uint8_t> tmp;
+		 std::vector<uint8_t> tmp;
 		 timer.Start();
 		 gzip::Decompressor(SIZE_MAX).decompress(tmp, (char *)sNbtData.data(), sNbtData.size());
 		 timer.Stop();
@@ -281,7 +282,7 @@ bool Convert(const char *const pFileName)
 	//以下使用nbt
 	 NBT_Type::Compound nRoot;
 	timer.Start();
-	if (!NBT_Reader<>::ReadNBT(nRoot, sNbtData))
+	if (!NBT_Reader::ReadNBT(nRoot, { sNbtData }))
 	{
 		printf("\nData before the error was encountered:");
 		NBT_Helper::Print(nRoot);

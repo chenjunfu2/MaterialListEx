@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>//size_t
-#include <string>
+#include <vector>
 #include <filesystem>
 
 #ifdef USE_GZIPZLIB
@@ -28,7 +28,8 @@ class NBT_IO
 	NBT_IO(void) = delete;
 	~NBT_IO(void) = delete;
 public:
-	static bool WriteFile(const char *const pcFileName, const std::basic_string<uint8_t> &u8Data)
+	template<typename T = std::vector<uint8_t>>
+	static bool WriteFile(const char *const pcFileName, const T &tData)
 	{
 		FILE *pFile = fopen(pcFileName, "wb");
 		if (pFile == NULL)
@@ -37,8 +38,8 @@ public:
 		}
 
 		//获取文件大小并写出
-		uint64_t qwFileSize = u8Data.size();
-		if (fwrite(u8Data.data(), sizeof(u8Data[0]), qwFileSize, pFile) != qwFileSize)
+		uint64_t qwFileSize = tData.size();
+		if (fwrite(tData.data(), sizeof(tData[0]), qwFileSize, pFile) != qwFileSize)
 		{
 			return false;
 		}
@@ -50,7 +51,8 @@ public:
 		return true;
 	}
 
-	static bool ReadFile(const char *const pcFileName, std::basic_string<uint8_t> &u8Data)
+	template<typename T = std::vector<uint8_t>>
+	static bool ReadFile(const char *const pcFileName, T &tData)
 	{
 		FILE *pFile = fopen(pcFileName, "rb");
 		if (pFile == NULL)
@@ -67,8 +69,8 @@ public:
 		rewind(pFile);
 
 		//直接给数据塞string里
-		u8Data.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
-		if (fread(u8Data.data(), sizeof(u8Data[0]), qwFileSize, pFile) != qwFileSize)//直接读入data
+		tData.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
+		if (fread(tData.data(), sizeof(tData[0]), qwFileSize, pFile) != qwFileSize)//直接读入data
 		{
 			return false;
 		}
@@ -89,18 +91,19 @@ public:
 
 #ifdef USE_GZIPZLIB
 
-	static bool DecompressIfZipped(std::basic_string<uint8_t> &u8Data)
+	template<typename T = std::vector<uint8_t>>
+	static bool DecompressIfZipped(T &tData)
 	{
-		if (!gzip::is_compressed((const char *)u8Data.data(), u8Data.size()))
+		if (!gzip::is_compressed((const char *)tData.data(), tData.size()))
 		{
 			return true;
 		}
 
 		try
 		{
-			std::basic_string<uint8_t> tmpData{};
-			gzip::Decompressor{ SIZE_MAX }.decompress(tmpData, (const char *)u8Data.data(), u8Data.size());
-			u8Data = std::move(tmpData);
+			T tmpData{};
+			gzip::Decompressor{ SIZE_MAX }.decompress(tmpData, (const char *)tData.data(), tData.size());
+			tData = std::move(tmpData);
 		}
 		catch (const std::bad_alloc& e)
 		{

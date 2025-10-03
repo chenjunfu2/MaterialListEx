@@ -2,7 +2,7 @@
 
 #include <new>//std::bad_alloc
 #include <bit>//std::bit_cast
-#include <string>//字节流
+#include <vector>//字节流
 #include <stdint.h>//类型定义
 #include <stddef.h>//size_t
 #include <stdlib.h>//byte swap
@@ -12,113 +12,109 @@
 #include "NBT_Node.hpp"//nbt类型
 #include "NBT_Endian.hpp"//字节序
 
-//请尽可能使用basic_string_view来减少开销
-//因为string的[]运算符访问有坑，每次都会判断是否是优化模式导致问题，所以存储data指针直接访问以加速
-//否则汇编里会出现一大堆
-//cmp qword ptr [...],10h
-//jb ...
-//这种判断string是否是小于16的优化模式，来决定怎么访问string
-template <typename T = std::basic_string_view<uint8_t>>
-class MyInputStream
-{
-private:
-	const T &tData = {};
-	size_t szIndex = 0;
-public:
-	
-	MyInputStream(const T &_tData, size_t szStartIdx = 0) :tData(_tData), szIndex(szStartIdx)
-	{}
-	~MyInputStream(void) = default;//默认析构
-
-	MyInputStream(const MyInputStream &) = delete;
-	MyInputStream(MyInputStream &&) = delete;
-
-	MyInputStream &operator=(const MyInputStream &) = delete;
-	MyInputStream &operator=(MyInputStream &&) = delete;
-
-	const typename T::value_type &operator[](size_t szIndex) const noexcept
-	{
-		return tData[szIndex];
-	}
-
-	typename T::value_type GetNext() noexcept
-	{
-		return tData[szIndex++];
-	}
-
-	void GetRange(void *pDest, size_t szSize) noexcept
-	{
-		std::memcpy(pDest, &tData[szIndex], szSize);
-		szIndex += szSize;
-	}
-
-	void UnGet() noexcept
-	{
-		if (szIndex != 0)
-		{
-			--szIndex;
-		}
-	}
-
-	const typename T::value_type *CurData() const noexcept
-	{
-		return &(tData[szIndex]);
-	}
-
-	size_t AddIndex(size_t szSize) noexcept
-	{
-		return szIndex += szSize;
-	}
-
-	size_t SubIndex(size_t szSize) noexcept
-	{
-		return szIndex -= szSize;
-	}
-
-	bool IsEnd() const noexcept
-	{
-		return szIndex >= tData.size();
-	}
-
-	size_t Size() const noexcept
-	{
-		return tData.size();
-	}
-
-	bool HasAvailData(size_t szSize) const noexcept
-	{
-		return (tData.size() - szIndex) >= szSize;
-	}
-
-	void Reset() noexcept
-	{
-		szIndex = 0;
-	}
-
-	const typename T::value_type *BaseData() const noexcept
-	{
-		return tData.data();
-	}
-
-	size_t Index() const noexcept
-	{
-		return szIndex;
-	}
-
-	size_t &Index() noexcept
-	{
-		return szIndex;
-	}
-};
-
-
-template <typename DataType = std::basic_string_view<uint8_t>>
-class NBT_Reader//请尽可能使用basic_string_view
+class NBT_Reader
 {
 	NBT_Reader(void) = delete;
 	~NBT_Reader(void) = delete;
 
-	using InputStream = MyInputStream<DataType>;//流类型
+public:
+	template <typename T = std::vector<uint8_t>>
+	class MyInputStream
+	{
+	private:
+		const T &tData = {};
+		size_t szIndex = 0;
+	public:
+		using StreamType = T;
+		using ValueType = typename T::value_type;
+
+		//禁止用户使用临时值构造
+		MyInputStream(const T &&_tData, size_t szStartIdx = 0) = delete;
+		MyInputStream(const T &_tData, size_t szStartIdx = 0) :tData(_tData), szIndex(szStartIdx)
+		{}
+		~MyInputStream(void) = default;//默认析构
+
+		MyInputStream(const MyInputStream &) = delete;
+		MyInputStream(MyInputStream &&) = delete;
+
+		MyInputStream &operator=(const MyInputStream &) = delete;
+		MyInputStream &operator=(MyInputStream &&) = delete;
+
+		const ValueType &operator[](size_t szIndex) const noexcept
+		{
+			return tData[szIndex];
+		}
+
+		ValueType GetNext() noexcept
+		{
+			return tData[szIndex++];
+		}
+
+		void GetRange(void *pDest, size_t szSize) noexcept
+		{
+			std::memcpy(pDest, &tData[szIndex], szSize);
+			szIndex += szSize;
+		}
+
+		void UnGet() noexcept
+		{
+			if (szIndex != 0)
+			{
+				--szIndex;
+			}
+		}
+
+		const ValueType *CurData() const noexcept
+		{
+			return &(tData[szIndex]);
+		}
+
+		size_t AddIndex(size_t szSize) noexcept
+		{
+			return szIndex += szSize;
+		}
+
+		size_t SubIndex(size_t szSize) noexcept
+		{
+			return szIndex -= szSize;
+		}
+
+		bool IsEnd() const noexcept
+		{
+			return szIndex >= tData.size();
+		}
+
+		size_t Size() const noexcept
+		{
+			return tData.size();
+		}
+
+		bool HasAvailData(size_t szSize) const noexcept
+		{
+			return (tData.size() - szIndex) >= szSize;
+		}
+
+		void Reset() noexcept
+		{
+			szIndex = 0;
+		}
+
+		const ValueType *BaseData() const noexcept
+		{
+			return tData.data();
+		}
+
+		size_t Index() const noexcept
+		{
+			return szIndex;
+		}
+
+		size_t &Index() noexcept
+		{
+			return szIndex;
+		}
+	};
+
 private:
 	enum ErrCode : uint8_t
 	{
@@ -191,7 +187,7 @@ private:
 			try
 			{
 				auto tmp = std::format(std::move(fmt), std::forward<Args>(args)...);
-				fwrite(tmp.data(), sizeof(*tmp.data()), tmp.size(), stderr);
+				fwrite(tmp.data(), sizeof(tmp.data()[0]), tmp.size(), stderr);
 			}
 			catch (const std::exception &e)
 			{
@@ -209,7 +205,7 @@ private:
 	//主动检查引发的错误，主动调用eRet = Error报告，然后触发STACK_TRACEBACK，最后返回eRet到上一级
 	//上一级返回的错误通过if (eRet != AllOk)判断的，直接触发STACK_TRACEBACK后返回eRet到上一级
 	//如果是警告值，则不返回值
-	template <typename T, typename ErrInfoFunc, typename... Args>
+	template <typename T, typename InputStream, typename ErrInfoFunc, typename... Args>
 	requires(std::is_same_v<T, ErrCode> || std::is_same_v<T, WarnCode>)
 	static std::conditional_t<std::is_same_v<T, ErrCode>, ErrCode, void> Error
 		(
@@ -356,7 +352,7 @@ catch(...)\
 }
 
 	//读取大端序数值，bNoCheck为true则不进行任何检查
-	template<bool bNoCheck = false, typename T, typename ErrInfoFunc>
+	template<bool bNoCheck = false, typename T, typename InputStream, typename ErrInfoFunc>
 	requires std::integral<T>
 	static inline std::conditional_t<bNoCheck, void, ErrCode> ReadBigEndian(InputStream &tData, T &tVal, ErrInfoFunc &funcErrInfo) noexcept
 	{
@@ -381,7 +377,7 @@ catch(...)\
 		}
 	}
 
-	template<typename ErrInfoFunc>
+	template<typename InputStream, typename ErrInfoFunc>
 	static ErrCode GetName(InputStream &tData, NBT_Type::String &tName, ErrInfoFunc &funcErrInfo) noexcept
 	{
 	MYTRY;
@@ -414,7 +410,7 @@ catch(...)\
 	MYCATCH;
 	}
 
-	template<typename T, typename ErrInfoFunc>
+	template<typename T, typename InputStream, typename ErrInfoFunc>
 	static ErrCode GetBuiltInType(InputStream &tData, T &tBuiltIn, ErrInfoFunc &funcErrInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -436,7 +432,7 @@ catch(...)\
 		return eRet;
 	}
 
-	template<typename T, typename ErrInfoFunc>
+	template<typename T, typename InputStream, typename ErrInfoFunc>
 	static ErrCode GetArrayType(InputStream &tData, T &tArray, ErrInfoFunc &funcErrInfo) noexcept
 	{
 	MYTRY;
@@ -451,11 +447,13 @@ catch(...)\
 			return eRet;
 		}
 
+		using ValueType = typename T::value_type;
+
 		//判断长度是否超过
-		if (!tData.HasAvailData(iElementCount * sizeof(T::value_type)))//保证下方调用安全
+		if (!tData.HasAvailData(iElementCount * sizeof(ValueType)))//保证下方调用安全
 		{
 			eRet = Error(OutOfRangeError, tData, funcErrInfo, __FUNCTION__ ":\n(Index[{}] + iElementCount[{}] * sizeof(T::value_type)[{}])[{}] > DataSize[{}]",
-				tData.Index(), (size_t)iElementCount, sizeof(T::value_type), tData.Index() + (size_t)iElementCount * sizeof(T::value_type), tData.Size());
+				tData.Index(), (size_t)iElementCount, sizeof(ValueType), tData.Index() + (size_t)iElementCount * sizeof(T::value_type), tData.Size());
 			STACK_TRACEBACK("HasAvailData Test");
 			return eRet;
 		}
@@ -465,7 +463,7 @@ catch(...)\
 		//读取dElementCount个元素
 		for (NBT_Type::ArrayLength i = 0; i < iElementCount; ++i)
 		{
-			typename T::value_type tTmpData{};
+			ValueType tTmpData{};
 			ReadBigEndian<true>(tData, tTmpData, funcErrInfo);//调用需要确保范围安全
 			tArray.emplace_back(std::move(tTmpData));//读取一个插入一个
 		}
@@ -475,7 +473,7 @@ catch(...)\
 	}
 
 	//如果是非根部，有额外检测
-	template<bool bRoot, typename ErrInfoFunc>
+	template<bool bRoot, typename InputStream, typename ErrInfoFunc>
 	static ErrCode GetCompoundType(InputStream &tData, NBT_Type::Compound &tCompound, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept
 	{
 	MYTRY;
@@ -556,7 +554,7 @@ catch(...)\
 	MYCATCH;
 	}
 
-	template<typename ErrInfoFunc>
+	template<typename InputStream, typename ErrInfoFunc>
 	static ErrCode GetStringType(InputStream &tData, NBT_Type::String &tString, ErrInfoFunc &funcErrInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -572,7 +570,7 @@ catch(...)\
 		return eRet;
 	}
 
-	template<typename ErrInfoFunc>
+	template<typename InputStream, typename ErrInfoFunc>
 	static ErrCode GetListType(InputStream &tData, NBT_Type::List &tList, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept
 	{
 	MYTRY;
@@ -653,7 +651,7 @@ catch(...)\
 	}
 
 	//这个函数拦截所有内部调用产生的异常并处理返回，所以此函数绝对不抛出异常，由此调用此函数的函数也可无需catch异常
-	template<typename ErrInfoFunc>
+	template<typename InputStream, typename ErrInfoFunc>
 	static ErrCode GetSwitch(InputStream &tData, NBT_Node &nodeNbt, NBT_TAG tagNbt, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept//选择函数不检查递归层，由函数调用的函数检查
 	{
 		ErrCode eRet = AllOk;
@@ -786,19 +784,14 @@ public:
 	//szStackDepth 控制栈深度，递归层检查仅由可嵌套的可能进行递归的函数进行，栈深度递减仅由对选择函数的调用进行
 	//注意此函数不会清空tCompound，所以可以对一个tCompound通过不同的tData多次调用来读取多个nbt片段并合并到一起
 	//如果指定了szDataStartIndex则会忽略tData中长度为szDataStartIndex的数据
-	template<typename ErrInfoFunc = ErrInfo>
-	static bool ReadNBT(NBT_Type::Compound &tCompound, const DataType &tData, size_t szDataStartIndex = 0, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = ErrInfo{}) noexcept//从data中读取nbt
+	template<typename DataType = std::vector<uint8_t>, typename InputStream = MyInputStream<DataType>, typename ErrInfoFunc = ErrInfo>
+	static bool ReadNBT(NBT_Type::Compound &tCompound, InputStream IptStream, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = ErrInfo{}) noexcept//从data中读取nbt
 	{
-	MYTRY;
-		//初始化数据流对象
-		InputStream IptStream(tData, szDataStartIndex);
-
 		//输出最大栈深度
 		//printf("Max Stack Depth [%zu]\n", szStackDepth);
 
 		//开始递归读取
 		return GetCompoundType<true>(IptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
-	MYCATCH;
 	}
 
 

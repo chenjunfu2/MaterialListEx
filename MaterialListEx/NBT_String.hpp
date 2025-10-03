@@ -5,10 +5,7 @@
 
 #include "MUTF8_Tool.hpp"
 
-template <typename DataType>
 class NBT_Reader;
-
-template <typename DataType>
 class NBT_Writer;
 
 template<typename String, typename StringView>
@@ -17,6 +14,9 @@ class MyString;
 template<typename StringView>
 class MyStringView : public StringView
 {
+	friend class NBT_Reader;
+	friend class NBT_Writer;
+
 private:
 	static constexpr size_t CalcStringViewSize(const typename StringView::value_type *ltrStr, size_t N)
 	{
@@ -59,10 +59,7 @@ public:
 template<typename String, typename StringView>
 class MyString :public String//暂时不考虑保护继承
 {
-	template <typename DataType>
 	friend class NBT_Reader;
-
-	template <typename DataType>
 	friend class NBT_Writer;
 	
 private:

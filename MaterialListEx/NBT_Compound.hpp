@@ -7,10 +7,7 @@
 
 #include "NBT_Type.hpp"
 
-template <typename DataType>
 class NBT_Reader;
-
-template <typename DataType>
 class NBT_Writer;
 
 template <typename T>
@@ -31,11 +28,9 @@ concept HasCREnd = requires(T t) {t.crend();};
 template<typename Compound>
 class MyCompound :protected Compound//Compound is Map
 {
-	template <typename DataType>
 	friend class NBT_Reader;
-
-	template <typename DataType>
 	friend class NBT_Writer;
+
 private:
 	//总是允许插入nbt end，但是在写出文件时会忽略end类型
 	//template<typename V>

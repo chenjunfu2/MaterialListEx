@@ -2,7 +2,7 @@
 
 #include <new>//std::bad_alloc
 #include <bit>//std::bit_cast
-#include <string>//字节流
+#include <vector>//字节流
 #include <stdint.h>//类型定义
 #include <stddef.h>//size_t
 #include <stdlib.h>//byte swap
@@ -12,74 +12,76 @@
 #include "NBT_Node.hpp"//nbt类型
 #include "NBT_Endian.hpp"//字节序
 
-template <typename T = std::basic_string<uint8_t>>
-class MyOutputStream
-{
-private:
-	T &tData;
-public:
-	MyOutputStream(T &_tData, size_t szStartIdx = 0) :tData(_tData)
-	{
-		tData.resize(szStartIdx);
-	}
-	~MyOutputStream(void) = default;
-
-	const typename T::value_type &operator[](size_t szIndex) const noexcept
-	{
-		return tData[szIndex];
-	}
-
-	template<typename V>
-	requires(std::is_constructible_v<typename T::value_type, V &&>)
-	void PutOnce(V &&c)
-	{
-		tData.push_back(std::forward<V>(c));
-	}
-
-	void PutRange(const typename T::value_type *pData, size_t szSize)
-	{
-		tData.append(pData, szSize);
-	}
-
-	void AddReserve(size_t szAddSize)
-	{
-		tData.reserve(tData.size() + szAddSize);
-	}
-
-	void UnPut(void) noexcept
-	{
-		tData.pop_back();
-	}
-
-	size_t Size(void) const noexcept
-	{
-		return tData.size();
-	}
-
-	void Reset(void) noexcept
-	{
-		tData.clear();
-	}
-
-	const T &Data(void) const noexcept
-	{
-		return tData;
-	}
-
-	T &Data(void) noexcept
-	{
-		return tData;
-	}
-};
-
-
-template <typename DataType = std::basic_string<uint8_t>>
 class NBT_Writer
 {
 	NBT_Writer(void) = delete;
 	~NBT_Writer(void) = delete;
 
-	using OutputStream = MyOutputStream<DataType>;//流类型
+public:
+	template <typename T = std::vector<uint8_t>>
+	class MyOutputStream
+	{
+	private:
+		T &tData;
+	public:
+		using StreamType = T;
+		using ValueType = typename T::value_type;
+
+		//引用天生无法使用临时值构造，无需担心临时值构造导致的悬空引用
+		MyOutputStream(T &_tData, size_t szStartIdx = 0) :tData(_tData)
+		{
+			tData.resize(szStartIdx);
+		}
+		~MyOutputStream(void) = default;
+
+		const ValueType &operator[](size_t szIndex) const noexcept
+		{
+			return tData[szIndex];
+		}
+
+		template<typename V>
+		requires(std::is_constructible_v<ValueType, V &&>)
+			void PutOnce(V &&c)
+		{
+			tData.push_back(std::forward<V>(c));
+		}
+
+		void PutRange(const ValueType *pData, size_t szSize)
+		{
+			tData.insert(tData.end(), &pData[0], &pData[szSize]);
+		}
+
+		void AddReserve(size_t szAddSize)
+		{
+			tData.reserve(tData.size() + szAddSize);
+		}
+
+		void UnPut(void) noexcept
+		{
+			tData.pop_back();
+		}
+
+		size_t Size(void) const noexcept
+		{
+			return tData.size();
+		}
+
+		void Reset(void) noexcept
+		{
+			tData.clear();
+		}
+
+		const T &Data(void) const noexcept
+		{
+			return tData;
+		}
+
+		T &Data(void) noexcept
+		{
+			return tData;
+		}
+	};
+
 private:
 	enum ErrCode : uint8_t
 	{
@@ -154,7 +156,7 @@ private:
 			try
 			{
 				auto tmp = std::format(std::move(fmt), std::forward<Args>(args)...);
-				fwrite(tmp.data(), sizeof(*tmp.data()), tmp.size(), stderr);
+				fwrite(tmp.data(), sizeof(tmp.data()[0]), tmp.size(), stderr);
 			}
 			catch (const std::exception &e)
 			{
@@ -172,7 +174,7 @@ private:
 	//主动检查引发的错误，主动调用eRet = Error报告，然后触发STACK_TRACEBACK，最后返回eRet到上一级
 	//上一级返回的错误通过if (eRet != AllOk)判断的，直接触发STACK_TRACEBACK后返回eRet到上一级
 	//如果是警告值，则不返回值
-	template <typename T, typename ErrInfoFunc, typename... Args>
+	template <typename T, typename OutputStream, typename ErrInfoFunc, typename... Args>
 	requires(std::is_same_v<T, ErrCode> || std::is_same_v<T, WarnCode>)
 	static std::conditional_t<std::is_same_v<T, ErrCode>, ErrCode, void> Error
 		(
@@ -307,7 +309,7 @@ catch(...)\
 	return eRet;\
 }
 
-	template<typename ErrInfoFunc>
+	template<typename OutputStream, typename ErrInfoFunc>
 	static inline ErrCode CheckReserve(OutputStream &tData, size_t szAddSize, ErrInfoFunc &funcErrInfo) noexcept
 	{
 	MYTRY;
@@ -317,7 +319,7 @@ catch(...)\
 	}
 
 	//写出大端序值
-	template<typename T, typename ErrInfoFunc>
+	template<typename T, typename OutputStream, typename ErrInfoFunc>
 	requires std::integral<T>
 	static inline ErrCode WriteBigEndian(OutputStream &tData, const T &tVal, ErrInfoFunc &funcErrInfo) noexcept
 	{
@@ -328,7 +330,7 @@ catch(...)\
 	MYCATCH;
 	}
 
-	template<typename ErrInfoFunc>
+	template<typename OutputStream, typename ErrInfoFunc>
 	static ErrCode PutName(OutputStream &tData, const NBT_Type::String &sName, ErrInfoFunc &funcErrInfo) noexcept
 	{
 	MYTRY;
@@ -363,13 +365,13 @@ catch(...)\
 			return eRet;
 		}
 		//范围写入
-		tData.PutRange((const typename DataType::value_type *)sName.data(), szStringLength);
+		tData.PutRange((const typename OutputStream::ValueType *)sName.data(), szStringLength);
 
 		return eRet;
 	MYCATCH;
 	}
 
-	template<typename T, typename ErrInfoFunc>
+	template<typename T, typename OutputStream, typename ErrInfoFunc>
 	static ErrCode PutbuiltInType(OutputStream &tData, const T &tBuiltIn, ErrInfoFunc &funcErrInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -388,7 +390,7 @@ catch(...)\
 		return eRet;
 	}
 
-	template<typename T, typename ErrInfoFunc>
+	template<typename T, typename OutputStream, typename ErrInfoFunc>
 	static ErrCode PutArrayType(OutputStream &tData, const T &tArray, ErrInfoFunc &funcErrInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -423,8 +425,7 @@ catch(...)\
 
 		for (NBT_Type::ArrayLength i = 0; i < iArrayLength; ++i)
 		{
-			typename T::value_type tTmpData = tArray[i];
-			eRet = WriteBigEndian(tData, tTmpData, funcErrInfo);
+			eRet = WriteBigEndian(tData, tArray[i], funcErrInfo);
 			if (eRet < AllOk)
 			{
 				STACK_TRACEBACK("tTmpData Write");
@@ -436,7 +437,7 @@ catch(...)\
 	}
 
 	//如果是非根部，不会输出额外的Compound_End
-	template<bool bRoot, typename ErrInfoFunc>
+	template<bool bRoot, typename OutputStream, typename ErrInfoFunc>
 	static ErrCode PutCompoundType(OutputStream &tData, const NBT_Type::Compound &tCompound, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -497,7 +498,7 @@ catch(...)\
 		return eRet;
 	}
 
-	template<typename ErrInfoFunc>
+	template<typename OutputStream, typename ErrInfoFunc>
 	static ErrCode PutStringType(OutputStream &tData, const NBT_Type::String &tString, ErrInfoFunc &funcErrInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -512,7 +513,7 @@ catch(...)\
 		return eRet;
 	}
 
-	template<typename ErrInfoFunc>
+	template<typename OutputStream, typename ErrInfoFunc>
 	static ErrCode PutListType(OutputStream &tData, const NBT_Type::List &tList, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -591,7 +592,7 @@ catch(...)\
 		return eRet;
 	}
 
-	template<typename ErrInfoFunc>
+	template<typename OutputStream, typename ErrInfoFunc>
 	static ErrCode PutSwitch(OutputStream &tData, const NBT_Node &nodeNbt, NBT_TAG tagNbt, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -695,19 +696,14 @@ catch(...)\
 public:
 	//输出到tData中，部分功能和原理参照ReadNBT处的注释，szDataStartIndex在此处可以对一个tData通过不同的tCompound和szDataStartIndex = tData.size()
 	//来调用以达到把多个不同的nbt输出到同一个tData内的功能
-	template<typename ErrInfoFunc = ErrInfo>
-	static bool WriteNBT(DataType &tData, const NBT_Type::Compound &tCompound, size_t szDataStartIndex = 0, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = ErrInfo{}) noexcept
+	template<typename DataType = std::vector<uint8_t>, typename OutputStream = MyOutputStream<DataType>, typename ErrInfoFunc = ErrInfo>
+	static bool WriteNBT(OutputStream OptStream, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = ErrInfo{}) noexcept
 	{
-	MYTRY;
-		//初始化数据流对象
-		OutputStream OptStream(tData, szDataStartIndex);
-
 		//输出最大栈深度
-		//printf("Max Stack Depth [{}]\n", szStackDepth);
+		//printf("Max Stack Depth [%zu]\n", szStackDepth);
 
 		//开始递归输出
 		return PutCompoundType<true>(OptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;
-	MYCATCH;//以防万一还是需要捕获一下
 	}
 
 
