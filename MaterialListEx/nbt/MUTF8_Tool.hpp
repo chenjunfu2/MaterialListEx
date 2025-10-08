@@ -8,6 +8,22 @@
 #include <array>
 #include <algorithm>
 
+//来个static string包装类，使得模板能接受字符串字面量
+//必须放在外面，否则NTTP推导主类模板会失败，
+//导致此并不依赖主类模板的模板也推导失败
+template<typename T, size_t N>
+class StringLiteral : public std::array<T, N>
+{
+public:
+	using Super = std::array<T, N>;
+
+public:
+	constexpr StringLiteral(const T(&_tStr)[N]) noexcept : Super(std::to_array(_tStr))
+	{}
+	constexpr ~StringLiteral(void) = default;
+
+};
+
 template<typename MU8T = uint8_t, typename U16T = char16_t, typename U8T = char8_t>
 class MUTF8_Tool
 {
@@ -29,20 +45,6 @@ public:
 	using U8_T = U8T;
 
 private:
-	//来个static string包装类，使得模板能接受字符串字面量
-	template<typename T, size_t N>
-	class StringLiteral : public std::array<T, N>
-	{
-	public:
-		using Super = std::array<T, N>;
-
-	public:
-		constexpr StringLiteral(const T(&_tStr)[N]) noexcept : Super(std::to_array(_tStr))
-		{}
-		constexpr ~StringLiteral(void) = default;
-
-	};
-
 	//来点魔法类，伪装成basic string，在插入的时候进行数据长度计数，忽略插入的数据，最后转换为size_t长度
 	//这样就能在最小修改的情况下用同一个函数套模板来获取转换后的长度（且100%准确），而不是重写一个例程
 	template<typename T>
