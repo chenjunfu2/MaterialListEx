@@ -29,6 +29,20 @@ public:
 	using U8_T = U8T;
 
 private:
+	//来个static string包装类，使得模板能接受字符串字面量
+	template<typename T, size_t N>
+	class StringLiteral : public std::array<T, N>
+	{
+	public:
+		using Super = std::array<T, N>;
+
+	public:
+		constexpr StringLiteral(const T(&_tStr)[N]) noexcept : Super(std::to_array(_tStr))
+		{}
+		constexpr ~StringLiteral(void) = default;
+
+	};
+
 	//来点魔法类，伪装成basic string，在插入的时候进行数据长度计数，忽略插入的数据，最后转换为size_t长度
 	//这样就能在最小修改的情况下用同一个函数套模板来获取转换后的长度（且100%准确），而不是重写一个例程
 	template<typename T>
@@ -783,7 +797,18 @@ private:
 #undef HAS_BITMASK
 #undef GET_NEXTCHAR
 
+private:
+	template<typename T>
+	static consteval size_t ContentLength(const T &tStr)//获取不包含末尾0的长度（如果有）
+	{
+		return tStr.size() > 0 && tStr[tStr.size() - 1] == (typename T::value_type)0x00
+			 ? tStr.size() - 1
+			 : tStr.size();
+	}
+
 public:
+	//---------------------------------------------------------------------------------------------//
+
 	static constexpr size_t U16ToMU8Length(const std::basic_string_view<U16T> &u16String)
 	{
 		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String.data(), u16String.size()).GetData();
@@ -792,17 +817,7 @@ public:
 	{
 		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringLength).GetData();
 	}
-	template<size_t N>
-	static consteval size_t U16ToMU8Length(const U16T(&u16String)[N])
-	{
-		size_t szStringLength =
-			N > 0 && u16String[N - 1] == (U16T)0x00
-			? N - 1
-			: N;
-
-		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringLength).GetData();
-	}
-
+	
 	static std::basic_string<MU8T> U16ToMU8(const std::basic_string_view<U16T> &u16String)
 	{
 		return U16ToMU8Impl<std::basic_string<MU8T>>(u16String.data(), u16String.size());
@@ -811,17 +826,48 @@ public:
 	{
 		return U16ToMU8Impl<std::basic_string<MU8T>>(u16String, szStringLength);
 	}
-	template<size_t szNewLength, size_t N>//size_t szNewLength = U16ToMU8Length(u16String);
-	static consteval auto U16ToMU8(const U16T(&u16String)[N])
+
+	template<StringLiteral u16String>
+	requires std::is_same_v<typename decltype(u16String)::value_type, U16T>//限定类型
+	static consteval auto U16ToMU8(void)
 	{
-		size_t szStringLength = 
-			N > 0 && u16String[N - 1] == (U16T)0x00
-			? N - 1 
-			: N;
-	
+		constexpr size_t szStringLength = ContentLength(u16String);
+		constexpr size_t szNewLength = U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringLength).GetData();
+
 		return U16ToMU8Impl<StaticString<MU8T, szNewLength>>(u16String, szStringLength).GetData();
 	}
 
+	//---------------------------------------------------------------------------------------------//
+
+	static constexpr size_t U8ToMU8Length(const std::basic_string_view<U8T> &u8String)
+	{
+		return U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String.data(), u8String.size()).GetData();
+	}
+	static constexpr size_t U8ToMU8Length(const U8T *u8String, size_t szStringLength)
+	{
+		return U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String, szStringLength).GetData();
+	}
+
+	static std::basic_string<MU8T> U8ToMU8(const std::basic_string_view<U8T> &u8String)
+	{
+		return U8ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u8String.data(), u8String.size());
+	}
+	static std::basic_string<MU8T> U8ToMU8(const U8T *u8String, size_t szStringLength)
+	{
+		return U8ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u8String, szStringLength);
+	}
+
+	template<StringLiteral u8String>
+	requires std::is_same_v<typename decltype(u8String)::value_type, U8T>//限定类型
+	static consteval auto U8ToMU8(void)
+	{
+		size_t szStringLength = ContentLength(u8String);
+		size_t szNewLength = U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String, szStringLength).GetData();
+
+		return U8ToMU8Impl<StaticString<MU8T, szNewLength>>(u8String, szStringLength).GetData();
+	}
+
+	//---------------------------------------------------------------------------------------------//
 	//---------------------------------------------------------------------------------------------//
 
 	static constexpr size_t MU8ToU16Size(const std::basic_string_view<MU8T> &mu8String)
@@ -840,48 +886,6 @@ public:
 	static std::basic_string<U16T> MU8ToU16(const MU8T *mu8String, size_t szStringLength)
 	{
 		return MU8ToU16Impl<std::basic_string<U16T>>(mu8String, szStringLength);
-	}
-
-	//---------------------------------------------------------------------------------------------//
-
-	//---------------------------------------------------------------------------------------------//
-
-	static constexpr size_t U8ToMU8Length(const std::basic_string_view<U8T> &u8String)
-	{
-		return U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String.data(), u8String.size()).GetData();
-	}
-	static constexpr size_t U8ToMU8Length(const U8T *u8String, size_t szStringLength)
-	{
-		return U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String, szStringLength).GetData();
-	}
-	template<size_t N>
-	static consteval size_t U8ToMU8Length(const U8T(&u8String)[N])
-	{
-		size_t szStringLength =
-			N > 0 && u8String[N - 1] == (U8T)0x00
-			? N - 1
-			: N;
-
-		return U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String, szStringLength).GetData();
-	}
-
-	static std::basic_string<MU8T> U8ToMU8(const std::basic_string_view<U8T> &u8String)
-	{
-		return U8ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u8String.data(), u8String.size());
-	}
-	static std::basic_string<MU8T> U8ToMU8(const U8T *u8String, size_t szStringLength)
-	{
-		return U8ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u8String, szStringLength);
-	}
-	template<size_t szNewLength, size_t N>//size_t szNewLength = U8ToMU8Length(u8String);
-	static consteval auto U8ToMU8(const U8T(&u8String)[N])
-	{
-		size_t szStringLength =
-			N > 0 && u8String[N - 1] == (U8T)0x00
-			? N - 1
-			: N;
-
-		return U8ToMU8Impl<StaticString<MU8T, szNewLength>>(u8String, szStringLength).GetData();
 	}
 
 	//---------------------------------------------------------------------------------------------//
@@ -914,8 +918,8 @@ public:
 
 //转换为静态字符串数组
 //在mutf-8中，任何字符串结尾\0都会被映射成0xC0 0x80，且保证串中不包含0x00，所以一定程度上可以和c-str（以0结尾）兼容
-#define U16TOMU8STR(u16LiteralString) (MUTF8_Tool<>::U16ToMU8<MUTF8_Tool<>::U16ToMU8Length(u16LiteralString)>(u16LiteralString))
-#define U8TOMU8STR(u8LiteralString) (MUTF8_Tool<>::U8ToMU8<MUTF8_Tool<>::U8ToMU8Length(u8LiteralString)>(u8LiteralString))
+#define U16TOMU8STR(u16LiteralString) (MUTF8_Tool<>::U16ToMU8<u16LiteralString>())
+#define U8TOMU8STR(u8LiteralString) (MUTF8_Tool<>::U8ToMU8<u8LiteralString>())
 
 //英文原文
 /*
