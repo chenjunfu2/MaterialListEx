@@ -3,6 +3,7 @@
 #include <bit>
 #include <concepts>
 
+#include "NBT_Print.hpp"//打印输出
 #include "NBT_Node.hpp"
 #include "NBT_Node_View.hpp"
 
@@ -16,14 +17,15 @@ class NBT_Helper
 	~NBT_Helper() = delete;
 
 public:
-	static void Print(const NBT_Node_View<true> nRoot, bool bPadding = true, bool bNewLine = true)
+	template<typename PrintFunc = NBT_Print>
+	static void Print(const NBT_Node_View<true> nRoot, PrintFunc funcPrint = NBT_Print{}, bool bPadding = true, bool bNewLine = true)
 	{
 		size_t szLevelStart = bPadding ? 0 : (size_t)-1;//跳过打印
 
-		PrintSwitch(nRoot, 0);
+		PrintSwitch(nRoot, 0, funcPrint);
 		if (bNewLine)
 		{
-			putchar('\n');
+			funcPrint("\n");
 		}
 	}
 
@@ -60,7 +62,8 @@ public:
 private:
 	constexpr const static inline char *const LevelPadding = "    ";//默认对齐
 
-	static void PrintPadding(size_t szLevel, bool bSubLevel, bool bNewLine)//bSubLevel会让缩进多一层
+	template<typename PrintFunc>
+	static void PrintPadding(size_t szLevel, bool bSubLevel, bool bNewLine, PrintFunc &funcPrint)//bSubLevel会让缩进多一层
 	{
 		if (szLevel == (size_t)-1)//跳过打印
 		{
@@ -69,160 +72,160 @@ private:
 
 		if (bNewLine)
 		{
-			putchar('\n');
+			funcPrint("\n");
 		}
 		
 		for (size_t i = 0; i < szLevel; ++i)
 		{
-			printf("%s", LevelPadding);
+			funcPrint("{}", LevelPadding);
 		}
 
 		if (bSubLevel)
 		{
-			printf("%s", LevelPadding);
+			funcPrint("{}", LevelPadding);
 		}
 	}
 
 	//首次调用默认为true，二次调用开始内部主动变为false
-	template<bool bRoot = true>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
-	static void PrintSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, size_t szLevel)
+	template<bool bRoot = true, typename PrintFunc = NBT_Print>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+	static void PrintSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, size_t szLevel, PrintFunc &funcPrint)
 	{
 		auto tag = nRoot.GetTag();
 		switch (tag)
 		{
 		case NBT_TAG::End:
 			{
-				printf("[End]");
+				funcPrint("[End]");
 			}
 			break;
 		case NBT_TAG::Byte:
 			{
-				printf("%dB", nRoot.GetData<NBT_Type::Byte>());
+				funcPrint("{}B", nRoot.GetData<NBT_Type::Byte>());
 			}
 			break;
 		case NBT_TAG::Short:
 			{
-				printf("%dS", nRoot.GetData<NBT_Type::Short>());
+				funcPrint("{}S", nRoot.GetData<NBT_Type::Short>());
 			}
 			break;
 		case NBT_TAG::Int:
 			{
-				printf("%dI", nRoot.GetData<NBT_Type::Int>());
+				funcPrint("{}I", nRoot.GetData<NBT_Type::Int>());
 			}
 			break;
 		case NBT_TAG::Long:
 			{
-				printf("%lldL", nRoot.GetData<NBT_Type::Long>());
+				funcPrint("{}L", nRoot.GetData<NBT_Type::Long>());
 			}
 			break;
 		case NBT_TAG::Float:
 			{
-				printf("%gF", nRoot.GetData<NBT_Type::Float>());
+				funcPrint("{}F", nRoot.GetData<NBT_Type::Float>());
 			}
 			break;
 		case NBT_TAG::Double:
 			{
-				printf("%gD", nRoot.GetData<NBT_Type::Double>());
+				funcPrint("{}D", nRoot.GetData<NBT_Type::Double>());
 			}
 			break;
 		case NBT_TAG::ByteArray:
 			{
 				const auto &arr = nRoot.GetData<NBT_Type::ByteArray>();
-				printf("[B;");
+				funcPrint("[B;");
 				for (const auto &it : arr)
 				{
-					printf("%d,", it);
+					funcPrint("{},", it);
 				}
 				if (arr.size() != 0)
 				{
-					printf("\b");
+					funcPrint("\b");
 				}
 
-				printf("]");
+				funcPrint("]");
 			}
 			break;
 		case NBT_TAG::IntArray:
 			{
 				const auto &arr = nRoot.GetData<NBT_Type::IntArray>();
-				printf("[I;");
+				funcPrint("[I;");
 				for (const auto &it : arr)
 				{
-					printf("%d,", it);
+					funcPrint("{},", it);
 				}
 
 				if (arr.size() != 0)
 				{
-					printf("\b");
+					funcPrint("\b");
 				}
-				printf("]");
+				funcPrint("]");
 			}
 			break;
 		case NBT_TAG::LongArray:
 			{
 				const auto &arr = nRoot.GetData<NBT_Type::LongArray>();
-				printf("[L;");
+				funcPrint("[L;");
 				for (const auto &it : arr)
 				{
-					printf("%lld,", it);
+					funcPrint("{},", it);
 				}
 
 				if (arr.size() != 0)
 				{
-					printf("\b");
+					funcPrint("\b");
 				}
-				printf("]");
+				funcPrint("]");
 			}
 			break;
 		case NBT_TAG::String:
 			{
-				printf("\"%s\"", nRoot.GetData<NBT_Type::String>().ToCharTypeUTF8().c_str());
+				funcPrint("\"{}\"", nRoot.GetData<NBT_Type::String>().ToCharTypeUTF8());
 			}
 			break;
 		case NBT_TAG::List://需要打印缩进的地方
 			{
 				const auto &list = nRoot.GetData<NBT_Type::List>();
-				PrintPadding(szLevel, false, !bRoot);//不是根部则打印开头换行
-				printf("[");
+				PrintPadding(szLevel, false, !bRoot, funcPrint);//不是根部则打印开头换行
+				funcPrint("[");
 				for (const auto &it : list)
 				{
-					PrintPadding(szLevel, true, it.GetTag() != NBT_TAG::Compound && it.GetTag() != NBT_TAG::List);
-					PrintSwitch<false>(it, szLevel + 1);
-					printf(",");
+					PrintPadding(szLevel, true, it.GetTag() != NBT_TAG::Compound && it.GetTag() != NBT_TAG::List, funcPrint);
+					PrintSwitch<false>(it, szLevel + 1, funcPrint);
+					funcPrint(",");
 				}
 
 				if (list.Size() != 0)
 				{
-					printf("\b \b");//清除最后一个逗号
-					PrintPadding(szLevel, false, true);//空列表无需换行以及对齐
+					funcPrint("\b \b");//清除最后一个逗号
+					PrintPadding(szLevel, false, true, funcPrint);//空列表无需换行以及对齐
 				}
-				printf("]");
+				funcPrint("]");
 			}
 			break;
 		case NBT_TAG::Compound://需要打印缩进的地方
 			{
 				const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
-				PrintPadding(szLevel, false, !bRoot);//不是根部则打印开头换行
-				printf("{");
+				PrintPadding(szLevel, false, !bRoot, funcPrint);//不是根部则打印开头换行
+				funcPrint("{{");//大括号转义
 
 				for (const auto &it : cpd)
 				{
-					PrintPadding(szLevel, true, true);
-					printf("\"%s\":", it.first.ToCharTypeUTF8().c_str());
-					PrintSwitch<false>(it.second, szLevel + 1);
-					printf(",");
+					PrintPadding(szLevel, true, true, funcPrint);
+					funcPrint("\"{}\":", it.first.ToCharTypeUTF8());
+					PrintSwitch<false>(it.second, szLevel + 1, funcPrint);
+					funcPrint(",");
 				}
 
 				if (cpd.Size() != 0)
 				{
-					printf("\b \b");//清除最后一个逗号
-					PrintPadding(szLevel, false, true);//空集合无需换行以及对齐
+					funcPrint("\b \b");//清除最后一个逗号
+					PrintPadding(szLevel, false, true, funcPrint);//空集合无需换行以及对齐
 				}
-				printf("}");
+				funcPrint("}}");//大括号转义
 			}
 			break;
 		default:
 			{
-				printf("[Unknown NBT Tag Type [%02X(%d)]]", tag, tag);
+				funcPrint("[Unknown NBT Tag Type [{:02X}({})]]", (NBT_TAG_RAW_TYPE)tag, (NBT_TAG_RAW_TYPE)tag);
 			}
 			break;
 		}

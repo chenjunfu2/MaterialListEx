@@ -8,8 +8,8 @@
 #include <stdlib.h>//byte swap
 #include <string.h>//memcpy
 #include <type_traits>//类型约束
-#include <format>//格式化
 
+#include "NBT_Print.hpp"//打印输出
 #include "NBT_Node.hpp"//nbt类型
 #include "NBT_Endian.hpp"//字节序
 
@@ -171,38 +171,6 @@ private:
 	//记得同步数组！
 	static_assert(sizeof(warnReason) / sizeof(warnReason[0]) == WARNCODE_END, "warnReason array out sync");
 
-#ifdef _MSC_VER
-#if _MSC_VER >= 1935 //msvc 19.35+ 支持标准 format_string
-#define FMT_STR format_string
-#else
-#define FMT_STR _Fmt_string //旧版本 MSVC
-#endif
-#else
-#define FMT_STR format_string //GCC、Clang 等使用标准库版本
-#endif
-
-	class ErrInfo
-	{
-	public:
-		template<typename... Args>
-		void operator()(const std::FMT_STR<Args...> fmt, Args&&... args) noexcept
-		{
-			try
-			{
-				auto tmp = std::format(std::move(fmt), std::forward<Args>(args)...);
-				fwrite(tmp.data(), sizeof(tmp.data()[0]), tmp.size(), stderr);
-			}
-			catch (const std::exception &e)
-			{
-				printf("ErrInfo Exception: \"%s\"\n", e.what());
-			}
-			catch (...)
-			{
-				printf("ErrInfo Exception: \"Unknown Error\"\n");
-			}
-		}
-	};
-
 	//error处理
 	//使用变参形参表+vprintf代理复杂输出，给出更多扩展信息
 	//主动检查引发的错误，主动调用eRet = Error报告，然后触发STACK_TRACEBACK，最后返回eRet到上一级
@@ -311,8 +279,6 @@ private:
 			return code;
 		}
 	}
-
-#undef FMT_STR
 
 #define _RP___FUNCTION__ __FUNCTION__//用于编译过程二次替换达到函数内部
 
@@ -787,8 +753,8 @@ public:
 	//szStackDepth 控制栈深度，递归层检查仅由可嵌套的可能进行递归的函数进行，栈深度递减仅由对选择函数的调用进行
 	//注意此函数不会清空tCompound，所以可以对一个tCompound通过不同的tData多次调用来读取多个nbt片段并合并到一起
 	//如果指定了szDataStartIndex则会忽略tData中长度为szDataStartIndex的数据
-	template<typename DataType = std::vector<uint8_t>, typename InputStream = MyInputStream<DataType>, typename ErrInfoFunc = ErrInfo>
-	static bool ReadNBT(NBT_Type::Compound &tCompound, InputStream IptStream, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = ErrInfo{}) noexcept//从data中读取nbt
+	template<typename DataType = std::vector<uint8_t>, typename InputStream = MyInputStream<DataType>, typename ErrInfoFunc = NBT_Print>
+	static bool ReadNBT(InputStream IptStream, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{}) noexcept//从data中读取nbt
 	{
 		//输出最大栈深度
 		//printf("Max Stack Depth [%zu]\n", szStackDepth);
