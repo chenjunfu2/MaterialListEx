@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
 	printf("\ndataOriginal ReadNBT To cpdOriginal Start\n");
 	ct.Start();
 	NBT_Type::Compound cpdOriginal{};
-	if (!NBT_Reader::ReadNBT(cpdOriginal, { dataOriginal }))
+	if (!NBT_Reader::ReadNBT({ dataOriginal }, cpdOriginal))
 	{
 		printf("[Line:%d]dataOriginal ReadNBT To cpdOriginal Fail\n", __LINE__);
 		return -1;
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
 	NBT_Type::Compound cpdNew{};
 	printf("\ndataNew ReadNBT To cpdNew Start\n");
 	ct.Start();
-	if (!NBT_Reader::ReadNBT(cpdNew, { dataNew }))
+	if (!NBT_Reader::ReadNBT({ dataNew },  cpdNew))
 	{
 		printf("[Line:%d]dataNew ReadNBT To cpdNew Fail\n", __LINE__);
 		return -1;
@@ -317,7 +317,7 @@ int main0(int argc, char *argv[])
 	std::vector<uint8_t> tR{};
 	NBT_Type::Compound cpd;
 	if (!NBT_IO::ReadFile("TestNbt.nbt", tR) ||
-		!NBT_Reader::ReadNBT(cpd, { tR }))
+		!NBT_Reader::ReadNBT({ tR }, cpd))
 	{
 		printf("TestNbt Read Fail!\nData before the error was encountered:\n");
 	}
