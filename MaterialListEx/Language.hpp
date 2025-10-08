@@ -4,7 +4,7 @@
 using Json = nlohmann::json;
 /*Json*/
 
-#include "NBT_Node.hpp"
+#include "nbt/NBT_Node.hpp"
 
 #include <set>
 #include <string>
