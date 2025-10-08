@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "NBT_Node.hpp"
+#include "nbt/NBT_Node.hpp"
 #include "Calc_Tool.hpp"
 #include "ItemProcess.hpp"
 
