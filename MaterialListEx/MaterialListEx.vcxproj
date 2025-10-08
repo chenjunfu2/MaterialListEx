@@ -225,6 +225,7 @@
     <ClInclude Include="nbt\NBT_List.hpp" />
     <ClInclude Include="nbt\NBT_Node.hpp" />
     <ClInclude Include="nbt\NBT_Node_View.hpp" />
+    <ClInclude Include="nbt\NBT_Print.hpp" />
     <ClInclude Include="nbt\NBT_Reader.hpp" />
     <ClInclude Include="nbt\NBT_String.hpp" />
     <ClInclude Include="nbt\NBT_TAG.hpp" />

@@ -377,6 +377,9 @@
     <ClInclude Include="nbt\NBT_Writer.hpp">
       <Filter>头文件\nbt</Filter>
     </ClInclude>
+    <ClInclude Include="nbt\NBT_Print.hpp">
+      <Filter>头文件\nbt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="TODO.txt">
