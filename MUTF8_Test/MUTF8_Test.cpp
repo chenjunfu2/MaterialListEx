@@ -441,8 +441,8 @@ int mainyy(void)
 
 
 
-#include "../MaterialListEx/NBT_Node.hpp"
-#include "../MaterialListEx/MUTF8_Tool.hpp"
+#include "../MaterialListEx/nbt/NBT_Node.hpp"
+#include "../MaterialListEx/nbt/MUTF8_Tool.hpp"
 #include "../MaterialListEx/Windows_ANSI.hpp"
 
 #include <stdlib.h>

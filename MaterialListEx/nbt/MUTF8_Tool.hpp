@@ -832,9 +832,9 @@ public:
 	static consteval auto U16ToMU8(void)
 	{
 		constexpr size_t szStringLength = ContentLength(u16String);
-		constexpr size_t szNewLength = U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringLength).GetData();
+		constexpr size_t szNewLength = U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String.data(), szStringLength).GetData();
 
-		return U16ToMU8Impl<StaticString<MU8T, szNewLength>>(u16String, szStringLength).GetData();
+		return U16ToMU8Impl<StaticString<MU8T, szNewLength>>(u16String.data(), szStringLength).GetData();
 	}
 
 	//---------------------------------------------------------------------------------------------//
@@ -861,10 +861,10 @@ public:
 	requires std::is_same_v<typename decltype(u8String)::value_type, U8T>//限定类型
 	static consteval auto U8ToMU8(void)
 	{
-		size_t szStringLength = ContentLength(u8String);
-		size_t szNewLength = U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String, szStringLength).GetData();
+		constexpr size_t szStringLength = ContentLength(u8String);
+		constexpr size_t szNewLength = U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String.data(), szStringLength).GetData();
 
-		return U8ToMU8Impl<StaticString<MU8T, szNewLength>>(u8String, szStringLength).GetData();
+		return U8ToMU8Impl<StaticString<MU8T, szNewLength>>(u8String.data(), szStringLength).GetData();
 	}
 
 	//---------------------------------------------------------------------------------------------//
