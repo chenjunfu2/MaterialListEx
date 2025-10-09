@@ -3,8 +3,8 @@
 #include <xxhash.h>
 #include <compare>
 
-#include "nbt/NBT_Node.hpp"
-#include "nbt/NBT_Helper.hpp"
+#include <NBT_Node.hpp>
+#include <NBT_Helper.hpp>
 
 struct ItemInfo
 {

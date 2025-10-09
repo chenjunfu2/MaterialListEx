@@ -9,7 +9,7 @@
 #define USE_GZIPZLIB
 #define USE_XXHASH
 
-#include "nbt/NBT_Node.hpp"
+#include <NBT_Node.hpp>
 #include "ItemProcess.hpp"
 #include "BlockProcess.hpp"
 #include "TileEntityProcess.hpp"

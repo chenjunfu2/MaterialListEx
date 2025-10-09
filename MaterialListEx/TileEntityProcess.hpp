@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "nbt/NBT_Node.hpp"
+#include <NBT_Node.hpp>
 #include "ItemProcess.hpp"
 
 #include <unordered_map>

@@ -12,7 +12,7 @@
 
 #define USE_GZIPZLIB
 #define USE_XXHASH
-#include "nbt/NBT_All.hpp"
+#include <NBT_All.hpp>
 
 #include "BlockProcess.hpp"
 #include "TileEntityProcess.hpp"

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>//size_t
+#include <fstream>
 #include <vector>
 #include <filesystem>
 
@@ -30,54 +31,63 @@ class NBT_IO
 
 public:
 	template<typename T = std::vector<uint8_t>>
-	static bool WriteFile(const char *const pcFileName, const T &tData)
+	static bool WriteFile(const std::string &strFileName, const T &tData)
 	{
-		FILE *pFile = fopen(pcFileName, "wb");
-		if (pFile == NULL)
+		std::fstream fWrite;
+		fWrite.open(strFileName, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+		if (!fWrite)
 		{
 			return false;
 		}
 
 		//获取文件大小并写出
 		uint64_t qwFileSize = tData.size();
-		if (fwrite(tData.data(), sizeof(tData[0]), qwFileSize, pFile) != qwFileSize)
+		if (!fWrite.write((const char *)tData.data(), sizeof(tData[0]) * qwFileSize))
 		{
 			return false;
 		}
 
 		//完成，关闭文件
-		fclose(pFile);
-		pFile = NULL;
+		fWrite.close();
 
 		return true;
 	}
 
 	template<typename T = std::vector<uint8_t>>
-	static bool ReadFile(const char *const pcFileName, T &tData)
+	static bool ReadFile(const std::string &strFileName, T &tData)
 	{
-		FILE *pFile = fopen(pcFileName, "rb");
-		if (pFile == NULL)
+		std::fstream fRead;
+		fRead.open(strFileName, std::ios_base::binary | std::ios_base::in);
+		if (!fRead)
 		{
 			return false;
 		}
+
 		//获取文件大小
-		if (_fseeki64(pFile, 0, SEEK_END) != 0)
+		// 移动到文件末尾
+		if (!fRead.seekg(0, std::ios::end))
 		{
 			return false;
 		}
-		uint64_t qwFileSize = _ftelli64(pFile);
+
+		// 获取文件大小
+		size_t szFileSize = fRead.tellg();
+
 		//回到文件开头
-		rewind(pFile);
+		if (!fRead.seekg(0, std::ios::beg))
+		{
+			return false;
+		}
 
 		//直接给数据塞string里
-		tData.resize(qwFileSize);//设置长度 c++23用resize_and_overwrite
-		if (fread(tData.data(), sizeof(tData[0]), qwFileSize, pFile) != qwFileSize)//直接读入data
+		tData.resize(szFileSize);//设置长度 c++23用resize_and_overwrite
+		if (!fRead.read((char *)tData.data(), sizeof(tData[0]) * szFileSize))//直接读入data
 		{
 			return false;
 		}
+
 		//完成，关闭文件
-		fclose(pFile);
-		pFile = NULL;
+		fRead.close();
 
 		return true;
 	}

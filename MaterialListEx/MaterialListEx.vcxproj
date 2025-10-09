@@ -72,23 +72,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)xxhash;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)xxhash;$(ProjectDir)nbt_cpp;$(ProjectDir);$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ProjectDir)xxhash;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)xxhash;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)xxhash;$(ProjectDir)nbt_cpp;$(ProjectDir);$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ProjectDir)xxhash;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)xxhash;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)xxhash;$(ProjectDir)nbt_cpp;$(ProjectDir);$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ProjectDir)xxhash;$(ExternalIncludePath)</ExternalIncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)xxhash;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)xxhash;$(ProjectDir)nbt_cpp;$(ProjectDir);$(IncludePath)</IncludePath>
     <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ProjectDir)xxhash;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
@@ -214,23 +214,23 @@
     <ClInclude Include="ItemProcess.hpp" />
     <ClInclude Include="Language.hpp" />
     <ClInclude Include="MemoryLeakCheck.hpp" />
-    <ClInclude Include="nbt\MUTF8_Tool.hpp" />
-    <ClInclude Include="nbt\NBT_All.hpp" />
-    <ClInclude Include="nbt\NBT_Array.hpp" />
-    <ClInclude Include="nbt\NBT_Compound.hpp" />
-    <ClInclude Include="nbt\NBT_Endian.hpp" />
-    <ClInclude Include="nbt\NBT_Hash.hpp" />
-    <ClInclude Include="nbt\NBT_Helper.hpp" />
-    <ClInclude Include="nbt\NBT_IO.hpp" />
-    <ClInclude Include="nbt\NBT_List.hpp" />
-    <ClInclude Include="nbt\NBT_Node.hpp" />
-    <ClInclude Include="nbt\NBT_Node_View.hpp" />
-    <ClInclude Include="nbt\NBT_Print.hpp" />
-    <ClInclude Include="nbt\NBT_Reader.hpp" />
-    <ClInclude Include="nbt\NBT_String.hpp" />
-    <ClInclude Include="nbt\NBT_TAG.hpp" />
-    <ClInclude Include="nbt\NBT_Type.hpp" />
-    <ClInclude Include="nbt\NBT_Writer.hpp" />
+    <ClInclude Include="nbt_cpp\MUTF8_Tool.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_All.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_Array.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_Compound.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_Endian.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_Hash.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_Helper.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_IO.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_List.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_Node.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_Node_View.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_Print.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_Reader.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_String.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_TAG.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_Type.hpp" />
+    <ClInclude Include="nbt_cpp\NBT_Writer.hpp" />
     <ClInclude Include="nlohmann\adl_serializer.hpp" />
     <ClInclude Include="nlohmann\byte_container_with_subtype.hpp" />
     <ClInclude Include="nlohmann\detail\abi_macros.hpp" />

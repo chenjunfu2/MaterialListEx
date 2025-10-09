@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "nbt/NBT_Node.hpp"
+#include <NBT_Node.hpp>
 
 template <typename T>
 const T &Max(const T &l, const T &r)
