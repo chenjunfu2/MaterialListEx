@@ -1,32 +1,12 @@
-#pragma once
+ï»¿#pragma once
 
-#include <bit>//×Ö½ÚĞò
-#include <stdint.h>//¶¨Òå
+#include <bit>//å­—èŠ‚åº
+#include <stdint.h>//å®šä¹‰
 #include <stddef.h>//size_t
 #include <utility>//std::index_sequence
 #include <type_traits>//std::make_unsigned_t
 
-#if defined(_MSC_VER)
-#define COMPILER_MSVC 1
-#define COMPILER_GCC 0
-#define COMPILER_CLANG 0
-#define COMPILER_NAME "MSVC"
-#elif defined(__clang__)
-#define COMPILER_MSVC 0
-#define COMPILER_GCC 0
-#define COMPILER_CLANG 1
-#define COMPILER_NAME "Clang"
-#elif defined(__GNUC__)
-#define COMPILER_MSVC 0
-#define COMPILER_GCC 1
-#define COMPILER_CLANG 0
-#define COMPILER_NAME "GCC"
-#else
-#define COMPILER_MSVC 0
-#define COMPILER_GCC 0
-#define COMPILER_CLANG 0
-#define COMPILER_NAME "Unknown"
-#endif
+#include "Compiler_Define.h"//ç¼–è¯‘å™¨ç±»å‹åˆ¤æ–­
 
 class NBT_Endian
 {
@@ -49,48 +29,48 @@ public:
 	requires std::integral<T>
 	constexpr static T ByteSwapAny(T data) noexcept
 	{
-		//±ØĞëÊÇ2µÄ±¶Êı²ÅÄÜÕıÈ·Ö´ĞĞbyteswap
+		//å¿…é¡»æ˜¯2çš„å€æ•°æ‰èƒ½æ­£ç¡®æ‰§è¡Œbyteswap
 		static_assert(sizeof(T) % 2 == 0 || sizeof(T) == 1, "The size of T is not a multiple of 2 or equal to 1");
 
-		//Èç¹û´óĞ¡ÊÇ1Ö±½Ó·µ»Ø
+		//å¦‚æœå¤§å°æ˜¯1ç›´æ¥è¿”å›
 		if constexpr (sizeof(T) == 1)
 		{
 			return data;
 		}
 
-		//Í³Ò»µ½ÎŞ·ûºÅÀàĞÍ
+		//ç»Ÿä¸€åˆ°æ— ç¬¦å·ç±»å‹
 		using UT = std::make_unsigned_t<T>;
 		static_assert(sizeof(UT) == sizeof(T), "Unsigned type size mismatch");
 
-		//»ñÈ¡¾²Ì¬´óĞ¡
+		//è·å–é™æ€å¤§å°
 		constexpr size_t szSize = sizeof(T);
 		constexpr size_t szHalf = sizeof(T) / 2;
 
-		//ÁÙÊ±½»»»Á¿
+		//ä¸´æ—¶äº¤æ¢é‡
 		UT tmp = 0;
 
-		//(i < sizeof(T) / 2)Ç°°ë£¬×óÒÆ
+		//(i < sizeof(T) / 2)å‰åŠï¼Œå·¦ç§»
 		[&] <size_t... i>(std::index_sequence<i...>) -> void
 		{
 			((tmp |= ((UT)data & ((UT)0xFF << (8 * i))) << 8 * (szSize - (i * 2) - 1)), ...);
 		}(std::make_index_sequence<szHalf>{});
 
-		//(i + szHalf >= sizeof(T) / 2)ºó°ë£¬ÓÒÒÆ
+		//(i + szHalf >= sizeof(T) / 2)ååŠï¼Œå³ç§»
 		[&] <size_t... i>(std::index_sequence<i...>) -> void
 		{
 			((tmp |= ((UT)data & ((UT)0xFF << (8 * (i + szHalf)))) >> 8 * (i * 2 + 1)), ...);
 		}(std::make_index_sequence<szHalf>{});
 
-		//×ª»»»ØÔ­ÏÈµÄÀàĞÍ²¢·µ»Ø
+		//è½¬æ¢å›åŸå…ˆçš„ç±»å‹å¹¶è¿”å›
 		return (T)tmp;
 	}
 
 	static uint16_t ByteSwap16(uint16_t data) noexcept
 	{
-		//¸ù¾İ±àÒëÆ÷ÇĞ»»ÄÚ½¨Ö¸Áî»òÊ¹ÓÃÄ¬ÈÏÎ»ÒÆÊµÏÖ
-#if COMPILER_MSVC
+		//æ ¹æ®ç¼–è¯‘å™¨åˆ‡æ¢å†…å»ºæŒ‡ä»¤æˆ–ä½¿ç”¨é»˜è®¤ä½ç§»å®ç°
+#if __COMPILER_MSVC__
 		return _byteswap_ushort(data);
-#elif COMPILER_GCC || COMPILER_CLANG
+#elif __COMPILER_GCC__ || __COMPILER_CLANG__
 		return __builtin_bswap16(data);
 #else
 		return ByteSwapAny(data);
@@ -99,10 +79,10 @@ public:
 
 	static uint32_t ByteSwap32(uint32_t data) noexcept
 	{
-		//¸ù¾İ±àÒëÆ÷ÇĞ»»ÄÚ½¨Ö¸Áî»òÊ¹ÓÃÄ¬ÈÏÎ»ÒÆÊµÏÖ
-#if COMPILER_MSVC
+		//æ ¹æ®ç¼–è¯‘å™¨åˆ‡æ¢å†…å»ºæŒ‡ä»¤æˆ–ä½¿ç”¨é»˜è®¤ä½ç§»å®ç°
+#if __COMPILER_MSVC__
 		return _byteswap_ulong(data);
-#elif COMPILER_GCC || COMPILER_CLANG
+#elif __COMPILER_GCC__ || __COMPILER_CLANG__
 		return __builtin_bswap32(data);
 #else
 		return ByteSwapAny(data);
@@ -111,10 +91,10 @@ public:
 
 	static uint64_t ByteSwap64(uint64_t data) noexcept
 	{
-		//¸ù¾İ±àÒëÆ÷ÇĞ»»ÄÚ½¨Ö¸Áî»òÊ¹ÓÃÄ¬ÈÏÎ»ÒÆÊµÏÖ
-#if COMPILER_MSVC
+		//æ ¹æ®ç¼–è¯‘å™¨åˆ‡æ¢å†…å»ºæŒ‡ä»¤æˆ–ä½¿ç”¨é»˜è®¤ä½ç§»å®ç°
+#if __COMPILER_MSVC__
 		return _byteswap_uint64(data);
-#elif COMPILER_GCC || COMPILER_CLANG
+#elif __COMPILER_GCC__ || __COMPILER_CLANG__
 		return __builtin_bswap64(data);
 #else
 		return ByteSwapAny(data);
@@ -125,8 +105,8 @@ public:
 	requires std::integral<T>
 	constexpr static T AutoByteSwap(T data) noexcept
 	{
-		//Èç¹ûÊÇÒÑÖª´óĞ¡£¬ÓÅÏÈ×ßÖØÔØ£¬ÒòÎªÖØÔØ¸üÓĞ¿ÉÄÜÊÇÖ¸Áî¼¯Ö§³ÖµÄ¸ßĞ§ÊµÏÖ
-		//·ñÔò×ßÎ»²Ù×÷ÊµÏÖ£¬Ğ§ÂÊ¸üµÍµ«ÊÇ¼æÈİĞÔ¸üºÃ
+		//å¦‚æœæ˜¯å·²çŸ¥å¤§å°ï¼Œä¼˜å…ˆèµ°é‡è½½ï¼Œå› ä¸ºé‡è½½æ›´æœ‰å¯èƒ½æ˜¯æŒ‡ä»¤é›†æ”¯æŒçš„é«˜æ•ˆå®ç°
+		//å¦åˆ™èµ°ä½æ“ä½œå®ç°ï¼Œæ•ˆç‡æ›´ä½ä½†æ˜¯å…¼å®¹æ€§æ›´å¥½
 		if constexpr (sizeof(T) == sizeof(uint8_t))
 		{
 			return data;
@@ -155,12 +135,12 @@ public:
 	requires std::integral<T>
 	static T NativeToBigAny(T data) noexcept
 	{
-		if constexpr (IsBigEndian())//µ±Ç°Ò²ÊÇbig
+		if constexpr (IsBigEndian())//å½“å‰ä¹Ÿæ˜¯big
 		{
 			return data;
 		}
 
-		//µ±Ç°ÊÇlittle£¬little×ª»»µ½big
+		//å½“å‰æ˜¯littleï¼Œlittleè½¬æ¢åˆ°big
 		return AutoByteSwap(data);
 	}
 
@@ -168,12 +148,12 @@ public:
 	requires std::integral<T>
 	static T NativeToLittleAny(T data) noexcept
 	{
-		if constexpr (IsLittleEndian())//µ±Ç°Ò²ÊÇlittle
+		if constexpr (IsLittleEndian())//å½“å‰ä¹Ÿæ˜¯little
 		{
 			return data;
 		}
 
-		//µ±Ç°ÊÇbig£¬big×ª»»µ½little
+		//å½“å‰æ˜¯bigï¼Œbigè½¬æ¢åˆ°little
 		return AutoByteSwap(data);
 	}
 
@@ -181,12 +161,12 @@ public:
 	requires std::integral<T>
 	static T BigToNativeAny(T data) noexcept
 	{
-		if constexpr (IsBigEndian())//µ±Ç°Ò²ÊÇbig
+		if constexpr (IsBigEndian())//å½“å‰ä¹Ÿæ˜¯big
 		{
 			return data;
 		}
 
-		//µ±Ç°ÊÇlittle£¬big×ª»»µ½little
+		//å½“å‰æ˜¯littleï¼Œbigè½¬æ¢åˆ°little
 		return AutoByteSwap(data);
 	}
 
@@ -194,12 +174,12 @@ public:
 	requires std::integral<T>
 	static T LittleToNativeAny(T data) noexcept
 	{
-		if constexpr (IsLittleEndian())//µ±Ç°Ò²ÊÇlittle
+		if constexpr (IsLittleEndian())//å½“å‰ä¹Ÿæ˜¯little
 		{
 			return data;
 		}
 
-		//µ±Ç°ÊÇbig£¬little×ª»»µ½big
+		//å½“å‰æ˜¯bigï¼Œlittleè½¬æ¢åˆ°big
 		return AutoByteSwap(data);
 	}
 };

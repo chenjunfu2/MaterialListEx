@@ -1,14 +1,14 @@
-#pragma once
+ï»¿#pragma once
 
 #include <format>
 #include <stdio.h>
 
 class NBT_Print
 {
-#if defined(_MSC_VER) && _MSC_VER < 1935 //¾É°æ±¾MSVC 1935-²»Ö§³Ö
-#define FMT_STR _Fmt_string //Ê¹ÓÃMSVC¿âÄÚ²¿ÀàÐÍ
+#if defined(_MSC_VER) && _MSC_VER < 1935 //æ—§ç‰ˆæœ¬MSVC 1935-ä¸æ”¯æŒ
+#define FMT_STR _Fmt_string //ä½¿ç”¨MSVCåº“å†…éƒ¨ç±»åž‹
 #else
-#define FMT_STR format_string //MSVC 19.35+¡¢GCC¡¢Clang µÈÊ¹ÓÃ±ê×¼¿â°æ±¾
+#define FMT_STR format_string //MSVC 19.35+ã€GCCã€Clang ç­‰ä½¿ç”¨æ ‡å‡†åº“ç‰ˆæœ¬
 #endif
 
 public:
