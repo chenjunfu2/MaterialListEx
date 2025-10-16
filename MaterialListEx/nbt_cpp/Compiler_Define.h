@@ -1,16 +1,16 @@
-#pragma once
+﻿#pragma once
 
-//����û����ǰ������κδ����
+//必须没有提前定义过任何此类宏
 #if !defined(__COMPILER_MSVC__) &&\
 	!defined(__COMPILER_GCC__) &&\
 	!defined(__COMPILER_CLANG__)
 
-	//��Ԥ�������п��ܵı�������
+	//先预定义所有可能的编译器宏
 	#define __COMPILER_MSVC__ 0
 	#define __COMPILER_GCC__ 0
 	#define __COMPILER_CLANG__ 0
 	
-	//��ʵ���ж����ĸ����������Ǿ��滻���Լ��ĺ�Ϊ1
+	//后实际判断是哪个编译器，是就替换它自己的宏为1
 	#if defined(_MSC_VER)
 		#undef  __COMPILER_MSVC__
 		#define __COMPILER_MSVC__ 1
