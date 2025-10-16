@@ -389,23 +389,73 @@ public:
 		return List::shrink_to_fit();
 	}
 
+	template <bool bNoCheck = false>
+	std::conditional_t<bNoCheck, void, bool> Merge(const MyList &_Copy)
+	{
+		if constexpr (!bNoCheck)
+		{
+			if (_Copy.enElementTag != enElementTag)
+			{
+				return false;
+			}
+		}
+
+		List::insert(List::end(), _Copy.begin(), _Copy.end());
+
+		if constexpr (!bNoCheck)
+		{
+			return true;
+		}
+	}
+
+	template <bool bNoCheck = false>
+	std::conditional_t<bNoCheck, void, bool> Merge(MyList &&_Move)
+	{
+		if constexpr (!bNoCheck)
+		{
+			if (_Move.enElementTag != enElementTag)
+			{
+				return false;
+			}
+		}
+
+		List::insert(List::end(), std::make_move_iterator(_Move.begin()), std::make_move_iterator(_Move.end()));
+
+		if constexpr (!bNoCheck)
+		{
+			return true;
+		}
+	}
+
+	//简化判断
+	bool Contains(const typename List::value_type &tValue) const noexcept
+	{
+		return std::find(List::begin(), List::end(), tValue) != List::end();
+	}
+
+	template<typename Predicate>
+	bool ContainsIf(Predicate pred) const noexcept
+	{
+		return std::find_if(List::begin(), List::end(), pred) != List::end();
+	}
+
 #define TYPE_GET_FUNC(type)\
-const typename NBT_Type::##type &Get##type(const typename List::size_type &szPos) const\
+const typename NBT_Type::type &Get##type(const typename List::size_type &szPos) const\
 {\
 	return List::at(szPos).Get##type();\
 }\
 \
-typename NBT_Type::##type &Get##type(const typename List::size_type &szPos)\
+typename NBT_Type::type &Get##type(const typename List::size_type &szPos)\
 {\
 	return List::at(szPos).Get##type();\
 }\
 \
-const typename NBT_Type::##type &Back##type(void) const\
+const typename NBT_Type::type &Back##type(void) const\
 {\
 	return List::back().Get##type();\
 }\
 \
-typename NBT_Type::##type &Back##type(void)\
+typename NBT_Type::type &Back##type(void)\
 {\
 	return List::back().Get##type();\
 }
@@ -428,37 +478,37 @@ typename NBT_Type::##type &Back##type(void)\
 
 #define TYPE_PUT_FUNC(type)\
 template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Add##type(size_t szPos, const typename NBT_Type::##type &vTagVal)\
+std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Add##type(size_t szPos, const typename NBT_Type::type &vTagVal)\
 {\
 	return Add<bNoCheck>(szPos, vTagVal);\
 }\
 \
 template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Add##type(size_t szPos, typename NBT_Type::##type &&vTagVal)\
+std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Add##type(size_t szPos, typename NBT_Type::type &&vTagVal)\
 {\
 	return Add<bNoCheck>(szPos, std::move(vTagVal));\
 }\
 \
 template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> AddBack##type(const typename NBT_Type::##type &vTagVal)\
+std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> AddBack##type(const typename NBT_Type::type &vTagVal)\
 {\
 	return AddBack<bNoCheck>(vTagVal);\
 }\
 \
 template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> AddBack##type(typename NBT_Type::##type &&vTagVal)\
+std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> AddBack##type(typename NBT_Type::type &&vTagVal)\
 {\
 	return AddBack<bNoCheck>(std::move(vTagVal));\
 }\
 \
 template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Set##type(size_t szPos, const typename NBT_Type::##type &vTagVal)\
+std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Set##type(size_t szPos, const typename NBT_Type::type &vTagVal)\
 {\
 	return Set<bNoCheck>(szPos, vTagVal);\
 }\
 \
 template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Set##type(size_t szPos, typename NBT_Type::##type &&vTagVal)\
+std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Set##type(size_t szPos, typename NBT_Type::type &&vTagVal)\
 {\
 	return Set<bNoCheck>(szPos, std::move(vTagVal));\
 }

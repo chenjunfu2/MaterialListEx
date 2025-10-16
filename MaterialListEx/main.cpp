@@ -282,7 +282,7 @@ bool Convert(const char *const pFileName)
 	//以下使用nbt
 	 NBT_Type::Compound nRoot;
 	timer.Start();
-	if (!NBT_Reader::ReadNBT({ sNbtData }, nRoot))
+	if (!NBT_Reader::ReadNBT(sNbtData, 0, nRoot))
 	{
 		printf("\nData before the error was encountered:");
 		NBT_Helper::Print(nRoot);

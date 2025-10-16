@@ -15,7 +15,9 @@
 //注意任何需要保存MU8STR而不是临时使用MU8STR的情况下，都必须使用NBT_Type::String保存，而不能使用
 //NBT_Type::String::View保存，否则msvc不会报错但是使得NBT_Type::String::View持有无效地址导致
 //程序崩溃，但是这种情况下gcc和clang都会报错只有msvc不会还能过编译，只能说这是用msvc的福报（大哭）
-#define MU8STR(charLiteralString) (NBT_Type::String::View(U8TOMU8STR(u8##charLiteralString)))
+
+#define MU8STR(charLiteralString) (NBT_Type::String(U8TOMU8STR(u8##charLiteralString)))//初始化静态字符串为NBT_String
+#define MU8STRV(charLiteralString) (NBT_Type::String::View(U8TOMU8STR(u8##charLiteralString)))//初始化静态字符串为NBT_String_View
 
 template <bool bIsConst>
 class NBT_Node_View;
@@ -165,27 +167,27 @@ public:
 		Has开头的类型名函数带参数版本：查找当前Compound是否有特定Name的Tag，并返回此Name的Tag（转换到指定类型）的指针
 	*/
 #define TYPE_GET_FUNC(type)\
-const NBT_Type::##type &Get##type() const\
+const NBT_Type::type &Get##type() const\
 {\
-	return std::get<NBT_Type::##type>(data);\
+	return std::get<NBT_Type::type>(data);\
 }\
 \
-NBT_Type::##type &Get##type()\
+NBT_Type::type &Get##type()\
 {\
-	return std::get<NBT_Type::##type>(data);\
+	return std::get<NBT_Type::type>(data);\
 }\
 \
 bool Is##type() const\
 {\
-	return std::holds_alternative<NBT_Type::##type>(data);\
+	return std::holds_alternative<NBT_Type::type>(data);\
 }\
 \
-friend NBT_Type::##type &Get##type(NBT_Node & node)\
+friend NBT_Type::type &Get##type(NBT_Node & node)\
 {\
 	return node.Get##type();\
 }\
 \
-friend const NBT_Type::##type &Get##type(const NBT_Node & node)\
+friend const NBT_Type::type &Get##type(const NBT_Node & node)\
 {\
 	return node.Get##type();\
 }
