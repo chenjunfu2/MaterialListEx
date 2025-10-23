@@ -246,11 +246,11 @@ if (stBlocks.psBlockName->ends_with(target))
 				}
 				const auto &half = stBlocks.pcpdProperties->GetString(MU8STR("half"));
 
-				if (half == MU8STR("lower"))
+				if (half == MU8STRV("lower"))
 				{
 					stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
 				}
-				//else if (half == MU8STR("upper")){}
+				//else if (half == MU8STRV("upper")){}
 				//else{}
 
 				return true;
@@ -268,11 +268,11 @@ if (stBlocks.psBlockName->ends_with(target))
 				}
 				const auto &part = stBlocks.pcpdProperties->GetString(MU8STR("part"));
 
-				if (part == MU8STR("head"))
+				if (part == MU8STRV("head"))
 				{
 					stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
 				}
-				//else if (part == MU8STR("foot")){}
+				//else if (part == MU8STRV("foot")){}
 				//else{}
 
 				return true;
@@ -284,7 +284,7 @@ if (stBlocks.psBlockName->ends_with(target))
 			FIND("piston")
 			{
 				//判断是不是piston_head
-				if (*stBlocks.psBlockName != MU8STR("minecraft:piston_head"))
+				if (*stBlocks.psBlockName != MU8STRV("minecraft:piston_head"))
 				{
 					stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
 				}
@@ -386,15 +386,15 @@ if (stBlocks.psBlockName->ends_with(target))
 					}
 					const auto &level = stBlocks.pcpdProperties->GetString(MU8STR("level"));
 
-					if (level == MU8STR("1"))
+					if (level == MU8STRV("1"))
 					{
 						stItemsList.emplace_back(MU8STR("minecraft:glass_bottle"), stBlocks.u64Counter * 2);//2个空瓶移除水，剩余1
 					}
-					else if (level == MU8STR("2"))
+					else if (level == MU8STRV("2"))
 					{
 						stItemsList.emplace_back(MU8STR("minecraft:glass_bottle"), stBlocks.u64Counter * 1);//1个空瓶移除水，剩余2
 					}
-					//else if (level == MU8STR("3")){}//0个空瓶移除水，剩余3
+					//else if (level == MU8STRV("3")){}//0个空瓶移除水，剩余3
 					//else{}
 				}
 				break;
@@ -464,26 +464,26 @@ if (stBlocks.psBlockName->ends_with(target))
 
 	static bool CvrtFluid(const BlockStats &stBlocks, ItemProcess::NoTagItemList &stItemsList)//流体
 	{
-		if (*stBlocks.psBlockName == MU8STR("minecraft:water"))
+		if (*stBlocks.psBlockName == MU8STRV("minecraft:water"))
 		{
 			if (stBlocks.pcpdProperties == NULL)
 			{
 				return false;
 			}
-			if (stBlocks.pcpdProperties->GetString(MU8STR("level")) == MU8STR("0"))//是0就是水源
+			if (stBlocks.pcpdProperties->GetString(MU8STR("level")) == MU8STRV("0"))//是0就是水源
 			{
 				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
 			}
 
 			return true;
 		}
-		else if (*stBlocks.psBlockName == MU8STR("minecraft:lava"))
+		else if (*stBlocks.psBlockName == MU8STRV("minecraft:lava"))
 		{
 			if (stBlocks.pcpdProperties == NULL)
 			{
 				return false;
 			}
-			if (stBlocks.pcpdProperties->GetString(MU8STR("level")) == MU8STR("0"))//是0就是岩浆源
+			if (stBlocks.pcpdProperties->GetString(MU8STR("level")) == MU8STRV("0"))//是0就是岩浆源
 			{
 				stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"), stBlocks.u64Counter * 1);
 			}
@@ -503,7 +503,7 @@ if (stBlocks.psBlockName->ends_with(target))
 			{
 				return false;
 			}
-			if (stBlocks.pcpdProperties->GetString(MU8STR("type")) == MU8STR("double"))//转换为2，否则为1
+			if (stBlocks.pcpdProperties->GetString(MU8STR("type")) == MU8STRV("double"))//转换为2，否则为1
 			{
 				stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 2);
 			}
@@ -625,7 +625,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 			for (const auto &it : pSurfaceNameList)
 			{
 				const auto pSurface = stBlocks.pcpdProperties->HasString(it);
-				if (pSurface != NULL && *pSurface == MU8STR("true"))
+				if (pSurface != NULL && *pSurface == MU8STRV("true"))
 				{
 					++u64Counter;
 				}
@@ -669,8 +669,8 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 		{
 			stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1);//插入映射
 			//海带海草必含水，强制处理
-			if (it->second == MU8STR("minecraft:kelp")||
-				it->second == MU8STR("minecraft:seagrass"))
+			if (it->second == MU8STRV("minecraft:kelp")||
+				it->second == MU8STRV("minecraft:seagrass"))
 			{
 				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
 			}
@@ -704,11 +704,11 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 				return false;
 			}
 			const auto &half = stBlocks.pcpdProperties->GetString(MU8STR("half"));
-			if (half == MU8STR("lower"))
+			if (half == MU8STRV("lower"))
 			{
 				stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * 1);
 			}
-			//else if (half == MU8STR("upper")) {}
+			//else if (half == MU8STRV("upper")) {}
 			//else {}
 
 			return true;
@@ -737,18 +737,18 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 		const auto it = mapCropPlant.find(*stBlocks.psBlockName);
 		if (it != mapCropPlant.end())
 		{
-			if (it->second == MU8STR("minecraft:pitcher_pod"))//需要判断原方块的half
+			if (it->second == MU8STRV("minecraft:pitcher_pod"))//需要判断原方块的half
 			{
 				if (stBlocks.pcpdProperties == NULL)
 				{
 					return false;
 				}
 				const auto &half = stBlocks.pcpdProperties->GetString(MU8STR("half"));
-				if (half == MU8STR("lower"))
+				if (half == MU8STRV("lower"))
 				{
 					stItemsList.emplace_back(it->second, stBlocks.u64Counter * 1);
 				}
-				//else if (half == MU8STR("upper")) {}
+				//else if (half == MU8STRV("upper")) {}
 				//else {}
 			}
 			else
@@ -779,7 +779,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 		const auto it = stBlocks.pcpdProperties->HasString(MU8STR("waterlogged"));
 		if (it != NULL)
 		{
-			if (*it == MU8STR("true"))//含水
+			if (*it == MU8STRV("true"))//含水
 			{
 				stItemsList.emplace_back(MU8STR("minecraft:water_bucket"), stBlocks.u64Counter * 1);
 			}

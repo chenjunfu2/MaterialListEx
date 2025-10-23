@@ -252,7 +252,7 @@ private:
 			auto pcpdItems = pcpdBlockEntityTag->Search(MU8STR("Items"));//这里不用HasXXX而是Search是为了不解包出类型，兼容TraversalItems参数
 			TraversalItems(pcpdItems, listItemStack, stItemStack.u64ItemCount, szStackDepth);//获取当前容器的物品个数作为容器内所有物品的倍率
 		}
-		else if (stItemStack.sItemName == MU8STR("minecraft:bundle"))//收纳袋特殊处理
+		else if (stItemStack.sItemName == MU8STRV("minecraft:bundle"))//收纳袋特殊处理
 		{
 			//直接找到Items
 			auto plistItems = stItemStack.cpdItemTag.Search(MU8STR("Items"));//这里不用HasXXX而是Search是为了不解包出类型，兼容TraversalItems参数

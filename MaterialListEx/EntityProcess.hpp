@@ -173,7 +173,7 @@ public:
 
 	static EntitySlot EntityStatsToEntitySlot(const EntityStats &stEntityStats)
 	{
-		if (*stEntityStats.psEntityName == MU8STR("minecraft:item_display"))//跳过
+		if (*stEntityStats.psEntityName == MU8STRV("minecraft:item_display"))//跳过
 		{
 			return {};//空
 		}
