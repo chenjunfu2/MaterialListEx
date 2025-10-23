@@ -11,14 +11,21 @@ class NBT_Print
 #define FMT_STR format_string //MSVC 19.35+、GCC、Clang 等使用标准库版本
 #endif
 
+private:
+	FILE *pfOutput = NULL;
+
 public:
+	NBT_Print(FILE *_pfOutput) :pfOutput(_pfOutput)
+	{}
+	NBT_Print(void) = default;
+
 	template<typename... Args>
 	void operator()(const std::FMT_STR<Args...> fmt, Args&&... args) noexcept
 	{
 		try
 		{
 			auto tmp = std::format(std::move(fmt), std::forward<Args>(args)...);
-			fwrite(tmp.data(), sizeof(tmp.data()[0]), tmp.size(), stderr);
+			fwrite(tmp.data(), sizeof(tmp.data()[0]), tmp.size(), pfOutput);
 		}
 		catch (const std::exception &e)
 		{

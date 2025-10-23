@@ -183,3 +183,5 @@ public:
 		return AutoByteSwap(data);
 	}
 };
+
+#include "Compiler_Define.h"//二次包含取消定义

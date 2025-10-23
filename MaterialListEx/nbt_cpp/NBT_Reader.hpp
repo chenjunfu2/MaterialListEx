@@ -31,6 +31,7 @@ public:
 		using StreamType = T;
 		using ValueType = typename T::value_type;
 		static_assert(sizeof(ValueType) == 1, "Error ValueType Size");
+		static_assert(std::is_trivially_copyable_v<ValueType>, "ValueType Must Be Trivially Copyable");
 
 		//禁止用户使用临时值构造
 		MyInputStream(const T &&_tData, size_t szStartIdx = 0) = delete;
@@ -49,7 +50,7 @@ public:
 			return tData[szIndex];
 		}
 
-		ValueType GetNext() noexcept
+		const ValueType &GetNext() noexcept
 		{
 			return tData[szIndex++];
 		}
@@ -423,7 +424,7 @@ catch(...)\
 		if (!tData.HasAvailData(iElementCount * sizeof(ValueType)))//保证下方调用安全
 		{
 			eRet = Error(OutOfRangeError, tData, funcErrInfo, "{}:\n(Index[{}] + iElementCount[{}] * sizeof(T::value_type)[{}])[{}] > DataSize[{}]", __FUNCTION__,
-				tData.Index(), (size_t)iElementCount, sizeof(ValueType), tData.Index() + (size_t)iElementCount * sizeof(T::value_type), tData.Size());
+				tData.Index(), (size_t)iElementCount, sizeof(ValueType), tData.Index() + (size_t)iElementCount * sizeof(typename T::value_type), tData.Size());
 			STACK_TRACEBACK("HasAvailData Test");
 			return eRet;
 		}
@@ -756,7 +757,7 @@ public:
 	//注意此函数不会清空tCompound，所以可以对一个tCompound通过不同的tData多次调用来读取多个nbt片段并合并到一起
 	//如果指定了szDataStartIndex则会忽略tData中长度为szDataStartIndex的数据
 	template<typename InputStream, typename ErrInfoFunc = NBT_Print>
-	static bool ReadNBT(InputStream IptStream, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{}) noexcept//从data中读取nbt
+	static bool ReadNBT(InputStream IptStream, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept//从data中读取nbt
 	{
 		//输出最大栈深度
 		//printf("Max Stack Depth [%zu]\n", szStackDepth);
@@ -766,7 +767,7 @@ public:
 	}
 
 	template<typename DataType = std::vector<uint8_t>, typename ErrInfoFunc = NBT_Print>
-	static bool ReadNBT(const DataType &tDataInput, size_t szStartIdx, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{}) noexcept//从data中读取nbt
+	static bool ReadNBT(const DataType &tDataInput, size_t szStartIdx, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept//从data中读取nbt
 	{
 		return ReadNBT(MyInputStream<DataType>(tDataInput, szStartIdx), tCompound, szStackDepth, std::move(funcErrInfo));
 	}

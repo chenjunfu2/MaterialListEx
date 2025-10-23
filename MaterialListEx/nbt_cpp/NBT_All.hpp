@@ -13,10 +13,10 @@
 前提是安装了宏定义需求的库
 
 目前的可选接口有：
-#define USE_GZIPZLIB//安装gzip与zlib库
-#define USE_XXHASH//安装xxhash库
+#define USE_ZLIB//安装zlib库的情况下
+#define USE_XXHASH//安装xxhash库的情况下
 
 解锁的功能有：
-nbt解压
-nbt哈希
+NBT_IO中的nbt压缩
+NBT_Helper中的nbt哈希
 */

@@ -1,4 +1,4 @@
-﻿#pragma once
+﻿//此头文件不带防止重复包含的逻辑，方便二次包含取消定义防止宏名称空间污染
 
 //必须没有提前定义过任何此类宏
 #if !defined(__COMPILER_MSVC__) &&\
@@ -26,4 +26,9 @@
 	#else
 		#define __COMPILER_NAME__ "Unknown"
 	#endif
+
+#else//如果已经定义，那么头文件是第二次被包含，删除定义
+	#undef __COMPILER_MSVC__
+	#undef __COMPILER_GCC__
+	#undef __COMPILER_CLANG__
 #endif

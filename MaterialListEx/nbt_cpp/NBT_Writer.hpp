@@ -9,6 +9,7 @@
 #include <string.h>//memcpy
 #include <utility>//std::move
 #include <type_traits>//类型约束
+#include <algorithm>//std::sort
 
 #include "NBT_Print.hpp"//打印输出
 #include "NBT_Node.hpp"//nbt类型
@@ -30,6 +31,7 @@ public:
 		using StreamType = T;
 		using ValueType = typename T::value_type;
 		static_assert(sizeof(ValueType) == 1, "Error ValueType Size");
+		static_assert(std::is_trivially_copyable_v<ValueType>, "ValueType Must Be Trivially Copyable");
 
 		//引用天生无法使用临时值构造，无需担心临时值构造导致的悬空引用
 		MyOutputStream(T &_tData, size_t szStartIdx = 0) :tData(_tData)
@@ -412,16 +414,61 @@ catch(...)\
 	}
 
 	//如果是非根部，不会输出额外的Compound_End
-	template<bool bRoot, typename OutputStream, typename ErrInfoFunc>
+	template<bool bRoot, bool bSortCompound, typename OutputStream, typename ErrInfoFunc>
 	static ErrCode PutCompoundType(OutputStream &tData, const NBT_Type::Compound &tCompound, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
 		
+		using IterableRangeType = typename std::conditional_t<bSortCompound, std::vector<NBT_Type::Compound::const_iterator>, const NBT_Type::Compound &>;
+
+		//通过模板bSortCompound指定是否执行排序输出（nbt中仅compound是无序结构）
+		IterableRangeType tmpIterableRange =//万能引用推导类型
+		[&](void) -> IterableRangeType
+		{
+			if constexpr (bSortCompound)
+			{
+				IterableRangeType vSort{};
+				vSort.reserve(tCompound.size());//提前扩容
+
+				//插入迭代器
+				for (auto it = tCompound.cbegin(), end = tCompound.cend(); it != end; ++it)
+				{
+					vSort.push_back(it);
+				}
+
+				//进行排序
+				std::sort(vSort.begin(), vSort.end(),
+					[](const auto &l, const auto &r) -> bool
+					{
+						return l->first < r->first;
+					}
+				);
+
+				return vSort;
+			}
+			else
+			{
+				return tCompound;
+			}
+		}();
+
 		//注意compound是为数不多的没有元素数量限制的结构
 		//此处无需检查大小，且无需写出大小
-		for (const auto &[sName, nodeNbt] : tCompound)
+		for (const auto &it: tmpIterableRange)
 		{
+			const auto &[sName, nodeNbt] = [&](void) -> const auto &
+			{
+				if constexpr (bSortCompound)
+				{
+					return *it;
+				}
+				else
+				{
+					return it;
+				}
+			}();
+
 			NBT_TAG curTag = nodeNbt.GetTag();
 
 			//集合中如果存在nbt end类型的元素，删除而不输出
@@ -450,7 +497,7 @@ catch(...)\
 			}
 
 			//最后根据tag类型写出数据
-			eRet = PutSwitch(tData, nodeNbt, curTag, szStackDepth - 1, funcErrInfo);
+			eRet = PutSwitch<bSortCompound>(tData, nodeNbt, curTag, szStackDepth - 1, funcErrInfo);
 			if (eRet != AllOk)
 			{
 				STACK_TRACEBACK("PutSwitch Fail, Name: \"{}\", Type: [NBT_Type::{}]",
@@ -488,7 +535,7 @@ catch(...)\
 		return eRet;
 	}
 
-	template<typename OutputStream, typename ErrInfoFunc>
+	template<bool bSortCompound, typename OutputStream, typename ErrInfoFunc>
 	static ErrCode PutListType(OutputStream &tData, const NBT_Type::List &tList, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -556,7 +603,7 @@ catch(...)\
 
 			//一致，很好，那么输出
 			//列表无名字，无需重复tag，只需输出数据
-			eRet = PutSwitch(tData, tmpNode, enListElementTag, szStackDepth - 1, funcErrInfo);
+			eRet = PutSwitch<bSortCompound>(tData, tmpNode, enListElementTag, szStackDepth - 1, funcErrInfo);
 			if (eRet != AllOk)
 			{
 				STACK_TRACEBACK("PutSwitch Error, Size: [{}] Index: [{}]", iListLength, i);
@@ -567,7 +614,7 @@ catch(...)\
 		return eRet;
 	}
 
-	template<typename OutputStream, typename ErrInfoFunc>
+	template<bool bSortCompound, typename OutputStream, typename ErrInfoFunc>
 	static ErrCode PutSwitch(OutputStream &tData, const NBT_Node &nodeNbt, NBT_TAG tagNbt, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -625,13 +672,13 @@ catch(...)\
 		case NBT_TAG::List://可能递归，需要处理szStackDepth
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::List>;
-				eRet = PutListType(tData, nodeNbt.GetData<CurType>(), szStackDepth, funcErrInfo);
+				eRet = PutListType<bSortCompound>(tData, nodeNbt.GetData<CurType>(), szStackDepth, funcErrInfo);
 			}
 			break;
 		case NBT_TAG::Compound://可能递归，需要处理szStackDepth
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Compound>;
-				eRet = PutCompoundType<false>(tData, nodeNbt.GetData<CurType>(), szStackDepth, funcErrInfo);
+				eRet = PutCompoundType<false, bSortCompound>(tData, nodeNbt.GetData<CurType>(), szStackDepth, funcErrInfo);
 			}
 			break;
 		case NBT_TAG::IntArray:
@@ -671,20 +718,20 @@ catch(...)\
 public:
 	//输出到tData中，部分功能和原理参照ReadNBT处的注释，szDataStartIndex在此处可以对一个tData通过不同的tCompound和szDataStartIndex = tData.size()
 	//来调用以达到把多个不同的nbt输出到同一个tData内的功能
-	template<typename OutputStream, typename ErrInfoFunc = NBT_Print>
-	static bool WriteNBT(OutputStream OptStream, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{}) noexcept
+	template<bool bSortCompound = true, typename OutputStream, typename ErrInfoFunc = NBT_Print>
+	static bool WriteNBT(OutputStream OptStream, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept
 	{
 		//输出最大栈深度
 		//printf("Max Stack Depth [%zu]\n", szStackDepth);
 
 		//开始递归输出
-		return PutCompoundType<true>(OptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;
+		return PutCompoundType<true, bSortCompound>(OptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;
 	}
 
-	template<typename DataType = std::vector<uint8_t>, typename ErrInfoFunc = NBT_Print>
-	static bool WriteNBT(DataType &tDataOutput, size_t szStartIdx, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{}) noexcept
+	template<bool bSortCompound = true, typename DataType = std::vector<uint8_t>, typename ErrInfoFunc = NBT_Print>
+	static bool WriteNBT(DataType &tDataOutput, size_t szStartIdx, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept
 	{
-		return WriteNBT(MyOutputStream<DataType>(tDataOutput, szStartIdx), tCompound, szStackDepth, std::move(funcErrInfo));
+		return WriteNBT<bSortCompound>(MyOutputStream<DataType>(tDataOutput, szStartIdx), tCompound, szStackDepth, std::move(funcErrInfo));
 	}
 
 

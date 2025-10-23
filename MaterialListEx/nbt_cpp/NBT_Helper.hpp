@@ -2,6 +2,8 @@
 
 #include <bit>
 #include <concepts>
+#include <iterator>
+#include <algorithm>
 
 #include "NBT_Print.hpp"//打印输出
 #include "NBT_Node.hpp"
@@ -17,22 +19,23 @@ class NBT_Helper
 	~NBT_Helper() = delete;
 
 public:
-	template<typename PrintFunc = NBT_Print>
-	static void Print(const NBT_Node_View<true> nRoot, PrintFunc funcPrint = NBT_Print{}, bool bPadding = true, bool bNewLine = true)
+	template<bool bSortCompound = true, typename PrintFunc = NBT_Print>
+	static void Print(const NBT_Node_View<true> nRoot, PrintFunc funcPrint = NBT_Print{ stdout }, bool bPadding = true, bool bNewLine = true)
 	{
 		size_t szLevelStart = bPadding ? 0 : (size_t)-1;//跳过打印
 
-		PrintSwitch(nRoot, 0, funcPrint);
+		PrintSwitch<true, bSortCompound>(nRoot, szLevelStart, funcPrint);
 		if (bNewLine)
 		{
 			funcPrint("\n");
 		}
 	}
 
+	template<bool bSortCompound = true>
 	static std::string Serialize(const NBT_Node_View<true> nRoot)
 	{
 		std::string sRet{};
-		SerializeSwitch(nRoot, sRet);
+		SerializeSwitch<true, bSortCompound>(nRoot, sRet);
 		return sRet;
 	}
 
@@ -44,11 +47,11 @@ public:
 
 	using DefaultFuncType = std::decay_t<decltype(DefaultFunc)>;
 
-	template<typename TB = DefaultFuncType, typename TA = DefaultFuncType>//两个函数，分别在前后调用，可以用于插入哈希数据
+	template<bool bSortCompound = true, typename TB = DefaultFuncType, typename TA = DefaultFuncType>//两个函数，分别在前后调用，可以用于插入哈希数据
 	static NBT_Hash::HASH_T Hash(const NBT_Node_View<true> nRoot, NBT_Hash nbtHash, TB funBefore = DefaultFunc, TA funAfter = DefaultFunc)
 	{
 		funBefore(nbtHash);
-		HashSwitch(nRoot, nbtHash);
+		HashSwitch<true, bSortCompound>(nRoot, nbtHash);
 		funAfter(nbtHash);
 
 		return nbtHash.Digest();
@@ -60,6 +63,28 @@ public:
 #endif
 
 private:
+	static auto CompoundSort(const NBT_Type::Compound &cpd)
+	{
+		std::vector<NBT_Type::Compound::const_iterator> vSort{};
+		vSort.reserve(cpd.size());//提前扩容
+
+		//插入迭代器
+		for (auto it = cpd.cbegin(), end = cpd.cend(); it != end; ++it)
+		{
+			vSort.push_back(it);
+		}
+
+		//进行排序
+		std::sort(vSort.begin(), vSort.end(),
+			[](const auto &l, const auto &r) -> bool
+			{
+				return l->first < r->first;
+			}
+		);
+
+		return vSort;
+	}
+
 	constexpr const static inline char *const LevelPadding = "    ";//默认对齐
 
 	template<typename PrintFunc>
@@ -86,152 +111,6 @@ private:
 		}
 	}
 
-	//首次调用默认为true，二次调用开始内部主动变为false
-	template<bool bRoot = true, typename PrintFunc = NBT_Print>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
-	static void PrintSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, size_t szLevel, PrintFunc &funcPrint)
-	{
-		auto tag = nRoot.GetTag();
-		switch (tag)
-		{
-		case NBT_TAG::End:
-			{
-				funcPrint("[End]");
-			}
-			break;
-		case NBT_TAG::Byte:
-			{
-				funcPrint("{}B", nRoot.GetData<NBT_Type::Byte>());
-			}
-			break;
-		case NBT_TAG::Short:
-			{
-				funcPrint("{}S", nRoot.GetData<NBT_Type::Short>());
-			}
-			break;
-		case NBT_TAG::Int:
-			{
-				funcPrint("{}I", nRoot.GetData<NBT_Type::Int>());
-			}
-			break;
-		case NBT_TAG::Long:
-			{
-				funcPrint("{}L", nRoot.GetData<NBT_Type::Long>());
-			}
-			break;
-		case NBT_TAG::Float:
-			{
-				funcPrint("{}F", nRoot.GetData<NBT_Type::Float>());
-			}
-			break;
-		case NBT_TAG::Double:
-			{
-				funcPrint("{}D", nRoot.GetData<NBT_Type::Double>());
-			}
-			break;
-		case NBT_TAG::ByteArray:
-			{
-				const auto &arr = nRoot.GetData<NBT_Type::ByteArray>();
-				funcPrint("[B;");
-				for (const auto &it : arr)
-				{
-					funcPrint("{},", it);
-				}
-				if (arr.size() != 0)
-				{
-					funcPrint("\b");
-				}
-
-				funcPrint("]");
-			}
-			break;
-		case NBT_TAG::IntArray:
-			{
-				const auto &arr = nRoot.GetData<NBT_Type::IntArray>();
-				funcPrint("[I;");
-				for (const auto &it : arr)
-				{
-					funcPrint("{},", it);
-				}
-
-				if (arr.size() != 0)
-				{
-					funcPrint("\b");
-				}
-				funcPrint("]");
-			}
-			break;
-		case NBT_TAG::LongArray:
-			{
-				const auto &arr = nRoot.GetData<NBT_Type::LongArray>();
-				funcPrint("[L;");
-				for (const auto &it : arr)
-				{
-					funcPrint("{},", it);
-				}
-
-				if (arr.size() != 0)
-				{
-					funcPrint("\b");
-				}
-				funcPrint("]");
-			}
-			break;
-		case NBT_TAG::String:
-			{
-				funcPrint("\"{}\"", nRoot.GetData<NBT_Type::String>().ToCharTypeUTF8());
-			}
-			break;
-		case NBT_TAG::List://需要打印缩进的地方
-			{
-				const auto &list = nRoot.GetData<NBT_Type::List>();
-				PrintPadding(szLevel, false, !bRoot, funcPrint);//不是根部则打印开头换行
-				funcPrint("[");
-				for (const auto &it : list)
-				{
-					PrintPadding(szLevel, true, it.GetTag() != NBT_TAG::Compound && it.GetTag() != NBT_TAG::List, funcPrint);
-					PrintSwitch<false>(it, szLevel + 1, funcPrint);
-					funcPrint(",");
-				}
-
-				if (list.Size() != 0)
-				{
-					funcPrint("\b \b");//清除最后一个逗号
-					PrintPadding(szLevel, false, true, funcPrint);//空列表无需换行以及对齐
-				}
-				funcPrint("]");
-			}
-			break;
-		case NBT_TAG::Compound://需要打印缩进的地方
-			{
-				const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
-				PrintPadding(szLevel, false, !bRoot, funcPrint);//不是根部则打印开头换行
-				funcPrint("{{");//大括号转义
-
-				for (const auto &it : cpd)
-				{
-					PrintPadding(szLevel, true, true, funcPrint);
-					funcPrint("\"{}\":", it.first.ToCharTypeUTF8());
-					PrintSwitch<false>(it.second, szLevel + 1, funcPrint);
-					funcPrint(",");
-				}
-
-				if (cpd.Size() != 0)
-				{
-					funcPrint("\b \b");//清除最后一个逗号
-					PrintPadding(szLevel, false, true, funcPrint);//空集合无需换行以及对齐
-				}
-				funcPrint("}}");//大括号转义
-			}
-			break;
-		default:
-			{
-				funcPrint("[Unknown NBT Tag Type [{:02X}({})]]", (NBT_TAG_RAW_TYPE)tag, (NBT_TAG_RAW_TYPE)tag);
-			}
-			break;
-		}
-	}
-
-private:
 	template<typename T>
 	static void ToHexString(const T &value, std::string &result)
 	{
@@ -258,8 +137,169 @@ private:
 		}
 	}
 
+private:
 	//首次调用默认为true，二次调用开始内部主动变为false
-	template<bool bRoot = true>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+	template<bool bRoot = true, bool bSortCompound = true, typename PrintFunc = NBT_Print>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+	static void PrintSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, size_t szLevel, PrintFunc &funcPrint)
+	{
+		auto tag = nRoot.GetTag();
+		switch (tag)
+		{
+		case NBT_TAG::End:
+			{
+				funcPrint("[End]");
+			}
+			break;
+		case NBT_TAG::Byte:
+			{
+				funcPrint("{}B", nRoot.template GetData<NBT_Type::Byte>());
+			}
+			break;
+		case NBT_TAG::Short:
+			{
+				funcPrint("{}S", nRoot.template GetData<NBT_Type::Short>());
+			}
+			break;
+		case NBT_TAG::Int:
+			{
+				funcPrint("{}I", nRoot.template GetData<NBT_Type::Int>());
+			}
+			break;
+		case NBT_TAG::Long:
+			{
+				funcPrint("{}L", nRoot.template GetData<NBT_Type::Long>());
+			}
+			break;
+		case NBT_TAG::Float:
+			{
+				funcPrint("{}F", nRoot.template GetData<NBT_Type::Float>());
+			}
+			break;
+		case NBT_TAG::Double:
+			{
+				funcPrint("{}D", nRoot.template GetData<NBT_Type::Double>());
+			}
+			break;
+		case NBT_TAG::ByteArray:
+			{
+				const auto &arr = nRoot.template GetData<NBT_Type::ByteArray>();
+				funcPrint("[B;");
+				for (const auto &it : arr)
+				{
+					funcPrint("{},", it);
+				}
+				if (arr.size() != 0)
+				{
+					funcPrint("\b");
+				}
+
+				funcPrint("]");
+			}
+			break;
+		case NBT_TAG::IntArray:
+			{
+				const auto &arr = nRoot.template GetData<NBT_Type::IntArray>();
+				funcPrint("[I;");
+				for (const auto &it : arr)
+				{
+					funcPrint("{},", it);
+				}
+
+				if (arr.size() != 0)
+				{
+					funcPrint("\b");
+				}
+				funcPrint("]");
+			}
+			break;
+		case NBT_TAG::LongArray:
+			{
+				const auto &arr = nRoot.template GetData<NBT_Type::LongArray>();
+				funcPrint("[L;");
+				for (const auto &it : arr)
+				{
+					funcPrint("{},", it);
+				}
+
+				if (arr.size() != 0)
+				{
+					funcPrint("\b");
+				}
+				funcPrint("]");
+			}
+			break;
+		case NBT_TAG::String:
+			{
+				funcPrint("\"{}\"", nRoot.template GetData<NBT_Type::String>().ToCharTypeUTF8());
+			}
+			break;
+		case NBT_TAG::List://需要打印缩进的地方
+			{
+				const auto &list = nRoot.template GetData<NBT_Type::List>();
+				PrintPadding(szLevel, false, !bRoot, funcPrint);//不是根部则打印开头换行
+				funcPrint("[");
+				for (const auto &it : list)
+				{
+					PrintPadding(szLevel, true, it.GetTag() != NBT_TAG::Compound && it.GetTag() != NBT_TAG::List, funcPrint);
+					PrintSwitch<false>(it, szLevel + 1, funcPrint);
+					funcPrint(",");
+				}
+
+				if (list.Size() != 0)
+				{
+					funcPrint("\b \b");//清除最后一个逗号
+					PrintPadding(szLevel, false, true, funcPrint);//空列表无需换行以及对齐
+				}
+				funcPrint("]");
+			}
+			break;
+		case NBT_TAG::Compound://需要打印缩进的地方
+			{
+				const auto &cpd = nRoot.template GetData<NBT_Type::Compound>();
+				PrintPadding(szLevel, false, !bRoot, funcPrint);//不是根部则打印开头换行
+				funcPrint("{{");//大括号转义
+
+				if constexpr (!bSortCompound)
+				{
+					for (const auto &it : cpd)
+					{
+						PrintPadding(szLevel, true, true, funcPrint);
+						funcPrint("\"{}\":", it.first.ToCharTypeUTF8());
+						PrintSwitch<false>(it.second, szLevel + 1, funcPrint);
+						funcPrint(",");
+					}
+				}
+				else
+				{
+					auto vSort = CompoundSort(cpd);
+
+					for (const auto &it : vSort)
+					{
+						PrintPadding(szLevel, true, true, funcPrint);
+						funcPrint("\"{}\":", it->first.ToCharTypeUTF8());
+						PrintSwitch<false>(it->second, szLevel + 1, funcPrint);
+						funcPrint(",");
+					}
+				}
+
+				if (cpd.Size() != 0)
+				{
+					funcPrint("\b \b");//清除最后一个逗号
+					PrintPadding(szLevel, false, true, funcPrint);//空集合无需换行以及对齐
+				}
+				funcPrint("}}");//大括号转义
+			}
+			break;
+		default:
+			{
+				funcPrint("[Unknown NBT Tag Type [{:02X}({})]]", (NBT_TAG_RAW_TYPE)tag, (NBT_TAG_RAW_TYPE)tag);
+			}
+			break;
+		}
+	}
+
+	//首次调用默认为true，二次调用开始内部主动变为false
+	template<bool bRoot = true, bool bSortCompound = true>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
 	static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, std::string &sRet)
 	{
 		auto tag = nRoot.GetTag();
@@ -272,43 +312,43 @@ private:
 			break;
 		case NBT_TAG::Byte:
 			{
-				ToHexString(nRoot.GetData<NBT_Type::Byte>(), sRet);
+				ToHexString(nRoot.template GetData<NBT_Type::Byte>(), sRet);
 				sRet += 'B';
 			}
 			break;
 		case NBT_TAG::Short:
 			{
-				ToHexString(nRoot.GetData<NBT_Type::Short>(), sRet);
+				ToHexString(nRoot.template GetData<NBT_Type::Short>(), sRet);
 				sRet += 'S';
 			}
 			break;
 		case NBT_TAG::Int:
 			{
-				ToHexString(nRoot.GetData<NBT_Type::Int>(), sRet);
+				ToHexString(nRoot.template GetData<NBT_Type::Int>(), sRet);
 				sRet += 'I';
 			}
 			break;
 		case NBT_TAG::Long:
 			{
-				ToHexString(nRoot.GetData<NBT_Type::Long>(), sRet);
+				ToHexString(nRoot.template GetData<NBT_Type::Long>(), sRet);
 				sRet += 'L';
 			}
 			break;
 		case NBT_TAG::Float:
 			{
-				ToHexString(nRoot.GetData<NBT_Type::Float>(), sRet);
+				ToHexString(nRoot.template GetData<NBT_Type::Float>(), sRet);
 				sRet += 'F';
 			}
 			break;
 		case NBT_TAG::Double:
 			{
-				ToHexString(nRoot.GetData<NBT_Type::Double>(), sRet);
+				ToHexString(nRoot.template GetData<NBT_Type::Double>(), sRet);
 				sRet += 'D';
 			}
 			break;
 		case NBT_TAG::ByteArray:
 			{
-				const auto &arr = nRoot.GetData<NBT_Type::ByteArray>();
+				const auto &arr = nRoot.template GetData<NBT_Type::ByteArray>();
 				sRet += "[B;";
 				for (const auto &it : arr)
 				{
@@ -325,7 +365,7 @@ private:
 			break;
 		case NBT_TAG::IntArray:
 			{
-				const auto &arr = nRoot.GetData<NBT_Type::IntArray>();
+				const auto &arr = nRoot.template GetData<NBT_Type::IntArray>();
 				sRet += "[I;";
 				for (const auto &it : arr)
 				{
@@ -342,7 +382,7 @@ private:
 			break;
 		case NBT_TAG::LongArray:
 			{
-				const auto &arr = nRoot.GetData<NBT_Type::LongArray>();
+				const auto &arr = nRoot.template GetData<NBT_Type::LongArray>();
 				sRet += "[L;";
 				for (const auto &it : arr)
 				{
@@ -360,13 +400,13 @@ private:
 		case NBT_TAG::String:
 			{
 				sRet += '\"';
-				sRet += nRoot.GetData<NBT_Type::String>().ToCharTypeUTF8();
+				sRet += nRoot.template GetData<NBT_Type::String>().ToCharTypeUTF8();
 				sRet += '\"';
 			}
 			break;
 		case NBT_TAG::List:
 			{
-				const auto &list = nRoot.GetData<NBT_Type::List>();
+				const auto &list = nRoot.template GetData<NBT_Type::List>();
 				sRet += '[';
 				for (const auto &it : list)
 				{
@@ -383,16 +423,32 @@ private:
 			break;
 		case NBT_TAG::Compound://需要打印缩进的地方
 			{
-				const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
+				const auto &cpd = nRoot.template GetData<NBT_Type::Compound>();
 				sRet += '{';
 	
-				for (const auto &it : cpd)
+				if constexpr (!bSortCompound)
 				{
-					sRet += '\"';
-					sRet += it.first.ToCharTypeUTF8();
-					sRet += "\":";
-					SerializeSwitch<false>(it.second, sRet);
-					sRet += ',';
+					for (const auto &it : cpd)
+					{
+						sRet += '\"';
+						sRet += it.first.ToCharTypeUTF8();
+						sRet += "\":";
+						SerializeSwitch<false>(it.second, sRet);
+						sRet += ',';
+					}
+				}
+				else
+				{
+					auto vSort = CompoundSort(cpd);
+
+					for (const auto &it : vSort)
+					{
+						sRet += '\"';
+						sRet += it->first.ToCharTypeUTF8();
+						sRet += "\":";
+						SerializeSwitch<false>(it->second, sRet);
+						sRet += ',';
+					}
 				}
 	
 				if (cpd.Size() != 0)
@@ -413,7 +469,7 @@ private:
 	}
 
 #ifdef USE_XXHASH
-	template<bool bRoot = true>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+	template<bool bRoot = true, bool bSortCompound = true>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
 	static void HashSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, NBT_Hash &nbtHash)
 	{
 		auto tag = nRoot.GetTag();
@@ -434,43 +490,43 @@ private:
 			break;
 		case NBT_TAG::Byte:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Type::Byte>();
+				const auto &tmp = nRoot.template GetData<NBT_Type::Byte>();
 				nbtHash.Update(tmp);
 			}
 			break;
 		case NBT_TAG::Short:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Type::Short>();
+				const auto &tmp = nRoot.template GetData<NBT_Type::Short>();
 				nbtHash.Update(tmp);
 			}
 			break;
 		case NBT_TAG::Int:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Type::Int>();
+				const auto &tmp = nRoot.template GetData<NBT_Type::Int>();
 				nbtHash.Update(tmp);
 			}
 			break;
 		case NBT_TAG::Long:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Type::Long>();
+				const auto &tmp = nRoot.template GetData<NBT_Type::Long>();
 				nbtHash.Update(tmp);
 			}
 			break;
 		case NBT_TAG::Float:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Type::Float>();
+				const auto &tmp = nRoot.template GetData<NBT_Type::Float>();
 				nbtHash.Update(tmp);
 			}
 			break;
 		case NBT_TAG::Double:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Type::Double>();
+				const auto &tmp = nRoot.template GetData<NBT_Type::Double>();
 				nbtHash.Update(tmp);
 			}
 			break;
 		case NBT_TAG::ByteArray:
 			{
-				const auto &arr = nRoot.GetData<NBT_Type::ByteArray>();
+				const auto &arr = nRoot.template GetData<NBT_Type::ByteArray>();
 				for (const auto &it : arr)
 				{
 					const auto &tmp = it;
@@ -480,7 +536,7 @@ private:
 			break;
 		case NBT_TAG::IntArray:
 			{
-				const auto &arr = nRoot.GetData<NBT_Type::IntArray>();
+				const auto &arr = nRoot.template GetData<NBT_Type::IntArray>();
 				for (const auto &it : arr)
 				{
 					const auto &tmp = it;
@@ -490,7 +546,7 @@ private:
 			break;
 		case NBT_TAG::LongArray:
 			{
-				const auto &arr = nRoot.GetData<NBT_Type::LongArray>();
+				const auto &arr = nRoot.template GetData<NBT_Type::LongArray>();
 				for (const auto &it : arr)
 				{
 					const auto &tmp = it;
@@ -500,13 +556,13 @@ private:
 			break;
 		case NBT_TAG::String:
 			{
-				const auto &tmp = nRoot.GetData<NBT_Type::String>();
+				const auto &tmp = nRoot.template GetData<NBT_Type::String>();
 				nbtHash.Update(tmp.data(), tmp.size());
 			}
 			break;
 		case NBT_TAG::List:
 			{
-				const auto &list = nRoot.GetData<NBT_Type::List>();
+				const auto &list = nRoot.template GetData<NBT_Type::List>();
 				for (const auto &it : list)
 				{
 					HashSwitch<false>(it, nbtHash);
@@ -515,12 +571,28 @@ private:
 			break;
 		case NBT_TAG::Compound://需要打印缩进的地方
 			{
-				const auto &cpd = nRoot.GetData<NBT_Type::Compound>();
-				for (const auto &it : cpd)
+				const auto &cpd = nRoot.template GetData<NBT_Type::Compound>();
+
+				if constexpr (!bSortCompound)
 				{
-					const auto &tmp = it.first;
-					nbtHash.Update(tmp.data(), tmp.size());
-					HashSwitch<false>(it.second, nbtHash);
+					for (const auto &it : cpd)
+					{
+						const auto &tmp = it.first;
+						nbtHash.Update(tmp.data(), tmp.size());
+						HashSwitch<false>(it.second, nbtHash);
+					}
+				}
+				else//对compound迭代器进行排序，以使得hash获得一致性结果
+				{
+					auto vSort = CompoundSort(cpd);
+
+					//遍历有序结构
+					for (const auto &it : vSort)
+					{
+						const auto &tmp = it->first;
+						nbtHash.Update(tmp.data(), tmp.size());
+						HashSwitch<false>(it->second, nbtHash);
+					}
 				}
 			}
 			break;

@@ -200,20 +200,21 @@ public:
 		static_assert(IsValidType_V<T> && std::is_integral_v<T>, "Not a legal type!");//抛出编译错误
 	};
 
-	template<>
-	struct BuiltinRawType<Float>//浮点数映射
-	{
-		using Type = Float_Raw;
-		static_assert(sizeof(Type) == sizeof(Float), "Type size does not match!");
-	};
-
-	template<>
-	struct BuiltinRawType<Double>//浮点数映射
-	{
-		using Type = Double_Raw;
-		static_assert(sizeof(Type) == sizeof(Double), "Type size does not match!");
-	};
-
 	template<typename T>
 	using BuiltinRawType_T = typename BuiltinRawType<T>::Type;
+};
+
+//显示特化
+template<>
+struct NBT_Type::BuiltinRawType<NBT_Type::Float>//浮点数映射
+{
+	using Type = Float_Raw;
+	static_assert(sizeof(Type) == sizeof(Float), "Type size does not match!");
+};
+
+template<>
+struct NBT_Type::BuiltinRawType<NBT_Type::Double>//浮点数映射
+{
+	using Type = Double_Raw;
+	static_assert(sizeof(Type) == sizeof(Double), "Type size does not match!");
 };

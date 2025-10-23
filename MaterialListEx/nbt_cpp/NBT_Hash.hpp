@@ -21,8 +21,11 @@ public:
 
 	~NBT_Hash(void)
 	{
-		XXH64_freeState(pHashState);
-		pHashState = nullptr;
+		if (pHashState != nullptr)
+		{
+			XXH64_freeState(pHashState);
+			pHashState = nullptr;
+		}
 	}
 
 	NBT_Hash(const NBT_Hash &_Copy) = delete;
@@ -31,11 +34,12 @@ public:
 		_Move.pHashState = nullptr;
 	}
 
-	NBT_Hash operator=(const NBT_Hash &) = delete;
-	NBT_Hash operator=(NBT_Hash &&_Move) noexcept
+	NBT_Hash &operator=(const NBT_Hash &) = delete;
+	NBT_Hash &operator=(NBT_Hash &&_Move) noexcept
 	{
 		pHashState = _Move.pHashState;
 		_Move.pHashState = nullptr;
+		return *this;
 	}
 
 	HASH_T Digest(void)
@@ -49,12 +53,14 @@ public:
 	}
 
 	template<typename T>
+	requires(std::is_trivially_copyable_v<T>)
 	void Update(const T &tData)
 	{
 		Update(&tData, sizeof(tData));
 	}
 
 	template<typename T, size_t S>
+	requires(std::is_trivially_copyable_v<T>)
 	void Update(const T(&tData)[S])
 	{
 		Update(&tData, sizeof(tData));
@@ -67,12 +73,14 @@ public:
 	}
 
 	template<typename T>
+	requires(std::is_trivially_copyable_v<T>)
 	static HASH_T Hash(const T &tData, HASH_T tHashSeed)
 	{
 		return Hash(&tData, sizeof(tData), tHashSeed);
 	}
 
 	template<typename T, size_t S>
+	requires(std::is_trivially_copyable_v<T>)
 	static HASH_T Hash(const T(&tData)[S], HASH_T tHashSeed)
 	{
 		return Hash(&tData, sizeof(tData), tHashSeed);

@@ -7,15 +7,17 @@
 
 class NBT_Reader;
 class NBT_Writer;
+class NBT_Helper;
 
 template<typename String, typename StringView>
 class MyString;
 
-template<typename StringView>
+template<typename String, typename StringView>
 class MyStringView : public StringView
 {
 	friend class NBT_Reader;
 	friend class NBT_Writer;
+	friend class NBT_Helper;
 
 private:
 	static constexpr size_t CalcStringViewSize(const typename StringView::value_type *ltrStr, size_t N)
@@ -50,7 +52,6 @@ public:
 	constexpr MyStringView(const std::array<typename StringView::value_type, N> &strArray) : StringView(strArray.data(), strArray.size())
 	{}
 
-	template<typename String, typename StringView>
 	constexpr explicit MyStringView(const MyString<String, StringView> &myString) : StringView(myString.data(), myString.size())//允许从string显示构造view
 	{}
 };
@@ -61,6 +62,9 @@ class MyString :public String//暂时不考虑保护继承
 {
 	friend class NBT_Reader;
 	friend class NBT_Writer;
+	friend class NBT_Helper;
+
+	static_assert(sizeof(typename std::string::value_type) == sizeof(typename String::value_type), "Size error");
 	
 private:
 	static constexpr size_t CalcStringSize(const typename String::value_type *ltrStr, size_t N)
@@ -86,7 +90,7 @@ private:
 
 public:
 	//view类型
-	using View = MyStringView<StringView>;
+	using View = MyStringView<String, StringView>;
 
 	//继承基类构造
 	using String::String;
@@ -125,17 +129,17 @@ public:
 
 	void FromCharTypeUTF8(std::basic_string_view<char> u8String)
 	{
-		*this = std::move(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u8String));//char8_t改为char
+		String::operator=(std::move(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u8String)));//char8_t改为char
 	}
 
 	void FromUTF8(std::basic_string_view<char8_t> u8String)
 	{
-		*this = std::move(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U8ToMU8(u8String));
+		String::operator=(std::move(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U8ToMU8(u8String)));
 	}
 
 	void FromUTF16(std::basic_string_view<char16_t> u16String)
 	{
-		*this = std::move(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U16ToMU8(u16String));
+		String::operator=(std::move(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U16ToMU8(u16String)));
 	}
 };
 
@@ -148,7 +152,7 @@ namespace std
 	{
 		size_t operator()(const MyString<T, StringView> &s) const noexcept
 		{
-			return std::hash<T>{}(s);
+			return std::hash<std::basic_string_view<char>>{}(s.GetCharTypeView());
 		}
 	};
 }

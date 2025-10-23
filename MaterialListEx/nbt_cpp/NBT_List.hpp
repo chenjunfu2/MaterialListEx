@@ -10,12 +10,14 @@
 
 class NBT_Reader;
 class NBT_Writer;
+class NBT_Helper;
 
 template <typename List>
 class MyList :protected List
 {
 	friend class NBT_Reader;
 	friend class NBT_Writer;
+	friend class NBT_Helper;
 
 private:
 	//列表元素类型（只能一种元素）
@@ -41,7 +43,7 @@ private:
 	template<typename V>
 	bool TestAndSetType(const V &vTagVal)
 	{
-		if constexpr (std::is_same_v<std::decay_t<V>, List::value_type>)
+		if constexpr (std::is_same_v<std::decay_t<V>, typename List::value_type>)
 		{
 			return TestTagAndSetType(vTagVal.GetTag());
 		}

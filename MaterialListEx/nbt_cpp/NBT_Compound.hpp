@@ -9,6 +9,7 @@
 
 class NBT_Reader;
 class NBT_Writer;
+class NBT_Helper;
 
 template <typename T>
 concept HasSpaceship = requires(const T & a, const T & b)
@@ -30,6 +31,7 @@ class MyCompound :protected Compound//Compound is Map
 {
 	friend class NBT_Reader;
 	friend class NBT_Writer;
+	friend class NBT_Helper;
 
 private:
 	//总是允许插入nbt end，但是在写出文件时会忽略end类型
