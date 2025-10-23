@@ -227,7 +227,7 @@ bool Convert(const char *const pFileName)
 
 		 if (!bDcp)
 		 {
-			 printf("File decompress fail\b");
+			 printf("File decompress fail\n");
 			 return false;
 		 }
 
