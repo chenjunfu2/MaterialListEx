@@ -19,9 +19,6 @@
     <Filter Include="头文件\zlib">
       <UniqueIdentifier>{b6d2f136-8663-4d25-be19-adc6ee84a3ad}</UniqueIdentifier>
     </Filter>
-    <Filter Include="头文件\gzip">
-      <UniqueIdentifier>{e07d4ce1-dcab-46d2-b7c9-5f64abf38772}</UniqueIdentifier>
-    </Filter>
     <Filter Include="头文件\nlohmann">
       <UniqueIdentifier>{3453bff3-d1d0-4b67-8f18-0290e2dd6b6b}</UniqueIdentifier>
     </Filter>
@@ -130,21 +127,6 @@
     </ClInclude>
     <ClInclude Include="zlib\gzguts.h">
       <Filter>头文件\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="gzip\config.hpp">
-      <Filter>头文件\gzip</Filter>
-    </ClInclude>
-    <ClInclude Include="gzip\decompress.hpp">
-      <Filter>头文件\gzip</Filter>
-    </ClInclude>
-    <ClInclude Include="gzip\utils.hpp">
-      <Filter>头文件\gzip</Filter>
-    </ClInclude>
-    <ClInclude Include="gzip\version.hpp">
-      <Filter>头文件\gzip</Filter>
-    </ClInclude>
-    <ClInclude Include="gzip\compress.hpp">
-      <Filter>头文件\gzip</Filter>
     </ClInclude>
     <ClInclude Include="Calc_Tool.hpp">
       <Filter>头文件</Filter>

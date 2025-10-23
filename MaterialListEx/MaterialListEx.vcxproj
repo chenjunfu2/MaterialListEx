@@ -210,11 +210,6 @@
     <ClInclude Include="CountFormatter.hpp" />
     <ClInclude Include="CSV_Tool.hpp" />
     <ClInclude Include="EntityProcess.hpp" />
-    <ClInclude Include="gzip\compress.hpp" />
-    <ClInclude Include="gzip\config.hpp" />
-    <ClInclude Include="gzip\decompress.hpp" />
-    <ClInclude Include="gzip\utils.hpp" />
-    <ClInclude Include="gzip\version.hpp" />
     <ClInclude Include="ItemProcess.hpp" />
     <ClInclude Include="Language.hpp" />
     <ClInclude Include="MemoryLeakCheck.hpp" />
