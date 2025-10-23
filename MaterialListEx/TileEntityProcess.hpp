@@ -71,8 +71,14 @@ private:
 public:
 	static TileEntityContainerStatsList GetTileEntityContainerStats(const NBT_Type::Compound &RgCompound)
 	{
-		//获取方块实体列表
-		const auto &listTileEntity = RgCompound.GetList(MU8STR("TileEntities"));
+		//尝试获取方块实体列表
+		const auto pListTileEntity = RgCompound.HasList(MU8STR("TileEntities"));
+		if (pListTileEntity == NULL)
+		{
+			return TileEntityContainerStatsList{};
+		}
+
+		const auto &listTileEntity = *pListTileEntity;
 		TileEntityContainerStatsList listTileEntityStats{};
 		listTileEntityStats.reserve(listTileEntity.Size());//提前扩容
 
