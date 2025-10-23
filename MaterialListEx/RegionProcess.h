@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <functional>
 
-#define USE_GZIPZLIB
+#define USE_ZLIB
 #define USE_XXHASH
 
 #include <NBT_Node.hpp>

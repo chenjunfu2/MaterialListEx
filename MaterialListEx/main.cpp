@@ -10,7 +10,7 @@
 #include <filesystem>
 #include <locale.h>
 
-#define USE_GZIPZLIB
+#define USE_ZLIB
 #define USE_XXHASH
 #include <NBT_All.hpp>
 
@@ -218,12 +218,19 @@ bool Convert(const char *const pFileName)
 	 printf("File read size:[%zu]\n", sNbtData.size());
 	 timer.PrintElapsed("File read time:[", "]\n");
 
-	 if (gzip::is_compressed((char*)sNbtData.data(), sNbtData.size()))//如果nbt已压缩，解压，否则保持原样
+	 if (NBT_IO::IsDataZipped(sNbtData))//如果nbt已压缩，解压，否则保持原样
 	 {
 		 std::vector<uint8_t> tmp;
 		 timer.Start();
-		 gzip::Decompressor(SIZE_MAX).decompress(tmp, (char *)sNbtData.data(), sNbtData.size());
+		 bool bDcp = NBT_IO::DecompressDataNoThrow(tmp, sNbtData);
 		 timer.Stop();
+
+		 if (!bDcp)
+		 {
+			 printf("File decompress fail\b");
+			 return false;
+		 }
+
 		 sNbtData = std::move(tmp);
 
 		 printf("File decompressed size:[%lld]\n", (uint64_t)sNbtData.size());

@@ -72,24 +72,24 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)xxhash;$(ProjectDir)nbt_cpp;$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ProjectDir)xxhash;$(ExternalIncludePath)</ExternalIncludePath>
+    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)xxhash;$(ProjectDir)nbt_cpp;$(ProjectDir);$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)nlohmann;$(ProjectDir)xxhash;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)xxhash;$(ProjectDir)nbt_cpp;$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ProjectDir)xxhash;$(ExternalIncludePath)</ExternalIncludePath>
+    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)xxhash;$(ProjectDir)nbt_cpp;$(ProjectDir);$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)nlohmann;$(ProjectDir)xxhash;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)xxhash;$(ProjectDir)nbt_cpp;$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ProjectDir)xxhash;$(ExternalIncludePath)</ExternalIncludePath>
+    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)xxhash;$(ProjectDir)nbt_cpp;$(ProjectDir);$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)nlohmann;$(ProjectDir)xxhash;$(ExternalIncludePath)</ExternalIncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)xxhash;$(ProjectDir)nbt_cpp;$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)gzip;$(ProjectDir)nlohmann;$(ProjectDir)xxhash;$(ExternalIncludePath)</ExternalIncludePath>
+    <IncludePath>$(ProjectDir)zlib;$(ProjectDir)xxhash;$(ProjectDir)nbt_cpp;$(ProjectDir);$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(ProjectDir)zlib;$(ProjectDir)nlohmann;$(ProjectDir)xxhash;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnabled>false</VcpkgEnabled>
