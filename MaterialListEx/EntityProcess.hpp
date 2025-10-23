@@ -101,13 +101,17 @@ private:
 public:
 	static EntityStatsList GetEntityStats(const NBT_Type::Compound &RgCompound)
 	{
-		//获取实体列表
-		const auto &listEntity = RgCompound.GetList(MU8STR("Entities"));
-		
-		//遍历，并在每个实体compound下查询所有关键字进行分类
+		//尝试获取实体列表
+		const auto pListEntity = RgCompound.HasList(MU8STR("Entities"));
+		if (pListEntity == NULL)
+		{
+			return EntityStatsList{};
+		}
+
+		const auto &listEntity = *pListEntity;
 		EntityStatsList listEntityStatsList{};
 		listEntityStatsList.reserve(listEntity.Size());//提前扩容
-		//遍历实体
+		//遍历，并在每个实体compound下查询所有关键字进行分类
 		for (const auto &it : listEntity)
 		{
 			//转换类型
