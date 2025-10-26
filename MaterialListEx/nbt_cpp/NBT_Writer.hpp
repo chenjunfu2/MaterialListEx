@@ -417,41 +417,72 @@ catch(...)\
 	template<bool bRoot, bool bSortCompound, typename OutputStream, typename ErrInfoFunc>
 	static ErrCode PutCompoundType(OutputStream &tData, const NBT_Type::Compound &tCompound, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept
 	{
+	MYTRY;
 		ErrCode eRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
 		
 		using IterableRangeType = typename std::conditional_t<bSortCompound, std::vector<NBT_Type::Compound::const_iterator>, const NBT_Type::Compound &>;
 
 		//通过模板bSortCompound指定是否执行排序输出（nbt中仅compound是无序结构）
-		IterableRangeType tmpIterableRange =//万能引用推导类型
-		[&](void) -> IterableRangeType
+		IterableRangeType tmpIterableRange =//注意此处如果内部抛出异常，返回空vector的情况下还有可能二次异常，所以外部还需另一个try catch
+		[&](void) noexcept -> IterableRangeType
 		{
 			if constexpr (bSortCompound)
 			{
-				IterableRangeType vSort{};
-				vSort.reserve(tCompound.size());//提前扩容
-
-				//插入迭代器
-				for (auto it = tCompound.cbegin(), end = tCompound.cend(); it != end; ++it)
+				try//筛掉标准库异常
 				{
-					vSort.push_back(it);
-				}
+					IterableRangeType vSort{};
+					vSort.reserve(tCompound.size());//提前扩容
 
-				//进行排序
-				std::sort(vSort.begin(), vSort.end(),
-					[](const auto &l, const auto &r) -> bool
+					//插入迭代器
+					for (auto it = tCompound.cbegin(), end = tCompound.cend(); it != end; ++it)
 					{
-						return l->first < r->first;
+						vSort.push_back(it);
 					}
-				);
 
-				return vSort;
+					//进行排序
+					std::sort(vSort.begin(), vSort.end(),
+						[](const auto &l, const auto &r) -> bool
+						{
+							return l->first < r->first;
+						}
+					);
+					return vSort;
+				}
+				catch (const std::bad_alloc &e)
+				{
+					eRet = Error(OutOfMemoryError, tData, funcErrInfo, "{}: Info:[{}]", _RP___FUNCTION__, e.what());
+					STACK_TRACEBACK("catch(std::bad_alloc)");
+					return {};
+				}
+				catch (const std::exception &e)
+				{
+					eRet = Error(StdException, tData, funcErrInfo, "{}: Info:[{}]", _RP___FUNCTION__, e.what());
+					STACK_TRACEBACK("catch(std::exception)");
+					return {};
+				}
+				catch (...)
+				{
+					eRet = Error(UnknownError, tData, funcErrInfo, "{}: Info:[Unknown Exception]", _RP___FUNCTION__);
+					STACK_TRACEBACK("catch(...)");
+					return {};
+				}
 			}
 			else
 			{
 				return tCompound;
 			}
 		}();
+
+		//判断错误码是否被设置
+		if constexpr (bSortCompound)
+		{
+			if (eRet != AllOk)
+			{
+				STACK_TRACEBACK("Lambda: GetIterableRange Error!");
+				return eRet;
+			}
+		}
 
 		//注意compound是为数不多的没有元素数量限制的结构
 		//此处无需检查大小，且无需写出大小
@@ -518,6 +549,7 @@ catch(...)\
 		}
 
 		return eRet;
+	MYCATCH;
 	}
 
 	template<typename OutputStream, typename ErrInfoFunc>

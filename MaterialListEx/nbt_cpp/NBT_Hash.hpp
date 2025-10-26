@@ -59,11 +59,11 @@ public:
 		Update(&tData, sizeof(tData));
 	}
 
-	template<typename T, size_t S>
+	template<typename T, size_t N>
 	requires(std::is_trivially_copyable_v<T>)
-	void Update(const T(&tData)[S])
+	void Update(const T(&tDataArr)[N])
 	{
-		Update(&tData, sizeof(tData));
+		Update(&tDataArr, sizeof(tDataArr));
 	}
 
 public:
@@ -79,10 +79,10 @@ public:
 		return Hash(&tData, sizeof(tData), tHashSeed);
 	}
 
-	template<typename T, size_t S>
+	template<typename T, size_t N>
 	requires(std::is_trivially_copyable_v<T>)
-	static HASH_T Hash(const T(&tData)[S], HASH_T tHashSeed)
+	static HASH_T Hash(const T(&tDataArr)[N], HASH_T tHashSeed)
 	{
-		return Hash(&tData, sizeof(tData), tHashSeed);
+		return Hash(&tDataArr, sizeof(tDataArr), tHashSeed);
 	}
 };

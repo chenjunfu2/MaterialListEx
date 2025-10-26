@@ -9,6 +9,8 @@
 #include "NBT_Node.hpp"
 #include "NBT_Node_View.hpp"
 
+#include "vcpkg_config.h"//包含vcpkg生成的配置以确认库安装情况
+
 #ifdef USE_XXHASH
 #include "NBT_Hash.hpp"
 #endif
@@ -604,3 +606,5 @@ private:
 #endif
 
 };
+
+#include "vcpkg_config.h"//二次包含取消定义防止宏污染

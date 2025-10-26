@@ -9,9 +9,9 @@
 #include <stdexcept>
 #include <filesystem>
 #include <locale.h>
+#include <thread>
+#include <chrono>
 
-#define USE_ZLIB
-#define USE_XXHASH
 #include <NBT_All.hpp>
 
 #include "BlockProcess.hpp"
@@ -27,6 +27,102 @@
 
 //NBT一般使用GZIP压缩，也有部分使用ZLIB压缩
 
+//重载一个日志输出类
+//用于在nbt读取报错的时候输出错误log
+template<bool bDelayOpenFile>
+class PrintLog
+{
+private:
+	const std::string sFileName;
+	const std::string sFileHead;
+	std::fstream fOpt;
+	bool bOpenFail;
+
+private:
+	void OpenAndWriteHead(void)
+	{
+		fOpt.open(sFileName, std::ios_base::out | std::ios_base::trunc);
+		fOpt.write((const char *)sFileHead.data(), sizeof(sFileHead.data()[0]) * sFileHead.size());
+		if (!fOpt)
+		{
+			bOpenFail = true;
+		}
+	}
+
+public:
+	PrintLog(const std::string &_sFileName, const std::string &_sFileHead = {}) : sFileName(_sFileName), sFileHead(_sFileHead), fOpt({}), bOpenFail(false)
+	{
+		if constexpr (!bDelayOpenFile)
+		{
+			OpenAndWriteHead();
+		}
+	}
+	~PrintLog(void) = default;
+
+	template<typename... Args>
+	void operator()(const std::FMT_STR<Args...> fmt, Args&&... args) noexcept
+	{
+		try
+		{
+			auto tmp = std::format(std::move(fmt), std::forward<Args>(args)...);
+
+			if constexpr (bDelayOpenFile)
+			{
+				if (!fOpt.is_open())
+				{
+					OpenAndWriteHead();
+				}
+			}
+
+			if (!bOpenFail)
+			{
+				fOpt.write((const char *)tmp.data(), sizeof(tmp.data()[0]) * tmp.size());
+			}
+			else
+			{
+				fwrite(tmp.data(), sizeof(tmp.data()[0]), tmp.size(), stderr);
+			}
+		}
+		catch (const std::exception &e)
+		{
+			fprintf(stderr, "PrintLog Exception: \"%s\"\n", e.what());
+		}
+		catch (...)
+		{
+			fprintf(stderr, "PrintLog Exception: \"Unknown Error\"\n");
+		}
+	}
+};
+
+std::string GetFilenameWithoutExtension(const std::string &sFilePath)
+{
+	size_t szPos = sFilePath.find_last_of('.');//找到最后一个.获得后缀名的位置
+	return sFilePath.substr(0, szPos);//然后返回子字符串
+}
+
+
+//找到一个唯一文件名
+std::string GenerateUniqueFilename(const std::string &sBeg, const std::string &sEnd, uint32_t u32TryCount = 10)//默认最多重试10次
+{
+	while(u32TryCount != 0)
+	{
+		//时间用[]包围
+		auto tmpPath = std::format("{}[{}]{}", sBeg, CodeTimer::GetSystemTime(), sEnd);//获取当前系统时间戳作为中间的部分
+		if (!NBT_IO::IsFileExist(tmpPath))
+		{
+			return tmpPath;
+		}
+
+		//等几ms在继续
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		--u32TryCount;
+	}
+
+	//次数到上限直接返回空
+	return std::string{};
+}
+
+//计算数量到可读分类
 std::string CountFormat(int64_t u64Count)
 {
 	return CountFormatter::Level2String(CountFormatter::CalculateLevels(u64Count));
@@ -228,7 +324,8 @@ bool Convert(const char *const pFileName)
 		 if (!bDcp)
 		 {
 			 printf("File decompress fail\n");
-			 return false;
+			 printf("The data may not be compressed, try parsing it directly\n");
+			 goto process_nbt_data;//跳到下面直接处理
 		 }
 
 		 sNbtData = std::move(tmp);
@@ -285,14 +382,14 @@ bool Convert(const char *const pFileName)
 	 }
 #endif // DEBUG
 
-
+process_nbt_data:
 	//以下使用nbt
-	 NBT_Type::Compound nRoot;
+	 NBT_Type::Compound nRoot{};
 	timer.Start();
-	if (!NBT_Reader::ReadNBT(sNbtData, 0, nRoot))
+	if (!NBT_Reader::ReadNBT(sNbtData, 0, nRoot, 512, PrintLog<true>{ GenerateUniqueFilename(GetFilenameWithoutExtension(pFileName), "_err.log"), "ReadNBT Error!\n\n" }))
 	{
-		printf("\nData before the error was encountered:");
-		NBT_Helper::Print(nRoot);
+		NBT_Helper::Print(nRoot, PrintLog<false>{ GenerateUniqueFilename(GetFilenameWithoutExtension(pFileName), "_other_info.log"), "Data before the error was encountered:\n\n" });
+		printf("\nRead NBT Error, Please check the log in the target folder.\n");
 		return false;
 	}
 	timer.Stop();
@@ -355,26 +452,13 @@ bool Convert(const char *const pFileName)
 	}
 
 	//准备csv文件
-	std::string sCsvPath{ pFileName };
-	size_t szPos = sCsvPath.find_last_of('.');//找到最后一个.获得后缀名的位置
-	if (szPos == std::string::npos)
-	{
-		szPos = sCsvPath.size() - 1;//没有后缀就从末尾开始
-	}
-
-	CSV_Tool<char8_t> csv{};//此处还未初始化
+	//注意此处还未初始化
+	CSV_Tool<char8_t> csv{};
 #ifndef _DEBUG
 	//找到一个合法文件名
-	int32_t i32Count = 10;//最多重试10次
-	do
-	{
-		//时间用[]包围
-		auto tmpCurTime = std::string{ '[' } + std::to_string(CodeTimer::GetSystemTime()) + std::string{ ']' };//获取当前系统时间
-		sCsvPath.replace(szPos, std::string::npos, tmpCurTime);//放入尾部
-		sCsvPath.append(".csv");//后缀名改成csv
-	} while (NBT_IO::IsFileExist(sCsvPath) && i32Count-- > 0);//如果文件已经存在，重试
+	auto sCsvPath = GenerateUniqueFilename(GetFilenameWithoutExtension(pFileName), ".csv");
 
-	if (i32Count > 0)//如果没次数了就别打开了，直接让它失败
+	if (!sCsvPath.empty())
 	{
 		csv.OpenFile(sCsvPath.c_str(), csv.Write);
 		printf("Output file:[%s]", sCsvPath.c_str());

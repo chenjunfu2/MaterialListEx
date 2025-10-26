@@ -54,6 +54,15 @@ public:
 
 	constexpr explicit MyStringView(const MyString<String, StringView> &myString) : StringView(myString.data(), myString.size())//允许从string显示构造view
 	{}
+
+	//删除临时对象构造方式，防止从临时对象构造导致悬空指针
+	MyStringView(MyString<String, StringView> &&) = delete;
+
+	//直接获取char类型的视图
+	std::basic_string_view<char> GetCharTypeView(void) const noexcept
+	{
+		return std::basic_string_view<char>((const char *)StringView::data(), StringView::size());
+	}
 };
 
 
@@ -107,7 +116,7 @@ public:
 	{}
 
 	//直接获取char类型的视图
-	std::basic_string_view<char> GetCharTypeView(void) const
+	std::basic_string_view<char> GetCharTypeView(void) const noexcept
 	{
 		return std::basic_string_view<char>((const char *)String::data(), String::size());
 	}
@@ -120,6 +129,11 @@ public:
 	auto ToUTF8(void) const
 	{
 		return MUTF8_Tool<typename String::value_type, char16_t, char8_t>::MU8ToU8(*this);
+	}
+
+	auto ToWchartTypeUTF16(void) const
+	{
+		return MUTF8_Tool<typename String::value_type, wchar_t, char8_t>::MU8ToU16(*this);//char16_t改为wchar_t
 	}
 
 	auto ToUTF16(void) const
@@ -137,6 +151,11 @@ public:
 		String::operator=(std::move(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U8ToMU8(u8String)));
 	}
 
+	void FromWchartTypeUTF16(std::basic_string_view<wchar_t> u16String)
+	{
+		String::operator=(std::move(MUTF8_Tool<typename String::value_type, wchar_t, char8_t>::U16ToMU8(u16String)));//char16_t改为wchar_t
+	}
+
 	void FromUTF16(std::basic_string_view<char16_t> u16String)
 	{
 		String::operator=(std::move(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U16ToMU8(u16String)));
@@ -147,10 +166,19 @@ public:
 //在std命名空间中添加此类的hash以便unordered_map等自动获取
 namespace std
 {
-	template<typename T, typename StringView>
-	struct hash<MyString<T, StringView>>
+	template<typename String, typename StringView>
+	struct hash<MyString<String, StringView>>
 	{
-		size_t operator()(const MyString<T, StringView> &s) const noexcept
+		size_t operator()(const MyString<String, StringView> &s) const noexcept
+		{
+			return std::hash<std::basic_string_view<char>>{}(s.GetCharTypeView());
+		}
+	};
+
+	template<typename String, typename StringView>
+	struct hash<MyStringView<String, StringView>>
+	{
+		size_t operator()(const MyStringView<String, StringView> &s) const noexcept
 		{
 			return std::hash<std::basic_string_view<char>>{}(s.GetCharTypeView());
 		}

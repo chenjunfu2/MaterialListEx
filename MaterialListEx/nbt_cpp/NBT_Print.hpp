@@ -29,11 +29,11 @@ public:
 		}
 		catch (const std::exception &e)
 		{
-			printf("ErrInfo Exception: \"%s\"\n", e.what());
+			fprintf(stderr, "ErrInfo Exception: \"%s\"\n", e.what());
 		}
 		catch (...)
 		{
-			printf("ErrInfo Exception: \"Unknown Error\"\n");
+			fprintf(stderr, "ErrInfo Exception: \"Unknown Error\"\n");
 		}
 	}
 };

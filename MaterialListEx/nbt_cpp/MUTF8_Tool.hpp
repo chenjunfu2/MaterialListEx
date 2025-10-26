@@ -875,11 +875,11 @@ public:
 	//---------------------------------------------------------------------------------------------//
 	//---------------------------------------------------------------------------------------------//
 
-	static constexpr size_t MU8ToU16Size(const std::basic_string_view<MU8T> &mu8String)
+	static constexpr size_t MU8ToU16Length(const std::basic_string_view<MU8T> &mu8String)
 	{
 		return MU8ToU16Impl<FakeStringCounter<U16T>>(mu8String.data(), mu8String.size()).GetData();
 	}
-	static constexpr size_t MU8ToU16Size(const MU8T *mu8String, size_t szStringLength)
+	static constexpr size_t MU8ToU16Length(const MU8T *mu8String, size_t szStringLength)
 	{
 		return MU8ToU16Impl<FakeStringCounter<U16T>>(mu8String, szStringLength).GetData();
 	}
