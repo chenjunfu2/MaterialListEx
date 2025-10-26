@@ -221,7 +221,7 @@ public:
 
 			//计算本次解压的大小
 			szDecompressedSize += szOut - zs.avail_out;
-		} while (iRet == Z_OK);//只要没错或者没到结尾就继续运行
+		} while (iRet == Z_OK || iRet == Z_BUF_ERROR);//只要没错误（缓冲区不够大除外）或者没到结尾就继续运行
 
 		inflateEnd(&zs);//结束解压
 		oData.resize(szDecompressedSize);//设置解压大小
@@ -354,7 +354,7 @@ public:
 
 			//计算本次压缩的大小
 			szCompressedSize += szOut - zs.avail_out;
-		} while (iRet == Z_OK);//只要没错或者没到结尾就继续运行
+		} while (iRet == Z_OK || iRet == Z_BUF_ERROR);//只要没错误（缓冲区不够大除外）或者没到结尾就继续运行
 
 		//结束并设置大小
 		deflateEnd(&zs);

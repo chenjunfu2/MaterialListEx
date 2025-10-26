@@ -50,7 +50,7 @@ private:
 	}
 
 public:
-	PrintLog(const std::string &_sFileName, const std::string &_sFileHead = {}) : sFileName(_sFileName), sFileHead(_sFileHead), fOpt({}), bOpenFail(false)
+	PrintLog(const std::string &_sFileName, const std::string &_sFileHead = {}) : sFileName(_sFileName), sFileHead(_sFileHead), fOpt(), bOpenFail(false)
 	{
 		if constexpr (!bDelayOpenFile)
 		{
@@ -58,6 +58,8 @@ public:
 		}
 	}
 	~PrintLog(void) = default;
+	PrintLog(PrintLog &&) = default;
+	PrintLog(const PrintLog &) = default;
 
 	template<typename... Args>
 	void operator()(const std::FMT_STR<Args...> fmt, Args&&... args) noexcept
@@ -389,7 +391,7 @@ process_nbt_data:
 	if (!NBT_Reader::ReadNBT(sNbtData, 0, nRoot, 512, PrintLog<true>{ GenerateUniqueFilename(GetFilenameWithoutExtension(pFileName), "_err.log"), "ReadNBT Error!\n\n" }))
 	{
 		NBT_Helper::Print(nRoot, PrintLog<false>{ GenerateUniqueFilename(GetFilenameWithoutExtension(pFileName), "_other_info.log"), "Data before the error was encountered:\n\n" });
-		printf("\nRead NBT Error, Please check the log in the target folder.\n");
+		printf("Read NBT Error, Please check the log in the target folder.\n");
 		return false;
 	}
 	timer.Stop();
