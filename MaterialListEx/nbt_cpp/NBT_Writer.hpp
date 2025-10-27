@@ -753,17 +753,14 @@ public:
 	template<bool bSortCompound = true, typename OutputStream, typename ErrInfoFunc = NBT_Print>
 	static bool WriteNBT(OutputStream OptStream, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept
 	{
-		//输出最大栈深度
-		//printf("Max Stack Depth [%zu]\n", szStackDepth);
-
-		//开始递归输出
 		return PutCompoundType<true, bSortCompound>(OptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;
 	}
 
 	template<bool bSortCompound = true, typename DataType = std::vector<uint8_t>, typename ErrInfoFunc = NBT_Print>
 	static bool WriteNBT(DataType &tDataOutput, size_t szStartIdx, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept
 	{
-		return WriteNBT<bSortCompound>(MyOutputStream<DataType>(tDataOutput, szStartIdx), tCompound, szStackDepth, std::move(funcErrInfo));
+		MyOutputStream<DataType> OptStream(tDataOutput, szStartIdx);
+		return PutCompoundType<true, bSortCompound>(OptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;
 	}
 
 

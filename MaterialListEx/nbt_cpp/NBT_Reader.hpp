@@ -759,17 +759,14 @@ public:
 	template<typename InputStream, typename ErrInfoFunc = NBT_Print>
 	static bool ReadNBT(InputStream IptStream, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept//从data中读取nbt
 	{
-		//输出最大栈深度
-		//printf("Max Stack Depth [%zu]\n", szStackDepth);
-
-		//开始递归读取
 		return GetCompoundType<true>(IptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
 	}
 
 	template<typename DataType = std::vector<uint8_t>, typename ErrInfoFunc = NBT_Print>
 	static bool ReadNBT(const DataType &tDataInput, size_t szStartIdx, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept//从data中读取nbt
 	{
-		return ReadNBT(MyInputStream<DataType>(tDataInput, szStartIdx), tCompound, szStackDepth, std::move(funcErrInfo));
+		MyInputStream<DataType> IptStream(tDataInput, szStartIdx);
+		return GetCompoundType<true>(IptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;
 	}
 
 
