@@ -2,15 +2,15 @@
 //示例配置文件内默认包含所有可选库
 
 //use zlib
-#ifndef USE_ZLIB
-#define USE_ZLIB
+#ifndef __USE_ZLIB__
+#define __USE_ZLIB__
 #else
-#undef USE_ZLIB
+#undef __USE_ZLIB__
 #endif
 
 //use xxhash
-#ifndef USE_XXHASH
-#define USE_XXHASH
+#ifndef __USE_XXHASH__
+#define __USE_XXHASH__
 #else
-#undef USE_XXHASH
+#undef __USE_XXHASH__
 #endif

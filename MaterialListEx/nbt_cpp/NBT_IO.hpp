@@ -9,7 +9,7 @@
 
 #include "vcpkg_config.h"//包含vcpkg生成的配置以确认库安装情况
 
-#ifdef USE_ZLIB
+#ifdef __USE_ZLIB__
 
 /*zlib*/
 #define ZLIB_CONST
@@ -96,7 +96,7 @@ public:
 		return !ec && bExists;//没有错误并且存在
 	}
 
-#ifdef USE_ZLIB
+#ifdef __USE_ZLIB__
 
 	static bool IsZlib(uint8_t u8DataFirst, uint8_t u8DataSecond)
 	{
