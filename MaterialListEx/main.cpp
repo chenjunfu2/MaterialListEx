@@ -58,7 +58,7 @@ public:
 		}
 	}
 	~PrintLog(void) = default;
-	PrintLog(PrintLog &&) = default;
+	PrintLog(PrintLog &&) noexcept = default;
 	PrintLog(const PrintLog &) = default;
 
 	template<typename... Args>
