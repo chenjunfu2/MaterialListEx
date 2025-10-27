@@ -313,7 +313,7 @@ public:
 		{
 			//在范围未溢出的情况下，进行预测
 			//把压缩大小设置为预测的压缩大小
-			oData.resize(deflateBound(&zs, iData.size()));
+			oData.resize(deflateBound(&zs, (uLong)iData.size()));
 		}
 		
 		//设置压缩后大小与待处理大小
