@@ -7,9 +7,11 @@
 #include <vector>
 #include <filesystem>
 
+#include "NBT_Print.hpp"//打印输出
+
 #include "vcpkg_config.h"//包含vcpkg生成的配置以确认库安装情况
 
-#ifdef __USE_ZLIB__
+#ifdef CJF2_NBT_CPP_USE_ZLIB
 
 /*zlib*/
 #define ZLIB_CONST
@@ -18,15 +20,26 @@
 
 #endif
 
-#include "NBT_Print.hpp"//打印输出
+/// @file
 
+/// @brief 用于提供nbt文件读写，解压与压缩功能
 class NBT_IO
 {
+	/// @brief 禁止构造
 	NBT_IO(void) = delete;
+	/// @brief 禁止析构
 	~NBT_IO(void) = delete;
 
 public:
+	/// @brief 从任意顺序容器写出字节流数据到指定文件名的文件中
+	/// @tparam T 任意顺序容器类型
+	/// @param strFileName 目标文件名
+	/// @param tData 顺序容器的引用
+	/// @return 写出是否成功
+	/// @note 如果文件已存在则直接清空并覆盖，未存在则创建文件。
+	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
 	template<typename T = std::vector<uint8_t>>
+	requires (sizeof(typename T::value_type) == 1 && std::is_trivially_copyable_v<typename T::value_type>)
 	static bool WriteFile(const std::string &strFileName, const T &tData)
 	{
 		std::fstream fWrite;
@@ -49,7 +62,15 @@ public:
 		return true;
 	}
 
+	/// @brief 从指定文件名的文件中读取字节流数据到任意顺序容器中
+	/// @tparam T 任意顺序容器类型
+	/// @param strFileName 目标文件名
+	/// @param[out] tData 顺序容器的引用
+	/// @return 读取是否成功
+	/// @note 如果文件不存在，则失败。
+	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
 	template<typename T = std::vector<uint8_t>>
+	requires (sizeof(typename T::value_type) == 1 && std::is_trivially_copyable_v<typename T::value_type>)
 	static bool ReadFile(const std::string &strFileName, T &tData)
 	{
 		std::fstream fRead;
@@ -88,6 +109,11 @@ public:
 		return true;
 	}
 
+	/// @brief 判断指定文件名的文件是否存在
+	/// @param sFileName 目标文件名
+	/// @return 文件是否存在
+	/// @note 如果判断出现错误，也返回不存在。只有明确返回存在的文件存在，
+	/// 否则文件可能不存在，也可能存在但是因为其它原因无法获取。
 	static bool IsFileExist(const std::string &sFileName)
 	{
 		std::error_code ec;//判断这东西是不是true确定有没有error
@@ -96,8 +122,13 @@ public:
 		return !ec && bExists;//没有错误并且存在
 	}
 
-#ifdef __USE_ZLIB__
+#ifdef CJF2_NBT_CPP_USE_ZLIB
 
+	/// @brief 通过字节流开始的两个字节判断是否可能是Zlib压缩
+	/// @param u8DataFirst 字节流的第一个字节
+	/// @param u8DataSecond 字节流的第二个字节
+	/// @return 是否可能是Zlib压缩
+	/// @note 仅用于可能性判断，具体是否Zlib压缩需要靠解压例程决定，仅作为快速判断的辅助函数。
 	static bool IsZlib(uint8_t u8DataFirst, uint8_t u8DataSecond)
 	{
 		return u8DataFirst == (uint8_t)0x78 &&
@@ -109,14 +140,25 @@ public:
 			);
 	}
 
+	/// @brief 通过字节流开始的两个字节判断是否可能是Gzip压缩
+	/// @param u8DataFirst 字节流的第一个字节
+	/// @param u8DataSecond 字节流的第二个字节
+	/// @return 是否可能是Gzip压缩
+	/// @note 仅用于可能性判断，具体是否Gzip压缩需要靠解压例程决定，仅作为快速判断的辅助函数。
 	static bool IsGzip(uint8_t u8DataFirst, uint8_t u8DataSecond)
 	{
 		return u8DataFirst == (uint8_t)0x1F && u8DataSecond == (uint8_t)0x8B;
 	}
 
+	/// @brief 判断一个顺序容器存储的字节流是否可能存在压缩
+	/// @tparam T 任意顺序容器类型
+	/// @param tData 顺序容器类型的引用
+	/// @return 是否可能存在压缩
+	/// @note 仅用于可能性判断，具体是否压缩需要靠解压例程决定，仅作为快速判断的辅助函数。
+	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
 	template<typename T>
 	requires (sizeof(typename T::value_type) == 1 && std::is_trivially_copyable_v<typename T::value_type>)
-	static bool IsDataZipped(T &tData)
+	static bool IsDataZipped(const T &tData)
 	{
 		if (tData.size() <= 2)
 		{
@@ -129,6 +171,13 @@ public:
 		return IsZlib(u8DataFirst, u8DataSecond) || IsGzip(u8DataFirst, u8DataSecond);
 	}
 
+	/// @brief 解压数据，自动判断Zlib或Gzip并解压，如果失败则抛出异常
+	/// @tparam I 输入的顺序容器类型
+	/// @tparam O 输出的顺序容器类型
+	/// @param[out] oData 输入的顺序容器引用
+	/// @param iData 输出的顺序容器引用
+	/// @note oData和iData不能引用相同对象，否则错误。如果输入为空，则输出也为空。
+	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
 	template<typename I, typename O>
 	requires (sizeof(typename I::value_type) == 1 && std::is_trivially_copyable_v<typename I::value_type> &&
 			  sizeof(typename O::value_type) == 1 && std::is_trivially_copyable_v<typename O::value_type>)
@@ -240,6 +289,14 @@ public:
 		}
 	}
 
+	/// @brief 压缩数据，默认压缩为Gzip，也就是NBT格式的标准压缩类型，如果失败则抛出异常
+	/// @tparam I 输入的顺序容器类型
+	/// @tparam O 输出的顺序容器类型
+	/// @param[out] oData 输入的顺序容器引用
+	/// @param iData 输出的顺序容器引用
+	/// @param iLevel 压缩等级
+	/// @note oData和iData不能引用相同对象，否则错误。如果输入为空，则输出也为空。
+	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
 	template<typename I, typename O>
 	requires (sizeof(typename I::value_type) == 1 && std::is_trivially_copyable_v<typename I::value_type> &&
 			  sizeof(typename O::value_type) == 1 && std::is_trivially_copyable_v<typename O::value_type>)
@@ -374,6 +431,17 @@ public:
 		}
 	}
 
+	/// @brief 压缩数据，但是不抛出异常，而是通过funcErrInfo打印异常信息并返回成功与否
+	/// @tparam I 输入的顺序容器类型
+	/// @tparam O 输出的顺序容器类型
+	/// @tparam ErrInfoFunc 打印异常信息的仿函数类型
+	/// @param[out] oData 输入的顺序容器引用
+	/// @param iData 输出的顺序容器引用
+	/// @param funcErrInfo 打印异常信息的仿函数
+	/// @return 操作是否成功
+	/// @note funcErrInfo默认实现为NBT_Print并输出到标准异常stderr，用户可以自定义。
+	/// 类似于NBT_Print的仿函数类型并替换输出例程，具体情况请参照NBT_Print类的说明。
+	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
 	template<typename I, typename O, typename ErrInfoFunc = NBT_Print>
 	requires (sizeof(typename I::value_type) == 1 && std::is_trivially_copyable_v<typename I::value_type> &&
 			  sizeof(typename O::value_type) == 1 && std::is_trivially_copyable_v<typename O::value_type>)
@@ -401,6 +469,18 @@ public:
 		}
 	}
 
+	/// @brief 解压数据，但是不抛出异常，而是通过funcErrInfo打印异常信息并返回成功与否
+	/// @tparam I 输入的顺序容器类型
+	/// @tparam O 输出的顺序容器类型
+	/// @tparam ErrInfoFunc 打印异常信息的仿函数类型
+	/// @param[out] oData 输入的顺序容器引用
+	/// @param iData 输出的顺序容器引用
+	/// @param iLevel 压缩等级
+	/// @param funcErrInfo 打印异常信息的仿函数
+	/// @return 操作是否成功
+	/// @note funcErrInfo默认实现为NBT_Print并输出到标准异常stderr，用户可以自定义。
+	/// 类似于NBT_Print的仿函数类型并替换输出例程，具体情况请参照NBT_Print类的说明。
+	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
 	template<typename I, typename O, typename ErrInfoFunc = NBT_Print>
 	requires (sizeof(typename I::value_type) == 1 && std::is_trivially_copyable_v<typename I::value_type> &&
 			  sizeof(typename O::value_type) == 1 && std::is_trivially_copyable_v<typename O::value_type>)
@@ -430,5 +510,3 @@ public:
 
 #endif
 };
-
-#include "vcpkg_config.h"//二次包含取消定义防止宏污染

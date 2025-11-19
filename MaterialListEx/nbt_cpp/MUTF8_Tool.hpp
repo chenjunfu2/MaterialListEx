@@ -8,22 +8,57 @@
 #include <array>
 #include <algorithm>
 
+/// @file
+/// @brief 用于处理Java的Modified-UTF-8的工具集
+
 //来个static string包装类，使得模板能接受字符串字面量
 //必须放在外面，否则NTTP推导主类模板会失败，
 //导致此并不依赖主类模板的模板也推导失败
-template<typename T, size_t N>
-class StringLiteral : public std::array<T, N>
+
+/// @brief 用于存放MUTF8_Tool使用的，无法存在于类内的辅助类
+/// @note 用户不应直接使用此内容
+namespace MUTF8_Tool_Internal
 {
-public:
-	using Super = std::array<T, N>;
+	/// @brief 用于编译期构造静态字符串字面量为字符数组，作为模板参数，使得模板能接受字符串的辅助类
+	/// @tparam T 字符串的字符类型
+	/// @tparam N 自动匹配数组长度
+	/// @note 用户不应直接使用此类
+	template<typename T, size_t N>
+	class StringLiteral : public std::array<T, N>
+	{
+	public:
+		/// @brief 父类类型定义
+		using Super = std::array<T, N>;
 
-public:
-	constexpr StringLiteral(const T(&_tStr)[N]) noexcept : Super(std::to_array(_tStr))
-	{}
-	constexpr ~StringLiteral(void) = default;
+	public:
 
-};
+		/// @brief 从字符串数组的引用拷贝构造
+		/// @param _tStr 字符串数组的引用
+		/// @note 编译期构造
+		constexpr StringLiteral(const T(&_tStr)[N]) noexcept : Super(std::to_array(_tStr))
+		{}
 
+		/// @brief 默认构造
+		/// @note 编译期构造
+		constexpr ~StringLiteral(void) = default;
+	};
+
+	/// @brief 利用模板固化编译期求值函数返回的数组临时量
+	/// @tparam ArrayData 函数返回的临时量
+	/// @tparam View_Type 字符串视图类型
+	/// @return 保存编译期固化的字符数组作为的字符串视图
+	template<auto ArrayData, typename View_Type>
+	consteval View_Type ToStringView(void) noexcept
+	{
+		return { ArrayData.data(), ArrayData.size() };
+	}
+}
+
+/// @brief 用于处理Java的Modified-UTF-8（以下简称M-UTF-8）字符串与UTF-8或UTF-16的静态或动态转换
+/// @tparam MU8T M-UTF-8对应的字符类型，简写为MU8
+/// @tparam U16T UTF-16对应的字符类型
+/// @tparam U8T UTF-8对应的字符类型
+/// @note 类仅提供M-UTF-8的静态生成方式，因为UTF-8或UTF-16可以由编译器支持，而M-UTF-8不存在支持
 template<typename MU8T = uint8_t, typename U16T = char16_t, typename U8T = char8_t>
 class MUTF8_Tool
 {
@@ -321,6 +356,8 @@ private:
 	}
 
 private:
+///@cond
+
 //c=char d=do检查迭代器并获取下一个字节（如果可以，否则执行指定语句后跳出）
 #define GET_NEXTCHAR(c,d) if (++it == end) { (d);break; } else { (c) = *it; }
 //v=value m=mask p=pattern t=test 测试遮罩位之后的结果是否是指定值或值是否是由指定bits组成
@@ -329,10 +366,14 @@ private:
 //v=value b=begin e=end 注意范围是左右边界包含关系，而不是普通的左边界包含
 #define IN_RANGE(v,b,e) (((uint16_t)(v) >= (uint16_t)(b)) && ((uint16_t)(v) <= (uint16_t)(e)))
 
+///@endcond
+
 	template<typename T = std::basic_string<MU8T>>
 	static constexpr T U16ToMU8Impl(const U16T *u16String, size_t szStringLength, T mu8String = {})
 	{
+///@cond
 #define PUSH_FAIL_MU8CHAR mu8String.append(mu8FailChar, sizeof(mu8FailChar) / sizeof(MU8T))
+///@endcond
 
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的mu8str
 		//mu8字符串结尾为0xC0 0x80而非0x00
@@ -403,7 +444,9 @@ private:
 	template<typename T = std::basic_string<U16T>>
 	static constexpr T MU8ToU16Impl(const MU8T *mu8String, size_t szStringLength, T u16String = {})
 	{
+///@cond
 #define PUSH_FAIL_U16CHAR u16String.push_back(u16FailChar)
+///@endcond
 
 		//因为string带长度信息，则不用处理0字符情况，for不会进入，直接返回size为0的u16str
 		//u16字符串末尾为0x0000
@@ -583,8 +626,10 @@ private:
 	template<typename T = DynamicString<std::basic_string<MU8T>>>
 	static constexpr T U8ToMU8Impl(const U8T *u8String, size_t szStringLength, T mu8String = {})
 	{
+///@cond
 #define PUSH_FAIL_MU8CHAR mu8String.append(mu8FailChar, sizeof(mu8FailChar) / sizeof(MU8T))
 #define INSERT_NORMAL(p) (mu8String.append_cvt((p) - szNormalLength, szNormalLength), szNormalLength = 0)
+///@endcond
 
 		size_t szNormalLength = 0;//普通字符的长度，用于优化批量插入
 		for (auto it = u8String, end = u8String + szStringLength; it != end; ++it)
@@ -661,8 +706,10 @@ private:
 	template<typename T = DynamicString<std::basic_string<U8T>>>
 	static constexpr T MU8ToU8Impl(const MU8T *mu8String, size_t szStringLength, T u8String = {})
 	{
+///@cond
 #define PUSH_FAIL_U8CHAR u8String.append(u8FailChar, sizeof(u8FailChar) / sizeof(U8T))
 #define INSERT_NORMAL(p) (u8String.append_cvt((p) - szNormalLength, szNormalLength), szNormalLength = 0)
+///@endcond
 
 		size_t szNormalLength = 0;//普通字符的长度，用于优化批量插入
 		for (auto it = mu8String, end = mu8String + szStringLength; it != end; ++it)
@@ -814,80 +861,164 @@ private:
 public:
 	//---------------------------------------------------------------------------------------------//
 
+	/// @brief 精确计算UTF-16转换到M-UTF-8所需的M-UTF-8字符串的长度
+	/// @param u16String UTF-16字符串的视图
+	/// @return 计算的长度
+	/// @note 请注意：是长度而非字节数
 	static constexpr size_t U16ToMU8Length(const std::basic_string_view<U16T> &u16String)
 	{
 		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String.data(), u16String.size()).GetData();
 	}
+
+	/// @brief 精确计算UTF-16转换到M-UTF-8所需的M-UTF-8字符串的长度
+	/// @param u16String UTF-16字符串的指针
+	/// @param szStringLength UTF-16字符串的长度
+	/// @return 计算的长度
+	/// @note 请注意：是长度而非字节数
 	static constexpr size_t U16ToMU8Length(const U16T *u16String, size_t szStringLength)
 	{
 		return U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String, szStringLength).GetData();
 	}
 	
+	/// @brief 获取UTF-16转换到M-UTF-8的字符串
+	/// @param u16String UTF-16字符串的视图
+	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从U16ToMU8Length调用获得）
+	/// @return 转换后的字符串
+	/// @note 请注意：是长度而非字节数
 	static std::basic_string<MU8T> U16ToMU8(const std::basic_string_view<U16T> &u16String, size_t szReserve = 0)
 	{
 		return U16ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u16String.data(), u16String.size(), { szReserve }).GetData();
 	}
+
+	/// @brief 获取UTF-16转换到M-UTF-8的字符串
+	/// @param u16String UTF-16字符串的指针
+	/// @param szStringLength UTF-16字符串的长度
+	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从U16ToMU8Length调用获得）
+	/// @return 转换后的字符串
+	/// @note 请注意：是长度而非字节数
 	static std::basic_string<MU8T> U16ToMU8(const U16T *u16String, size_t szStringLength, size_t szReserve = 0)
 	{
 		return U16ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u16String, szStringLength, { szReserve }).GetData();
 	}
 
-	template<StringLiteral u16String>
+	/// @brief 通过UTF-16字符串字面量，直接获得编译期的M-UTF-8静态字符串
+	/// @tparam u16String UTF-16字符串字面量，用于构造MUTF8_Tool_Internal::StringLiteral
+	/// @return 一个由std::basic_string_view存储的静态字符串数组，可用于构造NBT_Type::String或进行比较等
+	/// @note 此函数仅能在编译期使用，内部会先生成临时std::array对象然后通过ToStringView模板进行固化，
+	/// 以生成编译期常量（类似字符串字面量），这样就能只存储它的指针与大小，并在任何地方使用而不会导致生命周期提前结束
+	template<MUTF8_Tool_Internal::StringLiteral u16String>
 	requires std::is_same_v<typename decltype(u16String)::value_type, U16T>//限定类型
-	static consteval auto U16ToMU8(void)
+	static consteval std::basic_string_view<MU8T> U16ToMU8(void)
 	{
 		constexpr size_t szStringLength = ContentLength(u16String);
 		constexpr size_t szNewLength = U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String.data(), szStringLength).GetData();
 
-		return U16ToMU8Impl<StaticString<MU8T, szNewLength>>(u16String.data(), szStringLength).GetData();
+		return MUTF8_Tool_Internal::ToStringView
+		<
+			U16ToMU8Impl<StaticString<MU8T, szNewLength>>(u16String.data(), szStringLength).GetData(),
+			std::basic_string_view<MU8T>
+		>();
 	}
 
 	//---------------------------------------------------------------------------------------------//
 
+	/// @brief 精确计算UTF-8转换到M-UTF-8所需的M-UTF-8字符串的长度
+	/// @param u8String UTF-8字符串的视图
+	/// @return 计算的长度
+	/// @note 请注意：是长度而非字节数
 	static constexpr size_t U8ToMU8Length(const std::basic_string_view<U8T> &u8String)
 	{
 		return U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String.data(), u8String.size()).GetData();
 	}
+
+	/// @brief 精确计算UTF-8转换到M-UTF-8所需的M-UTF-8字符串的长度
+	/// @param u8String UTF-8字符串的指针
+	/// @param szStringLength UTF-8字符串的长度
+	/// @return 计算的长度
+	/// @note 请注意：是长度而非字节数
 	static constexpr size_t U8ToMU8Length(const U8T *u8String, size_t szStringLength)
 	{
 		return U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String, szStringLength).GetData();
 	}
 
+	/// @brief 获取UTF-8转换到M-UTF-8的字符串
+	/// @param u8String UTF-8字符串的视图
+	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从U8ToMU8Length调用获得）
+	/// @return 转换后的字符串
+	/// @note 请注意：是长度而非字节数
 	static std::basic_string<MU8T> U8ToMU8(const std::basic_string_view<U8T> &u8String, size_t szReserve = 0)
 	{
 		return U8ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u8String.data(), u8String.size(), { szReserve }).GetData();
 	}
+
+	/// @brief 获取UTF-8转换到M-UTF-8的字符串
+	/// @param u8String UTF-8字符串的指针
+	/// @param szStringLength UTF-8字符串的长度
+	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从U8ToMU8Length调用获得）
+	/// @return 转换后的字符串
+	/// @note 请注意：是长度而非字节数
 	static std::basic_string<MU8T> U8ToMU8(const U8T *u8String, size_t szStringLength, size_t szReserve = 0)
 	{
 		return U8ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u8String, szStringLength, { szReserve }).GetData();
 	}
 
-	template<StringLiteral u8String>
+	/// @brief 通过UTF-8字符串字面量，直接获得编译期的M-UTF-8静态字符串
+	/// @tparam u8String UTF-8字符串字面量，用于构造MUTF8_Tool_Internal::StringLiteral
+	/// @return 一个由std::string_view存储的静态字符串数组，可用于构造NBT_Type::String或进行比较等
+	/// @note 此函数仅能在编译期使用，内部会先生成临时std::array对象然后通过ToStringView模板进行固化，
+	/// 以生成编译期常量（类似字符串字面量），这样就能只存储它的指针与大小，并在任何地方使用而不会导致生命周期提前结束
+	template<MUTF8_Tool_Internal::StringLiteral u8String>
 	requires std::is_same_v<typename decltype(u8String)::value_type, U8T>//限定类型
-	static consteval auto U8ToMU8(void)
+	static consteval std::basic_string_view<MU8T> U8ToMU8(void)
 	{
 		constexpr size_t szStringLength = ContentLength(u8String);
 		constexpr size_t szNewLength = U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String.data(), szStringLength).GetData();
 
-		return U8ToMU8Impl<StaticString<MU8T, szNewLength>>(u8String.data(), szStringLength).GetData();
+		return MUTF8_Tool_Internal::ToStringView<U8ToMU8Impl
+		<
+			StaticString<MU8T, szNewLength>>(u8String.data(), szStringLength).GetData(),
+			std::basic_string_view<MU8T>
+		>();
 	}
 
 	//---------------------------------------------------------------------------------------------//
 	//---------------------------------------------------------------------------------------------//
 
+	/// @brief 精确计算M-UTF-8转换到UTF-16所需的UTF-16字符串的长度
+	/// @param mu8String M-UTF-8字符串的视图
+	/// @return 计算的长度
+	/// @note 请注意：是长度而非字节数
 	static constexpr size_t MU8ToU16Length(const std::basic_string_view<MU8T> &mu8String)
 	{
 		return MU8ToU16Impl<FakeStringCounter<U16T>>(mu8String.data(), mu8String.size()).GetData();
 	}
+
+	/// @brief 精确计算M-UTF-8转换到UTF-16所需的UTF-16字符串的长度
+	/// @param mu8String M-UTF-8字符串的指针
+	/// @param szStringLength M-UTF-8字符串的长度
+	/// @return 计算的长度
+	/// @note 请注意：是长度而非字节数
 	static constexpr size_t MU8ToU16Length(const MU8T *mu8String, size_t szStringLength)
 	{
 		return MU8ToU16Impl<FakeStringCounter<U16T>>(mu8String, szStringLength).GetData();
 	}
 
+	/// @brief 获取M-UTF-8转换到UTF-16的字符串
+	/// @param mu8String M-UTF-8字符串的视图
+	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从MU8ToU16Length调用获得）
+	/// @return 转换后的字符串
+	/// @note 请注意：是长度而非字节数
 	static std::basic_string<U16T> MU8ToU16(const std::basic_string_view<MU8T> &mu8String, size_t szReserve = 0)
 	{
 		return MU8ToU16Impl<DynamicString<std::basic_string<U16T>>>(mu8String.data(), mu8String.size(), { szReserve }).GetData();
 	}
+
+	/// @brief 获取M-UTF-8转换到UTF-16的字符串
+	/// @param mu8String M-UTF-8字符串的指针
+	/// @param szStringLength M-UTF-8字符串的长度
+	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从MU8ToU16Length调用获得）
+	/// @return 转换后的字符串
+	/// @note 请注意：是长度而非字节数
 	static std::basic_string<U16T> MU8ToU16(const MU8T *mu8String, size_t szStringLength, size_t szReserve = 0)
 	{
 		return MU8ToU16Impl<DynamicString<std::basic_string<U16T>>>(mu8String, szStringLength, { szReserve }).GetData();
@@ -895,36 +1026,89 @@ public:
 
 	//---------------------------------------------------------------------------------------------//
 
+	/// @brief 精确计算M-UTF-8转换到UTF-8所需的UTF-8字符串的长度
+	/// @param mu8String M-UTF-8字符串的视图
+	/// @return 计算的长度
+	/// @note 请注意：是长度而非字节数
 	static constexpr size_t MU8ToU8Length(const std::basic_string_view<MU8T> &mu8String)
 	{
 		return MU8ToU8Impl<FakeStringCounter<U8T>>(mu8String.data(), mu8String.size()).GetData();
 	}
+
+	/// @brief 精确计算M-UTF-8转换到UTF-8所需的UTF-8字符串的长度
+	/// @param mu8String M-UTF-8字符串的指针
+	/// @param szStringLength M-UTF-8字符串的长度
+	/// @return 计算的长度
+	/// @note 请注意：是长度而非字节数
 	static constexpr size_t MU8ToU8Length(const MU8T *mu8String, size_t szStringLength)
 	{
 		return MU8ToU8Impl<FakeStringCounter<U8T>>(mu8String, szStringLength).GetData();
 	}
 
+	/// @brief 获取M-UTF-8转换到UTF-8的字符串
+	/// @param mu8String M-UTF-8字符串的视图
+	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从MU8ToU8Length调用获得）
+	/// @return 转换后的字符串
+	/// @note 请注意：是长度而非字节数
 	static std::basic_string<U8T> MU8ToU8(const std::basic_string_view<MU8T> &mu8String, size_t szReserve = 0)
 	{
 		return MU8ToU8Impl<DynamicString<std::basic_string<U8T>>>(mu8String.data(), mu8String.size(), { szReserve }).GetData();
 	}
+
+	/// @brief 获取M-UTF-8转换到UTF-8的字符串
+	/// @param mu8String M-UTF-8字符串的指针
+	/// @param szStringLength M-UTF-8字符串的长度
+	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从MU8ToU8Length调用获得）
+	/// @return 转换后的字符串
+	/// @note 请注意：是长度而非字节数
 	static std::basic_string<U8T> MU8ToU8(const MU8T *mu8String, size_t szStringLength, size_t szReserve = 0)
 	{
 		return MU8ToU8Impl<DynamicString<std::basic_string<U8T>>>(mu8String, szStringLength, { szReserve }).GetData();
 	}
+
+	//---------------------------------------------------------------------------------------------//
 };
 
-//辅助调用宏
+//--------------------------------------------辅助调用宏--------------------------------------------//
+
+//动态转换
+
+/// @brief UTF-16到M-UTF-8字符串转换的便捷宏
+/// @param u16String UTF-16字符串视图
+/// @return 转换后的M-UTF-8字符串
 #define U16CV2MU8(u16String) MUTF8_Tool<>::U16ToMU8(u16String)
+
+/// @brief M-UTF-8到UTF-16字符串转换的便捷宏
+/// @param mu8String M-UTF-8字符串视图
+/// @return 转换后的UTF-16字符串
 #define MU8CV2U16(mu8String) MUTF8_Tool<>::MU8ToU16(mu8String)
 
+/// @brief UTF-8到M-UTF-8字符串转换的便捷宏
+/// @param u8String UTF-8字符串视图
+/// @return 转换后的M-UTF-8字符串
 #define U8CV2MU8(u8String) MUTF8_Tool<>::U8ToMU8(u8String)
+
+/// @brief M-UTF-8到UTF-8字符串转换的便捷宏
+/// @param mu8String M-UTF-8字符串视图
+/// @return 转换后的UTF-8字符串
 #define MU8CV2U8(mu8String) MUTF8_Tool<>::MU8ToU8(mu8String)
 
-//转换为静态字符串数组
-//在mutf-8中，任何字符串结尾\0都会被映射成0xC0 0x80，且保证串中不包含0x00，所以一定程度上可以和c-str（以0结尾）兼容
+//静态转换
+//在mutf-8中，任何字符串结尾\0都会被映射成0xC0 0x80，且保证串中不包含\0，所以一定程度上可以和c-str（以\0结尾）兼容
+
+/// @brief UTF-16字符串字面量到M-UTF-8静态字符串数组的编译期转换宏
+/// @param u16LiteralString UTF-16字符串字面量
+/// @return 编译期生成的std::array存储的静态字符串数组
+/// @note 在M-UTF-8中，任何字符串结尾\\0都会被映射成0xC0 0x80，且保证串中不包含\\0，所以一定程度上可以和C字符串（以\\0结尾）兼容
 #define U16TOMU8STR(u16LiteralString) (MUTF8_Tool<>::U16ToMU8<u16LiteralString>())
+
+/// @brief UTF-8字符串字面量到M-UTF-8静态字符串数组的编译期转换宏
+/// @param u8LiteralString UTF-8字符串字面量
+/// @return 编译期生成的std::array存储的静态字符串数组
+/// @note 在M-UTF-8中，任何字符串结尾\\0都会被映射成0xC0 0x80，且保证串中不包含\\0，所以一定程度上可以和C字符串（以\\0结尾）兼容
 #define U8TOMU8STR(u8LiteralString) (MUTF8_Tool<>::U8ToMU8<u8LiteralString>())
+
+//---------------------------------------------------------------------------------------------//
 
 //英文原文
 /*

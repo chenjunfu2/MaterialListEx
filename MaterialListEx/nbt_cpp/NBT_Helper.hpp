@@ -11,16 +11,29 @@
 
 #include "vcpkg_config.h"//包含vcpkg生成的配置以确认库安装情况
 
-#ifdef __USE_XXHASH__
+#ifdef CJF2_NBT_CPP_USE_XXHASH
 #include "NBT_Hash.hpp"
 #endif
 
+/// @file
+
+/// @brief 用于格式化打印、序列化、计算哈希等功能
+/// @note 计算哈希需要安装xxhash库
 class NBT_Helper
 {
-	NBT_Helper() = delete;
-	~NBT_Helper() = delete;
+	/// @brief 禁止构造
+	NBT_Helper(void) = delete;
+	/// @brief 禁止析构
+	~NBT_Helper(void) = delete;
 
 public:
+	/// @brief 格式化对齐打印NBT对象
+	/// @tparam bSortCompound 是否对Compound进行排序
+	/// @tparam PrintFunc 用于输出的仿函数类型，具体格式请参考NBT_Print说明
+	/// @param nRoot 任意NBT_Type中的类型，仅初始化为视图
+	/// @param funcPrint 用于输出的仿函数
+	/// @param bPadding 是否打印缩进补白
+	/// @param bNewLine 是否在所有打印完成后的末尾换行
 	template<bool bSortCompound = true, typename PrintFunc = NBT_Print>
 	static void Print(const NBT_Node_View<true> nRoot, PrintFunc funcPrint = NBT_Print{ stdout }, bool bPadding = true, bool bNewLine = true)
 	{
@@ -33,6 +46,11 @@ public:
 		}
 	}
 
+	/// @brief 直接序列化，按照一定规则输出为String并返回
+	/// @tparam bSortCompound 是否对Compound进行排序
+	/// @param nRoot 任意NBT_Type中的类型，仅初始化为视图
+	/// @return 返回序列化的结果
+	/// @note 注意并非序列化为snbt，一般用于小NBT对象的附加信息输出
 	template<bool bSortCompound = true>
 	static std::string Serialize(const NBT_Node_View<true> nRoot)
 	{
@@ -41,14 +59,28 @@ public:
 		return sRet;
 	}
 
-#ifdef __USE_XXHASH__
-	static void DefaultFunc(NBT_Hash &)
+#ifdef CJF2_NBT_CPP_USE_XXHASH
+	/// @brief 用于插入哈希的示例函数
+	/// @param nbtHash 哈希对象，可以向内部添加数据，具体请参考NBT_Hash
+	/// @note 此函数为默认实现，请根据需要替换
+	static void DefaultFunc(NBT_Hash &nbtHash)
 	{
 		return;
 	}
 
+	/// @brief 函数的类型，用于模板默认值
 	using DefaultFuncType = std::decay_t<decltype(DefaultFunc)>;
 
+	/// @brief 对NBT对象进行递归计算哈希
+	/// @tparam bSortCompound 是否对Compound进行排序，以获得一致性哈希结果
+	/// @tparam TB 开始NBT哈希之前调用的仿函数类型
+	/// @tparam TA 结束NBT哈希之后调用的仿函数类型
+	/// @param nRoot 任意NBT_Type中的类型，仅初始化为视图
+	/// @param nbtHash 哈希对象，使用一个哈希种子初始化，具体请参考NBT_Hash
+	/// @param funBefore 开始NBT哈希之前调用的仿函数
+	/// @param funAfter 结束NBT哈希之后调用的仿函数
+	/// @return 计算的哈希值，可以用于哈希表或比较NBT对象等
+	/// @note 注意，递归层数在此函数内没有限制，请注意不要将过深的NBT对象传入导致栈溢出！
 	template<bool bSortCompound = true, typename TB = DefaultFuncType, typename TA = DefaultFuncType>//两个函数，分别在前后调用，可以用于插入哈希数据
 	static NBT_Hash::HASH_T Hash(const NBT_Node_View<true> nRoot, NBT_Hash nbtHash, TB funBefore = DefaultFunc, TA funAfter = DefaultFunc)
 	{
@@ -470,7 +502,7 @@ private:
 		}
 	}
 
-#ifdef __USE_XXHASH__
+#ifdef CJF2_NBT_CPP_USE_XXHASH
 	template<bool bRoot = true, bool bSortCompound = true>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
 	static void HashSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, NBT_Hash &nbtHash)
 	{
@@ -606,5 +638,3 @@ private:
 #endif
 
 };
-
-#include "vcpkg_config.h"//二次包含取消定义防止宏污染

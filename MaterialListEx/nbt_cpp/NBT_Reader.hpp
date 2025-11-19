@@ -14,53 +14,91 @@
 #include "NBT_Node.hpp"//nbt类型
 #include "NBT_Endian.hpp"//字节序
 
+/// @file
+
+/// @brief 这个类用于提供从NBT二进制流读取到NBT_Type::Compound对象的反序列化功能
 class NBT_Reader
 {
+	/// @brief 禁止构造
 	NBT_Reader(void) = delete;
+	/// @brief 禁止析构
 	~NBT_Reader(void) = delete;
 
 public:
+	/// @brief 默认输入流类，用于从标准库容器中读取数据
+	/// @tparam T 数据容器类型，必须满足以下要求：
+	/// - value_type的大小必须为1字节
+	/// - value_type必须是可平凡复制的类型
+	/// @note 这个类用于标准库的顺序容器，非标准库容器顺序请使用其它的自定义流对象，而非使用此对象，
+	/// 因为此对象对标准库容器的部分实现存在假设，其它非标准库容器极有可能不兼容导致未定义行为。
+	/// 可以注意到部分接口在类中并未使用，这是未来扩展时可能用到的，如果自定义流对象，则可以省略部分未使用的接口。
 	template <typename T = std::vector<uint8_t>>
-	class MyInputStream
+	class DefaultInputStream
 	{
 	private:
 		const T &tData = {};
 		size_t szIndex = 0;
 
 	public:
+		/// @brief 容器类型
 		using StreamType = T;
+		/// @brief 容器值类型
 		using ValueType = typename T::value_type;
+
+		//静态断言确保字节流与可平凡拷贝
 		static_assert(sizeof(ValueType) == 1, "Error ValueType Size");
 		static_assert(std::is_trivially_copyable_v<ValueType>, "ValueType Must Be Trivially Copyable");
 
-		//禁止用户使用临时值构造
-		MyInputStream(const T &&_tData, size_t szStartIdx = 0) = delete;
-		MyInputStream(const T &_tData, size_t szStartIdx = 0) :tData(_tData), szIndex(szStartIdx)
+		/// @brief 禁止使用临时对象构造
+		DefaultInputStream(const T &&_tData, size_t szStartIdx = 0) = delete;
+
+		/// @brief 构造函数
+		/// @param _tData 输入数据容器的常量引用
+		/// @param szStartIdx 起始读取索引位置
+		/// @note 指定szStartIdx为0则从头开始读取，否则从指定索引位置开始读取
+		DefaultInputStream(const T &_tData, size_t szStartIdx = 0) :tData(_tData), szIndex(szStartIdx)
 		{}
-		~MyInputStream(void) = default;//默认析构
 
-		MyInputStream(const MyInputStream &) = delete;
-		MyInputStream(MyInputStream &&) = delete;
+		/// @brief 默认析构函数
+		~DefaultInputStream(void) = default;
+		/// @brief 禁止拷贝构造
+		DefaultInputStream(const DefaultInputStream &) = delete;
+		/// @brief 禁止移动构造
+		DefaultInputStream(DefaultInputStream &&) = delete;
+		/// @brief 禁止拷贝赋值
+		DefaultInputStream &operator=(const DefaultInputStream &) = delete;
+		/// @brief 禁止移动赋值
+		DefaultInputStream &operator=(DefaultInputStream &&) = delete;
 
-		MyInputStream &operator=(const MyInputStream &) = delete;
-		MyInputStream &operator=(MyInputStream &&) = delete;
-
+		/// @brief 下标访问运算符
+		/// @param szIndex 索引位置
+		/// @return 对应位置的常量引用
+		/// @note 这个接口一般用于随机访问流中的数据，不改变当前读取位置，调用者保证访问范围合法
 		const ValueType &operator[](size_t szIndex) const noexcept
 		{
 			return tData[szIndex];
 		}
 
+		/// @brief 获取下一个字节并推进读取位置
+		/// @return 下一个字节的常量引用
+		/// @note 这个接口一般用于逐个从流中读取数据
 		const ValueType &GetNext() noexcept
 		{
 			return tData[szIndex++];
 		}
 
+		/// @brief 从流中读取一段数据
+		/// @param pDest 指向要读取数据的目标缓冲区的指针
+		/// @param szSize 要读取的数据大小（字节数）
+		/// @note 这个接口一般用于批量从流中读取数据
 		void GetRange(void *pDest, size_t szSize) noexcept
 		{
 			memcpy(pDest, &tData[szIndex], szSize);
 			szIndex += szSize;
 		}
 
+		/// @brief 回退一个字节的读取
+		/// @note 如果当前已在流的起始位置，则不会进行任何操作
 		void UnGet() noexcept
 		{
 			if (szIndex != 0)
@@ -69,51 +107,77 @@ public:
 			}
 		}
 
+		/// @brief 获取当前读取位置的指针
+		/// @return 指向当前读取位置数据的指针
+		/// @note 这个接口一般用于直接访问当前及后续的数据而不拷贝
 		const ValueType *CurData() const noexcept
 		{
 			return &(tData[szIndex]);
 		}
 
+		/// @brief 向后推进读取
+		/// @param szSize 要推进的字节数
+		/// @return 推进后的新读取位置
+		/// @note 这个接口一般与CurData合并使用，通过CurData读取一段数据后，调用此接口移动当前读取位置
 		size_t AddIndex(size_t szSize) noexcept
 		{
 			return szIndex += szSize;
 		}
 
+		/// @brief 向前撤销读取
+		/// @param szSize 要撤销的字节数
+		/// @return 撤销后的新读取位置
+		/// @note 这个接口一般用于在某些情况下撤销一部分的读取
 		size_t SubIndex(size_t szSize) noexcept
 		{
 			return szIndex -= szSize;
 		}
 
+		/// @brief 检查是否已到达流末尾
+		/// @return 如果已到达或超过流末尾则返回true，否则返回false
 		bool IsEnd() const noexcept
 		{
 			return szIndex >= tData.size();
 		}
 
+		/// @brief 获取流的总大小
+		/// @return 流的总大小，以字节数计
 		size_t Size() const noexcept
 		{
 			return tData.size();
 		}
 
+		/// @brief 检查是否还有足够的数据可供读取
+		/// @param szSize 需要读取的数据大小
+		/// @return 如果剩余数据足够则返回true，否则返回false
 		bool HasAvailData(size_t szSize) const noexcept
 		{
 			return (tData.size() - szIndex) >= szSize;
 		}
 
+		/// @brief 重置流读取位置到起始处
 		void Reset() noexcept
 		{
 			szIndex = 0;
 		}
 
+		/// @brief 获取底层数据的起始指针
+		/// @return 指向底层数据起始位置的常量指针
 		const ValueType *BaseData() const noexcept
 		{
 			return tData.data();
 		}
 
+		/// @brief 获取当前读取位置（只读）
+		/// @return 当前读取位置索引
 		size_t Index() const noexcept
 		{
 			return szIndex;
 		}
 
+		/// @brief 获取当前读取位置（可写）
+		/// @return 当前读取位置索引的引用
+		/// @note 这个接口允许直接修改读取位置，调用者保证修改后的索引范围合法
 		size_t &Index() noexcept
 		{
 			return szIndex;
@@ -282,6 +346,7 @@ private:
 		}
 	}
 
+///@cond
 #define _RP___FUNCTION__ __FUNCTION__//用于编译过程二次替换达到函数内部
 
 #define _RP___LINE__ _RP_STRLING(__LINE__)
@@ -321,6 +386,7 @@ catch(...)\
 	STACK_TRACEBACK("catch(...)");\
 	return eRet;\
 }
+///@endcond
 
 	//读取大端序数值，bNoCheck为true则不进行任何检查
 	template<bool bNoCheck = false, typename T, typename InputStream, typename ErrInfoFunc>
@@ -756,16 +822,38 @@ public:
 	//szStackDepth 控制栈深度，递归层检查仅由可嵌套的可能进行递归的函数进行，栈深度递减仅由对选择函数的调用进行
 	//注意此函数不会清空tCompound，所以可以对一个tCompound通过不同的tData多次调用来读取多个nbt片段并合并到一起
 	//如果指定了szDataStartIndex则会忽略tData中长度为szDataStartIndex的数据
+
+	/// @brief 从输入流中读取NBT数据到NBT_Type::Compound对象中
+	/// @tparam InputStream 输入流类型，必须符合DefaultOutputStream类型的接口
+	/// @tparam ErrInfoFunc 错误信息输出仿函数类型
+	/// @param IptStream 输入流对象
+	/// @param[out] tCompound 用于返回读取结果的对象
+	/// @param szStackDepth 递归最大深度深度，防止栈溢出
+	/// @param funcErrInfo 错误信息处理仿函数
+	/// @return 读取成功返回true，失败返回false
+	/// @note 错误与警告信息都输出到funcErrInfo，错误会导致函数结束剩下的写出任务，并进行栈回溯输出，最终返回false。警告则只会输出一次信息，然后继续执行，如果没有任何错误但是存在警告，函数仍将返回true。
+	/// 函数不会清除tCompound对象的数据，所以可以通过多次调用此函数，把多个NBT数据流合并到同一个tCompound对象内，
+	/// 但是如果多个流中有重复、同名的NBT键，则会产生冲突，为了保证键的唯一性，后来的值会替换原先的值，并通过funcErrInfo产生一个警告信息。
 	template<typename InputStream, typename ErrInfoFunc = NBT_Print>
 	static bool ReadNBT(InputStream IptStream, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept//从data中读取nbt
 	{
 		return GetCompoundType<true>(IptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
 	}
 
+	/// @brief 从数据容器中读取NBT数据到NBT_Type::Compound对象中
+	/// @tparam DataType 数据容器类型
+	/// @tparam ErrInfoFunc 错误信息输出仿函数类型
+	/// @param tDataInput 输入数据容器
+	/// @param szStartIdx 数据起始索引，会忽略tDataInput中长度为szStartIndex的数据
+	/// @param[out] tCompound 用于返回读取结果的对象
+	/// @param szStackDepth 递归最大深度深度，防止栈溢出
+	/// @param funcErrInfo 错误信息处理仿函数
+	/// @return 读取成功返回true，失败返回false
+	/// @note 此函数是ReadNBT的标准库容器版本，其它信息请参考ReadNBT(InputStream)版本的详细说明
 	template<typename DataType = std::vector<uint8_t>, typename ErrInfoFunc = NBT_Print>
 	static bool ReadNBT(const DataType &tDataInput, size_t szStartIdx, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept//从data中读取nbt
 	{
-		MyInputStream<DataType> IptStream(tDataInput, szStartIdx);
+		DefaultInputStream<DataType> IptStream(tDataInput, szStartIdx);
 		return GetCompoundType<true>(IptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;
 	}
 

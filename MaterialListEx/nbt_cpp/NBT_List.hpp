@@ -8,12 +8,14 @@
 
 #include "NBT_Type.hpp"
 
+/// @file
+
 class NBT_Reader;
 class NBT_Writer;
 class NBT_Helper;
 
 template <typename List>
-class MyList :protected List
+class NBT_List :protected List
 {
 	friend class NBT_Reader;
 	friend class NBT_Writer;
@@ -84,62 +86,62 @@ public:
 
 	//完美转发、初始化列表代理构造
 	template<typename... Args>
-	MyList(NBT_TAG _enElementTag, Args&&... args) :List(std::forward<Args>(args)...), enElementTag(_enElementTag)
+	NBT_List(NBT_TAG _enElementTag, Args&&... args) :List(std::forward<Args>(args)...), enElementTag(_enElementTag)
 	{
 		TestInit();
 	}
 
 	template<typename... Args>
-	MyList(NoCheck_T, NBT_TAG _enElementTag, Args&&... args) : List(std::forward<Args>(args)...), enElementTag(_enElementTag)
+	NBT_List(NoCheck_T, NBT_TAG _enElementTag, Args&&... args) : List(std::forward<Args>(args)...), enElementTag(_enElementTag)
 	{}
 
 	template<typename... Args>
-	MyList(Args&&... args) : List(std::forward<Args>(args)...), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
+	NBT_List(Args&&... args) : List(std::forward<Args>(args)...), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
 	{
 		TestInit();
 	}
 
 	template<typename... Args>
-	MyList(NoCheck_T, Args&&... args) : List(std::forward<Args>(args)...), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
+	NBT_List(NoCheck_T, Args&&... args) : List(std::forward<Args>(args)...), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
 	{}
 
-	MyList(NBT_TAG _enElementTag, std::initializer_list<typename List::value_type> init) : List(init), enElementTag(_enElementTag)
+	NBT_List(NBT_TAG _enElementTag, std::initializer_list<typename List::value_type> init) : List(init), enElementTag(_enElementTag)
 	{
 		TestInit();
 	}
 
-	MyList(NoCheck_T, NBT_TAG _enElementTag, std::initializer_list<typename List::value_type> init) : List(init), enElementTag(_enElementTag)
+	NBT_List(NoCheck_T, NBT_TAG _enElementTag, std::initializer_list<typename List::value_type> init) : List(init), enElementTag(_enElementTag)
 	{}
 
-	MyList(std::initializer_list<typename List::value_type> init) : List(init), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
+	NBT_List(std::initializer_list<typename List::value_type> init) : List(init), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
 	{
 		TestInit();
 	}
 
-	MyList(NoCheck_T, std::initializer_list<typename List::value_type> init) : List(init), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
+	NBT_List(NoCheck_T, std::initializer_list<typename List::value_type> init) : List(init), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
 	{}
 
 	//无参构造析构
-	MyList(void) = default;
-	~MyList(void)
+	NBT_List(void) = default;
+	~NBT_List(void)
 	{
 		Clear();
 	}
 
 	//移动拷贝构造
-	MyList(MyList &&_Move) noexcept
+	NBT_List(NBT_List &&_Move) noexcept
 		:List(std::move(_Move)),
 		 enElementTag(std::move(_Move.enElementTag))
 	{
 		_Move.enElementTag = NBT_TAG::End;
 	}
-	MyList(const MyList &_Copy)
+	NBT_List(const NBT_List &_Copy)
 		:List(_Copy),
 		enElementTag(_Copy.enElementTag)
 	{}
 
 	//赋值
-	MyList &operator=(MyList &&_Move) noexcept
+	NBT_List &operator=(NBT_List &&_Move) noexcept
 	{
 		List::operator=(std::move(_Move));
 		enElementTag = std::move(_Move.enElementTag);
@@ -149,7 +151,7 @@ public:
 		return *this;
 	}
 
-	MyList &operator=(const MyList &_Copy)
+	NBT_List &operator=(const NBT_List &_Copy)
 	{
 		List::operator=(_Copy);
 		enElementTag = _Copy.enElementTag;
@@ -164,19 +166,19 @@ public:
 	}
 
 	//运算符重载
-	bool operator==(const MyList &_Right) const noexcept
+	bool operator==(const NBT_List &_Right) const noexcept
 	{
 		return enElementTag == _Right.enElementTag &&
 			(const List &)*this == (const List &)_Right;
 	}
 
-	bool operator!=(const MyList &_Right) const noexcept
+	bool operator!=(const NBT_List &_Right) const noexcept
 	{
 		return enElementTag != _Right.enElementTag ||
 			(const List &)*this != (const List &)_Right;
 	}
 
-	std::partial_ordering operator<=>(const MyList &_Right) const noexcept
+	std::partial_ordering operator<=>(const NBT_List &_Right) const noexcept
 	{
 		if (auto cmp = enElementTag <=> _Right.enElementTag; cmp != 0)
 		{
@@ -392,7 +394,7 @@ public:
 	}
 
 	template <bool bNoCheck = false>
-	std::conditional_t<bNoCheck, void, bool> Merge(const MyList &_Copy)
+	std::conditional_t<bNoCheck, void, bool> Merge(const NBT_List &_Copy)
 	{
 		if constexpr (!bNoCheck)
 		{
@@ -411,7 +413,7 @@ public:
 	}
 
 	template <bool bNoCheck = false>
-	std::conditional_t<bNoCheck, void, bool> Merge(MyList &&_Move)
+	std::conditional_t<bNoCheck, void, bool> Merge(NBT_List &&_Move)
 	{
 		if constexpr (!bNoCheck)
 		{

@@ -7,27 +7,47 @@
 
 #include "NBT_Type.hpp"
 
+/// @file
+
 class NBT_Reader;
 class NBT_Writer;
 class NBT_Helper;
 
-template <typename T>
-concept HasSpaceship = requires(const T & a, const T & b)
+/// @brief 用于存放NBT_Compound使用的，无法存在于类内的概念
+/// @note 用户不应直接使用此内容
+namespace NBT_Compound_Concept
 {
-	{ a <=> b };
-};
-
-template <typename T>
-concept HasRBegin = requires(T t) {t.rbegin();};
-template <typename T>
-concept HasCRBegin = requires(T t) {t.crbegin();};
-template <typename T>
-concept HasREnd = requires(T t) {t.rend();};
-template <typename T>
-concept HasCREnd = requires(T t) {t.crend();};
+	template <typename T>
+	concept HasSpaceship = requires(const T & a, const T & b)
+	{
+		{
+			a <=> b
+		};
+	};
+	template <typename T>
+	concept HasRBegin = requires(T t)
+	{
+		t.rbegin();
+	};
+	template <typename T>
+	concept HasCRBegin = requires(T t)
+	{
+		t.crbegin();
+	};
+	template <typename T>
+	concept HasREnd = requires(T t)
+	{
+		t.rend();
+	};
+	template <typename T>
+	concept HasCREnd = requires(T t)
+	{
+		t.crend();
+	};
+}
 
 template<typename Compound>
-class MyCompound :protected Compound//Compound is Map
+class NBT_Compound :protected Compound//Compound is Map
 {
 	friend class NBT_Reader;
 	friend class NBT_Writer;
@@ -50,31 +70,31 @@ private:
 public:
 	//完美转发、初始化列表代理构造
 	template<typename... Args>
-	MyCompound(Args&&... args) : Compound(std::forward<Args>(args)...)
+	NBT_Compound(Args&&... args) : Compound(std::forward<Args>(args)...)
 	{}
 
-	MyCompound(std::initializer_list<typename Compound::value_type> init) : Compound(init)
+	NBT_Compound(std::initializer_list<typename Compound::value_type> init) : Compound(init)
 	{}
 
 	//无参构造析构
-	MyCompound(void) = default;
-	~MyCompound(void) = default;
+	NBT_Compound(void) = default;
+	~NBT_Compound(void) = default;
 
 	//移动拷贝构造
-	MyCompound(MyCompound &&_Move) noexcept :Compound(std::move(_Move))
+	NBT_Compound(NBT_Compound &&_Move) noexcept :Compound(std::move(_Move))
 	{}
 
-	MyCompound(const MyCompound &_Copy) noexcept :Compound(_Copy)
+	NBT_Compound(const NBT_Compound &_Copy) noexcept :Compound(_Copy)
 	{}
 
 	//赋值
-	MyCompound &operator=(MyCompound &&_Move) noexcept
+	NBT_Compound &operator=(NBT_Compound &&_Move) noexcept
 	{
 		Compound::operator=(std::move(_Move));
 		return *this;
 	}
 
-	MyCompound &operator=(const MyCompound &_Copy)
+	NBT_Compound &operator=(const NBT_Compound &_Copy)
 	{
 		Compound::operator=(_Copy);
 		return *this;
@@ -88,19 +108,19 @@ public:
 	}
 
 	//运算符重载
-	bool operator==(const MyCompound &_Right) const noexcept
+	bool operator==(const NBT_Compound &_Right) const noexcept
 	{
 		return (const Compound &)*this == (const Compound &)_Right;
 	}
 
-	bool operator!=(const MyCompound &_Right) const noexcept
+	bool operator!=(const NBT_Compound &_Right) const noexcept
 	{
 		return (const Compound &)*this != (const Compound &)_Right;
 	}
 
-	std::partial_ordering operator<=>(const MyCompound &_Right) const noexcept
+	std::partial_ordering operator<=>(const NBT_Compound &_Right) const noexcept
 	{
-		if constexpr (HasSpaceship<Compound>)
+		if constexpr (NBT_Compound_Concept::HasSpaceship<Compound>)
 		{
 			return (const Compound &)*this <=> (const Compound &)_Right;
 		}
@@ -131,13 +151,13 @@ public:
 	
 	//存在则映射
 	//-------------------- rbegin --------------------
-	auto rbegin() requires HasRBegin<Compound> {return Compound::rbegin();}
-	auto rbegin() const requires HasRBegin<Compound> {return Compound::rbegin();}
-	auto crbegin() const noexcept requires HasCRBegin<Compound> {return Compound::crbegin();}
+	auto rbegin() requires NBT_Compound_Concept::HasRBegin<Compound> {return Compound::rbegin();}
+	auto rbegin() const requires NBT_Compound_Concept::HasRBegin<Compound> {return Compound::rbegin();}
+	auto crbegin() const noexcept requires NBT_Compound_Concept::HasCRBegin<Compound> {return Compound::crbegin();}
 	//-------------------- rend --------------------
-	auto rend() requires HasREnd<Compound> {return Compound::rend();}
-	auto rend() const requires HasREnd<Compound> {return Compound::rend();}
-	auto crend() const noexcept requires HasCREnd<Compound> {return Compound::crend();}
+	auto rend() requires NBT_Compound_Concept::HasREnd<Compound> {return Compound::rend();}
+	auto rend() const requires NBT_Compound_Concept::HasREnd<Compound> {return Compound::rend();}
+	auto crend() const noexcept requires NBT_Compound_Concept::HasCREnd<Compound> {return Compound::crend();}
 	
 	
 
@@ -223,12 +243,12 @@ public:
 		return Compound::size();
 	}
 
-	void Merge(const MyCompound &_Copy)
+	void Merge(const NBT_Compound &_Copy)
 	{
 		Compound::merge(_Copy);
 	}
 
-	void Merge(MyCompound &&_Move)
+	void Merge(NBT_Compound &&_Move)
 	{
 		Compound::merge(std::move(_Move));
 	}

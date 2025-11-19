@@ -15,43 +15,84 @@
 #include "NBT_Node.hpp"//nbt类型
 #include "NBT_Endian.hpp"//字节序
 
+/// @file
+
+/// @brief 这个类用于提供从NBT_Type::Compound对象写出到NBT二进制流的序列化功能
 class NBT_Writer
 {
+	/// @brief 禁止构造
 	NBT_Writer(void) = delete;
+	/// @brief 禁止析构
 	~NBT_Writer(void) = delete;
 
 public:
+	/// @brief 默认输出流类，用于将数据写入到标准库容器中
+	/// @tparam T 数据容器类型，必须满足以下要求：
+	/// - value_type的大小必须为1字节
+	/// - value_type必须是可平凡复制的类型
+	/// @note 这个类用于标准库的顺序容器，非标准库容器顺序请使用其它的自定义流对象，而非使用此对象，
+	/// 因为此对象对标准库容器的部分实现存在假设，其它非标准库容器极有可能不兼容导致未定义行为。
+	/// 可以注意到部分接口在类中并未使用，这是未来扩展时可能用到的，如果自定义流对象，则可以省略部分未使用的接口。
 	template <typename T = std::vector<uint8_t>>
-	class MyOutputStream
+	class DefaultOutputStream
 	{
 	private:
 		T &tData;
 
 	public:
+		/// @brief 容器类型
 		using StreamType = T;
+		/// @brief 容器值类型
 		using ValueType = typename T::value_type;
+
+		//静态断言确保字节流与可平凡拷贝
 		static_assert(sizeof(ValueType) == 1, "Error ValueType Size");
 		static_assert(std::is_trivially_copyable_v<ValueType>, "ValueType Must Be Trivially Copyable");
 
-		//引用天生无法使用临时值构造，无需担心临时值构造导致的悬空引用
-		MyOutputStream(T &_tData, size_t szStartIdx = 0) :tData(_tData)
+		/// @brief 构造函数
+		/// @param _tData 输出数据容器的引用
+		/// @param szStartIdx 起始索引，容器会调整大小到此索引位置
+		/// @note 索引位置后的数据都会被删除，然后从索引当前位置开始写入
+		DefaultOutputStream(T &_tData, size_t szStartIdx = 0) :tData(_tData)//引用天生无法使用临时值构造，无需担心临时值构造导致的悬空引用
 		{
 			tData.resize(szStartIdx);
 		}
-		~MyOutputStream(void) = default;
 
+		/// @brief 默认析构函数
+		~DefaultOutputStream(void) = default;
+		/// @brief 禁止拷贝构造
+		DefaultOutputStream(const DefaultOutputStream &) = delete;
+		/// @brief 禁止移动构造
+		DefaultOutputStream(DefaultOutputStream &&) = delete;
+		/// @brief 禁止拷贝赋值
+		DefaultOutputStream &operator=(const DefaultOutputStream &) = delete;
+		/// @brief 禁止移动赋值
+		DefaultOutputStream &operator=(DefaultOutputStream &&) = delete;
+
+		/// @brief 下标访问运算符
+		/// @param szIndex 索引位置
+		/// @return 对应位置的常量引用
+		/// @note 这个接口一般用于随机访问流中的数据，而不修改流，调用者保证访问范围合法
 		const ValueType &operator[](size_t szIndex) const noexcept
 		{
 			return tData[szIndex];
 		}
 
+		/// @brief 向流中写入写入单个值
+		/// @tparam V 元素类型，必须可构造为ValueType
+		/// @param c 要写入的元素
+		/// @note 这个接口一般用于逐个向流中写入数据
 		template<typename V>
 		requires(std::is_constructible_v<ValueType, V &&>)
-			void PutOnce(V &&c)
+		void PutOnce(V &&c)
 		{
 			tData.push_back(std::forward<V>(c));
 		}
 
+		/// @brief 向流中写入一段数据
+		/// @param pData 指向要写入数据的缓冲区的指针
+		/// @param szSize 要写入的数据大小（字节数）
+		/// @note 这个接口一般用于批量向流中写入数据
 		void PutRange(const ValueType *pData, size_t szSize)
 		{
 			//tData.insert(tData.end(), &pData[0], &pData[szSize]);
@@ -62,31 +103,43 @@ public:
 			memcpy(&tData.data()[szCurSize], &pData[0], szSize);
 		}
 
+		/// @brief 预分配额外容量
+		/// @param szAddSize 要额外分配的容量大小（字节数）
+		/// @note 这个接口一般是用于性能优化的，提前要求流预留空间以便后续的写入。
+		/// 请不要假设在所有写入操作之前都会进行此调用，这个接口只有部分情况会用到。
 		void AddReserve(size_t szAddSize)
 		{
 			tData.reserve(tData.size() + szAddSize);
 		}
 
+		/// @brief 删除（撤销）最后一个写入的字节
 		void UnPut(void) noexcept
 		{
 			tData.pop_back();
 		}
 
+		/// @brief 获取当前字节流中已有的数据大小
+		/// @return 数据大小，以字节数计
 		size_t Size(void) const noexcept
 		{
 			return tData.size();
 		}
 
+		/// @brief 重置流，清空所有数据
 		void Reset(void) noexcept
 		{
 			tData.clear();
 		}
 
+		/// @brief 获取底层数据的常量引用
+		/// @return 底层数据容器的常量引用
 		const T &Data(void) const noexcept
 		{
 			return tData;
 		}
 
+		/// @brief 获取底层数据的非常量引用
+		/// @return 底层数据容器的非常量引用
 		T &Data(void) noexcept
 		{
 			return tData;
@@ -246,6 +299,7 @@ private:
 		}
 	}
 
+///@cond
 #define _RP___FUNCTION__ __FUNCTION__//用于编译过程二次替换达到函数内部
 
 #define _RP___LINE__ _RP_STRLING(__LINE__)
@@ -285,6 +339,7 @@ catch(...)\
 	STACK_TRACEBACK("catch(...)");\
 	return eRet;\
 }
+///@endcond
 
 	template<typename OutputStream, typename ErrInfoFunc>
 	static inline ErrCode CheckReserve(OutputStream &tData, size_t szAddSize, ErrInfoFunc &funcErrInfo) noexcept
@@ -748,18 +803,42 @@ catch(...)\
 	}
 
 public:
-	//输出到tData中，部分功能和原理参照ReadNBT处的注释，szDataStartIndex在此处可以对一个tData通过不同的tCompound和szDataStartIndex = tData.size()
+	//输出到tData中，部分功能和原理参照ReadNBT处的注释，szDataStartIndex在此处可以对一个tData通过不同的tCompound和szStartIdx = tData.size()
 	//来调用以达到把多个不同的nbt输出到同一个tData内的功能
+
+	/// @brief 将NBT_Type::Compound对象写入到输出流中
+	/// @tparam bSortCompound 是否对Compound对象内部的键进行排序，以获得一致性的输出结果
+	/// @tparam[out] OutputStream 输出流类型，必须符合DefaultOutputStream类型的接口
+	/// @tparam ErrInfoFunc 错误信息输出仿函数类型
+	/// @param OptStream 输出流对象
+	/// @param tCompound 用于写出的对象
+	/// @param szStackDepth 递归最大深度，防止栈溢出
+	/// @param funcErrInfo 错误信息处理仿函数
+	/// @return 写入成功返回true，失败返回false
+	/// @note 错误与警告信息都输出到funcErrInfo，错误会导致函数结束剩下的写出任务，并进行栈回溯输出，最终返回false。警告则只会输出一次信息，然后继续执行，如果没有任何错误但是存在警告，函数仍将返回true。
 	template<bool bSortCompound = true, typename OutputStream, typename ErrInfoFunc = NBT_Print>
 	static bool WriteNBT(OutputStream OptStream, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept
 	{
 		return PutCompoundType<true, bSortCompound>(OptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;
 	}
 
+	/// @brief 将NBT_Type::Compound对象写入到数据容器中
+	/// @tparam bSortCompound 是否对Compound对象内部的键进行排序，以获得一致性的输出结果
+	/// @tparam DataType 数据容器类型
+	/// @tparam ErrInfoFunc 错误信息输出仿函数类型
+	/// @param[out] tDataOutput 输出数据容器
+	/// @param szStartIdx 数据起始索引，用于指定起始写入位置，设置为tDataOutput.size()则可以进行拼接，设置为0则清空容器
+	/// @param tCompound 用于写出的对象
+	/// @param szStackDepth 递归最大深度，防止栈溢出
+	/// @param funcErrInfo 错误信息处理仿函数
+	/// @return 写入成功返回true，失败返回false
+	/// @note 函数可以通过设置szStartIdx = tDataOutput.size()，把多个Compound对象的数据流合并到同一个tDataOutput对象内。如果多个对象中有重复、同名的NBT键，
+	/// 虽然可以合并到流中，但是如果对这个流进行读取，读取例程为了保证在同一个Compound中的键的唯一性，会丢失部分信息，具体请参考ReadNBT接口的说明。
+	/// 此函数是WriteNBT的标准库容器版本，其它信息请参考WriteNBT(OutputStream)版本的详细说明。
 	template<bool bSortCompound = true, typename DataType = std::vector<uint8_t>, typename ErrInfoFunc = NBT_Print>
 	static bool WriteNBT(DataType &tDataOutput, size_t szStartIdx, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept
 	{
-		MyOutputStream<DataType> OptStream(tDataOutput, szStartIdx);
+		DefaultOutputStream<DataType> OptStream(tDataOutput, szStartIdx);
 		return PutCompoundType<true, bSortCompound>(OptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;
 	}
 

@@ -8,9 +8,14 @@
 
 #include "Compiler_Define.h"//编译器类型判断
 
+/// @file
+
+/// @brief 用于处理大小端运算，根据实际平台字节序类型进行自动匹配
 class NBT_Endian
 {
+	/// @brief 禁止构造
 	NBT_Endian(void) = delete;
+	/// @brief 禁止析构
 	~NBT_Endian(void) = delete;
 	
 private:
@@ -25,6 +30,11 @@ private:
 	}
 
 public:
+	/// @brief 颠倒字节序，需要整数字节数为2的倍数或字节数为1
+	/// @tparam T 任意整数类型
+	/// @param data 任意整数类型的值
+	/// @return 字节序的颠倒形式
+	/// @note 保守实现，仅需平台支持位操作
 	template<typename T>
 	requires std::integral<T>
 	constexpr static T ByteSwapAny(T data) noexcept
@@ -65,42 +75,59 @@ public:
 		return (T)tmp;
 	}
 
+	/// @brief 颠倒字节序16位特化版
+	/// @param data uint16_t类型的值
+	/// @return 字节序的颠倒形式
+	/// @note 如果平台支持内建指令，则使用平台内建指令，否则落到保守实现ByteSwapAny
 	static uint16_t ByteSwap16(uint16_t data) noexcept
 	{
 		//根据编译器切换内建指令或使用默认位移实现
-#if __COMPILER_MSVC__
+#if CJF2_NBT_CPP_COMPILER_MSVC
 		return _byteswap_ushort(data);
-#elif __COMPILER_GCC__ || __COMPILER_CLANG__
+#elif CJF2_NBT_CPP_COMPILER_GCC || CJF2_NBT_CPP_COMPILER_CLANG
 		return __builtin_bswap16(data);
 #else
 		return ByteSwapAny(data);
 #endif
 	}
 
+	/// @brief 颠倒字节序32位特化版
+	/// @param data uint32_t类型的值
+	/// @return 字节序的颠倒形式
+	/// @note 如果平台支持内建指令，则使用平台内建指令，否则落到保守实现ByteSwapAny
 	static uint32_t ByteSwap32(uint32_t data) noexcept
 	{
 		//根据编译器切换内建指令或使用默认位移实现
-#if __COMPILER_MSVC__
+#if CJF2_NBT_CPP_COMPILER_MSVC
 		return _byteswap_ulong(data);
-#elif __COMPILER_GCC__ || __COMPILER_CLANG__
+#elif CJF2_NBT_CPP_COMPILER_GCC || CJF2_NBT_CPP_COMPILER_CLANG
 		return __builtin_bswap32(data);
 #else
 		return ByteSwapAny(data);
 #endif
 	}
 
+	/// @brief 颠倒字节序32位特化版
+	/// @param data uint32_t类型的值
+	/// @return 字节序的颠倒形式
+	/// @note 如果平台支持内建指令，则使用平台内建指令，否则落到保守实现ByteSwapAny
 	static uint64_t ByteSwap64(uint64_t data) noexcept
 	{
 		//根据编译器切换内建指令或使用默认位移实现
-#if __COMPILER_MSVC__
+#if CJF2_NBT_CPP_COMPILER_MSVC
 		return _byteswap_uint64(data);
-#elif __COMPILER_GCC__ || __COMPILER_CLANG__
+#elif CJF2_NBT_CPP_COMPILER_GCC || CJF2_NBT_CPP_COMPILER_CLANG
 		return __builtin_bswap64(data);
 #else
 		return ByteSwapAny(data);
 #endif
 	}
 
+	/// @brief 颠倒字节序，自动匹配位数
+	/// @tparam T 任意整数类型
+	/// @param data 任意整数类型的值
+	/// @return 字节序的颠倒形式
+	/// @note 如果没有T类型位数的特化版，则落到保守实现ByteSwapAny
 	template<typename T>
 	requires std::integral<T>
 	constexpr static T AutoByteSwap(T data) noexcept
@@ -131,6 +158,11 @@ public:
 
 	//------------------------------------------------------//
 
+	/// @brief 从当前平台字节序转换到大端字节序，自动匹配位数
+	/// @tparam T 任意整数类型
+	/// @param data 任意整数类型的值
+	/// @return 大端字节序的值
+	/// @note 如果平台字节序与大端相同，则返回值不变
 	template<typename T>
 	requires std::integral<T>
 	static T NativeToBigAny(T data) noexcept
@@ -144,6 +176,11 @@ public:
 		return AutoByteSwap(data);
 	}
 
+	/// @brief 从当前平台字节序转换到小端字节序，自动匹配位数
+	/// @tparam T 任意整数类型
+	/// @param data 任意整数类型的值
+	/// @return 小端字节序的值
+	/// @note 如果平台字节序与小端相同，则返回值不变
 	template<typename T>
 	requires std::integral<T>
 	static T NativeToLittleAny(T data) noexcept
@@ -157,6 +194,11 @@ public:
 		return AutoByteSwap(data);
 	}
 
+	/// @brief 从大端字节序转换到当前平台字节序，自动匹配位数
+	/// @tparam T 任意整数类型
+	/// @param data 任意整数类型的值
+	/// @return 平台字节序的值
+	/// @note 如果平台字节序与大端相同，则返回值不变
 	template<typename T>
 	requires std::integral<T>
 	static T BigToNativeAny(T data) noexcept
@@ -170,6 +212,11 @@ public:
 		return AutoByteSwap(data);
 	}
 
+	/// @brief 从小端字节序转换到当前平台字节序，自动匹配位数
+	/// @tparam T 任意整数类型
+	/// @param data 任意整数类型的值
+	/// @return 平台字节序的值
+	/// @note 如果平台字节序与小端相同，则返回值不变
 	template<typename T>
 	requires std::integral<T>
 	static T LittleToNativeAny(T data) noexcept
@@ -183,5 +230,3 @@ public:
 		return AutoByteSwap(data);
 	}
 };
-
-#include "Compiler_Define.h"//二次包含取消定义
