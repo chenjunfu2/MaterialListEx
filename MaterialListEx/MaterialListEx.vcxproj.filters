@@ -362,6 +362,12 @@
     <ClInclude Include="nbt_cpp\NBT_Writer.hpp">
       <Filter>头文件\nbt_cpp</Filter>
     </ClInclude>
+    <ClInclude Include="nbt_cpp\vcpkg_config.h">
+      <Filter>头文件\nbt_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="nbt_cpp\Compiler_Define.h">
+      <Filter>头文件\nbt_cpp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="TODO.txt">

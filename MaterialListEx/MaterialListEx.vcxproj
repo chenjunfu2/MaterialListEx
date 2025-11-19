@@ -213,6 +213,7 @@
     <ClInclude Include="ItemProcess.hpp" />
     <ClInclude Include="Language.hpp" />
     <ClInclude Include="MemoryLeakCheck.hpp" />
+    <ClInclude Include="nbt_cpp\Compiler_Define.h" />
     <ClInclude Include="nbt_cpp\MUTF8_Tool.hpp" />
     <ClInclude Include="nbt_cpp\NBT_All.hpp" />
     <ClInclude Include="nbt_cpp\NBT_Array.hpp" />
@@ -230,6 +231,7 @@
     <ClInclude Include="nbt_cpp\NBT_TAG.hpp" />
     <ClInclude Include="nbt_cpp\NBT_Type.hpp" />
     <ClInclude Include="nbt_cpp\NBT_Writer.hpp" />
+    <ClInclude Include="nbt_cpp\vcpkg_config.h" />
     <ClInclude Include="nlohmann\adl_serializer.hpp" />
     <ClInclude Include="nlohmann\byte_container_with_subtype.hpp" />
     <ClInclude Include="nlohmann\detail\abi_macros.hpp" />
