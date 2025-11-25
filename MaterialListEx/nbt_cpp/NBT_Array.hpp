@@ -3,12 +3,13 @@
 #include <vector>
 
 /// @file
+/// @brief NBT数组基础类型
 
 class NBT_Reader;
 class NBT_Writer;
 class NBT_Helper;
 
-/// @brief 一个公开继承自标准库std::vector（在NBT_Type中给出模板实例化）的代理类。
+/// @brief 继承自标准库std::vector的代理类。
 /// 无特殊成员，构造与使用方式与标准库std::vector一致。
 /// @tparam Array 需要继承的父类类型
 /// @note 用户不应自行实例化此类，请使用NBT_Type::xxxArray来访问此类实例化类型（xxx为具体Array存储的类型）

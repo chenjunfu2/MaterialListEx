@@ -16,6 +16,7 @@
 #endif
 
 /// @file
+/// @brief NBT对象辅助工具集
 
 /// @brief 用于格式化打印、序列化、计算哈希等功能
 /// @note 计算哈希需要安装xxhash库

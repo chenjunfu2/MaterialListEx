@@ -21,6 +21,7 @@
 #endif
 
 /// @file
+/// @brief IO工具集
 
 /// @brief 用于提供nbt文件读写，解压与压缩功能
 class NBT_IO

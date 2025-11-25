@@ -6,8 +6,7 @@
 #include "MUTF8_Tool.hpp"
 
 /// @file
-/// @brief 本文件包含的类用于存储、处理与转换Java的Modified-UTF-8字符串。
-/// 在NBT格式里，字符串全部使用Java的Modified-UTF-8。
+/// @brief NBT字符串类型
 
 class NBT_Reader;
 class NBT_Writer;
@@ -84,9 +83,9 @@ public:
 	{}
 
 	/// @brief 删除临时对象构造方式，防止从临时对象构造导致悬空指针
-	/// @param 参数未使用 临时对象的引用
+	/// @param _Temp 参数未使用 临时对象的引用
 	/// @note 一定程度上的防御，防止用户疏忽，但是无法完全杜绝极端情况。
-	NBT_StringView(NBT_String<String, StringView> &&) = delete;
+	NBT_StringView(NBT_String<String, StringView> &&_Temp) = delete;
 
 	/// @brief 直接获取char类型的视图
 	/// @return 返回char类型的视图View

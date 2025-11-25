@@ -9,7 +9,7 @@
 #include <algorithm>
 
 /// @file
-/// @brief 用于处理Java的Modified-UTF-8的工具集
+/// @brief Java Modified-UTF-8工具集
 
 //来个static string包装类，使得模板能接受字符串字面量
 //必须放在外面，否则NTTP推导主类模板会失败，
@@ -34,12 +34,12 @@ namespace MUTF8_Tool_Internal
 
 		/// @brief 从字符串数组的引用拷贝构造
 		/// @param _tStr 字符串数组的引用
-		/// @note 编译期构造
+		/// @note 可编译期构造
 		constexpr StringLiteral(const T(&_tStr)[N]) noexcept : Super(std::to_array(_tStr))
 		{}
 
-		/// @brief 默认构造
-		/// @note 编译期构造
+		/// @brief 默认析构
+		/// @note 可编译期析构
 		constexpr ~StringLiteral(void) = default;
 	};
 
@@ -75,8 +75,11 @@ class MUTF8_Tool
 	static inline constexpr U8T u8FailChar[3]{ (U8T)0xEF, (U8T)0xBF, (U8T)0xBD };
 
 public:
+	/// @brief 模板M-UTF-8字符类型的代理
 	using MU8_T = MU8T;
+	/// @brief 模板UTF-16字符类型的代理
 	using U16_T = U16T;
+	/// @brief 模板UTF-8字符类型的代理
 	using U8_T = U8T;
 
 private:

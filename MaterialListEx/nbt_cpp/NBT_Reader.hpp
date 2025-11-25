@@ -15,6 +15,7 @@
 #include "NBT_Endian.hpp"//字节序
 
 /// @file
+/// @brief NBT类型二进制反序列化工具
 
 /// @brief 这个类用于提供从NBT二进制流读取到NBT_Type::Compound对象的反序列化功能
 class NBT_Reader
@@ -283,8 +284,10 @@ private:
 		funcErrInfo("\"\n\n");
 
 		//如果可以，预览szCurrent前后n个字符，否则裁切到边界
+/// @cond
 #define VIEW_PRE (4 * 8 + 3)//向前
 #define VIEW_SUF (4 * 8 + 5)//向后
+/// @endcond
 		size_t rangeBeg = (tData.Index() > VIEW_PRE) ? (tData.Index() - VIEW_PRE) : (0);//上边界裁切
 		size_t rangeEnd = ((tData.Index() + VIEW_SUF) < tData.Size()) ? (tData.Index() + VIEW_SUF) : (tData.Size());//下边界裁切
 #undef VIEW_SUF

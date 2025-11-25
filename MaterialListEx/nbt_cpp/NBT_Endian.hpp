@@ -9,6 +9,7 @@
 #include "Compiler_Define.h"//编译器类型判断
 
 /// @file
+/// @brief 端序工具集
 
 /// @brief 用于处理大小端运算，根据实际平台字节序类型进行自动匹配
 class NBT_Endian

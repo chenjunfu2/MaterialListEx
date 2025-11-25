@@ -1,13 +1,16 @@
 ﻿#pragma once
 
 /// @file 
-/// @brief 编译器检测支持
+/// @brief 编译器检测支持宏
 /// 
 /// 本文件定义了编译器检测宏，用于识别当前编译环境：
 /// - CJF2_NBT_CPP_COMPILER_MSVC   (MSVC编译器标识)
 /// - CJF2_NBT_CPP_COMPILER_GCC    (GCC编译器标识)
 /// - CJF2_NBT_CPP_COMPILER_CLANG  (Clang编译器标识) 
 /// - CJF2_NBT_CPP_COMPILER_NAME   (编译器名称字符串)
+
+
+/// @cond
 
 //先预定义所有可能的编译器宏
 #define CJF2_NBT_CPP_COMPILER_MSVC 0
@@ -30,3 +33,5 @@
 #else
 	#define CJF2_NBT_CPP_COMPILER_NAME "Unknown"
 #endif
+
+/// @endcond

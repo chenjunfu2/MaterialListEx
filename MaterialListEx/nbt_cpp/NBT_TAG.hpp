@@ -5,6 +5,7 @@
 #include <compare>
 
 /// @file
+/// @brief NBT类型枚举与它的运算重载
 
 /// @brief NBT_TAG的原始类型，用于二进制读写或判断等
 /// @note 可以和NBT_TAG无损互转

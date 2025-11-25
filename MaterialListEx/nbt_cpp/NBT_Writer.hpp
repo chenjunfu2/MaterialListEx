@@ -16,6 +16,7 @@
 #include "NBT_Endian.hpp"//字节序
 
 /// @file
+/// @brief NBT类型二进制序列化工具
 
 /// @brief 这个类用于提供从NBT_Type::Compound对象写出到NBT二进制流的序列化功能
 class NBT_Writer
@@ -247,7 +248,9 @@ private:
 		funcErrInfo("\"\n\n");
 
 		//如果可以，预览szCurrent前n个字符，否则裁切到边界
+/// @cond
 #define VIEW_PRE (8 * 8 + 8)//向前
+/// @endcond
 		size_t rangeBeg = (tData.Size() > VIEW_PRE) ? (tData.Size() - VIEW_PRE) : (0);//上边界裁切
 		size_t rangeEnd = tData.Size();//下边界裁切
 #undef VIEW_PRE
@@ -808,9 +811,9 @@ public:
 
 	/// @brief 将NBT_Type::Compound对象写入到输出流中
 	/// @tparam bSortCompound 是否对Compound对象内部的键进行排序，以获得一致性的输出结果
-	/// @tparam[out] OutputStream 输出流类型，必须符合DefaultOutputStream类型的接口
+	/// @tparam OutputStream 输出流类型，必须符合DefaultOutputStream类型的接口
 	/// @tparam ErrInfoFunc 错误信息输出仿函数类型
-	/// @param OptStream 输出流对象
+	/// @param[out] OptStream 输出流对象
 	/// @param tCompound 用于写出的对象
 	/// @param szStackDepth 递归最大深度，防止栈溢出
 	/// @param funcErrInfo 错误信息处理仿函数

@@ -1,8 +1,9 @@
 ﻿#pragma once
 
 /// @file
-/// @brief 此头文件包含所有可选独立模块，其它模块大部分为库内依赖，不独立使用。
-/// 如果需要单独包部分含可选模块，可以在此文件内预览需要的模块头文件。
+/// @brief 包含所有可选独立模块
+/// @note 其它模块大部分为库内依赖，不独立使用，
+/// 如果需要单独包部分含可选模块，可以在此文件内预览需要的模块头文件
 #include "NBT_Node.hpp"
 #include "NBT_Node_View.hpp"
 #include "NBT_Helper.hpp"

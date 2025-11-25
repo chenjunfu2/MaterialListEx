@@ -11,6 +11,7 @@
 #include "NBT_TAG.hpp"
 
 /// @file
+/// @brief NBT所有类型定义与类型处理工具集
 
 class NBT_Node;
 template <typename Array>
@@ -68,7 +69,7 @@ public:
 
 	//集合类型
 	//挂在序列下的内容都通过map绑定名称
-	using Compound		= NBT_Compound<std::unordered_map<String, NBT_Node>>;	///集合类型，可存储任意不同的NBT类型，通过名称映射值
+	using Compound		= NBT_Compound<std::unordered_map<String, NBT_Node>>;	///< 集合类型，可存储任意不同的NBT类型，通过名称映射值
 
 	/// @}
 
@@ -165,39 +166,22 @@ public:
 	constexpr static inline Long Long_Min = INT64_MIN;		///< 长整数类型最小值
 	/// @}
 
-
-	/// @name 类型存在检查
-	/// @brief 用于编译期检查一个给定类型是否为NBT中的类型
-	/// @{
-
-	/// @brief 类型检查基础声明
-	/// @tparam T 类型
-	/// @tparam List 类型列表
+	/// @cond
 	template <typename T, typename List>
 	struct IsValidType;
 
-	/// @brief 类型检查特化
-	/// @tparam T 类型
-	/// @tparam ...Ts 类型列表
 	template <typename T, typename... Ts>
 	struct IsValidType<T, _TypeList<Ts...>> : std::bool_constant<(std::is_same_v<T, Ts> || ...)>
 	{};
+	/// @endcond
 
-	/// @brief 检查接口
+	/// @brief 类型存在检查：用于编译期检查一个给定类型是否为NBT中的类型
 	/// @tparam T 需要检查的类型
 	/// @note 如果类型存在于NBT类型列表中，则返回true，否则返回false
 	template <typename T>
 	static constexpr bool IsValidType_V = IsValidType<T, TypeList>::value;
 
-	/// @}
-
-	/// @name 类型枚举值查询
-	/// @brief 用于在编译期，通过类型查询它在NBT_TAG中对应的enum值
-	/// @note 类似于一种静态反射
-	/// @{
-
-	/// @brief 辅助函数
-	/// @return 类型在NBT_TAG中对应的Enum值的原始形式
+	/// @cond
 	template <typename T, typename... Ts>
 	static consteval NBT_TAG_RAW_TYPE TypeTagHelper()//consteval必须编译期求值
 	{
@@ -206,111 +190,89 @@ public:
 		return bFound ? tagIndex : (NBT_TAG_RAW_TYPE)-1;
 	}
 
-	/// @brief 类型标签查找基础声明
 	template <typename T, typename List>
 	struct TypeTagImpl;
 
-	/// @brief 类型标签查找特化
 	template <typename T, typename... Ts>
 	struct TypeTagImpl<T, _TypeList<Ts...>>
 	{
 		static constexpr NBT_TAG_RAW_TYPE value = TypeTagHelper<T, Ts...>();
 	};
+	/// @endcond
 
-	/// @brief 检查接口
+	/// @brief 类型枚举值查询：用于在编译期，通过类型查询它在NBT_TAG中对应的enum值
 	/// @tparam T 需要检查的类型
 	/// @note 如果类型存在于NBT类型列表中，则返回它在NBT_TAG中对应的Enum值，否则返回-1
+	/// @note 类似于一种静态反射
 	template <typename T>
 	static constexpr NBT_TAG TypeTag_V = (NBT_TAG)TypeTagImpl<T, TypeList>::value;
 
-	/// @}
-
-	/// @name 类型列表大小
-	/// @brief 编译期获取NBT类型的个数
-	/// @{
-
-	/// @brief 类型列表大小计算基础声明
+	/// @cond
 	template <typename List>
 	struct TypeListSize;
 
-	/// @brief 类型列表大小计算特化
 	template <typename... Ts>
 	struct TypeListSize<_TypeList<Ts...>>
 	{
 		static constexpr size_t value = sizeof...(Ts);
 	};
+	/// @endcond
 
-	/// @brief 类型列表大小的具体值
+	/// @brief 类型列表大小：获取NBT类型的个数
 	/// @note 它的值代表一共存在多少种NBT类型
 	static constexpr size_t TypeListSize_V = TypeListSize<TypeList>::value;
 
 	//静态断言：确保枚举值与类型数量匹配
 	static_assert(TypeListSize_V == NBT_TAG::ENUM_END, "Enumeration does not match the number of types in the mutator");
 
-	/// @}
-
-	/// @name 从NBT_TAG获取类型
-	/// @brief 用于在编译期，从NBT_TAG的enum值获取类型
-	/// @note 类似于一种静态反射
-	/// @{
-
-	/// @brief 类型列表索引访问基础声明
+	/// @cond
 	template <NBT_TAG_RAW_TYPE I, typename List> struct TypeAt;
 
-	/// @brief 类型列表索引访问特化
 	template <NBT_TAG_RAW_TYPE I, typename... Ts>
 	struct TypeAt<I, _TypeList<Ts...>>
 	{
 		using type = std::tuple_element_t<I, std::tuple<Ts...>>;
 	};
 
-	/// @brief 标签到类型映射基础声明
 	template <NBT_TAG Tag>
 	struct TagToType;
 
-	/// @brief 标签到类型映射特化
 	template <NBT_TAG Tag>
 	struct TagToType
 	{
 		static_assert((NBT_TAG_RAW_TYPE)Tag < TypeListSize_V, "Invalid NBT_TAG");
 		using type = typename TypeAt<(NBT_TAG_RAW_TYPE)Tag, TypeList>::type;
 	};
+	/// @endcond
 
-	/// @brief 用户查询接口
+	/// @brief 从NBT_TAG获取对应的类型：编译期从NBT_TAG的enum值获取类型
 	/// @tparam Tag 用于查询类型的NBT_TAG中的enum值
 	/// @note 返回NBT_TAG中的enum对应的类型，如果enum值非法，则静态断言失败，编译错误
+	/// @note 类似于一种静态反射
 	template <NBT_TAG Tag>
 	using TagToType_T = typename TagToType<Tag>::type;
 
-	/// @}
-
-
-	/// @name 映射内建类型到方便读写的raw类型
-	/// @brief 编译期获得内建类型到可以进行二进制读写的原始类型
-	/// @note 浮点数会被映射到对应大小的无符号整数类型，其它内建类型保持不变，
-	/// 部分平台对浮点数支持不完整的情况下，映射类型可能与原始类型相同，因为原始类型被声明为映射类型
-	/// @{
-
-	/// @brief 内建类型原始类型映射基础声明
+	/// @cond
 	template<typename T>
 	struct BuiltinRawType
 	{
 		using Type = T;
 		static_assert(IsValidType_V<T> && std::is_integral_v<T>, "Not a legal type!");//抛出编译错误
 	};
+	/// @endcond
 
-	/// @brief 用户查询接口
+	/// @brief 映射内建类型到方便读写的raw类型：编译期获得内建类型到可以进行二进制读写的原始类型
 	/// @tparam T 需要映射的类型
 	/// @note 返回对应类型的原始Raw类型，如果类型不存在于类型列表中或不是内建类型，则静态断言失败，编译错误
+	/// @note 浮点数会被映射到对应大小的无符号整数类型，其它内建类型保持不变，
+	/// 部分平台对浮点数支持不完整的情况下，映射类型可能与原始类型相同，因为原始类型被声明为映射类型
 	template<typename T>
 	using BuiltinRawType_T = typename BuiltinRawType<T>::Type;
-
-	/// @}
 };
 
 //显示特化
 
-/// @brief Float类型映射特化
+/// @cond
 template<>
 struct NBT_Type::BuiltinRawType<NBT_Type::Float>//浮点数映射
 {
@@ -318,10 +280,10 @@ struct NBT_Type::BuiltinRawType<NBT_Type::Float>//浮点数映射
 	static_assert(sizeof(Type) == sizeof(Float), "Type size does not match!");
 };
 
-/// @brief Double类型映射特化
 template<>
 struct NBT_Type::BuiltinRawType<NBT_Type::Double>//浮点数映射
 {
 	using Type = Double_Raw;
 	static_assert(sizeof(Type) == sizeof(Double), "Type size does not match!");
 };
+/// @endcond
