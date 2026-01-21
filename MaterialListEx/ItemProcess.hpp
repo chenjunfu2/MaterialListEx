@@ -176,7 +176,7 @@ public:
 	有一个重大问题，如果这个实体堆叠了，count不为1，并且这个实体是容器，则里面所含有的所有东西都得乘以它的堆叠倍率！
 	*/
 	//要求用户放弃原始listItemStack的所有权
-	static ItemStackList ItemStackListUnpackContainer(ItemStackList &&listItemStack, size_t szStackDepth = 64)
+	static ItemStackList ItemStackListUnpackContainer(ItemStackList &&listItemStack, size_t szStackDepth = 128)
 	{
 		ItemStackList ret;
 		ret.reserve(listItemStack.size());//提前扩容（但是解包的情况下可能还会添加新的东西）

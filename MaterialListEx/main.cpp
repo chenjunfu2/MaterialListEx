@@ -518,7 +518,7 @@ process_nbt_data:
 		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)");
 		PrintInfo<Language::Item>(it.mslEntityContainer.listSort, lang, csv);//实体容器
 		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)", u8"来源(source)");
-		PrintInfo< Language::Item, Language::Entity>(it.mmslParentInfoEC, lang, csv);//实体容器带实体名
+		PrintInfo<Language::Item, Language::Entity>(it.mmslParentInfoEC, lang, csv);//实体容器带实体名
 
 		PrintLine(csv);
 		PrintLine(csv, u8"类型(Type)", u8"[entity inventory]");

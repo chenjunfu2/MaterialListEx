@@ -58,7 +58,7 @@ RegionStatsList RegionProcess(const NBT_Type::Compound &cpRegions)
 			{
 				//转换方块实体
 				auto tmp = TileEntityProcess::TileEntityContainerStatsToItemStack(it);
-				tmp = ItemProcess::ItemStackListUnpackContainer(std::move(tmp));//解包物品内部的容器
+				tmp = ItemProcess::ItemStackListUnpackContainer(std::move(tmp));//解包物品内部的容器并把他们从容器中删除
 
 				//获取容器名称
 				auto sParentName = it.psTileEntityName == NULL ? NBT_Type::String{} : *it.psTileEntityName;
@@ -92,7 +92,12 @@ RegionStatsList RegionProcess(const NBT_Type::Compound &cpRegions)
 			auto &curInfoEC = rgsData.mmslParentInfoEC;
 			auto &curInfoEI = rgsData.mmslParentInfoEI;
 
+			//获取第一层实体状态
 			auto listEntityStats = EntityProcess::GetEntityStats(RgCompound);
+			//解包乘客，并把他们从中删除
+			listEntityStats = EntityProcess::EntityStatsListUnpackPassengers(std::move(listEntityStats));
+
+			//遍历所有实体
 			for (const auto &it : listEntityStats)
 			{
 				//转换实体

@@ -40,6 +40,7 @@ public:
 	struct EntityStats
 	{
 		const NBT_Type::String *psEntityName{};
+		NBT_Type::List listPassengers;
 		std::vector<EntityItemSlot> listSlot;
 	};
 
@@ -98,6 +99,40 @@ private:
 
 	}
 
+	static EntityStats EntityCompoundToEntityStats(const NBT_Type::Compound &cpdEntity)
+	{
+		//先获取实体名字
+		EntityStats stEntityStats{ cpdEntity.HasString(MU8STR("id")) };
+
+		//尝试获取实体乘客
+		const NBT_Type::List *plistPassengers = cpdEntity.HasList(MU8STR("Passengers"));
+		if (plistPassengers != NULL)
+		{
+			stEntityStats.listPassengers = *plistPassengers;//拷贝一份
+		}
+
+		//查找所有可能出现的可以容纳物品的tag
+
+		//转换特殊的实体id数据值到物品
+		ExtractSpecial(stEntityStats.listSlot, cpdEntity);
+
+		//遍历所有可以存放物品的格子名字
+		for (const auto &itTag : sSlotTagName)
+		{
+			const auto pSearch = cpdEntity.Search(itTag);//并在实体compound内查询，如果找到代表存在
+			if (pSearch == NULL)
+			{
+				continue;//没有这个tag，跳过
+			}
+
+			//把找到的物品栏集合放入集合列表
+			stEntityStats.listSlot.emplace_back((&itTag - sSlotTagName), pSearch);//偏移地址减去基地址获取下标
+		}
+
+		return stEntityStats;
+	}
+
+
 public:
 	static EntityStatsList GetEntityStats(const NBT_Type::Compound &RgCompound)
 	{
@@ -114,26 +149,7 @@ public:
 		//遍历，并在每个实体compound下查询所有关键字进行分类
 		for (const auto &it : listEntity)
 		{
-			//转换类型
-			const auto &curEntity = GetCompound(it);
-			
-			//在每个entity内查找所有可能出现的可以容纳物品的tag
-			EntityStats stEntityStats{ &curEntity.GetString(MU8STR("id")) };//先获取实体名字
-			//转换特殊的实体id数据值到物品
-			ExtractSpecial(stEntityStats.listSlot, curEntity);
-
-			//遍历所有可以存放物品的格子名字
-			for (const auto &itTag : sSlotTagName)
-			{
-				const auto pSearch = curEntity.Search(itTag);//并在实体compound内查询，如果找到代表存在
-				if (pSearch == NULL)
-				{
-					continue;//没有这个tag，跳过
-				}
-
-				//把找到的物品栏集合放入集合列表
-				stEntityStats.listSlot.emplace_back((&itTag - sSlotTagName), pSearch);//偏移地址减去基地址获取下标
-			}
+			auto stEntityStats = EntityCompoundToEntityStats(GetCompound(it));
 			
 			//最后把带有一个实体所有物品栏的信息放列表
 			listEntityStatsList.push_back(std::move(stEntityStats));
@@ -162,6 +178,60 @@ public:
 	//{
 	//
 	//}
+
+
+	//获取实体乘客（可能嵌套乘坐）
+	static EntityStatsList EntityStatsListUnpackPassengers(EntityStatsList &&listEntityStatus, size_t szStackDepth = 128)
+	{
+		EntityStatsList ret;
+		ret.reserve(listEntityStatus.size());
+		for (auto &it : listEntityStatus)
+		{
+			EntityStatsUnpackPassengers(std::move(it), ret, szStackDepth);
+		}
+
+		return ret;
+	}
+
+	//递归解析
+	static void EntityStatsUnpackPassengers(EntityStats &&stEntityStats, EntityStatsList &listEntityStatus, size_t szStackDepth)
+	{
+		if (szStackDepth <= 0)
+		{
+			return;//栈深度超了，直接返回
+		}
+
+		if (stEntityStats.listPassengers.Empty())
+		{
+			return;//根本没有乘客，直接返回
+		}
+
+		if (stEntityStats.listPassengers.GetTag() != NBT_TAG::Compound)
+		{
+			return;//根本不是实体Compound，直接返回
+		}
+
+		//遍历解包完成后插入
+		TraversalPassengers(stEntityStats.listPassengers, listEntityStatus, szStackDepth);
+
+		//不论如何，在这里插入，如果遍历解包过，那么信息会被删除
+		listEntityStatus.push_back(stEntityStats);
+	}
+
+
+	static void TraversalPassengers(NBT_Type::List &listPassengers, EntityStatsList &listEntityStatus, size_t szStackDepth)
+	{
+		//遍历乘客列表，每个都是单独的实体
+		for (auto &it : listPassengers)
+		{
+			auto stEntityStats = EntityCompoundToEntityStats(it.GetCompound());//解析实体信息
+			it.GetCompound().Clear();//清空，内部数据已经无用
+
+			//可能还有乘客，递归处理
+			EntityStatsUnpackPassengers(std::move(stEntityStats), listEntityStatus, szStackDepth - 1);
+		}
+	}
+
 
 
 /*
