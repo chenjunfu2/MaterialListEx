@@ -21,6 +21,12 @@ class NBT_Array :public Array//暂时不考虑保护继承
 	friend class NBT_Helper;
 
 public:
-	/// @brief 继承基类构造
+	/// @brief 使用基类构造
 	using Array::Array;
+
+	/// @brief 使用基类赋值
+	using Array::operator=;
+
+	/// @brief 使用基类下标
+	using Array::operator[];
 };

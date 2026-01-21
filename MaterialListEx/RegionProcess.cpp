@@ -112,9 +112,8 @@ RegionStatsList RegionProcess(const NBT_Type::Compound &cpRegions)
 				tmpSlot.listInventory = ItemProcess::ItemStackListUnpackContainer(std::move(tmpSlot.listInventory));
 
 				//获取实体名称并获取带容器名物品信息映射
-				auto sParentName = it.psEntityName == NULL ? NBT_Type::String{} : *it.psEntityName;
-				auto &mpInfoEC = curInfoEC[sParentName];
-				auto &mpInfoEI = curInfoEI[sParentName];
+				auto &mpInfoEC = curInfoEC[it.strEntityName];
+				auto &mpInfoEI = curInfoEI[it.strEntityName];
 
 				//遍历并合并相同物品
 				for (auto &itItem : tmpSlot.listContainer)

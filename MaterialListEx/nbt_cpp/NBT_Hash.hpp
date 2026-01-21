@@ -19,6 +19,15 @@ private:
 	using STATE_T = XXH64_state_t;
 	STATE_T *pHashState = nullptr;
 
+	void Clear(void)
+	{
+		if (pHashState != nullptr)
+		{
+			XXH64_freeState(pHashState);
+			pHashState = nullptr;
+		}
+	}
+
 public:
 	/// @brief 通过哈希种子构造并初始化xxhash对象
 	/// @param tHashSeed 哈希种子
@@ -30,11 +39,7 @@ public:
 	/// @brief 析构并释放xxhash对象，然后置空
 	~NBT_Hash(void)
 	{
-		if (pHashState != nullptr)
-		{
-			XXH64_freeState(pHashState);
-			pHashState = nullptr;
-		}
+		Clear();
 	}
 
 	/// @brief 禁止拷贝构造
@@ -53,8 +58,11 @@ public:
 	/// @return 对象的引用
 	NBT_Hash &operator=(NBT_Hash &&_Move) noexcept
 	{
+		Clear();
+
 		pHashState = _Move.pHashState;
 		_Move.pHashState = nullptr;
+
 		return *this;
 	}
 

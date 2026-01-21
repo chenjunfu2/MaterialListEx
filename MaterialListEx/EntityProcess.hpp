@@ -39,8 +39,8 @@ public:
 
 	struct EntityStats
 	{
-		const NBT_Type::String *psEntityName{};
-		NBT_Type::List listPassengers;
+		NBT_Type::String strEntityName;
+		const NBT_Type::List *plistPassengers{};
 		std::vector<EntityItemSlot> listSlot;
 	};
 
@@ -101,15 +101,18 @@ private:
 
 	static EntityStats EntityCompoundToEntityStats(const NBT_Type::Compound &cpdEntity)
 	{
+		//返回值
+		EntityStats stEntityStats{};
+
 		//先获取实体名字
-		EntityStats stEntityStats{ cpdEntity.HasString(MU8STR("id")) };
+		const NBT_Type::String *pstrEntityName = cpdEntity.HasString(MU8STR("id"));
+		if (pstrEntityName != NULL)
+		{
+			stEntityStats.strEntityName = *pstrEntityName;
+		}
 
 		//尝试获取实体乘客
-		const NBT_Type::List *plistPassengers = cpdEntity.HasList(MU8STR("Passengers"));
-		if (plistPassengers != NULL)
-		{
-			stEntityStats.listPassengers = *plistPassengers;//拷贝一份
-		}
+		stEntityStats.plistPassengers = cpdEntity.HasList(MU8STR("Passengers"));
 
 		//查找所有可能出现的可以容纳物品的tag
 
@@ -164,7 +167,7 @@ public:
 	{
 		return EntityInfo
 		{
-			stEntityStats.psEntityName == NULL ? NBT_Type::String{} : *stEntityStats.psEntityName
+			stEntityStats.strEntityName,
 		};
 	}
 
@@ -201,37 +204,39 @@ public:
 			return;//栈深度超了，直接返回
 		}
 
-		if (stEntityStats.listPassengers.Empty())
+		//遍历解包完成后插入
+		TraversalPassengers(stEntityStats.plistPassengers, listEntityStatus, szStackDepth);
+
+		//不论如何，在这里插入，这样有解包就会获得额外插入，否则相当于移动一份
+		listEntityStatus.push_back(std::move(stEntityStats));
+	}
+
+
+	static void TraversalPassengers(const NBT_Type::List *plistPassengers, EntityStatsList &listEntityStatus, size_t szStackDepth)
+	{
+		if (plistPassengers == NULL)
+		{
+			return;//根本不存在
+		}
+
+		if (plistPassengers->Empty())
 		{
 			return;//根本没有乘客，直接返回
 		}
 
-		if (stEntityStats.listPassengers.GetTag() != NBT_TAG::Compound)
+		if (plistPassengers->GetTag() != NBT_TAG::Compound)
 		{
 			return;//根本不是实体Compound，直接返回
 		}
 
-		//遍历解包完成后插入
-		TraversalPassengers(stEntityStats.listPassengers, listEntityStatus, szStackDepth);
-
-		//不论如何，在这里插入，如果遍历解包过，那么信息会被删除
-		listEntityStatus.push_back(stEntityStats);
-	}
-
-
-	static void TraversalPassengers(NBT_Type::List &listPassengers, EntityStatsList &listEntityStatus, size_t szStackDepth)
-	{
 		//遍历乘客列表，每个都是单独的实体
-		for (auto &it : listPassengers)
+		for (const auto &it : *plistPassengers)
 		{
 			auto stEntityStats = EntityCompoundToEntityStats(it.GetCompound());//解析实体信息
-			it.GetCompound().Clear();//清空，内部数据已经无用
-
 			//可能还有乘客，递归处理
 			EntityStatsUnpackPassengers(std::move(stEntityStats), listEntityStatus, szStackDepth - 1);
 		}
 	}
-
 
 
 /*
@@ -243,7 +248,8 @@ public:
 
 	static EntitySlot EntityStatsToEntitySlot(const EntityStats &stEntityStats)
 	{
-		if (*stEntityStats.psEntityName == MU8STRV("minecraft:item_display"))//跳过
+		//只有物品展示实体会被解析出容器内容，方块展示实体不会，仅排除物品展示实体
+		if (stEntityStats.strEntityName == MU8STRV("minecraft:item_display"))//跳过
 		{
 			return {};//空
 		}

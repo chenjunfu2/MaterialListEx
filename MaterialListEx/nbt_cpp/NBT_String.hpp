@@ -49,8 +49,14 @@ private:
 	}
 
 public:
-	/// @brief 继承基类构造
+	/// @brief 使用基类构造
 	using StringView::StringView;
+
+	/// @brief 使用基类赋值
+	using StringView::operator=;
+
+	/// @brief 使用基类下标
+	using StringView::operator[];
 
 	/// @brief 提供从父类拷贝构造此类的途径
 	/// @param _Copy 需要拷贝构造的对象
@@ -138,8 +144,14 @@ public:
 	/// @brief 当前String对应的视图View类型
 	using View = NBT_StringView<String, StringView>;
 
-	/// @brief 继承基类构造
+	/// @brief 使用基类构造
 	using String::String;
+
+	/// @brief 使用基类赋值
+	using String::operator=;
+
+	/// @brief 使用基类下标
+	using String::operator[];
 
 	/// @brief 通过c风格字符串或字符数组初始化
 	/// @param ltrStr 数组的引用
