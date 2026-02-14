@@ -136,7 +136,7 @@ public:
 		墙上的方块\
 		不同种类花盆（杜鹃id有例外要注意）\炼药锅（不同内容物不同id）\带蜡烛的蛋糕转换为蛋糕+蜡烛\
 		绊线到线\气泡柱转换为水\耕地、土径转为泥土\红石线到红石粉
-		水、岩浆等流体处理\半砖处理\
+		水、岩浆等流体处理\细雪到细雪桶\半砖处理\
 		同一格内多个物品数量的方块转换（雪\海龟蛋\海泡菜\蜡烛\樱花簇）\
 		同一格内多面生长方块转换（藤蔓，发光地衣，幽匿脉络）\
 		多格植株植物处理（海带有植株跟上部，大型垂滴有颈部和叶部，(紫菘花无需特殊处理，直接跳过走默认例程（紫菘植株也直接转化为物品（反正生存不可获取，但是创造能拿）)
@@ -447,6 +447,7 @@ if (stBlocks.psBlockName->ends_with(target))
 			{MU8STR("minecraft:tripwire"),MU8STR("minecraft:string")},
 			{MU8STR("minecraft:redstone_wire"),MU8STR("minecraft:redstone")},
 			{MU8STR("minecraft:bubble_column"),MU8STR("minecraft:water_bucket")},
+			{MU8STR("minecraft:powder_snow"),MU8STR("minecraft:powder_snow_bucket")}
 			//{MU8STR("minecraft:farmland"),MU8STR("minecraft:dirt")},
 			//{MU8STR("minecraft:dirt_path"),MU8STR("minecraft:dirt")},
 		};
