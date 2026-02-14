@@ -56,9 +56,9 @@ public:
 		const BlockPos posEndRel = getRelativeEndPositionFromAreaSize(regionSize).add(regionPos);
 		const BlockPos posMin = getMinCorner(regionPos, posEndRel);
 		const BlockPos posMax = getMaxCorner(regionPos, posEndRel);
-		const BlockPos size = posMax.sub(posMin).add({ 1,1,1 });
+		const BlockPos sizeRegion = posMax.sub(posMin).add({ 1,1,1 });
 
-		//printf("RegionSize: [%d, %d, %d]\n", size.x, size.y, size.z);
+		//printf("RegionSize: [%d, %d, %d]\n", sizeRegion.x, sizeRegion.y, sizeRegion.z);
 
 		//获取调色板（方块种类）
 		const auto &BlockStatePalette = RgCompound.GetList(MU8STR("BlockStatePalette"));
@@ -86,7 +86,7 @@ public:
 
 		//获取Long方块状态位图数组（用于作为下标访问调色板）
 		const auto &BlockStates = RgCompound.GetLongArray(MU8STR("BlockStates"));
-		const uint64_t RegionFullSize = (uint64_t)size.x * (uint64_t)size.y * (uint64_t)size.z;
+		const uint64_t RegionFullSize = (uint64_t)sizeRegion.x * (uint64_t)sizeRegion.y * (uint64_t)sizeRegion.z;
 		if (BlockStates.size() * 64 / bitsPerBitMapElement < RegionFullSize)
 		{
 			//printf("BlockStates Too Small!\n");
