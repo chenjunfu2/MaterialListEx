@@ -295,6 +295,35 @@ public:
 		std::is_same_v<T, IntArray> ||
 		std::is_same_v<T, LongArray>;
 
+	/// @brief 判断类型是否为NBT容器类型（包含List、Compound和所有数组类型）
+	/// @tparam T 需要检查的类型
+	/// @note 如果类型是ByteArray、IntArray、LongArray、List、Compound中的一种，则返回true，否则返回false
+	template <typename T>
+	static constexpr bool IsContainerType_V =
+		std::is_same_v<T, ByteArray> ||
+		std::is_same_v<T, IntArray> ||
+		std::is_same_v<T, LongArray> ||
+		std::is_same_v<T, List> ||
+		std::is_same_v<T, Compound>;
+
+	/// @brief 判断类型是否为NBT String类型
+	/// @tparam T 需要检查的类型
+	/// @return 如果类型是String，则返回true，否则返回false
+	template <typename T>
+	static constexpr bool IsStringType_V = std::is_same_v<T, String>;
+
+	/// @brief 判断类型是否为NBT List类型
+	/// @tparam T 需要检查的类型
+	/// @return 如果类型是List，则返回true，否则返回false
+	template <typename T>
+	static constexpr bool IsListType_V = std::is_same_v<T, List>;
+
+	/// @brief 判断类型是否为NBT Compound类型
+	/// @tparam T 需要检查的类型
+	/// @return 如果类型是Compound，则返回true，否则返回false
+	template <typename T>
+	static constexpr bool IsCompoundType_V = std::is_same_v<T, Compound>;
+
 	/// @}
 
 	/// @cond
@@ -382,6 +411,48 @@ public:
 		default:
 			return false;
 		}
+	}
+
+	/// @brief 判断给定的NBT_TAG是否对应容器类型（包含List、Compound和所有数组类型）
+	/// @param tag 需要判断的NBT_TAG枚举值
+	/// @return 如果tag对应List、Compound或任何数组类型，则返回true，否则返回false
+	constexpr static inline bool IsContainerTag(NBT_TAG tag) noexcept
+	{
+		switch (tag)
+		{
+		case NBT_TAG::ByteArray:
+		case NBT_TAG::IntArray:
+		case NBT_TAG::LongArray:
+		case NBT_TAG::List:
+		case NBT_TAG::Compound:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	/// @brief 判断给定的NBT_TAG是否对应String类型
+	/// @param tag 需要判断的NBT_TAG枚举值
+	/// @return 如果tag对应String，则返回true，否则返回false
+	constexpr static inline bool IsStringTag(NBT_TAG tag) noexcept
+	{
+		return tag == NBT_TAG::String;
+	}
+
+	/// @brief 判断给定的NBT_TAG是否对应List类型
+	/// @param tag 需要判断的NBT_TAG枚举值
+	/// @return 如果tag对应List，则返回true，否则返回false
+	constexpr static inline bool IsListTag(NBT_TAG tag) noexcept
+	{
+		return tag == NBT_TAG::List;
+	}
+
+	/// @brief 判断给定的NBT_TAG是否对应Compound类型
+	/// @param tag 需要判断的NBT_TAG枚举值
+	/// @return 如果tag对应Compound，则返回true，否则返回false
+	constexpr static inline bool IsCompoundTag(NBT_TAG tag) noexcept
+	{
+		return tag == NBT_TAG::Compound;
 	}
 
 	/// @}
