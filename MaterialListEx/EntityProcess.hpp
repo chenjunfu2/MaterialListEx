@@ -122,7 +122,7 @@ private:
 		//遍历所有可以存放物品的格子名字
 		for (const auto &itTag : sSlotTagName)
 		{
-			const auto pSearch = cpdEntity.Search(itTag);//并在实体compound内查询，如果找到代表存在
+			const auto pSearch = cpdEntity.Has(itTag);//并在实体compound内查询，如果找到代表存在
 			if (pSearch == NULL)
 			{
 				continue;//没有这个tag，跳过
@@ -224,14 +224,14 @@ public:
 			return;//根本没有乘客，直接返回
 		}
 
-		if (plistPassengers->GetTag() != NBT_TAG::Compound)
-		{
-			return;//根本不是实体Compound，直接返回
-		}
-
 		//遍历乘客列表，每个都是单独的实体
 		for (const auto &it : *plistPassengers)
 		{
+			if (!it.IsCompound())//跳过所有不是集合的类型
+			{
+				continue;
+			}
+
 			auto stEntityStats = EntityCompoundToEntityStats(it.GetCompound());//解析实体信息
 			//可能还有乘客，递归处理
 			EntityStatsUnpackPassengers(std::move(stEntityStats), listEntityStatus, szStackDepth - 1);

@@ -28,7 +28,7 @@ private:
 		*/
 
 		//尝试寻找Items（普通多格容器）
-		if (const auto pItems = teCompound.Search(MU8STR("Items"));
+		if (const auto pItems = teCompound.Has(MU8STR("Items"));
 			pItems != NULL && pItems->IsList())
 		{
 			teStats.pItems = pItems;
@@ -57,7 +57,7 @@ private:
 		}
 
 		//通过映射名查找对应物品存储位置
-		const auto pSearch = teCompound.Search(findIt->second);
+		const auto pSearch = teCompound.Has(findIt->second);
 		if (pSearch == NULL)//查找失败
 		{
 			return false;//跳过此方块实体

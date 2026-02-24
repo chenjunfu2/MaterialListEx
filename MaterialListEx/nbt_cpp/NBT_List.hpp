@@ -24,173 +24,35 @@ class NBT_List :protected List
 	friend class NBT_Reader;
 	friend class NBT_Writer;
 	friend class NBT_Helper;
-
-private:
-	//列表元素类型（同一时间list内只能存储一种类型的多个元素）
-	//此变量仅用于规约列表元素类型，无需参与比较与hash，但是需要参与构造与移动
-	NBT_TAG enElementTag = NBT_TAG::End;
 	
-private:
-	bool TestTagAndSetType(NBT_TAG enTargetTag)
-	{
-		if (enTargetTag == NBT_TAG::End)
-		{
-			return false;//不能插入空值，拒掉
-		}
-
-		if (enElementTag == NBT_TAG::End)
-		{
-			enElementTag = enTargetTag;//当前为空状态，替换
-			return true;
-		}
-
-		return enTargetTag == enElementTag;
-	}
-
-	template<typename V>
-	bool TestAndSetType(const V &vTagVal)
-	{
-		if constexpr (std::is_same_v<std::decay_t<V>, typename List::value_type>)
-		{
-			return TestTagAndSetType(vTagVal.GetTag());
-		}
-		else
-		{
-			return TestTagAndSetType(NBT_Type::TypeTag_V<std::decay_t<V>>);
-		}
-	}
-
-	void TestInit(void)
-	{
-		if (enElementTag == NBT_TAG::End && !List::empty())
-		{
-			Clear();
-			throw std::invalid_argument("Tag is end but the list is not empty");
-		}
-
-		if (enElementTag != NBT_TAG::End)
-		{
-			for (const auto &it : (List)*this)
-			{
-				if (it.GetTag() != enElementTag)
-				{
-					Clear();
-					throw std::invalid_argument("List contains elements of different types");
-				}
-			}
-		}
-	}
 public:
-	/// @brief 提示性标签，用于取消构造函数对类型符合性的检测，类型检查要求列表中所有元素类型一致
-	/// @note 仅用于性能敏感场景，用户需保证类型一致性，否则在NBT_Write进行写出时将产生错误
-	struct NoCheck_T
-	{
-		explicit constexpr NoCheck_T() noexcept = default;
-	};
-
-	/// @copydoc NoCheck_T
-	constexpr static inline const NoCheck_T NoCheck{};
-
 	//完美转发、初始化列表代理构造
 
 	/// @brief 构造函数
 	/// @tparam Args 变长构造参数类型包
-	/// @param _enElementTag 列表元素类型标签
 	/// @param args 变长构造参数列表
-	/// @note 列表元素类型设置为_enElementTag代表的类型，并进行类型检查，
-	/// 如果构造的类型不匹配，则抛出std::invalid_argument异常
 	template<typename... Args>
-	NBT_List(NBT_TAG _enElementTag, Args&&... args) :List(std::forward<Args>(args)...), enElementTag(_enElementTag)
-	{
-		TestInit();
-	}
-
-	/// @brief 构造函数
-	/// @tparam Args 变长构造参数类型包
-	/// @param _NoCheck 取消检查标记
-	/// @param _enElementTag 列表元素类型标签
-	/// @param args 变长构造参数列表
-	/// @note 不进行类型检查
-	template<typename... Args>
-	NBT_List(NoCheck_T _NoCheck, NBT_TAG _enElementTag, Args&&... args) : List(std::forward<Args>(args)...), enElementTag(_enElementTag)
-	{}
-
-	/// @brief 构造函数
-	/// @tparam Args 变长构造参数类型包
-	/// @param args 变长构造参数列表
-	/// @note 根据第一个元素的类型作为列表元素类型，并进行类型检查，
-	/// 如果构造的类型不匹配，则抛出std::invalid_argument异常
-	template<typename... Args>
-	NBT_List(Args&&... args) : List(std::forward<Args>(args)...), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
-	{
-		TestInit();
-	}
-
-	/// @brief 构造函数
-	/// @tparam Args 变长构造参数类型包
-	/// @param _NoCheck 取消检查标记
-	/// @param args 变长构造参数列表
-	/// @note 不进行类型检查
-	template<typename... Args>
-	NBT_List(NoCheck_T _NoCheck, Args&&... args) : List(std::forward<Args>(args)...), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
-	{}
-
-	/// @brief 初始化列表构造函数
-	/// @param _enElementTag 列表元素类型标签
-	/// @param init 初始化列表
-	/// @note 列表元素类型设置为_enElementTag代表的类型，并对进行类型检查，
-	/// 如果构造的任一类型不匹配，则抛出std::invalid_argument异常
-	NBT_List(NBT_TAG _enElementTag, std::initializer_list<typename List::value_type> init) : List(init), enElementTag(_enElementTag)
-	{
-		TestInit();
-	}
-
-	/// @brief 初始化列表构造函数
-	/// @param _NoCheck 取消检查标记
-	/// @param _enElementTag 列表元素类型标签
-	/// @param init 初始化列表
-	/// @note 不进行类型检查
-	NBT_List(NoCheck_T _NoCheck, NBT_TAG _enElementTag, std::initializer_list<typename List::value_type> init) : List(init), enElementTag(_enElementTag)
+	NBT_List(Args&&... args) : List(std::forward<Args>(args)...)
 	{}
 
 	/// @brief 初始化列表构造函数
 	/// @param init 初始化列表
-	/// @note 根据第一个元素的类型作为列表元素类型，并进行类型检查，
-	/// 如果构造的类型不匹配，则抛出std::invalid_argument异常
-	NBT_List(std::initializer_list<typename List::value_type> init) : List(init), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
-	{
-		TestInit();
-	}
-
-	/// @brief 初始化列表构造函数
-	/// @param _NoCheck 取消检查标记
-	/// @param init 初始化列表
-	/// @note 不进行类型检查
-	NBT_List(NoCheck_T _NoCheck, std::initializer_list<typename List::value_type> init) : List(init), enElementTag(List::empty() ? NBT_TAG::End : List::front().GetTag())
+	NBT_List(std::initializer_list<typename List::value_type> init) : List(init)
 	{}
 
 	/// @brief 默认构造函数
 	NBT_List(void) = default;
 	/// @brief 析构函数
-	~NBT_List(void)
-	{
-		Clear();
-	}
+	~NBT_List(void) = default;
 
 	/// @brief 移动构造函数
 	/// @param _Move 要移动的源对象
-	NBT_List(NBT_List &&_Move) noexcept
-		:List(std::move(_Move)),
-		 enElementTag(std::move(_Move.enElementTag))
-	{
-		_Move.enElementTag = NBT_TAG::End;
-	}
+	NBT_List(NBT_List &&_Move) noexcept :List(std::move(_Move))
+	{}
 
 	/// @brief 拷贝构造函数
 	/// @param _Copy 要拷贝的源对象
-	NBT_List(const NBT_List &_Copy)
-		:List(_Copy),
-		enElementTag(_Copy.enElementTag)
+	NBT_List(const NBT_List &_Copy) :List(_Copy)
 	{}
 
 	/// @brief 移动赋值运算符
@@ -199,10 +61,6 @@ public:
 	NBT_List &operator=(NBT_List &&_Move) noexcept
 	{
 		List::operator=(std::move(_Move));
-
-		enElementTag = std::move(_Move.enElementTag);
-		_Move.enElementTag = NBT_TAG::End;
-
 		return *this;
 	}
 
@@ -212,9 +70,6 @@ public:
 	NBT_List &operator=(const NBT_List &_Copy)
 	{
 		List::operator=(_Copy);
-
-		enElementTag = _Copy.enElementTag;
-
 		return *this;
 	}
 
@@ -230,8 +85,7 @@ public:
 	/// @return 是否相等
 	bool operator==(const NBT_List &_Right) const noexcept
 	{
-		return enElementTag == _Right.enElementTag &&
-			(const List &)*this == (const List &)_Right;
+		return (const List &)*this == (const List &)_Right;
 	}
 
 	/// @brief 不等比较运算符
@@ -239,29 +93,19 @@ public:
 	/// @return 是否不相等
 	bool operator!=(const NBT_List &_Right) const noexcept
 	{
-		return enElementTag != _Right.enElementTag ||
-			(const List &)*this != (const List &)_Right;
+		return (const List &)*this != (const List &)_Right;
 	}
 
 	/// @brief 三路比较运算符
 	/// @param _Right 要比较的右操作数
 	/// @return 比较结果，通过std::partial_ordering返回
-	/// @note 列表会首先比较当前存储的类型是否与目标一致，不一致则返回Tag顺序的比较结果，
-	/// 否则返回列表元素顺序的比较结果
 	std::partial_ordering operator<=>(const NBT_List &_Right) const noexcept
 	{
-		if (auto cmp = enElementTag <=> _Right.enElementTag; cmp != 0)
-		{
-			return cmp;
-		}
-
 		return (const List &)*this <=> (const List &)_Right;
 	}
 
 	/// @name 暴露父类迭代器接口
 	/// @brief 继承底层容器的迭代器和访问接口
-	/// @note 请不要使用这些API修改list内部对象的类型（注意是类型而非值），
-	/// 这些接口无法简单的进行封装并检查用户对类型的操作
 	/// @{
 
 	using List::begin;
@@ -276,42 +120,8 @@ public:
 
 	/// @}
 
-	/// @brief 设置列表元素类型
-	/// @tparam bNoCheck 是否跳过检查，作用与NoCheck_T相同
-	/// @param tagNewValue 新的元素类型
-	/// @return 如果bNoCheck为false，返回设置是否成功，否则返回void
-	/// @note 在bNoCheck为false的情况下，当且仅当list为空函数才能成功，否则修改失败，
-	/// 如果bNoCheck为true则必然成功，所以函数返回void，则用于强制修改列表元素类型
-	template <bool bNoCheck = false>
-	std::conditional_t<bNoCheck, void, bool> SetTag(NBT_TAG tagNewValue) noexcept
-	{
-		if (!bNoCheck)
-		{
-			if (!List::empty())
-			{
-				return false;
-			}
-		}
-
-		enElementTag = tagNewValue;
-
-		if (!bNoCheck)
-		{
-			return true;
-		}
-	}
-
-	/// @brief 获取列表存储的元素类型
-	/// @return 当前列表存储的元素类型
-	NBT_TAG GetTag(void) const noexcept
-	{
-		return enElementTag;
-	}
-
 	/// @name 查询接口
 	/// @brief 提供一组接口用于对list不同元素的访问
-	/// @note 请不要使用这些API修改list内部对象的类型（注意是类型而非值），
-	/// 这些接口无法简单的进行封装并检查用户对类型的操作
 	/// @{
 
 	/// @brief 根据位置获取值
@@ -323,13 +133,33 @@ public:
 		return List::at(szPos);
 	}
 
-	/// @brief 根据位置获取值
+	/// @brief 根据位置获取值（常量版本）
 	/// @param szPos 要查找的位置
 	/// @return 位置对应的值的常量引用
 	/// @note 如果位置不存在则抛出异常，请参考std::vector对于at的描述
 	const typename List::value_type &Get(const typename List::size_type &szPos) const
 	{
 		return List::at(szPos);
+	}
+
+	/// @brief 根据位置查找值
+	/// @param szPos 要查找的位置
+	/// @return 位置对应的值的指针，如果值不存在则为NULL
+	typename List::value_type *Has(const typename List::size_type &szPos) noexcept
+	{
+		return szPos < List::size()
+			? &List::operator[](szPos)
+			: NULL;
+	}
+
+	/// @brief 根据位置查找值（常量版本）
+	/// @param szPos 要查找的位置
+	/// @return 位置对应的值的指针，如果值不存在则为NULL
+	const typename List::value_type *Has(const typename List::size_type &szPos) const noexcept
+	{
+		return szPos < List::size()
+			? &List::operator[](szPos)
+			: NULL;
 	}
 
 	/// @brief 获取列表开头的元素
@@ -340,7 +170,7 @@ public:
 		return List::front();
 	}
 
-	/// @brief 获取列表开头的元素
+	/// @brief 获取列表开头的元素（常量版本）
 	/// @return 开头的元素的常量引用
 	/// @note 如果当前列表为空，行为未定义，请参考std::vector对于front的描述
 	const typename List::value_type &Front(void) const noexcept
@@ -356,7 +186,7 @@ public:
 		return List::back();
 	}
 
-	/// @brief 获取列表最后的元素
+	/// @brief 获取列表最后的元素（常量版本）
 	/// @return 最后的元素的引用
 	/// @note 如果当前列表为空，行为未定义，请参考std::vector对于back的描述
 	const typename List::value_type &Back(void) const noexcept
@@ -366,178 +196,60 @@ public:
 
 	/// @}
 
-	/// @name 插入接口
-	/// @brief 提供一组接口用于对list进行元素插入
+	/// @name 修改接口
+	/// @brief 提供一组接口用于对list进行元素编辑
 	/// @todo 提供范围插入等功能
+	/// @{
 	
 	/// @brief 在指定位置的前面插入元素
-	/// @tparam bNoCheck 是否跳过类型检查，作用与NoCheck_T相同
 	/// @tparam V 元素值类型
 	/// @param szPos 插入位置
 	/// @param vTagVal 要插入的值
-	/// @return 如果bNoCheck为false，返回包含插入元素所在位置的迭代器和是否操作成功的bool值的pair，否则仅返回迭代器
-	/// @note 在bNoCheck为false的情况下，当且仅当插入的类型与当前列表存储的类型一致，同时szPos在合法范围内，函数成功，否则失败，
-	/// 如果bNoCheck为true则必然成功，所以函数仅返回迭代器
-	/// @note 在bNoCheck为false的情况下，如果当前列表标签为空，则列表存储的类型自动变为当前元素类型，
-	/// 如果bNoCheck为true，则列表不会设置当前元素类型，请使用SetTag来变更元素类型或放弃维护元素类型
-	template <bool bNoCheck = false, typename V>
-	std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Add(size_t szPos, V &&vTagVal)
+	/// @return 刚才添加的元素的引用
+	/// @note 用户需要保证szPos范围合法，否则行为未定义
+	template <typename V>
+	typename List::value_type &Add(size_t szPos, V &&vTagVal)
 	{
-		if (!bNoCheck)
-		{
-			if (szPos > List::size())
-			{
-				return std::pair{ List::end(),false };
-			}
-			if (!TestAndSetType(vTagVal))
-			{
-				return std::pair{ List::end(),false };
-			}
-		}
-
-		//插入
-		typename List::iterator itRet = List::emplace(List::begin() + szPos, std::forward<V>(vTagVal));
-
-		if (!bNoCheck)
-		{
-			return std::pair{ itRet,true };
-		}
-		else
-		{
-			return itRet;
-		}
+		return *List::emplace(List::begin() + szPos, std::forward<V>(vTagVal));//插入
 	}
 
 	/// @brief 在列表头部插入元素
-	/// @tparam bNoCheck 是否跳过类型检查，作用与NoCheck_T相同
 	/// @tparam V 元素值类型
 	/// @param vTagVal 要插入的值
-	/// @return 如果bNoCheck为false，返回包含插入元素所在位置的迭代器和是否操作成功的bool值的pair，否则仅返回迭代器
-	/// @note 在bNoCheck为false的情况下，当且仅当插入的类型与当前列表存储的类型一致，同时szPos在合法范围内，函数成功，否则失败，
-	/// 如果bNoCheck为true则必然成功，所以函数仅返回迭代器
-	/// @note 在bNoCheck为false的情况下，如果当前列表标签为空，则列表存储的类型自动变为当前元素类型，
-	/// 如果bNoCheck为true，则列表不会设置当前元素类型，请使用SetTag来变更元素类型或放弃维护元素类型
-	template <bool bNoCheck = false, typename V>
-	std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> AddFront(V &&vTagVal)
+	/// @return 刚才添加的元素的引用
+	template <typename V>
+	typename List::value_type &AddFront(V &&vTagVal)
 	{
-		if constexpr (!bNoCheck)
-		{
-			if (!TestAndSetType(vTagVal))
-			{
-				return std::pair{ List::end(),false };
-			}
-		}
-
-		//插入
-		List::emplace(List::begin(), std::forward<V>(vTagVal));
-
-		if constexpr (!bNoCheck)
-		{
-			return std::pair{ List::begin(),true };
-		}
-		else
-		{
-			return List::begin();
-		}
+		return *List::emplace(List::begin(), std::forward<V>(vTagVal));//插入
 	}
 
 	/// @brief 在列表末尾插入元素
-	/// @tparam bNoCheck 是否跳过类型检查，作用与NoCheck_T相同
 	/// @tparam V 元素值类型
 	/// @param vTagVal 要插入的值
-	/// @return 如果bNoCheck为false，返回包含插入元素所在位置的迭代器和是否操作成功的bool值的pair，否则仅返回迭代器
-	/// @note 在bNoCheck为false的情况下，当且仅当插入的类型与当前列表存储的类型一致，同时szPos在合法范围内，函数成功，否则失败，
-	/// 如果bNoCheck为true则必然成功，所以函数仅返回迭代器
-	/// @note 在bNoCheck为false的情况下，如果当前列表标签为空，则列表存储的类型自动变为当前元素类型，
-	/// 如果bNoCheck为true，则列表不会设置当前元素类型，请使用SetTag来变更元素类型或放弃维护元素类型
-	template <bool bNoCheck = false, typename V>
-	std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> AddBack(V &&vTagVal)
+	/// @return 刚才添加的元素的引用
+	template <typename V>
+	typename List::value_type &AddBack(V &&vTagVal)
 	{
-		if constexpr (!bNoCheck)
-		{
-			if (!TestAndSetType(vTagVal))
-			{
-				return std::pair{ List::end(),false };
-			}
-		}
-
-		//插入
-		List::emplace_back(std::forward<V>(vTagVal));
-
-		if constexpr (!bNoCheck)
-		{
-			return std::pair{ List::end() - 1,true };
-		}
-		else
-		{
-			return List::end() - 1;
-		}
+		return List::emplace_back(std::forward<V>(vTagVal));
 	}
 
 	/// @brief 设置（替换）指定位置的元素
-	/// @tparam bNoCheck 是否跳过类型检查，作用与NoCheck_T相同
 	/// @tparam V 元素值类型
 	/// @param szPos 要设置的位置
 	/// @param vTagVal 要设置的值
-	/// @return 如果bNoCheck为false，返回包含插入元素所在位置的迭代器和是否操作成功的bool值的pair，否则仅返回迭代器
-	/// @note 在bNoCheck为false的情况下，当且仅当插入的类型与当前列表存储的类型一致同时szPos在合法范围内，函数成功，否则失败，
-	/// 如果bNoCheck为true则必然成功，所以函数仅返回迭代器
-	/// @note 在bNoCheck为false的情况下，如果当前列表标签为空，，则列表存储的类型自动变为当前元素类型，
-	/// 如果bNoCheck为true，则列表不会设置当前元素类型，请使用SetTag来变更元素类型或放弃维护元素类型
-	template <bool bNoCheck = false, typename V>
-	std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Set(size_t szPos, V &&vTagVal)
+	/// @return 刚才设置的元素的引用
+	/// @note 用户需要保证szPos范围合法，否则行为未定义
+	template <typename V>
+	typename List::value_type &Set(size_t szPos, V &&vTagVal)
 	{
-		if constexpr (!bNoCheck)
-		{
-			if (szPos > List::size())
-			{
-				return std::pair{ List::end(),false };
-			}
-			if (!TestAndSetType(vTagVal))
-			{
-				return std::pair{ List::end(),false };
-			}
-		}
-
-		List::operator[](szPos) = std::forward<V>(vTagVal);
-
-		if constexpr (!bNoCheck)
-		{
-			return std::pair{ List::begin() + szPos,true };
-		}
-		else
-		{
-			return List::begin() + szPos;
-		}
+		return List::operator[](szPos) = std::forward<V>(vTagVal);
 	}
 
 	/// @brief 删除指定位置的元素
-	/// @tparam bNoCheck 是否跳过索引检查
 	/// @param szPos 要删除的位置
-	/// @return 如果bNoCheck为false，返回删除是否成功，否则直接返回void
-	/// @note bNoCheck为true则用户需保证szPos索引范围安全
-	template <bool bNoCheck = false>
-	std::conditional_t<bNoCheck, void, bool> Remove(size_t szPos)
+	void Remove(size_t szPos)
 	{
-		if constexpr (!bNoCheck)
-		{
-			if (szPos > List::size())
-			{
-				return false;
-			}
-		}
-
 		List::erase(List::begin() + szPos);//这个没必要返回结果，直接丢弃
-
-		if (Empty())
-		{
-			enElementTag = NBT_TAG::End;//清除类型
-		}
-
-		if constexpr (!bNoCheck)
-		{
-			return true;
-		}
 	}
 
 	/// @brief 清空所有元素
@@ -545,8 +257,38 @@ public:
 	void Clear(void)
 	{
 		List::clear();
-		enElementTag = NBT_TAG::End;
 	}
+
+	/// @brief 调整容器大小，如果大小大于当前大小，那么使用默认值填充新增空间，否则删除多余元素
+	/// @param szNewSize 新的容器大小
+	void Resize(size_t szNewSize)
+	{
+		return List::resize(szNewSize);
+	}
+
+	/// @brief 调整容器大小，如果大小大于当前大小，那么使用val填充新增空间，否则删除多余元素
+	/// @param szNewSize 新的容器大小
+	/// @param val （可能）需要重复的元素
+	void Resize(size_t szNewSize, const typename List::value_type &val)
+	{
+		return List::resize(szNewSize, val);
+	}
+
+	/// @brief 拷贝合并另一个NBT_List的内容
+	/// @param _Copy 要合并的源对象
+	void Merge(const NBT_List &_Copy)
+	{
+		List::insert(List::end(), _Copy.begin(), _Copy.end());
+	}
+
+	/// @brief 移动合并另一个NBT_List的内容
+	/// @param _Move 要合并的源对象
+	void Merge(NBT_List &&_Move)
+	{
+		List::insert(List::end(), std::make_move_iterator(_Move.begin()), std::make_move_iterator(_Move.end()));
+	}
+
+	///@}
 
 	/// @brief 检查容器是否为空
 	/// @return 如果容器为空返回true，否则返回false
@@ -569,88 +311,10 @@ public:
 		return List::reserve(szNewCap);
 	}
 
-	/// @brief 调整容器大小
-	/// @param szNewSize 新的容器大小
-	void Resize(size_t szNewSize)
-	{
-		return List::resize(szNewSize);
-	}
-
 	/// @brief 缩减容器容量以匹配大小
 	void ShrinkToFit(void)
 	{
 		return List::shrink_to_fit();
-	}
-
-	/// @brief 拷贝合并另一个NBT_List的内容
-	/// @tparam bNoCheck 是否跳过另一个列表中的类型检查
-	/// @param _Copy 要合并的源对象
-	/// @return 如果bNoCheck为false，返回合并是否成功；否则返回void
-	/// @note 在bNoCheck为false的情况下，只要任一列表标签为空或两个列表元素类型相同，则成功，否则失败，
-	/// 如果bNoCheck为true，则必然成功，所以函数返回void
-	/// @note 在bNoCheck为false的情况下，如果当前列表标签为空，则列表存储的类型自动变为当前元素类型，
-	/// 如果bNoCheck为true，则列表不会设置当前元素类型，请使用SetTag来变更元素类型或放弃维护元素类型
-	template <bool bNoCheck = false>
-	std::conditional_t<bNoCheck, void, bool> Merge(const NBT_List &_Copy)
-	{
-		if constexpr (!bNoCheck)
-		{
-			if (enElementTag != NBT_TAG::End &&
-				_Copy.enElementTag != NBT_TAG::End &&
-				enElementTag != _Copy.enElementTag)
-			{
-				return false;
-			}
-
-			//替换当前类型
-			if (enElementTag == NBT_TAG::End)
-			{
-				enElementTag = _Copy.enElementTag;
-			}
-		}
-
-		List::insert(List::end(), _Copy.begin(), _Copy.end());
-
-		if constexpr (!bNoCheck)
-		{
-			return true;
-		}
-	}
-
-	/// @brief 移动合并另一个NBT_List的内容
-	/// @tparam bNoCheck 是否跳过另一个列表中的类型检查
-	/// @param _Move 要合并的源对象
-	/// @return 如果bNoCheck为false，返回合并是否成功；否则返回void
-	/// @note 在bNoCheck为false的情况下，只要任一列表标签为空或两个列表元素类型相同，则成功，否则失败，
-	/// 如果bNoCheck为true，则必然成功，所以函数返回void
-	/// @note 在bNoCheck为false的情况下，如果当前列表标签为空，则列表存储的类型自动变为当前元素类型，
-	/// 如果bNoCheck为true，则列表不会设置当前元素类型，请使用SetTag来变更元素类型或放弃维护元素类型
-	/// @note 如果函数失败，不会进行移动
-	template <bool bNoCheck = false>
-	std::conditional_t<bNoCheck, void, bool> Merge(NBT_List &&_Move)
-	{
-		if constexpr (!bNoCheck)
-		{
-			if (enElementTag != NBT_TAG::End &&
-				_Move.enElementTag != NBT_TAG::End &&
-				enElementTag != _Move.enElementTag)
-			{
-				return false;
-			}
-
-			//替换当前类型
-			if (enElementTag == NBT_TAG::End)
-			{
-				enElementTag = _Move.enElementTag;
-			}
-		}
-
-		List::insert(List::end(), std::make_move_iterator(_Move.begin()), std::make_move_iterator(_Move.end()));
-
-		if constexpr (!bNoCheck)
-		{
-			return true;
-		}
 	}
 
 	/// @brief 检查是否包含指定元素
@@ -678,7 +342,7 @@ public:
 /// @note 用户不应该使用此宏（实际上宏已在使用后取消定义），标注仅为消除doxygen警告
 #define TYPE_GET_FUNC(type)\
 /**
- @brief 获取指定位置的 type 类型数据
+ @brief 获取指定位置的 type 类型数据（常量版本）
  @param szPos 位置索引
  @return type 类型数据的常量引用
  @note 如果位置不存在或类型不匹配则抛出异常，
@@ -702,7 +366,33 @@ typename NBT_Type::type &Get##type(const typename List::size_type &szPos)\
 }\
 \
 /**
- @brief 获取列表第一个 type 类型数据
+ @brief 获取指定位置的 type 类型数据（常量版本）
+ @param szPos 位置索引
+ @return type 类型数据的指针，如果位置不存在或类型不对则返回NULL
+ */\
+const typename NBT_Type::type *Has##type(const typename List::size_type &szPos) const noexcept\
+{\
+	auto *p = Has(szPos);\
+	return p != NULL && p->Is##type()\
+		? &p->Get##type()\
+		: NULL;\
+}\
+\
+/**
+ @brief 获取指定位置的 type 类型数据
+ @param szPos 位置索引
+ @return type 类型数据的指针，如果位置不存在或类型不对则返回NULL
+ */\
+typename NBT_Type::type *Has##type(const typename List::size_type &szPos) noexcept\
+{\
+	auto *p = Has(szPos);\
+	return p != NULL && p->Is##type()\
+		? &p->Get##type()\
+		: NULL;\
+}\
+\
+/**
+ @brief 获取列表第一个 type 类型数据（常量版本）
  @return type 类型数据的常量引用
  @note 如果列表为空或类型不匹配则抛出异常，
  具体请参考std::vector关于front的说明与std::get的说明
@@ -723,7 +413,7 @@ typename NBT_Type::type &Front##type(void)\
 	return List::front().Get##type(); \
  }\
 /**
- @brief 获取列表最后一个 type 类型数据
+ @brief 获取列表最后一个 type 类型数据（常量版本）
  @return type 类型数据的常量引用
  @note 如果列表为空或类型不匹配则抛出异常，
  具体请参考std::vector关于back的说明与std::get的说明
@@ -777,110 +467,93 @@ typename NBT_Type::type &Back##type(void)\
 #define TYPE_PUT_FUNC(type)\
 /**
  @brief 在指定位置插入 type 类型数据（拷贝）
- @tparam bNoCheck 是否跳过类型检查，作用与NoCheck_T相同
  @param szPos 插入位置
  @param vTagVal 要插入的 type 类型值
- @return 如果bNoCheck为false，返回包含迭代器和bool值的pair；否则返回迭代器
- @note 通用类型函数Add的代理，具体行为参考Add函数的说明
+ @return 刚才插入的元素的引用
  */\
-template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Add##type(size_t szPos, const typename NBT_Type::type &vTagVal)\
+typename List::value_type &Add##type(size_t szPos, const typename NBT_Type::type &vTagVal)\
 {\
-	return Add<bNoCheck>(szPos, vTagVal);\
+	return Add(szPos, vTagVal);\
 }\
 \
 /**
  @brief 在指定位置插入 type 类型数据（移动）
- @tparam bNoCheck 是否跳过类型检查，作用与NoCheck_T相同
  @param szPos 插入位置
  @param vTagVal 要插入的 type 类型值
- @return 如果bNoCheck为false，返回包含迭代器和bool值的pair；否则返回迭代器
+ @return 刚才插入的元素的引用
  @note 通用类型函数Add的代理，具体行为参考Add函数的说明
  */\
-template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Add##type(size_t szPos, typename NBT_Type::type &&vTagVal)\
+typename List::value_type & Add##type(size_t szPos, typename NBT_Type::type &&vTagVal)\
 {\
-	return Add<bNoCheck>(szPos, std::move(vTagVal));\
+	return Add(szPos, std::move(vTagVal));\
 }\
 \
 /**
  @brief 在列表头部插入 type 类型数据（拷贝）
- @tparam bNoCheck 是否跳过类型检查，作用与NoCheck_T相同
  @param vTagVal 要插入的 type 类型值
- @return 如果bNoCheck为false，返回包含迭代器和bool值的pair；否则返回迭代器
+ @return 刚才插入的元素的引用
  @note 通用类型函数AddFront的代理，具体行为参考AddFront函数的说明
  */\
-template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> AddFront##type(const typename NBT_Type::type &vTagVal)\
+typename List::value_type &AddFront##type(const typename NBT_Type::type &vTagVal)\
 {\
-	return AddFront<bNoCheck>(vTagVal); \
+	return AddFront(vTagVal); \
 }\
 \
 /**
  @brief 在列表头部插入 type 类型数据（移动）
- @tparam bNoCheck 是否跳过类型检查，作用与NoCheck_T相同
  @param vTagVal 要插入的 type 类型值
- @return 如果bNoCheck为false，返回包含迭代器和bool值的pair；否则返回迭代器
+ @return 刚才插入的元素的引用
  @note 通用类型函数AddFront的代理，具体行为参考AddFront函数的说明
  */\
-template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> AddFront##type(typename NBT_Type::type &&vTagVal)\
+typename List::value_type & AddFront##type(typename NBT_Type::type &&vTagVal)\
 {\
-	return AddFront<bNoCheck>(std::move(vTagVal));\
+	return AddFront(std::move(vTagVal));\
 }\
 \
 /**
  @brief 在列表末尾插入 type 类型数据（拷贝）
- @tparam bNoCheck 是否跳过类型检查，作用与NoCheck_T相同
  @param vTagVal 要插入的 type 类型值
- @return 如果bNoCheck为false，返回包含迭代器和bool值的pair；否则返回迭代器
+ @return 刚才插入的元素的引用
  @note 通用类型函数AddBack的代理，具体行为参考AddBack函数的说明
  */\
-template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> AddBack##type(const typename NBT_Type::type &vTagVal)\
+typename List::value_type &AddBack##type(const typename NBT_Type::type &vTagVal)\
 {\
-	return AddBack<bNoCheck>(vTagVal);\
+	return AddBack(vTagVal);\
 }\
 \
 /**
  @brief 在列表末尾插入 type 类型数据（移动）
- @tparam bNoCheck 是否跳过类型检查，作用与NoCheck_T相同
  @param vTagVal 要插入的 type 类型值
- @return 如果bNoCheck为false，返回包含迭代器和bool值的pair；否则返回迭代器
+ @return 刚才插入的元素的引用
  @note 通用类型函数AddBack的代理，具体行为参考AddBack函数的说明
  */\
-template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> AddBack##type(typename NBT_Type::type &&vTagVal)\
+typename List::value_type &AddBack##type(typename NBT_Type::type &&vTagVal)\
 {\
-	return AddBack<bNoCheck>(std::move(vTagVal));\
+	return AddBack(std::move(vTagVal));\
 }\
 \
 /**
  @brief 设置指定位置的 type 类型数据（拷贝）
- @tparam bNoCheck 是否跳过类型检查，作用与NoCheck_T相同
  @param szPos 要设置的位置
  @param vTagVal 要设置的 type 类型值
- @return 如果bNoCheck为false，返回包含迭代器和bool值的pair；否则返回迭代器
+ @return 刚才修改的元素的引用
  @note 通用类型函数Set的代理，具体行为参考Set函数的说明
  */\
-template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Set##type(size_t szPos, const typename NBT_Type::type &vTagVal)\
+typename List::value_type &Set##type(size_t szPos, const typename NBT_Type::type &vTagVal)\
 {\
-	return Set<bNoCheck>(szPos, vTagVal);\
+	return Set(szPos, vTagVal);\
 }\
 \
 /**
  @brief 设置指定位置的 type 类型数据（移动）
- @tparam bNoCheck 是否跳过类型检查，作用与NoCheck_T相同
  @param szPos 要设置的位置
  @param vTagVal 要设置的 type 类型值
- @return 如果bNoCheck为false，返回包含迭代器和bool值的pair；否则返回迭代器
+ @return 刚才修改的元素的引用
  @note 通用类型函数Set的代理，具体行为参考Set函数的说明
  */\
-template <bool bNoCheck = false>\
-std::conditional_t<bNoCheck, typename List::iterator, std::pair<typename List::iterator, bool>> Set##type(size_t szPos, typename NBT_Type::type &&vTagVal)\
+typename List::value_type &Set##type(size_t szPos, typename NBT_Type::type &&vTagVal)\
 {\
-	return Set<bNoCheck>(szPos, std::move(vTagVal));\
+	return Set(szPos, std::move(vTagVal));\
 }
 
 	/// @name 针对每种类型提供插入和设置函数，由宏批量生成

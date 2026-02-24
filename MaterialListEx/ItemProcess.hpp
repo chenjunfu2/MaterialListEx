@@ -249,13 +249,13 @@ private:
 			}
 
 			//现在找内部的Items（潜影盒内部只能是这个，不用想了）
-			auto pcpdItems = pcpdBlockEntityTag->Search(MU8STR("Items"));//这里不用HasXXX而是Search是为了不解包出类型，兼容TraversalItems参数
+			auto pcpdItems = pcpdBlockEntityTag->Has(MU8STR("Items"));//这里不用HasXXX而是Has是为了不解包出类型，兼容TraversalItems参数
 			TraversalItems(pcpdItems, listItemStack, stItemStack.u64ItemCount, szStackDepth);//获取当前容器的物品个数作为容器内所有物品的倍率
 		}
 		else if (stItemStack.sItemName == MU8STRV("minecraft:bundle"))//收纳袋特殊处理
 		{
 			//直接找到Items
-			auto plistItems = stItemStack.cpdItemTag.Search(MU8STR("Items"));//这里不用HasXXX而是Search是为了不解包出类型，兼容TraversalItems参数
+			auto plistItems = stItemStack.cpdItemTag.Has(MU8STR("Items"));//这里不用HasXXX而是Has是为了不解包出类型，兼容TraversalItems参数
 			TraversalItems(plistItems, listItemStack, stItemStack.u64ItemCount, szStackDepth);
 		}
 		//else {} //上面几个都不是，无需解包，直接插入就行

@@ -153,6 +153,36 @@ public:
 	/// @brief 使用基类下标
 	using String::operator[];
 
+	/// @brief 提供从父类拷贝构造此类的途径
+	/// @param _Copy 需要拷贝构造的对象
+	NBT_String(const String &_Copy) :String(_Copy)
+	{}
+
+	/// @brief 提供从父类移动构造此类的途径
+	/// @param _Move 需要移动构造的对象
+	NBT_String(String &&_Move) :String(std::move(_Move))
+	{}
+
+	/// @brief 从char类型的UTF-8编码字符串构造NBT_String对象
+	/// @param u8CharTypeString char类型的UTF-8字符串视图
+	NBT_String(const std::basic_string_view<char> &u8CharTypeString) :String(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u8CharTypeString))
+	{}
+
+	/// @brief 从UTF-8编码字符串构造NBT_String对象
+	/// @param u8String char8_t类型的UTF-8字符串视图
+	NBT_String(const std::basic_string_view<char8_t> &u8String) :String(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U8ToMU8(u8String))
+	{}
+
+	/// @brief 从wchar_t类型的UTF-16编码字符串构造NBT_String对象
+	/// @param u16WCharTypeString wchar_t类型的UTF-16字符串视图
+	NBT_String(const std::basic_string_view<wchar_t> &u16WCharTypeString) :String(MUTF8_Tool<typename String::value_type, wchar_t, char8_t>::U8ToMU8(u16WCharTypeString))
+	{}
+
+	/// @brief 从UTF-16编码字符串构造NBT_String对象
+	/// @param u16String char16_t类型的UTF-16字符串视图
+	NBT_String(const std::basic_string_view<char16_t> &u16String) :String(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u16String))
+	{}
+
 	/// @brief 通过c风格字符串或字符数组初始化
 	/// @param ltrStr 数组的引用
 	/// @note 如果字符串或字符数组以c风格字符串的\0或mutf8的0x80 0xc0结尾，则裁切多余结尾，因为string数据中不应包含字符串结束符，
@@ -215,35 +245,35 @@ public:
 	}
 
 	/// @brief 从char类型的UTF-8编码字符串替换当前对象内容
-	/// @param u8String char类型的视图view，实际编码应为UTF-8
+	/// @param u8CharTypeString char类型的视图view，实际编码应为UTF-8
 	/// @note 从视图中的字符串转换为Modified-UTF-8后替换当前对象。
-	void FromCharTypeUTF8(std::basic_string_view<char> u8String)
+	void FromCharTypeUTF8(const std::basic_string_view<char> &u8CharTypeString)
 	{
-		String::operator=(std::move(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u8String)));//char8_t改为char
+		String::operator=(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u8CharTypeString));//char8_t改为char
 	}
 
 	/// @brief 从UTF-8编码字符串替换当前对象内容
 	/// @param u8String char8_t类型的视图view
 	/// @note 从视图中的字符串转换为Modified-UTF-8后替换当前对象。
-	void FromUTF8(std::basic_string_view<char8_t> u8String)
+	void FromUTF8(const std::basic_string_view<char8_t> &u8String)
 	{
-		String::operator=(std::move(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U8ToMU8(u8String)));
+		String::operator=(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U8ToMU8(u8String));
 	}
 
 	/// @brief 从wchar_t类型的UTF-16编码字符串替换当前对象内容
-	/// @param u16String wchar_t类型的视图view，实际编码应为UTF-16
+	/// @param u16WCharTypeString wchar_t类型的视图view，实际编码应为UTF-16
 	/// @note 从视图中的字符串转换为Modified-UTF-8后替换当前对象。
-	void FromWchartTypeUTF16(std::basic_string_view<wchar_t> u16String)
+	void FromWchartTypeUTF16(const std::basic_string_view<wchar_t> &u16WCharTypeString)
 	{
-		String::operator=(std::move(MUTF8_Tool<typename String::value_type, wchar_t, char8_t>::U16ToMU8(u16String)));//char16_t改为wchar_t
+		String::operator=(MUTF8_Tool<typename String::value_type, wchar_t, char8_t>::U16ToMU8(u16WCharTypeString));//char16_t改为wchar_t
 	}
 
 	/// @brief 从UTF-16编码字符串替换当前对象内容
 	/// @param u16String char16_t类型的视图view
 	/// @note 从视图中的字符串转换为Modified-UTF-8后替换当前对象。
-	void FromUTF16(std::basic_string_view<char16_t> u16String)
+	void FromUTF16(const std::basic_string_view<char16_t> &u16String)
 	{
-		String::operator=(std::move(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U16ToMU8(u16String)));
+		String::operator=(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U16ToMU8(u16String));
 	}
 };
 

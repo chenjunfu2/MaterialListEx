@@ -229,36 +229,40 @@ public:
 		return Compound::at(sTagName);
 	}
 
+
 	/// @brief 搜索标签是否存在
 	/// @param sTagName 要搜索的标签名
 	/// @return 如果找到，则返回指向标签名对应的值的指针，否则返回NULL指针
 	/// @note 标签不存在时不会抛出异常，适用于检查性访问
-	typename Compound::mapped_type *Search(const typename Compound::key_type &sTagName) noexcept
+	typename Compound::mapped_type *Has(const typename Compound::key_type &sTagName) noexcept
 	{
 		auto find = Compound::find(sTagName);
-		return find == Compound::end() ? NULL : &((*find).second);
+		return find == Compound::end()
+			? NULL
+			: &(find->second);
 	}
 
 	/// @brief 搜索标签是否存在（常量版本）
 	/// @param sTagName 要搜索的标签名
 	/// @return 如果找到，则返回指向标签名对应的值的常量指针，否则返回NULL指针
 	/// @note 标签不存在时不会抛出异常，适用于检查性访问
-	const typename Compound::mapped_type *Search(const typename Compound::key_type &sTagName) const noexcept
+	const typename Compound::mapped_type *Has(const typename Compound::key_type &sTagName) const noexcept
 	{
 		auto find = Compound::find(sTagName);
-		return find == Compound::end() ? NULL : &((*find).second);
+		return find == Compound::end()
+			? NULL
+			: &(find->second);
 	}
 
 	//简化map插入
 	//使用完美转发，不丢失引用、右值信息
 
-	/// @brief 原位构造键值对
+	/// @brief 插入或替换键值对
 	/// @tparam K 标签名类型，必须可构造为key_type
 	/// @tparam V 标签值类型，必须可构造为mapped_type
 	/// @param sTagName 标签名
 	/// @param vTagVal 标签名对应的值
-	/// @return 包含迭代器和bool值的pair，指示插入是否成功及插入位置
-	/// @note 如果键已存在则失败，不会进行拷贝或移动行为。
+	/// @return 包含迭代器和bool值的pair，迭代器指向插入或替换的元素，bool值为true则执行了插入，否则执行了替换
 	/// @note 允许插入End类型的值，这样设计的目的在于允许处理过程出现特殊值，
 	/// 请确保输出前处理完毕所有End类型，否则通过NBT_Write输出时会忽略这些值并生成警告
 	template <typename K, typename V>
@@ -271,41 +275,28 @@ public:
 		//	return std::pair{ Compound::end(),false };
 		//}
 
+		return Compound::insert_or_assign(std::forward<K>(sTagName), std::forward<V>(vTagVal));
+	}
+
+	/// @brief 原位构造键值对
+	/// @tparam K 标签名类型，必须可构造为key_type
+	/// @tparam V 标签值类型，必须可构造为mapped_type
+	/// @param sTagName 标签名
+	/// @param vTagVal 标签名对应的值
+	/// @return 包含迭代器和bool值的pair，迭代器指向插入或替换的元素，bool值为true则执行了插入，否则键已存在，不会进行拷贝或移动
+	/// @note 允许插入End类型的值，这样设计的目的在于允许处理过程出现特殊值，
+	/// 请确保输出前处理完毕所有End类型，否则通过NBT_Write输出时会忽略这些值并生成警告
+	template <typename K, typename V>
+	requires std::constructible_from<typename Compound::key_type, K &&> &&std::constructible_from<typename Compound::mapped_type, V &&>
+	std::pair<typename Compound::iterator, bool> TryPut(K &&sTagName, V &&vTagVal)
+	{
+		//总是允许插入nbt end，但是在写出文件时会忽略end类型
+		//if (!TestType(vTagVal))
+		//{
+		//	return std::pair{ Compound::end(),false };
+		//}
+
 		return Compound::try_emplace(std::forward<K>(sTagName), std::forward<V>(vTagVal));
-	}
-
-	/// @brief 插入键值对（拷贝）
-	/// @param mapValue 要插入的键值对，通过std::pair存储
-	/// @return 包含迭代器和bool值的pair，指示插入是否成功及插入位置
-	/// @note 如果键已存在则插入失败。
-	/// @note 允许插入End类型的值，这样设计的目的在于允许处理过程出现特殊值，
-	/// 请确保输出前处理完毕所有End类型，否则通过NBT_Write输出时会忽略这些值并生成警告
-	std::pair<typename Compound::iterator, bool> Put(const typename Compound::value_type &mapValue)
-	{
-		//总是允许插入nbt end，但是在写出文件时会忽略end类型
-		//if (!TestType(mapValue.second.GetTag()))
-		//{
-		//	return std::pair{ Compound::end(),false };
-		//}
-
-		return Compound::insert(mapValue);
-	}
-
-	/// @brief 插入键值对（移动）
-	/// @param mapValue 要插入的键值对，通过std::pair存储
-	/// @return 包含迭代器和bool值的pair，指示插入是否成功及插入位置
-	/// @note 如果键已存在则插入失败。
-	/// @note 允许插入End类型的值，这样设计的目的在于允许处理过程出现特殊值，
-	/// 请确保输出前处理完毕所有End类型，否则通过NBT_Write输出时会忽略这些值并生成警告
-	std::pair<typename Compound::iterator, bool> Put(typename Compound::value_type &&mapValue)
-	{
-		//总是允许插入nbt end，但是在写出文件时会忽略end类型
-		//if (!TestType(mapValue.second.GetTag()))
-		//{
-		//	return std::pair{ Compound::end(),false };
-		//}
-
-		return Compound::insert(std::move(mapValue));
 	}
 
 	/// @brief 删除指定标签
@@ -363,17 +354,6 @@ public:
 		return Compound::contains(sTagName);
 	}
 
-	/// @brief 检查是否包含指定类型和名称的标签
-	/// @param sTagName 要检查的标签名
-	/// @param enTypeTag 期望的标签类型
-	/// @return 如果包含指定标签名，且标签名对应的值的类型匹配，则返回true，否则返回false
-	/// @note 同时检查标签存在性和值类型
-	bool Contains(const typename Compound::key_type &sTagName, const NBT_TAG &enTypeTag) const noexcept
-	{
-		auto *p = Search(sTagName);
-		return p != NULL && p->GetTag() == enTypeTag;
-	}
-
 	/// @brief 使用谓词检查是否存在满足条件的元素
 	/// @tparam Predicate 谓词仿函数类型，需要接受value_type并返回bool
 	/// @param pred 谓词仿函数对象
@@ -394,7 +374,19 @@ public:
 /// @note 用户不应该使用此宏（实际上宏已在使用后取消定义），标注仅为消除doxygen警告
 #define TYPE_GET_FUNC(type)\
 /**
- @brief 获取指定标签名的 type 类型数据
+ @brief 检查是否包含指定标签名的 type 类型数据
+ @param sTagName 要检查的标签名
+ @return 如果包含指定标签名，且对应的值的类型匹配，则返回true，否则返回false
+ @note 同时检查标签存在性和值类型
+ */\
+bool Contains##type(const typename Compound::key_type &sTagName) const\
+{\
+	auto *p = Has(sTagName);\
+	return p != NULL && p->GetTag() == NBT_TAG::type;\
+}\
+\
+/**
+ @brief 获取指定标签名的 type 类型数据（常量版本）
  @param sTagName 标签名
  @return type 类型数据的常量引用
  @note 如果标签不存在或类型不匹配则抛出异常，
@@ -418,15 +410,17 @@ typename NBT_Type::type &Get##type(const typename Compound::key_type & sTagName)
 }\
 \
 /**
- @brief 安全检查并获取指定标签名的 type 类型数据
+ @brief 安全检查并获取指定标签名的 type 类型数据（常量版本）
  @param sTagName 标签名
  @return 如果存在且对应值的类型为 type 则返回指向数据的常量指针，否则返回NULL
  @note 标签不存在或类型不为 type 时不会抛出异常，适用于检查性访问
  */\
 const typename NBT_Type::type *Has##type(const typename Compound::key_type & sTagName) const noexcept\
 {\
-	auto find = Compound::find(sTagName);\
-	return find != Compound::end() && find->second.Is##type() ? &(find->second.Get##type()) : NULL;\
+	auto *p = Has(sTagName);\
+	return p != NULL && p->Is##type()\
+		? &(p->Get##type())\
+		: NULL;\
 }\
 \
 /**
@@ -437,8 +431,10 @@ const typename NBT_Type::type *Has##type(const typename Compound::key_type & sTa
  */\
 typename NBT_Type::type *Has##type(const typename Compound::key_type & sTagName) noexcept\
 {\
-	auto find = Compound::find(sTagName);\
-	return find != Compound::end() && find->second.Is##type() ? &(find->second.Get##type()) : NULL;\
+	auto *p = Has(sTagName);\
+	return p != NULL && p->Is##type()\
+		? &(p->Get##type())\
+		: NULL;\
 }
 
 	/// @name 针对每种类型提供一个方便使用的函数，由宏批量生成
@@ -470,12 +466,11 @@ typename NBT_Type::type *Has##type(const typename Compound::key_type & sTagName)
 /// @note 用户不应该使用此宏（实际上宏已在使用后取消定义），标注仅为消除doxygen警告
 #define TYPE_PUT_FUNC(type)\
 /**
- @brief 插入 type 类型的键值对（拷贝）
+ @brief 插入或替换 type 类型的键值对（拷贝）
  @tparam K 标签名类型，必须可构造为key_type
  @param sTagName 标签名
  @param vTagVal 要插入的 type 类型值
- @return 包含迭代器和bool值的pair，指示插入是否成功及插入位置
- @note 如果键已存在则插入失败
+ @return 包含迭代器和bool值的pair，迭代器指向插入或替换的元素，bool值为true则执行了插入，否则执行了替换
  @note 允许插入End类型的值，这样设计的目的在于允许处理过程出现特殊值，
  请确保输出前处理完毕所有End类型，否则通过NBT_Write输出时会忽略这些值并生成警告
  */\
@@ -487,12 +482,11 @@ std::pair<typename Compound::iterator, bool> Put##type(K &&sTagName, const typen
 }\
 \
 /**
- @brief 插入 type 类型的键值对（移动）
+ @brief 插入或替换 type 类型的键值对（移动）
  @tparam K 标签名类型，必须可构造为key_type
  @param sTagName 标签名
  @param vTagVal 要插入的 type 类型值
- @return 包含迭代器和bool值的pair，指示插入是否成功及插入位置
- @note 如果键已存在则插入失败
+ @return 包含迭代器和bool值的pair，迭代器指向插入或替换的元素，bool值为true则执行了插入，否则执行了替换
  @note 允许插入End类型的值，这样设计的目的在于允许处理过程出现特殊值，
  请确保输出前处理完毕所有End类型，否则通过NBT_Write输出时会忽略这些值并生成警告
  */\
@@ -501,6 +495,38 @@ requires std::constructible_from<typename Compound::key_type, K &&>\
 std::pair<typename Compound::iterator, bool> Put##type(K &&sTagName, typename NBT_Type::type &&vTagVal)\
 {\
 	return Put(std::forward<K>(sTagName), std::move(vTagVal));\
+}\
+\
+ /**
+ @brief 尝试插入 type 类型的键值对（拷贝）
+ @tparam K 标签名类型，必须可构造为key_type
+ @param sTagName 标签名
+ @param vTagVal 要插入的 type 类型值
+ @return 包含迭代器和bool值的pair，迭代器指向插入或替换的元素，bool值为true则执行了插入，否则键已存在，不会进行拷贝或移动
+ @note 允许插入End类型的值，这样设计的目的在于允许处理过程出现特殊值，
+ 请确保输出前处理完毕所有End类型，否则通过NBT_Write输出时会忽略这些值并生成警告
+ */\
+template <typename K>\
+requires std::constructible_from<typename Compound::key_type, K &&>\
+std::pair<typename Compound::iterator, bool> TryPut##type(K &&sTagName, const typename NBT_Type::type &vTagVal)\
+{\
+	return TryPut(std::forward<K>(sTagName), vTagVal);\
+}\
+\
+/**
+ @brief 尝试插入 type 类型的键值对（移动）
+ @tparam K 标签名类型，必须可构造为key_type
+ @param sTagName 标签名
+ @param vTagVal 要插入的 type 类型值
+ @return 包含迭代器和bool值的pair，迭代器指向插入或替换的元素，bool值为true则执行了插入，否则键已存在，不会进行拷贝或移动
+ @note 允许插入End类型的值，这样设计的目的在于允许处理过程出现特殊值，
+ 请确保输出前处理完毕所有End类型，否则通过NBT_Write输出时会忽略这些值并生成警告
+ */\
+template <typename K>\
+requires std::constructible_from<typename Compound::key_type, K &&>\
+std::pair<typename Compound::iterator, bool> TryPut##type(K &&sTagName, typename NBT_Type::type &&vTagVal)\
+{\
+	return TryPut(std::forward<K>(sTagName), std::move(vTagVal));\
 }
 
 	/// @name 针对每种类型提供插入函数，由宏批量生成

@@ -53,17 +53,17 @@ public:
 	/// @brief 静态常量，表示当前视图指向的数据是否只读
 	static inline constexpr bool is_const = bIsConst;
 
-	/// @brief 通用构造函数（适用于const与非const的情况）
+
+
+	/// @brief 通用构造函数（仅适用于非const）
 	/// @tparam T 要指向的数据类型
 	/// @param value 要指向的数据对象的引用
 	/// @note 要求类型T必须是NBT_Type类型列表中的任意一个，且不是NBT_Node类型
 	/// @note 传入的对象必须在使用期间保持有效，否则行为未定义
 	template <typename T>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)//此构造任何时候都生效，const的情况下可以指向非const对象的指针
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> &&NBT_Type::IsValidType_V<std::decay_t<T>> && !bIsConst)
 	NBT_Node_View(T &value) : data(&value)
-	{
-		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT node view");
-	}
+	{}
 
 	/// @brief 通用构造函数（仅适用于const）
 	/// @tparam T 要指向的数据类型
@@ -71,21 +71,11 @@ public:
 	/// @note 要求类型T必须是NBT_Type类型列表中的任意一个，且不是NBT_Node类型
 	/// @warning 传入的对象必须在使用期间保持有效，否则行为未定义
 	template <typename T>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && bIsConst)//此构造只在const的情况下生效，因为非const的情况下不能通过const对象初始化非const指针
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>> && bIsConst)
 	NBT_Node_View(const T &value) : data(&value)
-	{
-		static_assert(NBT_Type::IsValidType_V<std::decay_t<T>>, "Invalid type for NBT node view");
-	}
+	{}
 
-	/// @brief 删除临时对象构造方式，防止从临时对象构造导致悬空指针
-	/// @tparam T 临时对象的类型
-	/// @param _Temp 任意类型的临时对象
-	/// @note 这是一个删除的构造函数，用于一定程度上防御用户通过临时对象构造
-	template <typename T>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node>)//这里的requires是为了保证不要让任意类型的右值全部重载到这里
-	NBT_Node_View(T &&_Temp) = delete;
-
-	/// @brief 从NBT_Node构造视图（适用于const与非const的情况）
+	/// @brief 从NBT_Node构造视图（仅适用于非const）
 	/// @param node 要创建视图的NBT_Node对象
 	/// @note 创建指向NBT_Node内部数据的视图
 	/// @warning 传入的NBT_Node对象必须在使用期间保持有效，否则行为未定义
@@ -111,11 +101,6 @@ public:
 			}, node.data);
 	}
 
-	/// @brief 删除临时对象构造方式，防止从临时对象构造导致悬空指针
-	/// @param _Temp NBT_Node类型的临时对象
-	/// @note 这是一个删除的构造函数，用于一定程度上防御用户通过临时对象构造
-	NBT_Node_View(NBT_Node &&_Temp) = delete;
-
 	/// @brief 从非const视图隐式构造const视图
 	/// @tparam void 占位模板参数
 	/// @param _Other 用于构造的非const视图对象
@@ -130,11 +115,161 @@ public:
 			}, _Other.data);
 	}
 
-private:
-	// 隐藏默认构造（TAG_End）
-	// 它应该存在，并在内部使用，但用户不应该使用，所以它是private的，但不是delete的
-	NBT_Node_View() = default;
+	/// @brief 删除临时对象构造方式，防止从临时对象构造导致悬空指针
+	/// @tparam T 临时对象的类型
+	/// @param _Temp 任意类型的临时对象
+	/// @note 这是一个删除的构造函数，用于一定程度上防御用户通过临时对象构造
+	template <typename T>
+	requires(!std::is_lvalue_reference_v<T>)
+	NBT_Node_View(T &&_Temp) = delete;
+
+	/// @brief 通用设置函数（仅适用于非const）
+	/// @tparam T 要指向的数据类型
+	/// @param value 要指向的数据对象的引用
+	/// @return 设置的值的引用
+	/// @note 要求类型T必须是NBT_Type类型列表中的任意一个，且不是NBT_Node类型
+	/// @note 传入的对象必须在使用期间保持有效，否则行为未定义
+	template <typename T>
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>> && !bIsConst)
+	T &Set(T &value)
+	{
+		data.template emplace<PtrType<T>>(&value);
+		return value;
+	}
+
+	/// @brief 通用设置函数（仅适用于const）
+	/// @tparam T 要指向的数据类型
+	/// @param value 要指向的数据对象的常量引用
+	/// @return 设置的值的常量引用
+	/// @note 要求类型T必须是NBT_Type类型列表中的任意一个，且不是NBT_Node类型
+	/// @warning 传入的对象必须在使用期间保持有效，否则行为未定义
+	template <typename T>
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>> && bIsConst)
+	const T &Set(const T &value)
+	{
+		data.template emplace<PtrType<T>>(&value);
+		return value;
+	}
+
+	/// @brief 从NBT_Node重设视图（仅适用于非const）
+	/// @param node 要创建视图的NBT_Node对象
+	/// @return 设置的值的引用
+	/// @note 创建指向NBT_Node内部数据的视图
+	/// @warning 传入的NBT_Node对象必须在使用期间保持有效，否则行为未定义
+	template <typename = void>//requires占位模板
+	requires(!bIsConst)
+	NBT_Node &Set(NBT_Node &node)
+	{
+		std::visit([this](auto &arg)
+			{
+				this->data = &arg;
+			}, node.data);
+
+		return node;
+	}
+
+	/// @brief 从NBT_Node重设视图（仅适用于const）
+	/// @param node 要创建视图的NBT_Node对象
+	/// @return 设置的值的常量引用
+	/// @note 创建指向NBT_Node内部数据的只读视图
+	/// @warning 传入的NBT_Node对象必须在使用期间保持有效，否则行为未定义
+	template <typename = void>//requires占位模板
+	requires(bIsConst)
+	const NBT_Node &Set(const NBT_Node &node)
+	{
+		std::visit([this](auto &arg)
+			{
+				this->data = &arg;
+			}, node.data);
+
+		return node;
+	}
+
+	/// @brief 删除临时对象设置方式，防止从临时对象构造导致悬空指针
+	/// @tparam T 临时对象的类型
+	/// @param _Temp 任意类型的临时对象
+	/// @note 这是一个删除的设置函数，用于一定程度上防御用户通过临时对象构造
+	template <typename T>
+	requires(!std::is_lvalue_reference_v<T>)
+	T &Set(T &&_Temp) = delete;
+
+	/// @brief 通用赋值设置函数（仅适用于非const）
+	/// @tparam T 要指向的数据类型
+	/// @param value 要指向的数据对象的引用
+	/// @return 设置的值的引用
+	/// @note 要求类型T必须是NBT_Type类型列表中的任意一个，且不是NBT_Node类型
+	/// @note 传入的对象必须在使用期间保持有效，否则行为未定义
+	template <typename T>
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>> && !bIsConst)
+	NBT_Node_View &operator=(T &value)
+	{
+		data = &value;
+
+		return *this;
+	}
+
+	/// @brief 通用赋值设置函数（仅适用于const）
+	/// @tparam T 要指向的数据类型
+	/// @param value 要指向的数据对象的常量引用
+	/// @return 设置的值的常量引用
+	/// @note 要求类型T必须是NBT_Type类型列表中的任意一个，且不是NBT_Node类型
+	/// @warning 传入的对象必须在使用期间保持有效，否则行为未定义
+	template <typename T>
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>> && bIsConst)
+	NBT_Node_View &operator=(const T &value)
+	{
+		data = &value;
+
+		return *this;
+	}
+
+	/// @brief 从NBT_Node赋值重设视图（仅适用于非const）
+	/// @param node 要创建视图的NBT_Node对象
+	/// @return 设置的值的引用
+	/// @note 创建指向NBT_Node内部数据的视图
+	/// @warning 传入的NBT_Node对象必须在使用期间保持有效，否则行为未定义
+	template <typename = void>
+	requires(!bIsConst)
+	NBT_Node_View &operator=(NBT_Node &node)
+	{
+		std::visit([this](auto &arg)
+			{
+				this->data = &arg;
+			}, node.data);
+
+		return *this;
+	}
+
+	/// @brief 从NBT_Node赋值重设视图（仅适用于const）
+	/// @param node 要创建视图的NBT_Node对象
+	/// @return 设置的值的常量引用
+	/// @note 创建指向NBT_Node内部数据的只读视图
+	/// @warning 传入的NBT_Node对象必须在使用期间保持有效，否则行为未定义
+	template <typename = void>
+	requires(bIsConst)
+	NBT_Node_View &operator=(const NBT_Node &node)
+	{
+		std::visit([this](auto &arg)
+			{
+				this->data = &arg;
+			}, node.data);
+
+		return *this;
+	}
+
+	/// @brief 删除临时对象赋值设置方式，防止从临时对象构造导致悬空指针
+	/// @tparam T 临时对象的类型
+	/// @param _Temp 任意类型的临时对象
+	/// @note 这是一个删除的设置函数，用于一定程度上防御用户通过临时对象构造
+	template <typename T>
+	requires(!std::is_lvalue_reference_v<T>)
+	NBT_Node_View &operator=(T &&_Temp) = delete;
+
 public:
+	/// @brief 默认构造函数
+	/// @note 构造为空View
+	NBT_Node_View() : data(PtrType<NBT_Type::End>{})
+	{}
 
 	/// @brief 默认析构函数
 	/// @note 视图析构不会影响实际数据对象，只释放内部指针
@@ -241,7 +376,7 @@ public:
 	/// @return 对指向数据的常量引用
 	/// @note 如果类型不存在或当前存储的不是指定类型的指针，则抛出异常，具体请参考std::get的说明
 	template<typename T>
-	const T &GetData() const
+	const T &Get() const
 	{
 		return *std::get<PtrType<T>>(data);
 	}
@@ -252,7 +387,7 @@ public:
 	/// @note 如果类型不存在或当前存储的不是指定类型的指针，则抛出异常，具体请参考std::get的说明
 	template<typename T>
 	requires(!bIsConst)//仅在非const的情况下可用
-	T &GetData()
+	T &Get()
 	{
 		return *std::get<PtrType<T>>(data);
 	}
@@ -264,6 +399,20 @@ public:
 	bool TypeHolds() const
 	{
 		return std::holds_alternative<PtrType<T>>(data);
+	}
+
+	/// @brief 为空判断
+	/// @return 如果存储空值则返回true，否则返回false
+	bool IsEmpty() const
+	{
+		return TypeHolds<NBT_Type::End>() &&
+			std::get<PtrType<NBT_Type::End>>(data) == PtrType<NBT_Type::End>{};
+	}
+
+	/// @brief 设置为空
+	void SetEmpty()
+	{
+		data.template emplace<PtrType<NBT_Type::End>>(PtrType<NBT_Type::End>{});
 	}
 
 //针对每种类型生成一个方便的函数
@@ -358,4 +507,62 @@ friend bool Is##type(const NBT_Node_View &node)\
 	/// @}
 
 #undef TYPE_GET_FUNC
+
+/// @def TYPE_SET_FUNC(type)
+/// @brief 不同类型名接口生成宏
+/// @note 用户不应该使用此宏（实际上宏已在使用后取消定义），标注仅为消除doxygen警告
+#define TYPE_SET_FUNC(type)\
+/**
+ @brief 从value设置 type 类型的视图（非const）
+ @param value 要设置的值的引用
+ @return 设置的值的引用
+ */\
+template <typename = void>\
+requires(!bIsConst)\
+NBT_Type::type &Set##type(NBT_Type::type &value)\
+{\
+	return Set<NBT_Type::type>(value); \
+}\
+\
+/**
+ @brief 从value设置 type 类型的视图（const）
+ @param value 要设置的值的常量引用
+ @return 设置的值的引用
+ */\
+template <typename = void>\
+requires(bIsConst)\
+const NBT_Type::type &Set##type(const NBT_Type::type &value)\
+{\
+	return Set<NBT_Type::type>(value); \
+}\
+\
+/**
+ @brief 删除从临时对象设置 type 类型的视图，，防止从临时对象构造导致悬空指针
+ @param _Temp type 类型的临时对象
+ @note 这是一个删除的设置函数，用于一定程度上防御用户通过临时对象构造
+ */\
+NBT_Type::type &Set##type(NBT_Type::type &&_Temp) = delete;
+
+	/// @name 针对每种类型提供一个方便使用的函数，由宏批量生成
+	/// @brief 具体作用说明：
+	/// - Set开头+类型名的函数：设置node为此类型，从值或默认值设置
+	/// @{
+	
+	TYPE_SET_FUNC(End);
+	TYPE_SET_FUNC(Byte);
+	TYPE_SET_FUNC(Short);
+	TYPE_SET_FUNC(Int);
+	TYPE_SET_FUNC(Long);
+	TYPE_SET_FUNC(Float);
+	TYPE_SET_FUNC(Double);
+	TYPE_SET_FUNC(ByteArray);
+	TYPE_SET_FUNC(IntArray);
+	TYPE_SET_FUNC(LongArray);
+	TYPE_SET_FUNC(String);
+	TYPE_SET_FUNC(List);
+	TYPE_SET_FUNC(Compound);
+
+	/// @}
+
+#undef TYPE_SET_FUNC
 };

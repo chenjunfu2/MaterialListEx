@@ -252,12 +252,57 @@ public:
 	template <NBT_TAG Tag>
 	using TagToType_T = typename TagToType<Tag>::type;
 
+
+	/// @name 类型判断模板
+	/// @{
+	
+	/// @brief 判断类型是否为NBT数值类型（包含所有整数和浮点数类型）
+	/// @tparam T 需要检查的类型
+	/// @note 如果类型是Byte、Short、Int、Long、Float、Double中的一种，则返回true，否则返回false
+	template <typename T>
+	static constexpr bool IsNumericType_V =
+		std::is_same_v<T, Byte> ||
+		std::is_same_v<T, Short> ||
+		std::is_same_v<T, Int> ||
+		std::is_same_v<T, Long> ||
+		std::is_same_v<T, Float> ||
+		std::is_same_v<T, Double>;
+
+	/// @brief 判断类型是否为NBT整数类型（包含所有整数类型）
+	/// @tparam T 需要检查的类型
+	/// @note 如果类型是Byte、Short、Int、Long中的一种，则返回true，否则返回false
+	template <typename T>
+	static constexpr bool IsIntegerType_V =
+		std::is_same_v<T, Byte> ||
+		std::is_same_v<T, Short> ||
+		std::is_same_v<T, Int> ||
+		std::is_same_v<T, Long>;
+
+	/// @brief 判断类型是否为NBT浮点数类型（包含所有浮点数类型）
+	/// @tparam T 需要检查的类型
+	/// @note 如果类型是Float、Double中的一种，则返回true，否则返回false
+	template <typename T>
+	static constexpr bool IsFloatingType_V =
+		std::is_same_v<T, Float> ||
+		std::is_same_v<T, Double>;
+
+	/// @brief 判断类型是否为NBT数组类型（包含所有数组类型）
+	/// @tparam T 需要检查的类型
+	/// @note 如果类型是ByteArray、IntArray、LongArray中的一种，则返回true，否则返回false
+	template <typename T>
+	static constexpr bool IsArrayType_V =
+		std::is_same_v<T, ByteArray> ||
+		std::is_same_v<T, IntArray> ||
+		std::is_same_v<T, LongArray>;
+
+	/// @}
+
 	/// @cond
 	template<typename T>
 	struct BuiltinRawType
 	{
 		using Type = T;
-		static_assert(IsValidType_V<T> && std::is_integral_v<T>, "Not a legal type!");//抛出编译错误
+		static_assert(IsValidType_V<T> && IsNumericType_V<T>, "Not a legal type!");//抛出编译错误
 	};
 	/// @endcond
 
@@ -268,6 +313,78 @@ public:
 	/// 部分平台对浮点数支持不完整的情况下，映射类型可能与原始类型相同，因为原始类型被声明为映射类型
 	template<typename T>
 	using BuiltinRawType_T = typename BuiltinRawType<T>::Type;
+
+	/// @name 类型判断函数（可动态）
+	/// @{
+
+	/// @brief 判断给定的NBT_TAG是否对应数值类型（包含所有整数和浮点数类型）
+	/// @param tag 需要判断的NBT_TAG枚举值
+	/// @return 如果tag对应Byte、Short、Int、Long、Float、Double中的一种，则返回true，否则返回false
+	constexpr static inline bool IsNumericTag(NBT_TAG tag) noexcept
+	{
+		switch (tag)
+		{
+		case NBT_TAG::Byte:
+		case NBT_TAG::Short:
+		case NBT_TAG::Int:
+		case NBT_TAG::Long:
+		case NBT_TAG::Float:
+		case NBT_TAG::Double:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	/// @brief 判断给定的NBT_TAG是否对应整数类型（包含所有整数类型）
+	/// @param tag 需要判断的NBT_TAG枚举值
+	/// @return 如果tag对应Byte、Short、Int、Long中的一种，则返回true，否则返回false
+	constexpr static inline bool IsIntegerTag(NBT_TAG tag) noexcept
+	{
+		switch (tag)
+		{
+		case NBT_TAG::Byte:
+		case NBT_TAG::Short:
+		case NBT_TAG::Int:
+		case NBT_TAG::Long:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	/// @brief 判断给定的NBT_TAG是否对应浮点数类型（包含所有浮点数类型）
+	/// @param tag 需要判断的NBT_TAG枚举值
+	/// @return 如果tag对应Float、Double中的一种，则返回true，否则返回false
+	constexpr static inline bool IsFloatingTag(NBT_TAG tag) noexcept
+	{
+		switch (tag)
+		{
+		case NBT_TAG::Float:
+		case NBT_TAG::Double:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	/// @brief 判断给定的NBT_TAG是否对应数组类型（包含所有数组类型）
+	/// @param tag 需要判断的NBT_TAG枚举值
+	/// @return 如果tag对应ByteArray、IntArray、LongArray中的一种，则返回true，否则返回false
+	constexpr static inline bool IsArrayTag(NBT_TAG tag) noexcept
+	{
+		switch (tag)
+		{
+		case NBT_TAG::ByteArray:
+		case NBT_TAG::IntArray:
+		case NBT_TAG::LongArray:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	/// @}
 };
 
 //显示特化

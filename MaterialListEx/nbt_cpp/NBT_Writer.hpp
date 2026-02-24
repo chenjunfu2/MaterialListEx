@@ -155,7 +155,6 @@ private:
 		UnknownError,//其他错误
 		StdException,//标准异常
 		OutOfMemoryError,//内存不足错误
-		ListElementTypeError,//列表元素类型错误（代码问题）
 		StackDepthExceeded,//调用栈深度过深（代码问题）
 		StringTooLongError,//字符串过长错误
 		ArrayTooLongError,//数组过长错误
@@ -172,7 +171,6 @@ private:
 		"UnknownError",
 		"StdException",
 		"OutOfMemoryError",
-		"ListElementTypeError",
 		"StackDepthExceeded",
 		"StringTooLongError",
 		"ArrayTooLongError",
@@ -207,35 +205,39 @@ private:
 	//主动检查引发的错误，主动调用eRet = Error报告，然后触发STACK_TRACEBACK，最后返回eRet到上一级
 	//上一级返回的错误通过if (eRet != AllOk)判断的，直接触发STACK_TRACEBACK后返回eRet到上一级
 	//如果是警告值，则不返回值
-	template <typename T, typename OutputStream, typename ErrInfoFunc, typename... Args>
+	template <typename T, typename OutputStream, typename InfoFunc, typename... Args>
 	requires(std::is_same_v<T, ErrCode> || std::is_same_v<T, WarnCode>)
 	static std::conditional_t<std::is_same_v<T, ErrCode>, ErrCode, void> Error
 		(
 			const T &code,
 			const OutputStream &tData,
-			ErrInfoFunc &funcErrInfo,
+			InfoFunc &funcInfo,
 			const std::FMT_STR<Args...> fmt,
 			Args&&... args
 		) noexcept
 	{
+		NBT_Print_Level lvl;
+
 		//打印错误原因
 		if constexpr (std::is_same_v<T, ErrCode>)
 		{
+			lvl = NBT_Print_Level::Err;
 			if (code >= ERRCODE_END)
 			{
 				return code;
 			}
 			//上方if保证code不会溢出
-			funcErrInfo("Read Err[{}]: {}\n", (uint8_t)code, errReason[code]);
+			funcInfo(lvl, "Read Err[{}]: {}\n", (uint8_t)code, errReason[code]);
 		}
 		else if constexpr (std::is_same_v<T, WarnCode>)
 		{
+			lvl = NBT_Print_Level::Warn;
 			if (code >= WARNCODE_END)
 			{
 				return;
 			}
 			//上方if保证code不会溢出
-			funcErrInfo("Read Warn[{}]: {}\n", (uint8_t)code, warnReason[code]);
+			funcInfo(lvl, "Read Warn[{}]: {}\n", (uint8_t)code, warnReason[code]);
 		}
 		else
 		{
@@ -243,9 +245,9 @@ private:
 		}
 
 		//打印扩展信息
-		funcErrInfo("Extra Info: \"");
-		funcErrInfo(std::move(fmt), std::forward<Args>(args)...);
-		funcErrInfo("\"\n\n");
+		funcInfo(lvl, "Extra Info: \"");
+		funcInfo(lvl, std::move(fmt), std::forward<Args>(args)...);
+		funcInfo(lvl, "\"\n\n");
 
 		//如果可以，预览szCurrent前n个字符，否则裁切到边界
 /// @cond
@@ -255,8 +257,9 @@ private:
 		size_t rangeEnd = tData.Size();//下边界裁切
 #undef VIEW_PRE
 		//输出信息
-		funcErrInfo
+		funcInfo
 		(
+			lvl,
 			"Data Review:\n"\
 			"Data Size: 0x{:02X}({})\n"\
 			"Data Range: [0x{:02X}({}),0x{:02X}({})):\n",
@@ -273,22 +276,22 @@ private:
 			{
 				if (i != rangeBeg)//除去第一个每8个换行
 				{
-					funcErrInfo("\n");
+					funcInfo(lvl, "\n");
 				}
-				funcErrInfo("0x{:02X}: ", (uint64_t)i);
+				funcInfo(lvl, "0x{:02X}: ", (uint64_t)i);
 			}
 
-			funcErrInfo(" {:02X} ", (uint8_t)tData[i]);
+			funcInfo(lvl, " {:02X} ", (uint8_t)tData[i]);
 		}
 
 		//输出提示信息
 		if constexpr (std::is_same_v<T, ErrCode>)
 		{
-			funcErrInfo("\nSkip err and return...\n\n");
+			funcInfo(lvl, "\nSkip err and return...\n\n");
 		}
 		else if constexpr (std::is_same_v<T, WarnCode>)
 		{
-			funcErrInfo("\nSkip warn and continue...\n\n");
+			funcInfo(lvl, "\nSkip warn and continue...\n\n");
 		}
 		else
 		{
@@ -309,11 +312,11 @@ private:
 #define _RP_STRLING(l) STRLING(l)
 #define STRLING(l) #l
 
-#define STACK_TRACEBACK(fmt, ...) funcErrInfo("In [{}] Line:[" _RP___LINE__ "]: \n" fmt "\n\n", _RP___FUNCTION__ __VA_OPT__(,) __VA_ARGS__);
+#define STACK_TRACEBACK(fmt, ...) funcInfo(NBT_Print_Level::Err, "In [{}] Line:[" _RP___LINE__ "]: \n" fmt "\n\n", _RP___FUNCTION__ __VA_OPT__(,) __VA_ARGS__);
 #define CHECK_STACK_DEPTH(Depth) \
 if((Depth) <= 0)\
 {\
-	eRet = Error(StackDepthExceeded, tData, funcErrInfo, "{}: NBT nesting depth exceeded maximum call stack limit", _RP___FUNCTION__);\
+	eRet = Error(StackDepthExceeded, tData, funcInfo, "{}: NBT nesting depth exceeded maximum call stack limit", _RP___FUNCTION__);\
 	STACK_TRACEBACK("(Depth) <= 0");\
 	return eRet;\
 }\
@@ -326,26 +329,26 @@ try\
 }\
 catch(const std::bad_alloc &e)\
 {\
-	ErrCode eRet = Error(OutOfMemoryError, tData, funcErrInfo, "{}: Info:[{}]", _RP___FUNCTION__, e.what());\
+	ErrCode eRet = Error(OutOfMemoryError, tData, funcInfo, "{}: Info:[{}]", _RP___FUNCTION__, e.what());\
 	STACK_TRACEBACK("catch(std::bad_alloc)");\
 	return eRet;\
 }\
 catch(const std::exception &e)\
 {\
-	ErrCode eRet = Error(StdException, tData, funcErrInfo, "{}: Info:[{}]", _RP___FUNCTION__, e.what());\
+	ErrCode eRet = Error(StdException, tData, funcInfo, "{}: Info:[{}]", _RP___FUNCTION__, e.what());\
 	STACK_TRACEBACK("catch(std::exception)");\
 	return eRet;\
 }\
 catch(...)\
 {\
-	ErrCode eRet =  Error(UnknownError, tData, funcErrInfo, "{}: Info:[Unknown Exception]", _RP___FUNCTION__);\
+	ErrCode eRet =  Error(UnknownError, tData, funcInfo, "{}: Info:[Unknown Exception]", _RP___FUNCTION__);\
 	STACK_TRACEBACK("catch(...)");\
 	return eRet;\
 }
 ///@endcond
 
-	template<typename OutputStream, typename ErrInfoFunc>
-	static inline ErrCode CheckReserve(OutputStream &tData, size_t szAddSize, ErrInfoFunc &funcErrInfo) noexcept
+	template<typename OutputStream, typename InfoFunc>
+	static inline ErrCode CheckReserve(OutputStream &tData, size_t szAddSize, InfoFunc &funcInfo) noexcept
 	{
 	MYTRY;
 		tData.AddReserve(szAddSize);
@@ -354,9 +357,9 @@ catch(...)\
 	}
 
 	//写出大端序值
-	template<typename T, typename OutputStream, typename ErrInfoFunc>
+	template<typename T, typename OutputStream, typename InfoFunc>
 	requires std::integral<T>
-	static inline ErrCode WriteBigEndian(OutputStream &tData, const T &tVal, ErrInfoFunc &funcErrInfo) noexcept
+	static inline ErrCode WriteBigEndian(OutputStream &tData, const T &tVal, InfoFunc &funcInfo) noexcept
 	{
 	MYTRY;
 		auto BigEndianVal = NBT_Endian::NativeToBigAny(tVal);
@@ -365,8 +368,8 @@ catch(...)\
 	MYCATCH;
 	}
 
-	template<typename OutputStream, typename ErrInfoFunc>
-	static ErrCode PutName(OutputStream &tData, const NBT_Type::String &sName, ErrInfoFunc &funcErrInfo) noexcept
+	template<typename OutputStream, typename InfoFunc>
+	static ErrCode PutName(OutputStream &tData, const NBT_Type::String &sName, InfoFunc &funcInfo) noexcept
 	{
 	MYTRY;
 		ErrCode eRet = AllOk;
@@ -377,7 +380,7 @@ catch(...)\
 		//检查大小是否符合上限
 		if (szStringLength > (size_t)NBT_Type::StringLength_Max)
 		{
-			eRet = Error(StringTooLongError, tData, funcErrInfo, "{}:\nszStringLength[{}] > StringLength_Max[{}]", __FUNCTION__,
+			eRet = Error(StringTooLongError, tData, funcInfo, "{}:\nszStringLength[{}] > StringLength_Max[{}]", __FUNCTION__,
 				szStringLength, (size_t)NBT_Type::StringLength_Max);
 			STACK_TRACEBACK("szStringLength Test");
 			return eRet;
@@ -385,15 +388,15 @@ catch(...)\
 
 		//输出名称长度
 		NBT_Type::StringLength wNameLength = (uint16_t)szStringLength;
-		eRet = WriteBigEndian(tData, wNameLength, funcErrInfo);
-		if (eRet < AllOk)
+		eRet = WriteBigEndian(tData, wNameLength, funcInfo);
+		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("wNameLength Write");
 			return eRet;
 		}
 
 		//输出名称
-		eRet = CheckReserve(tData, szStringLength * sizeof(sName[0]), funcErrInfo);//提前分配
+		eRet = CheckReserve(tData, szStringLength * sizeof(sName[0]), funcInfo);//提前分配
 		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("CheckReserve Fail, Check Size: [{}]", szStringLength * sizeof(sName[0]));
@@ -406,8 +409,8 @@ catch(...)\
 	MYCATCH;
 	}
 
-	template<typename T, typename OutputStream, typename ErrInfoFunc>
-	static ErrCode PutbuiltInType(OutputStream &tData, const T &tBuiltIn, ErrInfoFunc &funcErrInfo) noexcept
+	template<typename T, typename OutputStream, typename InfoFunc>
+	static ErrCode PutbuiltInType(OutputStream &tData, const T &tBuiltIn, InfoFunc &funcInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
 
@@ -415,8 +418,8 @@ catch(...)\
 		using RAW_DATA_T = NBT_Type::BuiltinRawType_T<T>;//原始类型映射
 		RAW_DATA_T tTmpRawData = std::bit_cast<RAW_DATA_T>(tBuiltIn);
 
-		eRet = WriteBigEndian(tData, tTmpRawData, funcErrInfo);
-		if (eRet < AllOk)
+		eRet = WriteBigEndian(tData, tTmpRawData, funcInfo);
+		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("tTmpRawData Write");
 			return eRet;
@@ -425,8 +428,8 @@ catch(...)\
 		return eRet;
 	}
 
-	template<typename T, typename OutputStream, typename ErrInfoFunc>
-	static ErrCode PutArrayType(OutputStream &tData, const T &tArray, ErrInfoFunc &funcErrInfo) noexcept
+	template<typename T, typename OutputStream, typename InfoFunc>
+	static ErrCode PutArrayType(OutputStream &tData, const T &tArray, InfoFunc &funcInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
 
@@ -435,7 +438,7 @@ catch(...)\
 		size_t szArrayLength = tArray.size();
 		if (szArrayLength > (size_t)NBT_Type::ArrayLength_Max)
 		{
-			eRet = Error(ArrayTooLongError, tData, funcErrInfo, "{}:\nszArrayLength[{}] > ArrayLength_Max[{}]", __FUNCTION__,
+			eRet = Error(ArrayTooLongError, tData, funcInfo, "{}:\nszArrayLength[{}] > ArrayLength_Max[{}]", __FUNCTION__,
 				szArrayLength, (size_t)NBT_Type::ArrayLength_Max);
 			STACK_TRACEBACK("szArrayLength Test");
 			return eRet;
@@ -443,15 +446,15 @@ catch(...)\
 
 		//获取实际写出大小
 		NBT_Type::ArrayLength iArrayLength = (NBT_Type::ArrayLength)szArrayLength;
-		eRet = WriteBigEndian(tData, iArrayLength, funcErrInfo);
-		if (eRet < AllOk)
+		eRet = WriteBigEndian(tData, iArrayLength, funcInfo);
+		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("iArrayLength Write");
 			return eRet;
 		}
 
 		//写出元素
-		eRet = CheckReserve(tData, iArrayLength * sizeof(tArray[0]), funcErrInfo);//提前分配
+		eRet = CheckReserve(tData, iArrayLength * sizeof(tArray[0]), funcInfo);//提前分配
 		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("CheckReserve Fail, Check Size: [{}]", iArrayLength * sizeof(tArray[0]));
@@ -460,8 +463,8 @@ catch(...)\
 
 		for (NBT_Type::ArrayLength i = 0; i < iArrayLength; ++i)
 		{
-			eRet = WriteBigEndian(tData, tArray[i], funcErrInfo);
-			if (eRet < AllOk)
+			eRet = WriteBigEndian(tData, tArray[i], funcInfo);
+			if (eRet != AllOk)
 			{
 				STACK_TRACEBACK("tTmpData Write");
 				return eRet;
@@ -471,9 +474,70 @@ catch(...)\
 		return eRet;
 	}
 
-	//如果是非根部，不会输出额外的Compound_End
-	template<bool bRoot, bool bSortCompound, typename OutputStream, typename ErrInfoFunc>
-	static ErrCode PutCompoundType(OutputStream &tData, const NBT_Type::Compound &tCompound, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept
+	template<bool bSortCompound, typename OutputStream, typename InfoFunc>
+	static ErrCode PutCompoundEntry(OutputStream &tData, const NBT_Type::String &sName, const NBT_Node &nodeNbt, size_t szStackDepth, InfoFunc &funcInfo)//它不是noexcept的
+	{
+		ErrCode eRet = AllOk;
+
+		//获取类型
+		NBT_TAG curTag = nodeNbt.GetTag();
+
+		//集合中如果存在nbt end类型的元素，删除而不输出
+		if (curTag == NBT_TAG::End)
+		{
+			//End元素被忽略警告（警告不返回错误码）
+			Error(EndElementIgnoreWarn, tData, funcInfo, "{}:\nName: \"{}\", type is [NBT_Type::End], ignored!", __FUNCTION__,
+				sName.ToCharTypeUTF8());//此处ToCharTypeUTF8可能抛异常
+			return eRet;
+		}
+
+		//先写出tag
+		eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)curTag, funcInfo);
+		if (eRet != AllOk)
+		{
+			STACK_TRACEBACK("curTag Write");
+			return eRet;
+		}
+
+		//然后写出name
+		eRet = PutName(tData, sName, funcInfo);
+		if (eRet != AllOk)
+		{
+			STACK_TRACEBACK("PutName Fail, Type: [NBT_Type::{}]", NBT_Type::GetTypeName(curTag));
+			return eRet;
+		}
+
+		//最后根据tag类型写出数据
+		eRet = PutSwitch<bSortCompound>(tData, nodeNbt, curTag, szStackDepth - 1, funcInfo);
+		if (eRet != AllOk)
+		{
+			STACK_TRACEBACK("PutSwitch Fail, Name: \"{}\", Type: [NBT_Type::{}]",
+				sName.ToCharTypeUTF8(), NBT_Type::GetTypeName(curTag));//此处ToCharTypeUTF8可能抛异常
+			return eRet;
+		}
+
+		return eRet;
+	}
+
+	template<typename OutputStream, typename InfoFunc>
+	static ErrCode PutCompoundEnd(OutputStream &tData, InfoFunc &funcInfo) noexcept
+	{
+		ErrCode eRet = AllOk;
+		
+		//注意Compound类型有一个NBT_TAG::End结尾
+		eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)NBT_TAG::End, funcInfo);
+		if (eRet != AllOk)
+		{
+			STACK_TRACEBACK("NBT_TAG::End[0x00(0)] Write");
+			return eRet;
+		}
+
+		return eRet;
+	}
+
+	//如果是非根部，则会输出额外的Compound_End
+	template<bool bRoot, bool bSortCompound, typename OutputStream, typename InfoFunc>
+	static ErrCode PutCompoundType(OutputStream &tData, const NBT_Type::Compound &tCompound, size_t szStackDepth, InfoFunc &funcInfo) noexcept
 	{
 	MYTRY;
 		ErrCode eRet = AllOk;
@@ -509,19 +573,19 @@ catch(...)\
 				}
 				catch (const std::bad_alloc &e)
 				{
-					eRet = Error(OutOfMemoryError, tData, funcErrInfo, "{}: Info:[{}]", _RP___FUNCTION__, e.what());
+					eRet = Error(OutOfMemoryError, tData, funcInfo, "{}: Info:[{}]", _RP___FUNCTION__, e.what());
 					STACK_TRACEBACK("catch(std::bad_alloc)");
 					return {};
 				}
 				catch (const std::exception &e)
 				{
-					eRet = Error(StdException, tData, funcErrInfo, "{}: Info:[{}]", _RP___FUNCTION__, e.what());
+					eRet = Error(StdException, tData, funcInfo, "{}: Info:[{}]", _RP___FUNCTION__, e.what());
 					STACK_TRACEBACK("catch(std::exception)");
 					return {};
 				}
 				catch (...)
 				{
-					eRet = Error(UnknownError, tData, funcErrInfo, "{}: Info:[Unknown Exception]", _RP___FUNCTION__);
+					eRet = Error(UnknownError, tData, funcInfo, "{}: Info:[Unknown Exception]", _RP___FUNCTION__);
 					STACK_TRACEBACK("catch(...)");
 					return {};
 				}
@@ -558,50 +622,20 @@ catch(...)\
 				}
 			}();
 
-			NBT_TAG curTag = nodeNbt.GetTag();
-
-			//集合中如果存在nbt end类型的元素，删除而不输出
-			if (curTag == NBT_TAG::End)
-			{
-				//End元素被忽略警告（警告不返回错误码）
-				Error(EndElementIgnoreWarn, tData, funcErrInfo, "{}:\nName: \"{}\", type is [NBT_Type::End], ignored!", __FUNCTION__,
-					sName.ToCharTypeUTF8());
-				continue;
-			}
-
-			//先写出tag
-			eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)curTag, funcErrInfo);
+			eRet = PutCompoundEntry<bSortCompound>(tData, sName, nodeNbt, szStackDepth, funcInfo);
 			if (eRet != AllOk)
 			{
-				STACK_TRACEBACK("curTag Write");
-				return eRet;
-			}
-
-			//然后写出name
-			eRet = PutName(tData, sName, funcErrInfo);
-			if (eRet != AllOk)
-			{
-				STACK_TRACEBACK("PutName Fail, Type: [NBT_Type::{}]", NBT_Type::GetTypeName(curTag));
-				return eRet;
-			}
-
-			//最后根据tag类型写出数据
-			eRet = PutSwitch<bSortCompound>(tData, nodeNbt, curTag, szStackDepth - 1, funcErrInfo);
-			if (eRet != AllOk)
-			{
-				STACK_TRACEBACK("PutSwitch Fail, Name: \"{}\", Type: [NBT_Type::{}]",
-					sName.ToCharTypeUTF8(), NBT_Type::GetTypeName(curTag));
+				STACK_TRACEBACK("PutCompoundEntry");
 				return eRet;
 			}
 		}
 
 		if constexpr (!bRoot)
 		{
-			//注意Compound类型有一个NBT_TAG::End结尾，如果写出错误则在前面返回，不放置结尾
-			eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)NBT_TAG::End, funcErrInfo);
+			eRet = PutCompoundEnd(tData, funcInfo);
 			if (eRet != AllOk)
 			{
-				STACK_TRACEBACK("NBT_TAG::End[0x00(0)] Write");
+				STACK_TRACEBACK("PutCompoundEnd");
 				return eRet;
 			}
 		}
@@ -610,13 +644,13 @@ catch(...)\
 	MYCATCH;
 	}
 
-	template<typename OutputStream, typename ErrInfoFunc>
-	static ErrCode PutStringType(OutputStream &tData, const NBT_Type::String &tString, ErrInfoFunc &funcErrInfo) noexcept
+	template<typename OutputStream, typename InfoFunc>
+	static ErrCode PutStringType(OutputStream &tData, const NBT_Type::String &tString, InfoFunc &funcInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
 
-		eRet = PutName(tData, tString, funcErrInfo);//借用PutName实现，因为string走的name相同操作
-		if (eRet < AllOk)
+		eRet = PutName(tData, tString, funcInfo);//借用PutName实现，因为string走的name相同操作
+		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("PutString");//因为是借用实现，所以这里小小的改个名，防止报错Name误导人
 			return eRet;
@@ -625,8 +659,8 @@ catch(...)\
 		return eRet;
 	}
 
-	template<bool bSortCompound, typename OutputStream, typename ErrInfoFunc>
-	static ErrCode PutListType(OutputStream &tData, const NBT_Type::List &tList, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept
+	template<bool bSortCompound, typename OutputStream, typename InfoFunc>
+	static ErrCode PutListType(OutputStream &tData, const NBT_Type::List &tList, size_t szStackDepth, InfoFunc &funcInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
@@ -635,7 +669,7 @@ catch(...)\
 		size_t szListLength = tList.size();
 		if (szListLength > (size_t)NBT_Type::ListLength_Max)//大于的情况下强制赋值会导致严重问题，只能返回错误
 		{
-			eRet = Error(ListTooLongError, tData, funcErrInfo, "{}:\nszListLength[{}] > ListLength_Max[{}]", __FUNCTION__,
+			eRet = Error(ListTooLongError, tData, funcInfo, "{}:\nszListLength[{}] > ListLength_Max[{}]", __FUNCTION__,
 				szListLength, (size_t)NBT_Type::ListLength_Max);
 			STACK_TRACEBACK("szListLength Test");
 			return eRet;
@@ -643,69 +677,127 @@ catch(...)\
 
 		//转换为写入大小
 		NBT_Type::ListLength iListLength = (NBT_Type::ListLength)szListLength;
+		NBT_Type::ListLength iListEmptyEntryLength = 0;//统计空元素数量
 
-		//判断：长度不为0但是拥有空标签
-		NBT_TAG enListValueTag = tList.enElementTag;
-		if (enListValueTag == NBT_TAG::End && iListLength != 0)
+		//获取列表标签
+		bool bNeedWarp = false;
+		NBT_TAG enListElementTag = NBT_TAG::End;
+
+		//判断列表元素一致性，不一致则使用Compound封装
+		for (const auto &it : tList)
 		{
-			eRet = Error(ListElementTypeError, tData, funcErrInfo, "{}:\nThe list with TAG_End[0x00] tag must be empty, but [{}] elements were found", __FUNCTION__,
-				iListLength);
-			STACK_TRACEBACK("iListLength And enListValueTag Test");
-			return eRet;
+			auto curTag = it.GetTag();
+			if (curTag == NBT_TAG::End)
+			{
+				++iListEmptyEntryLength;//统计空元素数量
+				continue;//空元素没有后续判断必要性，跳过
+			}
+
+			//如果已经确定需要进行替换，则跳过
+			if (bNeedWarp == true)
+			{
+				continue;
+			}
+
+			//如果列表元素值为End，那么替换为当前类型
+			if (enListElementTag == NBT_TAG::End)
+			{
+				enListElementTag = curTag;
+				continue;
+			}
+			
+			//类型不同则设为替换类型
+			if (enListElementTag != curTag)
+			{
+				bNeedWarp = true;
+				enListElementTag = NBT_TAG::Compound;//修改为Compound封装
+			}
 		}
 
-		//获取列表标签，如果列表长度为0，则强制改为空标签
-		NBT_TAG enListElementTag = iListLength == 0 ? NBT_TAG::End : enListValueTag;
+		//执行到这里：如果tList为空，那么enListElementTag恰好为End，符合0长度且为End的情况
+		//如果List不为空：
+		//元素不同：bNeedWarp为true且enListElementTag为Compound
+		//元素相同：bNeedWarp为false且enListElementTag为列表元素类型
 
 		//写出标签
-		eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)enListElementTag, funcErrInfo);
-		if (eRet < AllOk)
+		eRet = WriteBigEndian(tData, (NBT_TAG_RAW_TYPE)enListElementTag, funcInfo);
+		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("enListElementTag Write");
 			return eRet;
 		}
 
-		//写出长度
-		eRet = WriteBigEndian(tData, iListLength, funcErrInfo);
-		if (eRet < AllOk)
+		//写出长度，不包含空元素，所以减去iListEmptyEntryLength
+		eRet = WriteBigEndian(tData, iListLength - iListEmptyEntryLength, funcInfo);
+		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("iListLength Write");
 			return eRet;
 		}
 
 		//写出列表（递归）
-		//写出时判断元素标签与enListElementTag不一致的错误
-		for (NBT_Type::ListLength i = 0; i < iListLength; ++i)
+		for (NBT_Type::ListLength i = 0; i < iListLength; ++i)//注意遍历仍然需要遍历整个列表，而不是iListLength - iListEmptyEntryLength
 		{
 			//获取元素与类型
 			const NBT_Node &tmpNode = tList[i];
-			NBT_TAG curTag = tmpNode.GetTag();
+			auto curTag = tmpNode.GetTag();
 
-			//对于每个元素，检查类型是否与列表存储一致
-			if (curTag != enListElementTag)
+			if (curTag == NBT_TAG::End)//空元素跳过
 			{
-				eRet = Error(ListElementTypeError, tData, funcErrInfo, "{}:\nExpected type [NBT_Type::{}][0x{:02X}({})] in list, but found type [NBT_Type::{}][0x{:02X}({})]", __FUNCTION__,
-				NBT_Type::GetTypeName(enListElementTag), (NBT_TAG_RAW_TYPE)enListElementTag, (NBT_TAG_RAW_TYPE)enListElementTag,
-				NBT_Type::GetTypeName(curTag), (NBT_TAG_RAW_TYPE)curTag, (NBT_TAG_RAW_TYPE)curTag);
-				STACK_TRACEBACK("curTag Test");
-				return eRet;
+				//End元素被忽略警告（警告不返回错误码）
+				Error(EndElementIgnoreWarn, tData, funcInfo, "{}:\ntList[{}] type is [NBT_Type::End], ignored!", __FUNCTION__, i);
+				continue;//跳过
 			}
-
-			//一致，很好，那么输出
-			//列表无名字，无需重复tag，只需输出数据
-			eRet = PutSwitch<bSortCompound>(tData, tmpNode, enListElementTag, szStackDepth - 1, funcErrInfo);
-			if (eRet != AllOk)
+			
+			if (!bNeedWarp)//不需要封装，直接写出
 			{
-				STACK_TRACEBACK("PutSwitch Error, Size: [{}] Index: [{}]", iListLength, i);
-				return eRet;
+				//列表无名字，无需重复tag，只需输出数据
+				eRet = PutSwitch<bSortCompound>(tData, tmpNode, enListElementTag, szStackDepth - 1, funcInfo);//同一元素类型List
+
+				if (eRet != AllOk)
+				{
+					STACK_TRACEBACK("PutSwitch Error, Size: [{}] Index: [{}]", iListLength, i);
+					return eRet;
+				}
+			}
+			else//需要封装，添加Compound
+			{
+				//如果元素本身就是Compound，那么检测是否和封装模式匹配，是的话再套一层防止丢失语义
+				
+				if (curTag == NBT_TAG::Compound)
+				{
+					const auto &cpdNode = tmpNode.GetCompound();
+					if (cpdNode.Size() != 1 || !cpdNode.Contains(MU8STR("")))//直接写出为Compound
+					{
+						eRet = PutCompoundType<false, bSortCompound>(tData, cpdNode, szStackDepth - 1, funcInfo);
+						continue;
+					}
+				}
+				
+				//是Compound但是需要再套一层或者不是Compound
+				MYTRY;
+				eRet = PutCompoundEntry<bSortCompound>(tData, MU8STR(""), tmpNode, szStackDepth - 1, funcInfo);
+				MYCATCH;
+				if (eRet != AllOk)
+				{
+					STACK_TRACEBACK("PutCompoundEntry");
+					return eRet;
+				}
+
+				eRet = PutCompoundEnd(tData, funcInfo);
+				if (eRet != AllOk)
+				{
+					STACK_TRACEBACK("PutCompoundEnd");
+					return eRet;
+				}
 			}
 		}
 
 		return eRet;
 	}
 
-	template<bool bSortCompound, typename OutputStream, typename ErrInfoFunc>
-	static ErrCode PutSwitch(OutputStream &tData, const NBT_Node &nodeNbt, NBT_TAG tagNbt, size_t szStackDepth, ErrInfoFunc &funcErrInfo) noexcept
+	template<bool bSortCompound, typename OutputStream, typename InfoFunc>
+	static ErrCode PutSwitch(OutputStream &tData, const NBT_Node &nodeNbt, NBT_TAG tagNbt, size_t szStackDepth, InfoFunc &funcInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
 
@@ -714,83 +806,83 @@ catch(...)\
 		case NBT_TAG::Byte:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Byte>;
-				eRet = PutbuiltInType<CurType>(tData, nodeNbt.GetData<CurType>(), funcErrInfo);
+				eRet = PutbuiltInType<CurType>(tData, nodeNbt.Get<CurType>(), funcInfo);
 			}
 			break;
 		case NBT_TAG::Short:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Short>;
-				eRet = PutbuiltInType<CurType>(tData, nodeNbt.GetData<CurType>(), funcErrInfo);
+				eRet = PutbuiltInType<CurType>(tData, nodeNbt.Get<CurType>(), funcInfo);
 			}
 			break;
 		case NBT_TAG::Int:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Int>;
-				eRet = PutbuiltInType<CurType>(tData, nodeNbt.GetData<CurType>(), funcErrInfo);
+				eRet = PutbuiltInType<CurType>(tData, nodeNbt.Get<CurType>(), funcInfo);
 			}
 			break;
 		case NBT_TAG::Long:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Long>;
-				eRet = PutbuiltInType<CurType>(tData, nodeNbt.GetData<CurType>(), funcErrInfo);
+				eRet = PutbuiltInType<CurType>(tData, nodeNbt.Get<CurType>(), funcInfo);
 			}
 			break;
 		case NBT_TAG::Float:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Float>;
-				eRet = PutbuiltInType<CurType>(tData, nodeNbt.GetData<CurType>(), funcErrInfo);
+				eRet = PutbuiltInType<CurType>(tData, nodeNbt.Get<CurType>(), funcInfo);
 			}
 			break;
 		case NBT_TAG::Double:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Double>;
-				eRet = PutbuiltInType<CurType>(tData, nodeNbt.GetData<CurType>(), funcErrInfo);
+				eRet = PutbuiltInType<CurType>(tData, nodeNbt.Get<CurType>(), funcInfo);
 			}
 			break;
 		case NBT_TAG::ByteArray:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::ByteArray>;
-				eRet = PutArrayType<CurType>(tData, nodeNbt.GetData<CurType>(), funcErrInfo);
+				eRet = PutArrayType<CurType>(tData, nodeNbt.Get<CurType>(), funcInfo);
 			}
 			break;
 		case NBT_TAG::String://类型唯一，非模板函数
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::String>;
-				eRet = PutStringType(tData, nodeNbt.GetData<CurType>(), funcErrInfo);
+				eRet = PutStringType(tData, nodeNbt.Get<CurType>(), funcInfo);
 			}
 			break;
 		case NBT_TAG::List://可能递归，需要处理szStackDepth
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::List>;
-				eRet = PutListType<bSortCompound>(tData, nodeNbt.GetData<CurType>(), szStackDepth, funcErrInfo);
+				eRet = PutListType<bSortCompound>(tData, nodeNbt.Get<CurType>(), szStackDepth, funcInfo);
 			}
 			break;
 		case NBT_TAG::Compound://可能递归，需要处理szStackDepth
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Compound>;
-				eRet = PutCompoundType<false, bSortCompound>(tData, nodeNbt.GetData<CurType>(), szStackDepth, funcErrInfo);
+				eRet = PutCompoundType<false, bSortCompound>(tData, nodeNbt.Get<CurType>(), szStackDepth, funcInfo);
 			}
 			break;
 		case NBT_TAG::IntArray:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::IntArray>;
-				eRet = PutArrayType<CurType>(tData, nodeNbt.GetData<CurType>(), funcErrInfo);
+				eRet = PutArrayType<CurType>(tData, nodeNbt.Get<CurType>(), funcInfo);
 			}
 			break;
 		case NBT_TAG::LongArray:
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::LongArray>;
-				eRet = PutArrayType<CurType>(tData, nodeNbt.GetData<CurType>(), funcErrInfo);
+				eRet = PutArrayType<CurType>(tData, nodeNbt.Get<CurType>(), funcInfo);
 			}
 			break;
 		case NBT_TAG::End://注意end标签绝对不可以进来
 			{
-				eRet = Error(NbtTypeTagError, tData, funcErrInfo, "{}:\nNBT Tag switch error: Unexpected Type Tag NBT_TAG::End[0x00(0)]", __FUNCTION__);
+				eRet = Error(NbtTypeTagError, tData, funcInfo, "{}:\nNBT Tag switch error: Unexpected Type Tag NBT_TAG::End[0x00(0)]", __FUNCTION__);
 			}
 			break;
 		default://数据出错
 			{
-				eRet = Error(NbtTypeTagError, tData, funcErrInfo, "{}:\nNBT Tag switch error: Unknown Type Tag[0x{:02X}({})]", __FUNCTION__,
+				eRet = Error(NbtTypeTagError, tData, funcInfo, "{}:\nNBT Tag switch error: Unknown Type Tag[0x{:02X}({})]", __FUNCTION__,
 					(NBT_TAG_RAW_TYPE)tagNbt, (NBT_TAG_RAW_TYPE)tagNbt);//此处不进行提前返回，往后默认返回处理
 			}
 			break;
@@ -812,37 +904,37 @@ public:
 	/// @brief 将NBT_Type::Compound对象写入到输出流中
 	/// @tparam bSortCompound 是否对Compound对象内部的键进行排序，以获得一致性的输出结果
 	/// @tparam OutputStream 输出流类型，必须符合DefaultOutputStream类型的接口
-	/// @tparam ErrInfoFunc 错误信息输出仿函数类型
+	/// @tparam InfoFunc 信息输出仿函数类型
 	/// @param[out] OptStream 输出流对象
 	/// @param tCompound 用于写出的对象
 	/// @param szStackDepth 递归最大深度，防止栈溢出
-	/// @param funcErrInfo 错误信息处理仿函数
+	/// @param funcInfo 错误信息处理仿函数
 	/// @return 写入成功返回true，失败返回false
-	/// @note 错误与警告信息都输出到funcErrInfo，错误会导致函数结束剩下的写出任务，并进行栈回溯输出，最终返回false。警告则只会输出一次信息，然后继续执行，如果没有任何错误但是存在警告，函数仍将返回true。
-	template<bool bSortCompound = true, typename OutputStream, typename ErrInfoFunc = NBT_Print>
-	static bool WriteNBT(OutputStream OptStream, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept
+	/// @note 错误与警告信息都输出到funcInfo，错误会导致函数结束剩下的写出任务，并进行栈回溯输出，最终返回false。警告则只会输出一次信息，然后继续执行，如果没有任何错误但是存在警告，函数仍将返回true。
+	template<bool bSortCompound = true, typename OutputStream, typename InfoFunc = NBT_Print>
+	static bool WriteNBT(OutputStream OptStream, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, InfoFunc funcInfo = NBT_Print{}) noexcept
 	{
-		return PutCompoundType<true, bSortCompound>(OptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;
+		return PutCompoundType<true, bSortCompound>(OptStream, tCompound, szStackDepth, funcInfo) == AllOk;
 	}
 
 	/// @brief 将NBT_Type::Compound对象写入到数据容器中
 	/// @tparam bSortCompound 是否对Compound对象内部的键进行排序，以获得一致性的输出结果
 	/// @tparam DataType 数据容器类型
-	/// @tparam ErrInfoFunc 错误信息输出仿函数类型
+	/// @tparam InfoFunc 信息输出仿函数类型
 	/// @param[out] tDataOutput 输出数据容器
 	/// @param szStartIdx 数据起始索引，用于指定起始写入位置，设置为tDataOutput.size()则可以进行拼接，设置为0则清空容器
 	/// @param tCompound 用于写出的对象
 	/// @param szStackDepth 递归最大深度，防止栈溢出
-	/// @param funcErrInfo 错误信息处理仿函数
+	/// @param funcInfo 错误信息处理仿函数
 	/// @return 写入成功返回true，失败返回false
 	/// @note 函数可以通过设置szStartIdx = tDataOutput.size()，把多个Compound对象的数据流合并到同一个tDataOutput对象内。如果多个对象中有重复、同名的NBT键，
 	/// 虽然可以合并到流中，但是如果对这个流进行读取，读取例程为了保证在同一个Compound中的键的唯一性，会丢失部分信息，具体请参考ReadNBT接口的说明。
 	/// 此函数是WriteNBT的标准库容器版本，其它信息请参考WriteNBT(OutputStream)版本的详细说明。
-	template<bool bSortCompound = true, typename DataType = std::vector<uint8_t>, typename ErrInfoFunc = NBT_Print>
-	static bool WriteNBT(DataType &tDataOutput, size_t szStartIdx, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept
+	template<bool bSortCompound = true, typename DataType = std::vector<uint8_t>, typename InfoFunc = NBT_Print>
+	static bool WriteNBT(DataType &tDataOutput, size_t szStartIdx, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, InfoFunc funcInfo = NBT_Print{}) noexcept
 	{
 		DefaultOutputStream<DataType> OptStream(tDataOutput, szStartIdx);
-		return PutCompoundType<true, bSortCompound>(OptStream, tCompound, szStackDepth, funcErrInfo) == AllOk;
+		return PutCompoundType<true, bSortCompound>(OptStream, tCompound, szStackDepth, funcInfo) == AllOk;
 	}
 
 

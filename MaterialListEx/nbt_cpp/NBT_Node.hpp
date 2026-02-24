@@ -97,7 +97,7 @@ public:
 	/// @note 要求类型T必须是NBT_Type类型列表中的任意一个，且不是当前NBT_Node类型，同时参数必须要能构造目标类型
 	template <typename T, typename... Args>
 	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
-	T &emplace(Args&&... args)
+	T &Set(Args&&... args)
 	{
 		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
 
@@ -197,7 +197,7 @@ public:
 	/// @return 对存储数据的常量引用
 	/// @note 如果类型不存在或当前存储的不是指定类型的指针，则抛出异常，具体请参考std::get的说明
 	template<typename T>
-	const T &GetData() const
+	const T &Get() const
 	{
 		return std::get<T>(data);
 	}
@@ -207,7 +207,7 @@ public:
 	/// @return 对存储数据的引用
 	/// @note 如果类型不存在或当前存储的不是指定类型的指针，则抛出异常，具体请参考std::get的说明
 	template<typename T>
-	T &GetData()
+	T &Get()
 	{
 		return std::get<T>(data);
 	}
@@ -225,7 +225,7 @@ public:
 //通过宏定义批量生成
 
 /// @def TYPE_GET_FUNC(type)
-/// @brief 不同类型名接口生成宏
+/// @brief 不同类型名获取接口生成宏
 /// @note 用户不应该使用此宏（实际上宏已在使用后取消定义），标注仅为消除doxygen警告
 #define TYPE_GET_FUNC(type)\
 /**
@@ -312,6 +312,62 @@ friend bool Is##type(const NBT_Node &node)\
 	/// @}
 
 #undef TYPE_GET_FUNC
+
+/// @def TYPE_SET_FUNC(type)
+/// @brief 不同类型名接口生成宏
+/// @note 用户不应该使用此宏（实际上宏已在使用后取消定义），标注仅为消除doxygen警告
+#define TYPE_SET_FUNC(type)\
+/**
+ @brief 从value设置node为 type 类型的值（拷贝）
+ @param value 要设置的值
+ @return 设置的值的引用
+ */\
+NBT_Type::type &Set##type(const NBT_Type::type &value)\
+{\
+	return Set<NBT_Type::type>(value);\
+}\
+\
+/**
+ @brief 从value设置node为 type 类型的值（移动）
+ @param value 要设置的值
+ @return 设置的值的引用
+ */\
+NBT_Type::type &Set##type(NBT_Type::type &&value)\
+{\
+	return Set<NBT_Type::type>(std::move(value));\
+}\
+\
+/**
+ @brief 设置node为 type 类型的默认值（拷贝）
+ @return 设置的值的引用
+ */\
+NBT_Type::type &Set##type(void)\
+{\
+	return Set<NBT_Type::type>();\
+}
+
+	/// @name 针对每种类型提供一个方便使用的函数，由宏批量生成
+	/// @brief 具体作用说明：
+	/// - Set开头+类型名的函数：设置node为此类型，从值或默认值设置
+	/// @{
+	
+	TYPE_SET_FUNC(End);
+	TYPE_SET_FUNC(Byte);
+	TYPE_SET_FUNC(Short);
+	TYPE_SET_FUNC(Int);
+	TYPE_SET_FUNC(Long);
+	TYPE_SET_FUNC(Float);
+	TYPE_SET_FUNC(Double);
+	TYPE_SET_FUNC(ByteArray);
+	TYPE_SET_FUNC(IntArray);
+	TYPE_SET_FUNC(LongArray);
+	TYPE_SET_FUNC(String);
+	TYPE_SET_FUNC(List);
+	TYPE_SET_FUNC(Compound);
+
+	/// @}
+
+#undef TYPE_SET_FUNC
 };
 
 /*
