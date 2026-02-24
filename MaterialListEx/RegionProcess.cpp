@@ -68,7 +68,7 @@ RegionStatsList RegionProcess(const NBT_Type::Compound &cpRegions)
 				for (auto &itItem : tmp)
 				{
 					mpInfoTEC.map[{ itItem.sItemName, itItem.cpdItemTag }] += itItem.u64ItemCount;
-					current.map[{ itItem.sItemName, itItem.cpdItemTag }] += itItem.u64ItemCount;
+					current.map[{ std::move(itItem.sItemName), std::move(itItem.cpdItemTag) }] += itItem.u64ItemCount;
 				}
 			}
 
@@ -119,12 +119,12 @@ RegionStatsList RegionProcess(const NBT_Type::Compound &cpRegions)
 				for (auto &itItem : tmpSlot.listContainer)
 				{
 					mpInfoEC.map[{ itItem.sItemName, itItem.cpdItemTag }] += itItem.u64ItemCount;
-					curContainer.map[{ itItem.sItemName, itItem.cpdItemTag }] += itItem.u64ItemCount;
+					curContainer.map[{ std::move(itItem.sItemName), std::move(itItem.cpdItemTag) }] += itItem.u64ItemCount;
 				}
 				for (auto &itItem : tmpSlot.listInventory)
 				{
 					mpInfoEI.map[{ itItem.sItemName, itItem.cpdItemTag }] += itItem.u64ItemCount;
-					curInventory.map[{ itItem.sItemName, itItem.cpdItemTag }] += itItem.u64ItemCount;
+					curInventory.map[{ std::move(itItem.sItemName), std::move(itItem.cpdItemTag) }] += itItem.u64ItemCount;
 				}
 			}
 
