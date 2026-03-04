@@ -8,3 +8,7 @@
 目前暂时只支持1.20.1数据版本，如果需要更高版本，可以尝试使用[版本降低转换器](https://github.com/chenjunfu2/Litematic_V7_To_V6)进行数据格式转换，同时语言文件可以直接从MC资源文件内提取后替换，这样就能解析最新版本的名称
 
 该项目使用的NBT库已独立发行：[NBT_CPP](https://github.com/chenjunfu2/NBT_CPP/)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=chenjunfu2/MaterialListEx&type=date&legend=top-left)](https://www.star-history.com/#chenjunfu2/MaterialListEx&type=date&legend=top-left)
