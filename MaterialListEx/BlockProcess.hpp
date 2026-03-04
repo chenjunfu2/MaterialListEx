@@ -402,14 +402,17 @@ if (stBlocks.psBlockName->ends_with(target))
 				{
 					stItemsList.emplace_back(MU8STR("minecraft:cauldron"), stBlocks.u64Counter * 1);
 					//扩展部分为岩浆桶
-					stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"), stBlocks.u64Counter * 1);
+					stItemsList.emplace_back(MU8STR("minecraft:lava_bucket"), stBlocks.u64Counter * 1);//岩浆炼药锅只有3等级，或者没有
 				}
 				break;
 			case Powder_snow_cauldron:
 				{
 					stItemsList.emplace_back(MU8STR("minecraft:cauldron"), stBlocks.u64Counter * 1);
 					//扩展部分为粉雪桶
-					stItemsList.emplace_back(MU8STR("minecraft:powder_snow_bucket"), stBlocks.u64Counter * 1);
+					if (stBlocks.pcpdProperties->GetString(MU8STR("level")) == MU8STRV("3"))//只有等级3才存在，否则丢失
+					{
+						stItemsList.emplace_back(MU8STR("minecraft:powder_snow_bucket"), stBlocks.u64Counter * 1);
+					}
 				}
 				break;
 			default:
