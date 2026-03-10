@@ -2,7 +2,7 @@
 投影材料列表扩展版，除了支持输出方块材料列表外，还额外支持输出实体材料列表、容器内物品材料列表等  
 
 ## 使用方法
-从Release处下载最新构建的exe与翻译json，将他们放在同一个文件夹，把需要转换的投影（可多个）拖动到exe上松手，即可转换完成  
+从Release处下载最新构建的exe、语言json、方块堆叠列表json，将他们放在同一个文件夹，把需要转换的投影（可多个）拖动到exe上松手，即可转换完成  
 
 ## 注意事项
 目前暂时只支持1.20.1数据版本  
@@ -14,7 +14,12 @@
 该项目使用的NBT库已独立发行：[NBT_CPP](https://github.com/chenjunfu2/NBT_CPP/)  
 
 ## 跨平台
-已通过移植Java版本完成跨平台支持，Java版本项目地址[MaterialListEx_Java](https://github.com/chenjunfu2/MaterialListEx_Java)  
+**Release仅提供Windows x64构建版本，Linux用户请自行构建**  
+**其他平台暂时不考虑兼容，如有需求请自行尝试**  
+  
+`Linux`请使用`Clang`或`GCC`通过`CMakeLists.txt`构建  
+`Windows`可使用`MSVC`通过`*.sln`构建，或使用与`Linux`相同的构建方式  
+  
 
 ## Star History
 [![Star History Chart](https://api.star-history.com/svg?repos=chenjunfu2/MaterialListEx&type=date&legend=top-left)](https://www.star-history.com/#chenjunfu2/MaterialListEx&type=date&legend=top-left)
