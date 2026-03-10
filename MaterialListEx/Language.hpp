@@ -65,7 +65,7 @@ public:
 		ENUM_END,
 	};
 
-	const std::string &KeyTranslate(KeyType enKeyType, const std::string &sKeyName) const
+	const std::string &KeyTranslate(KeyType enKeyType, std::string sKeyName) const//拷贝名称，因为需要修改
 	{
 		static const std::string sKeyTypePrefix[] =
 		{
