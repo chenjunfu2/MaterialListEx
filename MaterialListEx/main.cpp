@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
 		if (!Convert(ConvertUtf16ToUtf8<wchar_t, char>(argv[i]).c_str(), lang, cfItemStackCount))
 #else
-		if (!Convert(argv[i], lang, cfItemStackCount)
+		if (!Convert(argv[i], lang, cfItemStackCount))
 #endif
 		{
 			printf("Convert Error, Skip\n");

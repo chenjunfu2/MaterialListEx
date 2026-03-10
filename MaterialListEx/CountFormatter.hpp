@@ -95,6 +95,12 @@ private:
 		size_t szLargeChestShulkerBoxItemCount;
 
 	public:
+		ItemCount(void) = default;
+		ItemCount(size_t szItemStackCount, const ContainerSlotCount &csc)
+		{
+			SetItemStackCount(szItemStackCount, csc);
+		}
+
 		void SetItemStackCount(size_t szItemStackCount, const ContainerSlotCount & csc)
 		{
 			szSetItemCount = szItemStackCount;
@@ -267,7 +273,7 @@ do\
 						auto emp_ret = mapCountPos.try_emplace(szCount, szCurPos);
 						if (emp_ret.second)//插入成功，新值更新。否则失败跳过，值不会被覆盖
 						{
-							listItemCount.push_back({ szCount });//构造新大小
+							listItemCount.push_back(ItemCount(szCount, cscDefault));//构造新大小
 						}
 						else//获取阻止插入的值的坐标
 						{
