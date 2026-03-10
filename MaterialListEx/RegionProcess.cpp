@@ -39,6 +39,10 @@ RegionStatsList RegionProcess(const NBT_Type::Compound &cpRegions)
 				auto tmp = BlockProcess::BlockStatsToItemStack(itBlock);
 				for (auto &itItem : tmp)
 				{
+					if (itItem.sItemName == MU8STRV("minecraft:dead"))
+					{
+						throw "test";
+					}
 					curBlockItem.map[{ std::move(itItem.sItemName) }] += itItem.u64Counter;//如果key不存在，则自动创建，且保证value为0
 				}
 			}
