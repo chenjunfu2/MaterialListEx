@@ -90,11 +90,11 @@
     <ClCompile Include="xxhash\xxh_x86dispatch.c">
       <Filter>源文件\xxhash</Filter>
     </ClCompile>
+    <ClCompile Include="Converter.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MemoryLeakCheck.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="zlib\inffast.h">
       <Filter>头文件\zlib</Filter>
     </ClInclude>
@@ -305,9 +305,6 @@
     <ClInclude Include="CountFormatter.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Windows_FileSystem.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Windows_ANSI.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -367,6 +364,15 @@
     </ClInclude>
     <ClInclude Include="nbt_cpp\Compiler_Define.h">
       <Filter>头文件\nbt_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="CurrentModulePath.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="PrintLog.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="FileSystemHelper.hpp">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

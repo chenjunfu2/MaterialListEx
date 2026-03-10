@@ -104,7 +104,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <DisableSpecificWarnings>26812;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalOptions>/Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:preprocessor /utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -125,7 +125,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DisableSpecificWarnings>26812;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalOptions>/Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:preprocessor /utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,7 +147,7 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <DisableSpecificWarnings>26812;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <BrowseInformation>true</BrowseInformation>
-      <AdditionalOptions>/Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:preprocessor /utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -171,7 +171,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DisableSpecificWarnings>26812;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalOptions>/Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:preprocessor /utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -183,6 +183,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Converter.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RegionProcess.cpp" />
     <ClCompile Include="xxhash\xxhash.c" />
@@ -209,10 +210,11 @@
     <ClInclude Include="CodeTimer.hpp" />
     <ClInclude Include="CountFormatter.hpp" />
     <ClInclude Include="CSV_Tool.hpp" />
+    <ClInclude Include="CurrentModulePath.hpp" />
     <ClInclude Include="EntityProcess.hpp" />
+    <ClInclude Include="FileSystemHelper.hpp" />
     <ClInclude Include="ItemProcess.hpp" />
     <ClInclude Include="Language.hpp" />
-    <ClInclude Include="MemoryLeakCheck.hpp" />
     <ClInclude Include="nbt_cpp\Compiler_Define.h" />
     <ClInclude Include="nbt_cpp\MUTF8_Tool.hpp" />
     <ClInclude Include="nbt_cpp\NBT_All.hpp" />
@@ -278,10 +280,10 @@
     <ClInclude Include="nlohmann\ordered_map.hpp" />
     <ClInclude Include="nlohmann\thirdparty\hedley\hedley.hpp" />
     <ClInclude Include="nlohmann\thirdparty\hedley\hedley_undef.hpp" />
+    <ClInclude Include="PrintLog.hpp" />
     <ClInclude Include="RegionProcess.h" />
     <ClInclude Include="TileEntityProcess.hpp" />
     <ClInclude Include="Windows_ANSI.hpp" />
-    <ClInclude Include="Windows_FileSystem.hpp" />
     <ClInclude Include="xxhash\xxh3.h" />
     <ClInclude Include="xxhash\xxhash.h" />
     <ClInclude Include="xxhash\xxh_x86dispatch.h" />
