@@ -151,8 +151,8 @@ public:
 #define TRY_READ_FIELD(json_obj, expected_type, key, field)\
 do\
 {\
-	auto _it = json_obj.find(key);\
-	if (_it == json_obj.end())\
+	auto _it = (json_obj).find(key);\
+	if (_it == (json_obj).end())\
 	{\
 		break;\
 	}\
@@ -180,77 +180,110 @@ do\
 				throw std::runtime_error("Json root not object");
 			}
 
-			//读取成员信息
-			TRY_READ_FIELD(json, Json::value_t::number_unsigned, "ChestSlotCount", cscDefault.szChestSlotCount);
-			THROW_IF_ZERO("ChestSlotCount", cscDefault.szChestSlotCount);
-			
-			TRY_READ_FIELD(json, Json::value_t::number_unsigned, "ShulkerBoxSlotCount", cscDefault.szShulkerBoxSlotCount);
-			THROW_IF_ZERO("ShulkerBoxSlotCount", cscDefault.szShulkerBoxSlotCount);
-			
-			TRY_READ_FIELD(json, Json::value_t::number_unsigned, "LargeChestSlotCount", cscDefault.szLargeChestSlotCount);
-			THROW_IF_ZERO("LargeChestSlotCount", cscDefault.szLargeChestSlotCount);
-			
-			size_t szDefaultItemStackCount = icDefault.DefaultItemStackCount();
-			TRY_READ_FIELD(json, Json::value_t::number_unsigned, "DefaultItemStackCount", szDefaultItemStackCount);
-			THROW_IF_ZERO("DefaultItemStackCount", szDefaultItemStackCount);
-
-			icDefault.SetItemStackCount(szDefaultItemStackCount, cscDefault);
-
-
-			//读取列表信息
-			auto itStack = json.find("Stack");
-			if (itStack == json.end())
+			//读取容器信息
 			{
-				return true;
+				auto itContainer = json.find("Container");
+				if (itContainer == json.end())
+				{
+					icDefault.SetItemStackCount(icDefault.DefaultItemStackCount(), cscDefault);
+					return true;
+				}
+				if (!itContainer->is_object())//可以没有，但是不能存在却类型不对
+				{
+					throw std::runtime_error("\"Container\" not object");
+				}
+
+				TRY_READ_FIELD(*itContainer, Json::value_t::number_unsigned, "ChestSlotCount", cscDefault.szChestSlotCount);
+				THROW_IF_ZERO("ChestSlotCount", cscDefault.szChestSlotCount);
+
+				TRY_READ_FIELD(*itContainer, Json::value_t::number_unsigned, "ShulkerBoxSlotCount", cscDefault.szShulkerBoxSlotCount);
+				THROW_IF_ZERO("ShulkerBoxSlotCount", cscDefault.szShulkerBoxSlotCount);
+
+				TRY_READ_FIELD(*itContainer, Json::value_t::number_unsigned, "LargeChestSlotCount", cscDefault.szLargeChestSlotCount);
+				THROW_IF_ZERO("LargeChestSlotCount", cscDefault.szLargeChestSlotCount);
 			}
-
-			if (!itStack->is_array())
+			
 			{
-				throw std::runtime_error("\"Stack\" not array");
-			}
-
-			std::unordered_map<size_t, size_t> mapCountPos;
-			for (auto &obj : *itStack)
-			{
-				if (!obj.is_object())
+				auto itItem = json.find("Item");
+				if (itItem == json.end())
 				{
-					throw std::runtime_error("\"Stack\" not object array");
+					icDefault.SetItemStackCount(icDefault.DefaultItemStackCount(), cscDefault);
+					return true;
+				}
+				if (!itItem->is_object())//可以没有，但是不能存在却类型不对
+				{
+					throw std::runtime_error("\"Item\" not object");
 				}
 
-				auto itCount = obj.find("Count");
-				if (itCount == obj.end() && !itCount->is_number_unsigned())
-				{
-					throw std::runtime_error("object don't have unsigned number \"Count\"");
-				}
-				size_t szCount = itCount->get<size_t>();
+				//读取物品默认堆叠信息
+				size_t szDefaultItemStackCount = icDefault.DefaultItemStackCount();
+				TRY_READ_FIELD(*itItem, Json::value_t::number_unsigned, "DefaultItemStackCount", szDefaultItemStackCount);
+				THROW_IF_ZERO("DefaultItemStackCount", szDefaultItemStackCount);
+				icDefault.SetItemStackCount(szDefaultItemStackCount, cscDefault);
 
-				//筛去重复值
-				size_t szCurPos = listItemCount.size();
-				auto emp_ret = mapCountPos.try_emplace(szCount, szCurPos);
-				if (emp_ret.second)//插入成功，新值更新。否则失败跳过，值不会被覆盖
+				//读取物品特殊堆叠信息
 				{
-					listItemCount.push_back({ szCount });//构造新大小
-				}
-				else//获取阻止插入的值的坐标
-				{
-					szCurPos = emp_ret.first->second;//设置为已有的值的坐标
-				}
-
-				//查找物品列表
-				auto itItems = obj.find("Items");
-				if (itItems == obj.end() && !itItems->is_array())
-				{
-					throw std::runtime_error("object don't have array \"Items\"");
-				}
-
-				for (auto &name : *itItems)
-				{
-					if (!name.is_string())
+					auto itStack = itItem->find("Stack");
+					if (itStack == itItem->end())
 					{
-						throw std::runtime_error("\"Items\" not string array");
+						return true;//前面设置过物品信息，此处跳过
+					}
+					if (!itStack->is_array())//可以没有，但是不能存在却类型不对
+					{
+						throw std::runtime_error("\"Stack\" not array");
 					}
 
-					mapItemCount.emplace(name.get<std::string>(), szCurPos);//设置为vector的下标
+					std::unordered_map<size_t, size_t> mapCountPos;//记录下标与堆叠数，排除重复
+					for (auto &obj : *itStack)
+					{
+						if (!obj.is_object())//可以没有，但是不能存在却类型不对
+						{
+							throw std::runtime_error("\"Stack\" not object array");
+						}
+
+						//查找物品列表
+						auto itItems = obj.find("Items");//必须有且类型正确
+						if (itItems == obj.end() && !itItems->is_array())
+						{
+							throw std::runtime_error("object don't have array \"Items\"");
+						}
+
+						//空物品列表忽略
+						if (itItem->empty())
+						{
+							continue;
+						}
+
+						//查找堆叠数
+						auto itCount = obj.find("Count");//必须有且类型正确
+						if (itCount == obj.end() && !itCount->is_number_unsigned())
+						{
+							throw std::runtime_error("object don't have unsigned number \"Count\"");
+						}
+						size_t szCount = itCount->get<size_t>();
+
+						//筛去重复值
+						size_t szCurPos = listItemCount.size();
+						auto emp_ret = mapCountPos.try_emplace(szCount, szCurPos);
+						if (emp_ret.second)//插入成功，新值更新。否则失败跳过，值不会被覆盖
+						{
+							listItemCount.push_back({ szCount });//构造新大小
+						}
+						else//获取阻止插入的值的坐标
+						{
+							szCurPos = emp_ret.first->second;//设置为已有的值的坐标
+						}
+
+						for (auto &name : *itItems)
+						{
+							if (!name.is_string())//可以没有，但是不能存在却类型不对
+							{
+								throw std::runtime_error("\"Items\" not string array");
+							}
+
+							mapItemCount.emplace(name.get<std::string>(), szCurPos);//设置为vector的下标
+						}
+					}
 				}
 			}
 
