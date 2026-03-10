@@ -1,4 +1,6 @@
 ﻿#include <stdexcept>
+#include <stdio.h>
+#include <inttypes.h>
 
 #include <NBT_All.hpp>
 
@@ -31,7 +33,7 @@ void PrintInfo(const T &info, const Language &lang, const CountFormatter &cf)
 		//判断是否存在cpd成员，有则输出
 		if constexpr (HasCpdTag<std::decay_t<decltype(refItem.first)>>)
 		{
-			printf("%s[%s]%s:%lld = %s\n",
+			printf("%s[%s]%s:%" PRIu64 " = %s\n",
 				lang.KeyTranslate(enKeyType, u8ItemName).c_str(),
 				refItem.first.sName.c_str(),
 				NBT_Helper::Serialize(refItem.first.cpdTag).c_str(),
@@ -40,7 +42,7 @@ void PrintInfo(const T &info, const Language &lang, const CountFormatter &cf)
 		}
 		else//无则跳过
 		{
-			printf("%s[%s]:%lld = %s\n",
+			printf("%s[%s]:%" PRIu64 " = %s\n",
 				lang.KeyTranslate(enKeyType, u8ItemName).c_str(),
 				refItem.first.sName.c_str(),
 				refItem.second,
