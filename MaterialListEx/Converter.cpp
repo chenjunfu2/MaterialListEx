@@ -2,7 +2,6 @@
 
 #include <NBT_All.hpp>
 
-#include "CurrentModulePath.hpp"
 #include "FileSystemHelper.hpp"
 
 #include "PrintLog.hpp"
@@ -13,13 +12,6 @@
 
 #include "RegionProcess.h"
 
-//计算数量到可读分类
-std::string CountFormat(int64_t u64Count)
-{
-	return CountFormatter::Level2String(CountFormatter::CalculateLevels(u64Count));
-}
-
-
 //判断是否存在cpdTag成员
 template <typename T>
 concept HasCpdTag = requires(T t)
@@ -29,7 +21,7 @@ concept HasCpdTag = requires(T t)
 
 
 template<Language::KeyType enKeyType, typename T>
-void PrintInfo(const T &info, const Language &lang)
+void PrintInfo(const T &info, const Language &lang, const CountFormatter &cf)
 {
 	for (const auto &itItem : info)
 	{
@@ -43,7 +35,7 @@ void PrintInfo(const T &info, const Language &lang)
 				refItem.first.sName.c_str(),
 				NBT_Helper::Serialize(refItem.first.cpdTag).c_str(),
 				refItem.second,
-				CountFormat(refItem.second).c_str());
+				cf.CalculateLevels(refItem.first.sName, refItem.second).ToString().c_str());
 		}
 		else//无则跳过
 		{
@@ -51,18 +43,18 @@ void PrintInfo(const T &info, const Language &lang)
 				lang.KeyTranslate(enKeyType, refItem.first.sName).c_str(),
 				refItem.first.sName.c_str(),
 				refItem.second,
-				CountFormat(refItem.second).c_str());
+				cf.CalculateLevels(refItem.first.sName, refItem.second).ToString().c_str());
 		}
 	}
 }
 
 
 template<Language::KeyType enKeyType, typename T, typename U>
-void PrintInfo(const T &info, const Language &lang, CSV_Tool<U> &csv)
+void PrintInfo(const T &info, const Language &lang, CSV_Tool<U> &csv, const CountFormatter &cf)
 {
 	if (!csv)//非就绪状态重定向输出到控制台
 	{
-		PrintInfo<enKeyType>(info, lang);
+		PrintInfo<enKeyType>(info, lang, cf);
 		return;
 	}
 
@@ -79,14 +71,14 @@ void PrintInfo(const T &info, const Language &lang, CSV_Tool<U> &csv)
 			csv.WriteOnce<true>(NBT_Helper::Serialize(refItem.first.cpdTag));
 		}
 
-		csv.WriteOnce<true>(std::format("{}个 = {}", refItem.second, CountFormat(refItem.second)));
+		csv.WriteOnce<true>(std::format("{}个 = {}", refItem.second, cf.CalculateLevels(refItem.first.sName, refItem.second).ToString().c_str()));
 		csv.NewLine();
 	}
 }
 
 
 template<Language::KeyType enKeyType, Language::KeyType enParentKeyType, typename T>
-void PrintInfo(const MapMSL<T> &info, const Language &lang)
+void PrintInfo(const MapMSL<T> &info, const Language &lang, const CountFormatter &cf)
 {
 	for (const auto &itParent : info)
 	{
@@ -96,18 +88,18 @@ void PrintInfo(const MapMSL<T> &info, const Language &lang)
 		}
 
 		printf("%s(%s):\n", lang.KeyTranslate(enParentKeyType, itParent.first).c_str(), itParent.first.c_str());
-		PrintInfo<enKeyType>(itParent.second.listSort, lang);
+		PrintInfo<enKeyType>(itParent.second.listSort, lang, cf);
 	}
 }
 
 
 template<Language::KeyType enKeyType, Language::KeyType enParentKeyType, typename T, typename U>
-void PrintInfo(const MapMSL<T> &info, const Language &lang, CSV_Tool<U> &csv)
+void PrintInfo(const MapMSL<T> &info, const Language &lang, CSV_Tool<U> &csv, const CountFormatter &cf)
 {
 	//控制台重定向
 	if (!csv)
 	{
-		PrintInfo<enKeyType, enParentKeyType>(info, lang);
+		PrintInfo<enKeyType, enParentKeyType>(info, lang, cf);
 		return;
 	}
 
@@ -128,7 +120,7 @@ void PrintInfo(const MapMSL<T> &info, const Language &lang, CSV_Tool<U> &csv)
 		csv.WriteStop();//连续写入结束
 		csv.NewLine();//换行
 
-		PrintInfo<enKeyType>(itParent.second.listSort, lang, csv);
+		PrintInfo<enKeyType>(itParent.second.listSort, lang, csv, cf);
 	}
 }
 
@@ -187,7 +179,7 @@ void PrintLine(CSV_Tool<T> &csv)
 }
 
 
-bool Convert(const std::string pathFile)
+bool Convert(const std::string &pathFile, const Language &lang, const CountFormatter &cf)
 {
 	//计数器
 	CodeTimer timer;
@@ -327,21 +319,6 @@ process_nbt_data:
 	timer.Stop();
 	timer.PrintElapsed("RegionProcess time:[", "]\n");
 
-	Language lang;
-	auto pathModule = GetCurrentModulePath();//使用程序当前路径查找语言文件，而非工作目录
-	pathModule.append("zh_cn.json");
-	timer.Start();
-	bool bLangRead = lang.ReadLanguageFile(pathModule.string().c_str());
-	timer.Stop();
-	if (bLangRead)
-	{
-		timer.PrintElapsed("Language file read time:[", "]\n");
-	}
-	else
-	{
-		printf("Language file read fail\n");
-	}
-
 	//准备csv文件
 	//注意此处还未初始化
 	CSV_Tool<char8_t> csv{};
@@ -388,33 +365,33 @@ process_nbt_data:
 		PrintLine(csv);
 		PrintLine(csv, u8"类型(Type)", u8"[block item]");
 		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"数量(Count)");
-		PrintInfo<Language::Item>(it.mslBlockItem.listSort, lang, csv);//方块转物品
+		PrintInfo<Language::Item>(it.mslBlockItem.listSort, lang, csv, cf);//方块转物品
 
 		PrintLine(csv);
 		PrintLine(csv, u8"类型(Type)", u8"[tile entity container]");
 		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)");
-		PrintInfo<Language::Item>(it.mslTileEntityContainer.listSort, lang, csv);//方块实体容器
+		PrintInfo<Language::Item>(it.mslTileEntityContainer.listSort, lang, csv, cf);//方块实体容器
 		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)", u8"来源(source)");
-		PrintInfo<Language::Item, Language::Item>(it.mmslParentInfoTEC, lang, csv);//方块实体容器带容器名
+		PrintInfo<Language::Item, Language::Item>(it.mmslParentInfoTEC, lang, csv, cf);//方块实体容器带容器名
 
 		PrintLine(csv);
 		PrintLine(csv, u8"类型(Type)", u8"[entity info]");
 		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"数量(Count)");
-		PrintInfo<Language::Entity>(it.mslEntity.listSort, lang, csv);//实体
+		PrintInfo<Language::Entity>(it.mslEntity.listSort, lang, csv, cf);//实体
 
 		PrintLine(csv);
 		PrintLine(csv, u8"类型(Type)", u8"[entity container]");
 		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)");
-		PrintInfo<Language::Item>(it.mslEntityContainer.listSort, lang, csv);//实体容器
+		PrintInfo<Language::Item>(it.mslEntityContainer.listSort, lang, csv, cf);//实体容器
 		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)", u8"来源(source)");
-		PrintInfo<Language::Item, Language::Entity>(it.mmslParentInfoEC, lang, csv);//实体容器带实体名
+		PrintInfo<Language::Item, Language::Entity>(it.mmslParentInfoEC, lang, csv, cf);//实体容器带实体名
 
 		PrintLine(csv);
 		PrintLine(csv, u8"类型(Type)", u8"[entity inventory]");
 		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)");
-		PrintInfo<Language::Item>(it.mslEntityInventory.listSort, lang, csv);//实体物品栏
+		PrintInfo<Language::Item>(it.mslEntityInventory.listSort, lang, csv, cf);//实体物品栏
 		PrintLine(csv, u8"名称(Name)", u8"键名(Key)", u8"标签(Tag)", u8"数量(Count)", u8"来源(source)");
-		PrintInfo<Language::Item, Language::Entity>(it.mmslParentInfoEI, lang, csv);//实体物品栏带实体名
+		PrintInfo<Language::Item, Language::Entity>(it.mmslParentInfoEI, lang, csv, cf);//实体物品栏带实体名
 
 		PrintLine(csv);
 	}

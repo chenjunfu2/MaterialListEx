@@ -1,13 +1,12 @@
 ﻿#pragma once
-/*Json*/
-#include <nlohmann\json.hpp>
-using Json = nlohmann::json;
-/*Json*/
+
 
 #include <NBT_Node.hpp>
 
 #include <set>
 #include <string>
+
+#include "FileSystemHelper.hpp"
 
 class Language
 {
@@ -18,30 +17,9 @@ public:
 	~Language() = default;
 
 
-	bool ReadLanguageFile(const char*const pcFileName)
+	bool ReadLanguageFile(const std::string &strFileName)
 	{
-		FILE *pFile = fopen(pcFileName, "rb");
-		if (pFile == NULL)
-		{
-			printf("Langage file open fail\n");
-			return false;
-		}
-		
-		//从语言文件创建json对象
-		bool bRet = true;
-		try
-		{
-			data = Json::parse(pFile);
-		}
-		catch (const Json::parse_error &e)
-		{
-			// 输出异常详细信息
-			printf("JSON parse error: %s\nError Pos: [%zu]\n", e.what(), e.byte);
-			bRet = false;
-		}
-
-		fclose(pFile);
-		return bRet;
+		return ReadJsonFile(strFileName, data);
 	}
 
 	void PrintPrefixes(void) const//此函数代码由AI编写

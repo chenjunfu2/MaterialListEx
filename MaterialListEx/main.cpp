@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <locale.h>
 
+#include "CodeTimer.hpp"
+#include "Language.hpp"
+#include "CountFormatter.hpp"
 #include "CurrentModulePath.hpp"
 
 #ifdef _WIN32
@@ -9,7 +12,7 @@
 #endif
 
 //前向声明
-bool Convert(const std::string pathFile);
+bool Convert(const std::string &pathFile, const Language &lang, const CountFormatter &cf);
 
 #ifdef _WIN32
 int wmain(int argc, wchar_t *argv[])
@@ -34,6 +37,41 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	//计时器
+	CodeTimer timer;
+
+	//获取语言文件
+	Language lang;
+	auto pathLanguage = GetCurrentModulePath();//使用程序当前路径查找语言文件，而非工作目录
+	pathLanguage.append("zh_cn.json");
+	timer.Start();
+	bool bLangRead = lang.ReadLanguageFile(pathLanguage.string());
+	timer.Stop();
+	if (bLangRead)
+	{
+		timer.PrintElapsed("Language file read time:[", "]\n");
+	}
+	else
+	{
+		printf("Language file read fail\n");
+	}
+
+	//获取物品堆叠文件
+	CountFormatter cfItemStackCount;
+	auto pathItemStackCount = GetCurrentModulePath();//使用程序当前路径查找物品堆叠格式化文件，而非工作目录
+	pathItemStackCount.append("item_stack_count.json");
+	timer.Start();
+	bool bCfRead = cfItemStackCount.ReadCountFormatterFile(pathItemStackCount.string());
+	timer.Stop();
+	if (bCfRead)
+	{
+		timer.PrintElapsed("ItemStackCount file read time:[", "]\n");
+	}
+	else
+	{
+		printf("ItemStackCount file read fail\n");
+	}
+
 	int iTotal = argc - 1;
 
 	printf("total [%d] file(s)\n", iTotal);
@@ -43,9 +81,9 @@ int main(int argc, char *argv[])
 	{
 		printf("\n[%d] ", i);
 #ifdef _WIN32
-		if (!Convert(ConvertUtf16ToUtf8<wchar_t, char>(argv[i]).c_str()))
+		if (!Convert(ConvertUtf16ToUtf8<wchar_t, char>(argv[i]).c_str(), lang, cfItemStackCount))
 #else
-		if (!Convert(argv[i])
+		if (!Convert(argv[i], lang, cfItemStackCount)
 #endif
 		{
 			printf("Convert Error, Skip\n");
