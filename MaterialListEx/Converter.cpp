@@ -66,7 +66,7 @@ void PrintInfo(const T &info, const Language &lang, CSV_Tool<U> &csv, const Coun
 		const auto &refItem = itItem.get();
 
 		auto u8ItemName = refItem.first.sName.ToCharTypeUTF8();
-		csv.WriteOnce<true>(lang.KeyTranslate(enKeyType, u8ItemName));
+		csv.template WriteOnce<true>(lang.KeyTranslate(enKeyType, u8ItemName));
 		csv.template WriteOnce<true>(u8ItemName);
 
 		//判断是否存在cpd成员，有则输出
