@@ -71,7 +71,12 @@ void PrintInfo(const T &info, const Language &lang, CSV_Tool<U> &csv, const Coun
 			csv.WriteOnce<true>(NBT_Helper::Serialize(refItem.first.cpdTag));
 		}
 
-		csv.WriteOnce<true>(std::format("{}个 = {}", refItem.second, cf.CalculateLevels(refItem.first.sName, refItem.second).ToString().c_str()));
+		csv.WriteOnce<true>(
+			std::format("{}个 = {}", 
+			refItem.second,
+			cf.CalculateLevels(refItem.first.sName, refItem.second).ToString()
+			)
+		);
 		csv.NewLine();
 	}
 }

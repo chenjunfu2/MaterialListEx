@@ -116,7 +116,7 @@ private:
 	std::vector<ItemCount> listItemCount;
 
 private:
-	const ItemCount &GetItemCount(const std::string &strItemName)
+	const ItemCount &GetItemCount(const std::string &strItemName) const
 	{
 		if (auto it = mapItemCount.find(strItemName); it != mapItemCount.end())
 		{
@@ -127,7 +127,6 @@ private:
 			return icDefault;
 		}
 	}
-
 
 public:
 	CountFormatter():
@@ -281,7 +280,7 @@ do\
 	}
 
 
-	ItemLevel CalculateLevels(const std::string &strItemName, uint64_t u64Count)
+	ItemLevel CalculateLevels(const std::string &strItemName, uint64_t u64Count) const
 	{
 		const auto &icCurrent = GetItemCount(strItemName);
 		ItemLevel level = { 0 };
