@@ -123,7 +123,7 @@ struct RegionStats
 MapSortList<std::unordered_map<key, val, decltype(&key::Hash), decltype(&key::Equal)>>
 
 #define MAPSORTLIST(key,val,size,name) \
-MAPSORTLIST_TYPE(key,val) name{ {size, &key::Hash, &key::Equal} }
+MAPSORTLIST_TYPE(key,val) name{ typename MAPSORTLIST_TYPE(key,val)::MyMap{size, &key::Hash, &key::Equal} }
 
 #define MAPMAPSORTLIST(key,val,size,name) \
 MapMSL<std::map<NBT_Type::String, MAPSORTLIST_TYPE(key, val)>> name{size, &key::Hash, &key::Equal}
