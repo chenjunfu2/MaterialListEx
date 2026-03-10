@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <chrono>
+#include <thread>
 
 class CodeTimer
 {
@@ -107,7 +108,7 @@ public:
 	{
 		//通过时差长度选择合适的单位
 		auto [enUnitType, ldTime] = GetOutputData(Diff<std::chrono::nanoseconds>().count());
-		printf("%s%.6lf%s%s", cpBegInfo, ldTime, strUnitType[enUnitType], cpEndInfo);
+		printf("%s%.6Lf%s%s", cpBegInfo, ldTime, strUnitType[enUnitType], cpEndInfo);
 	}
 
 	template<typename T = std::chrono::milliseconds>
@@ -121,4 +122,11 @@ public:
 	{
 		return std::chrono::duration_cast<T>(std::chrono::system_clock::now().time_since_epoch()).count();
 	}
+
+	template<typename T = std::chrono::milliseconds>
+	static void Sleep(const T &t)
+	{
+		return std::this_thread::sleep_for(t);
+	}
+
 };
