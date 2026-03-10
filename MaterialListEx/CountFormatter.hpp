@@ -154,6 +154,9 @@ public:
 			return false;
 		}
 
+		mapItemCount.clear();
+		listItemCount.clear();
+
 #define TRY_READ_FIELD(json_obj, expected_type, key, field)\
 do\
 {\
