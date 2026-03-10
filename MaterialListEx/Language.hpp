@@ -65,7 +65,7 @@ public:
 		ENUM_END,
 	};
 
-	const std::string &KeyTranslate(KeyType enKeyType, const NBT_Type::String &sKeyName) const
+	const std::string &KeyTranslate(KeyType enKeyType, const std::string &sKeyName) const
 	{
 		static const std::string sKeyTypePrefix[] =
 		{
@@ -87,11 +87,10 @@ public:
 		//拆解sKeyName并与sKeyTypePrefix[enKeyType]组合
 
 		//把名称空间的:转换成.
-		std::string sJsonKey = sKeyName.ToCharTypeUTF8();//转换到char类型并拷贝
-		std::replace(sJsonKey.begin(), sJsonKey.end(), ':', '.');
+		std::replace(sKeyName.begin(), sKeyName.end(), ':', '.');
 
 	re_find:
-		auto itFind = data.find(sKeyTypePrefix[enKeyType] + sJsonKey);
+		auto itFind = data.find(sKeyTypePrefix[enKeyType] + sKeyName);
 		if (itFind == data.end())
 		{
 			//是空的情况下判断是不是item，是的话需要再查一次block

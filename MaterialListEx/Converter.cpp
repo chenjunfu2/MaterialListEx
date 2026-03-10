@@ -26,24 +26,25 @@ void PrintInfo(const T &info, const Language &lang, const CountFormatter &cf)
 	for (const auto &itItem : info)
 	{
 		const auto &refItem = itItem.get();
+		auto u8ItemName = refItem.first.sName.ToCharTypeUTF8();
 
 		//判断是否存在cpd成员，有则输出
 		if constexpr (HasCpdTag<std::decay_t<decltype(refItem.first)>>)
 		{
 			printf("%s[%s]%s:%lld = %s\n",
-				lang.KeyTranslate(enKeyType, refItem.first.sName).c_str(),
+				lang.KeyTranslate(enKeyType, u8ItemName).c_str(),
 				refItem.first.sName.c_str(),
 				NBT_Helper::Serialize(refItem.first.cpdTag).c_str(),
 				refItem.second,
-				cf.CalculateLevels(refItem.first.sName, refItem.second).ToString().c_str());
+				cf.CalculateLevels(u8ItemName, refItem.second).ToString().c_str());
 		}
 		else//无则跳过
 		{
 			printf("%s[%s]:%lld = %s\n",
-				lang.KeyTranslate(enKeyType, refItem.first.sName).c_str(),
+				lang.KeyTranslate(enKeyType, u8ItemName).c_str(),
 				refItem.first.sName.c_str(),
 				refItem.second,
-				cf.CalculateLevels(refItem.first.sName, refItem.second).ToString().c_str());
+				cf.CalculateLevels(u8ItemName, refItem.second).ToString().c_str());
 		}
 	}
 }
@@ -62,8 +63,9 @@ void PrintInfo(const T &info, const Language &lang, CSV_Tool<U> &csv, const Coun
 	{
 		const auto &refItem = itItem.get();
 
-		csv.WriteOnce<true>(lang.KeyTranslate(enKeyType, refItem.first.sName));
-		csv.WriteOnce<true>(refItem.first.sName.ToCharTypeUTF8());
+		auto u8ItemName = refItem.first.sName.ToCharTypeUTF8();
+		csv.WriteOnce<true>(lang.KeyTranslate(enKeyType, u8ItemName));
+		csv.WriteOnce<true>(u8ItemName);
 
 		//判断是否存在cpd成员，有则输出
 		if constexpr (HasCpdTag<std::decay_t<decltype(refItem.first)>>)
@@ -71,12 +73,7 @@ void PrintInfo(const T &info, const Language &lang, CSV_Tool<U> &csv, const Coun
 			csv.WriteOnce<true>(NBT_Helper::Serialize(refItem.first.cpdTag));
 		}
 
-		csv.WriteOnce<true>(
-			std::format("{}个 = {}", 
-			refItem.second,
-			cf.CalculateLevels(refItem.first.sName, refItem.second).ToString()
-			)
-		);
+		csv.WriteOnce<true>(std::format("{}个 = {}", refItem.second, cf.CalculateLevels(u8ItemName, refItem.second).ToString()));
 		csv.NewLine();
 	}
 }
@@ -92,7 +89,8 @@ void PrintInfo(const MapMSL<T> &info, const Language &lang, const CountFormatter
 			continue;
 		}
 
-		printf("%s(%s):\n", lang.KeyTranslate(enParentKeyType, itParent.first).c_str(), itParent.first.c_str());
+		auto u8ParentName = itParent.first.ToCharTypeUTF8();
+		printf("%s(%s):\n", lang.KeyTranslate(enParentKeyType, u8ParentName).c_str(), itParent.first.c_str());
 		PrintInfo<enKeyType>(itParent.second.listSort, lang, cf);
 	}
 }
@@ -116,11 +114,12 @@ void PrintInfo(const MapMSL<T> &info, const Language &lang, CSV_Tool<U> &csv, co
 			continue;
 		}
 
+		auto u8ParentName = itParent.first.ToCharTypeUTF8();
 		csv.WriteEmpty(5);//从第五个空格开始写入
 		csv.WriteStart();//连续写入开始
-		csv.WriteContinue<true>(lang.KeyTranslate(enParentKeyType, itParent.first));
+		csv.WriteContinue<true>(lang.KeyTranslate(enParentKeyType, u8ParentName));
 		csv.WriteContinue<false>(u8"(");
-		csv.WriteContinue<true>(itParent.first.ToCharTypeUTF8());
+		csv.WriteContinue<true>(u8ParentName);
 		csv.WriteContinue<false>(u8")");
 		csv.WriteStop();//连续写入结束
 		csv.NewLine();//换行
