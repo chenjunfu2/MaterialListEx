@@ -79,7 +79,8 @@ set(COMMON_LIBS xxhash zlib)
 include_directories(
     ${CMAKE_SOURCE_DIR}/MaterialListEx/zlib
     ${CMAKE_SOURCE_DIR}/MaterialListEx/xxhash
-    ${CMAKE_SOURCE_DIR}/Dependencies/nbt_cpp
+    ${CMAKE_SOURCE_DIR}/MaterialListEx/nbt_cpp
+    ${CMAKE_SOURCE_DIR}/MaterialListEx
 )
 
 #添加项目
