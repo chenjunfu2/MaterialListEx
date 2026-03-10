@@ -1,0 +1,44 @@
+name: C/C++ CI
+
+on:
+  workflow_dispatch:
+  #push:
+  #  branches: [ "master" ]
+  #pull_request:
+  #  branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+      fail-fast: false
+      
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup GCC
+      if: matrix.compiler == 'gcc'
+      uses: egor-tensin/setup-gcc@v1
+      with:
+        version: latest
+        
+    - name: Setup Clang
+      if: matrix.compiler == 'clang'
+      uses: egor-tensin/setup-clang@v1
+      with:
+        version: latest
+    
+    - name: List Dir
+      run: find . -type f | sort
+      
+    - name: Configure with CMake
+      run: cmake -B build -S .
+      
+    - name: Build
+      run: cmake --build build
+      
+    - name: List Dir
+      run: find . -type f | sort
