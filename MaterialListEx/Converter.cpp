@@ -64,16 +64,16 @@ void PrintInfo(const T &info, const Language &lang, CSV_Tool<U> &csv, const Coun
 		const auto &refItem = itItem.get();
 
 		auto u8ItemName = refItem.first.sName.ToCharTypeUTF8();
-		csv.WriteOnce<true>(lang.KeyTranslate(enKeyType, u8ItemName));
-		csv.WriteOnce<true>(u8ItemName);
+		csv.template WriteOnce<true>(lang.KeyTranslate(enKeyType, u8ItemName));
+		csv.template WriteOnce<true>(u8ItemName);
 
 		//判断是否存在cpd成员，有则输出
 		if constexpr (HasCpdTag<std::decay_t<decltype(refItem.first)>>)
 		{
-			csv.WriteOnce<true>(NBT_Helper::Serialize(refItem.first.cpdTag));
+			csv.template WriteOnce<true>(NBT_Helper::Serialize(refItem.first.cpdTag));
 		}
 
-		csv.WriteOnce<true>(std::format("{}个 = {}", refItem.second, cf.CalculateLevels(u8ItemName, refItem.second).ToString()));
+		csv.template WriteOnce<true>(std::format("{}个 = {}", refItem.second, cf.CalculateLevels(u8ItemName, refItem.second).ToString()));
 		csv.NewLine();
 	}
 }
@@ -117,10 +117,10 @@ void PrintInfo(const MapMSL<T> &info, const Language &lang, CSV_Tool<U> &csv, co
 		auto u8ParentName = itParent.first.ToCharTypeUTF8();
 		csv.WriteEmpty(5);//从第五个空格开始写入
 		csv.WriteStart();//连续写入开始
-		csv.WriteContinue<true>(lang.KeyTranslate(enParentKeyType, u8ParentName));
-		csv.WriteContinue<false>(u8"(");
-		csv.WriteContinue<true>(u8ParentName);
-		csv.WriteContinue<false>(u8")");
+		csv.template WriteContinue<true>(lang.KeyTranslate(enParentKeyType, u8ParentName));
+		csv.template WriteContinue<false>(u8"(");
+		csv.template WriteContinue<true>(u8ParentName);
+		csv.template WriteContinue<false>(u8")");
 		csv.WriteStop();//连续写入结束
 		csv.NewLine();//换行
 
@@ -217,7 +217,7 @@ bool Convert(const std::string &pathFile, const Language &lang, const CountForma
 
 		sNbtData = std::move(tmp);
 
-		printf("File decompressed size:[%lld]\n", (uint64_t)sNbtData.size());
+		printf("File decompressed size:[%zu]\n", sNbtData.size());
 		timer.PrintElapsed("File decompress time:[", "]\n");
 
 #ifdef _DEBUG
@@ -328,7 +328,7 @@ process_nbt_data:
 	CSV_Tool<char8_t> csv{};
 #ifndef _DEBUG
 	//找到一个合法文件名
-	auto sCsvPath = GenerateUniqueFilename(GetFilenameWithoutExtension(pFileName), ".csv");
+	auto sCsvPath = GenerateUniqueFilename(GetFilenameWithoutExtension(pathFile), ".csv");
 
 	if (!sCsvPath.empty())
 	{

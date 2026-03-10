@@ -43,7 +43,7 @@ public:
 
 			//挨个输出非0项
 			bool bOut = false;
-			for (int i = 0; i < szDatacount; ++i)
+			for (size_t i = 0; i < szDatacount; ++i)
 			{
 				if (u64Data[i] == 0)
 				{
@@ -273,7 +273,7 @@ do\
 						auto emp_ret = mapCountPos.try_emplace(szCount, szCurPos);
 						if (emp_ret.second)//插入成功，新值更新。否则失败跳过，值不会被覆盖
 						{
-							listItemCount.push_back(ItemCount(szCount, cscDefault));//构造新大小
+							listItemCount.push_back({ szCount, cscDefault });//构造新大小
 						}
 						else//获取阻止插入的值的坐标
 						{
@@ -322,7 +322,7 @@ do\
 	ItemLevel CalculateLevels(const std::string &strItemName, uint64_t u64Count) const
 	{
 		const auto &icCurrent = GetItemCount(strItemName);
-		ItemLevel level = { 0 };
+		ItemLevel level{};
 
 		//挨个计算
 		if (icCurrent.szLargeChestShulkerBoxItemCount != 1 && u64Count >= icCurrent.szLargeChestShulkerBoxItemCount)
