@@ -177,7 +177,7 @@ do\
 {\
 	if ((field) == 0)\
 	{\
-		throw std::runtime_error(name "is 0");\
+		throw std::runtime_error(name " is [0]");\
 	}\
 } while (false);
 
