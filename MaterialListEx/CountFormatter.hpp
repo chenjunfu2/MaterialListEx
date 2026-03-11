@@ -254,7 +254,7 @@ do\
 						auto itItems = obj.find("Items");//必须有且类型正确
 						if (itItems == obj.end() && !itItems->is_array())
 						{
-							throw std::runtime_error("object don't have array \"Items\"");
+							throw std::runtime_error("Object don't have array \"Items\"");
 						}
 
 						//空物品列表忽略
@@ -267,9 +267,10 @@ do\
 						auto itCount = obj.find("Count");//必须有且类型正确
 						if (itCount == obj.end() && !itCount->is_number_unsigned())
 						{
-							throw std::runtime_error("object don't have unsigned number \"Count\"");
+							throw std::runtime_error("Object don't have unsigned number \"Count\"");
 						}
 						size_t szCount = itCount->get<size_t>();
+						THROW_IF_ZERO("Count", szCount);
 
 						//筛去重复值
 						size_t szCurPos = listItemCount.size();
@@ -290,7 +291,11 @@ do\
 								throw std::runtime_error("\"Items\" not string array");
 							}
 
-							mapItemCount.emplace(name.get<std::string>(), szCurPos);//设置为vector的下标
+							//处理重复值，抛出异常
+							if (auto [it, b] = mapItemCount.try_emplace(name.get<std::string>(), szCurPos); !b)//设置为vector的下标
+							{
+								throw std::runtime_error(std::format("Item[{}] already exists, with value Count[{}]", name.get<std::string>(), listItemCount[it->second].szSetItemCount));
+							}
 						}
 					}
 				}
@@ -310,6 +315,8 @@ do\
 #undef TRY_READ_FIELD
 
 		printf("Use Default Value!\n");
+		mapItemCount.clear();
+		listItemCount.clear();
 		SetDefault();
 
 		return false;
@@ -328,19 +335,19 @@ do\
 		ItemLevel level{};
 
 		//挨个计算
-		if (icCurrent.szLargeChestShulkerBoxItemCount != 1 && u64Count >= icCurrent.szLargeChestShulkerBoxItemCount)
+		if (u64Count >= icCurrent.szLargeChestShulkerBoxItemCount)
 		{
-			level.u64LargeChestShulkerBox = (u64Count / icCurrent.szLargeChestShulkerBoxItemCount);//如果1大箱盒只有1个，那么跳过设置
+			level.u64LargeChestShulkerBox = (u64Count / icCurrent.szLargeChestShulkerBoxItemCount);
 		}
-		if (icCurrent.szChestShulkerBoxItemCount != 1 && u64Count >= icCurrent.szChestShulkerBoxItemCount)//如果1箱盒只有1个，那么跳过设置
+		if (u64Count >= icCurrent.szChestShulkerBoxItemCount)
 		{
 			level.u64ChestShulkerBox = (u64Count / icCurrent.szChestShulkerBoxItemCount) % (cscDefault.szLargeChestSlotCount / cscDefault.szChestSlotCount);
 		}
-		if (icCurrent.szShulkerBoxItemCount != 1 && u64Count >= icCurrent.szShulkerBoxItemCount)//如果1盒只有1个，那么跳过设置
+		if (u64Count >= icCurrent.szShulkerBoxItemCount)
 		{
 			level.u64ShulkerBox = (u64Count / icCurrent.szShulkerBoxItemCount) % cscDefault.szShulkerBoxSlotCount;
 		}
-		if (icCurrent.szSetItemCount != 1 && u64Count >= icCurrent.szSetItemCount)//如果1组只有1个，那么跳过设置
+		if (u64Count >= icCurrent.szSetItemCount)
 		{
 			level.u64SetItem = (u64Count / icCurrent.szSetItemCount) % cscDefault.szShulkerBoxSlotCount;
 		}
