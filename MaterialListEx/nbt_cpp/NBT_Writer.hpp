@@ -553,23 +553,7 @@ catch(...)\
 			{
 				try//筛掉标准库异常
 				{
-					IterableRangeType vSort{};
-					vSort.reserve(tCompound.size());//提前扩容
-
-					//插入迭代器
-					for (auto it = tCompound.cbegin(), end = tCompound.cend(); it != end; ++it)
-					{
-						vSort.push_back(it);
-					}
-
-					//进行排序
-					std::sort(vSort.begin(), vSort.end(),
-						[](const auto &l, const auto &r) -> bool
-						{
-							return l->first < r->first;
-						}
-					);
-					return vSort;
+					return tCompound.KeySortIt();
 				}
 				catch (const std::bad_alloc &e)
 				{

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <vector>
 #include <unordered_map>
 #include <compare>
 #include <type_traits>
@@ -158,7 +159,13 @@ public:
 	/// @brief 三路比较运算符
 	/// @param _Right 要比较的右操作数
 	/// @return 比较结果，通过std::partial_ordering返回
-	/// @note 如果底层容器支持三路比较则转发其实现，否则使用容器的相等运算符比较，在相等时返回equivalent，不相等时返回unordered
+	/// @note 如果底层容器支持三路比较则转发其实现，否则：
+	/// - 首先比较容器大小，如果不相等，那么返回比较结果
+	/// - 接着使用容器Key进行排序比较
+	///   - 如果key不相等，则返回比较结果
+	///   - 如果val不相等，则返回比较结果
+	/// - 如果都相同，返回相等
+	/// @warning 此比较方法开销较大，且可能存在递归情况
 	std::partial_ordering operator<=>(const NBT_Compound &_Right) const noexcept
 	{
 		if constexpr (NBT_Compound_Concept::HasSpaceship<Compound>)
@@ -167,15 +174,87 @@ public:
 		}
 		else
 		{
-			if (operator==(_Right))
+			if (auto _cmpSize = Compound::size() <=> _Right.size(); _cmpSize != 0)
 			{
-				return std::partial_ordering::equivalent;//相等返回相等
+				return _cmpSize;
 			}
-			else
+
+			//数量相等，比较数据的排序
+			const auto _lSort = this->KeySortIt();
+			const auto _rSort = _Right.KeySortIt();
+			size_t _Size = Compound::size();
+
+			for (size_t _i = 0; _i < _Size; ++_i)
 			{
-				return std::partial_ordering::unordered;//否则返回不可比较
+				const auto &_lIt = _lSort[_i];
+				const auto &_rIt = _rSort[_i];
+
+				//首先比较名称，如果不同则返回
+				if (auto _cmpKey = _lIt->first <=> _rIt->first; _cmpKey != 0)
+				{
+					return _cmpKey;
+				}
+
+				//然后比较值，如果不同则返回
+				if (auto _cmpVal = _lIt->second <=> _rIt->second; _cmpVal != 0)
+				{
+					return _cmpVal;
+				}
 			}
+
+			//前面都没有返回，那么所有元素都相等
+			return std::partial_ordering::equivalent;
 		}
+	}
+
+	/// @brief 获取按键名排序的迭代器向量（非常量版本）
+	/// @return 包含所有元素迭代器的vector，这些迭代器按照键名升序排序
+	/// @note 返回的迭代器可用于遍历元素，并允许修改元素的值
+	/// 排序仅影响返回的vector，不影响底层unordered_map的实际顺序
+	/// @warning 因为返回值中存储迭代器，在对当前容器进行修改后默认迭代器失效，
+	/// 请勿再次通过返回的std::vector中的迭代器访问容器成员
+	std::vector<typename Compound::iterator> KeySortIt(void)
+	{
+		std::vector<typename Compound::iterator> listSortIt;
+		listSortIt.reserve(Compound::size());
+		for (auto it = Compound::begin(); it != Compound::end(); ++it)
+		{
+			listSortIt.push_back(it);
+		}
+
+		std::sort(listSortIt.begin(), listSortIt.end(),
+			[](const auto &l, const auto &r) -> bool
+			{
+				return l->first < r->first;
+			}
+		);
+
+		return listSortIt;
+	}
+
+	/// @brief 获取按键名排序的常量迭代器向量（常量版本）
+	/// @return 包含所有元素常量迭代器的vector，这些迭代器按照键名升序排序
+	/// @note 返回的迭代器可用于遍历元素，但不允许修改元素的值
+	/// 排序仅影响返回的std::vector，不影响底层unordered_map的实际顺序
+	/// @warning 因为返回值中存储迭代器，在对当前容器进行修改后默认迭代器失效，
+	/// 请勿再次通过返回的std::vector中的迭代器访问容器成员
+	std::vector<typename Compound::const_iterator> KeySortIt(void) const
+	{
+		std::vector<typename Compound::const_iterator> listSortIt;
+		listSortIt.reserve(Compound::size());
+		for (auto it = Compound::cbegin(); it != Compound::cend(); ++it)
+		{
+			listSortIt.push_back(it);
+		}
+
+		std::sort(listSortIt.begin(), listSortIt.end(),
+			[](const auto &l, const auto &r) -> bool
+			{
+				return l->first < r->first;
+			}
+		);
+
+		return listSortIt;
 	}
 
 	/// @name 暴露父类迭代器接口

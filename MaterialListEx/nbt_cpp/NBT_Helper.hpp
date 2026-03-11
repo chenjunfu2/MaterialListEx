@@ -98,28 +98,6 @@ public:
 #endif
 
 private:
-	static auto CompoundSort(const NBT_Type::Compound &cpd)
-	{
-		std::vector<NBT_Type::Compound::const_iterator> vSort{};
-		vSort.reserve(cpd.size());//提前扩容
-
-		//插入迭代器
-		for (auto it = cpd.cbegin(), end = cpd.cend(); it != end; ++it)
-		{
-			vSort.push_back(it);
-		}
-
-		//进行排序
-		std::sort(vSort.begin(), vSort.end(),
-			[](const auto &l, const auto &r) -> bool
-			{
-				return l->first < r->first;
-			}
-		);
-
-		return vSort;
-	}
-
 	constexpr const static inline char *const LevelPadding = "    ";//默认对齐
 
 	template<typename PrintFunc>
@@ -312,7 +290,7 @@ private:
 				}
 				else
 				{
-					auto vSort = CompoundSort(cpd);
+					auto vSort = cpd.KeySortIt();
 
 					bool bFirst = true;
 					for (const auto &it : vSort)
@@ -489,7 +467,7 @@ private:
 				}
 				else
 				{
-					auto vSort = CompoundSort(cpd);
+					auto vSort = cpd.KeySortIt();
 
 					for (const auto &it : vSort)
 					{
@@ -634,7 +612,7 @@ private:
 				}
 				else//对compound迭代器进行排序，以使得hash获得一致性结果
 				{
-					auto vSort = CompoundSort(cpd);
+					auto vSort = cpd.KeySortIt();
 
 					//遍历有序结构
 					for (const auto &it : vSort)
