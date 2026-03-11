@@ -294,7 +294,7 @@ do\
 							//处理重复值，抛出异常
 							if (auto [it, b] = mapItemCount.try_emplace(name.get<std::string>(), szCurPos); !b)//设置为vector的下标
 							{
-								throw std::runtime_error(std::format("Item[{}] already exists, with value Count[{}]", name.get<std::string>(), listItemCount[it->second].szSetItemCount));
+								throw std::runtime_error(std::format("Item: [{}] already exists, with value Count: [{}]", name.get<std::string>(), listItemCount[it->second].szSetItemCount));
 							}
 						}
 					}
