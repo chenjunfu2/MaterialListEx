@@ -72,12 +72,18 @@ endif()
 function(copy_files_to_target TARGET_NAME SOURCE_FILES DEST_DIR)
     foreach(FILE_PATH ${SOURCE_FILES})
         get_filename_component(FILE_NAME ${FILE_PATH} NAME)
-        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+        set(DEST_PATH "${DEST_DIR}/${FILE_NAME}")
+
+        add_custom_command(
+            OUTPUT ${DEST_PATH}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${FILE_PATH}"
-                "${DEST_DIR}/${FILE_NAME}"
+                "${DEST_PATH}"
+            DEPENDS "${FILE_PATH}"
             COMMENT "copy ${FILE_NAME} to ${DEST_DIR}"
         )
+
+        target_sources(${TARGET_NAME} PRIVATE ${DEST_PATH})
     endforeach()
 endfunction()
 
