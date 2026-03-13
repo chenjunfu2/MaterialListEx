@@ -3,17 +3,15 @@
 #include <locale.h>
 
 #include "CodeTimer.hpp"
-#include "Language.hpp"
-#include "CountFormatter.hpp"
 #include "CurrentModulePath.hpp"
+#include "LitematicToMaterialList.h"
 
 #ifdef _WIN32
 #include "Windows_ANSI.hpp"
 #endif
 
-//前向声明
-bool Convert(const std::string &pathFile, const Language &lang, const CountFormatter &cf);
 
+//Win使用宽字符wmain
 #ifdef _WIN32
 int wmain(int argc, wchar_t *argv[])
 #else
@@ -81,9 +79,9 @@ int main(int argc, char *argv[])
 	{
 		printf("\n[%d] ", i);
 #ifdef _WIN32
-		if (!Convert(ConvertUtf16ToUtf8<wchar_t, char>(argv[i]).c_str(), lang, cfItemStackCount))
+		if (!LitematicToMaterialList(ConvertUtf16ToUtf8<wchar_t, char>(argv[i]), lang, cfItemStackCount))
 #else
-		if (!Convert(argv[i], lang, cfItemStackCount))
+		if (!LitematicToMaterialList(argv[i], lang, cfItemStackCount))
 #endif
 		{
 			printf("Convert Error, Skip\n");

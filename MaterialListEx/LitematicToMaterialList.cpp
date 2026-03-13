@@ -1,4 +1,6 @@
-﻿#include <stdexcept>
+﻿#include "LitematicToMaterialList.h"
+
+#include <stdexcept>
 #include <stdio.h>
 #include <inttypes.h>
 
@@ -7,9 +9,7 @@
 #include "FileSystemHelper.hpp"
 
 #include "PrintLog.hpp"
-#include "Language.hpp"
 #include "CSV_Tool.hpp"
-#include "CountFormatter.hpp"
 #include "CodeTimer.hpp"
 
 #include "RegionProcess.h"
@@ -185,7 +185,7 @@ void PrintLine(CSV_Tool<T> &csv)
 }
 
 
-bool Convert(const std::string &pathFile, const Language &lang, const CountFormatter &cf)
+bool LitematicToMaterialList(const std::string &pathFile, const Language &lang, const CountFormatter &cf)
 {
 	//计数器
 	CodeTimer timer;

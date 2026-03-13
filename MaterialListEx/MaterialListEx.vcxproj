@@ -183,7 +183,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Converter.cpp" />
+    <ClCompile Include="LitematicToMaterialList.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RegionProcess.cpp" />
     <ClCompile Include="xxhash\xxhash.c" />
@@ -215,6 +215,7 @@
     <ClInclude Include="FileSystemHelper.hpp" />
     <ClInclude Include="ItemProcess.hpp" />
     <ClInclude Include="Language.hpp" />
+    <ClInclude Include="LitematicToMaterialList.h" />
     <ClInclude Include="nbt_cpp\Compiler_Define.h" />
     <ClInclude Include="nbt_cpp\MUTF8_Tool.hpp" />
     <ClInclude Include="nbt_cpp\NBT_All.hpp" />

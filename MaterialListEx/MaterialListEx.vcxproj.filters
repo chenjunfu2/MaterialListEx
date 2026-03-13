@@ -90,7 +90,7 @@
     <ClCompile Include="xxhash\xxh_x86dispatch.c">
       <Filter>源文件\xxhash</Filter>
     </ClCompile>
-    <ClCompile Include="Converter.cpp">
+    <ClCompile Include="LitematicToMaterialList.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -372,6 +372,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="FileSystemHelper.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LitematicToMaterialList.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
