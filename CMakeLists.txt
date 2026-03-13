@@ -80,7 +80,7 @@ function(copy_files_to_target TARGET_NAME SOURCE_FILES DEST_DIR)
                 "${FILE_PATH}"
                 "${DEST_PATH}"
             DEPENDS "${FILE_PATH}"
-            COMMENT "copy ${FILE_PATH} to ${DEST_DIR}"
+            COMMENT "copy \"${FILE_PATH}\" to \"${DEST_DIR}\""
         )
 
         target_sources(${TARGET_NAME} PRIVATE ${DEST_PATH})
