@@ -13,7 +13,7 @@ target_link_libraries(MaterialListEx
 )
 
 #拷贝配置文件
-set(MY_CONFIG_FILES
+set(CONFIG_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/config/zh_cn.json"
     "${CMAKE_CURRENT_SOURCE_DIR}/config/item_stack_count.json"
 )
