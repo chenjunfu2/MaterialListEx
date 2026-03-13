@@ -2,7 +2,7 @@
 - `zh_cn.json` 用于键值翻译  
 - `item_stack_count.json` 用于计算物品堆叠上限  
 
-# 来源说明  
+# 文件来源来源说明  
 
 ## `zh_cn.json`  
 在`.minecraft\assets\indexes\`文件夹内，  
@@ -125,4 +125,5 @@ public class ItemStackCount implements ModInitializer {
 }
 ```
   
-直接运行项目即可在run文件夹下获得`item_stack_count.json`  
+直接运行项目即可在run文件夹下获得`item_stack_count.json`，  
+在输出文件的基础上补充应用程序的额外信息，并且删除64默认堆叠的物品名称，即可完成配置文件

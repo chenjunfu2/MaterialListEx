@@ -3,7 +3,7 @@
 
 ## 使用方法
 从Release处下载最新构建的exe、语言json、方块堆叠列表json，将他们放在同一个文件夹，把需要转换的投影（可多个）拖动到exe上松手，即可转换完成   
-[配置文件说明](config/README.md)
+[配置文件相关说明](MaterialListEx/config/README.md)
 
 
 ## 注意事项
