@@ -113,8 +113,8 @@
       </AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)config\zh_cn.json" "$(TargetDir)zh_cn.json"
-xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)item_stack_count.json"</Command>
+      <Command>xcopy /Y "$(ProjectDir)config\zh_cn.json" "$(TargetDir)"
+xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -140,8 +140,8 @@ xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)item_stack_cou
       </AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)config\zh_cn.json" "$(TargetDir)zh_cn.json"
-xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)item_stack_count.json"</Command>
+      <Command>xcopy /Y "$(ProjectDir)config\zh_cn.json" "$(TargetDir)"
+xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -167,8 +167,8 @@ xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)item_stack_cou
       <PreserveSbr>true</PreserveSbr>
     </Bscmake>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)config\zh_cn.json" "$(TargetDir)zh_cn.json"
-xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)item_stack_count.json"</Command>
+      <Command>xcopy /Y "$(ProjectDir)config\zh_cn.json" "$(TargetDir)"
+xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -194,8 +194,8 @@ xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)item_stack_cou
       </AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)config\zh_cn.json" "$(TargetDir)zh_cn.json"
-xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)item_stack_count.json"</Command>
+      <Command>xcopy /Y "$(ProjectDir)config\zh_cn.json" "$(TargetDir)"
+xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
