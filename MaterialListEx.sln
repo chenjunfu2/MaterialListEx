@@ -14,6 +14,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resource", "resource", "{57
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{BACCF89E-31A7-43E4-ABDE-F3B30AB215D9}"
+	ProjectSection(SolutionItems) = preProject
+		config\item_stack_count.json = config\item_stack_count.json
+		config\README.md = config\README.md
+		config\zh_cn.json = config\zh_cn.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -33,6 +40,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BACCF89E-31A7-43E4-ABDE-F3B30AB215D9} = {57FDD076-A9ED-4D75-9E75-613379445F4B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CBFA7E86-8359-4DA9-B021-EB2AB5FDC1BF}

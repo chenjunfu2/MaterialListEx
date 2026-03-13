@@ -112,6 +112,10 @@
       <AdditionalOptions>
       </AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)config/zh_cn.json" "$(TargetDir)zh_cn.json"
+xcopy /Y "$(ProjectDir)config/item_stack_count.json" "$(TargetDir)item_stack_count.json"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -135,6 +139,10 @@
       <AdditionalOptions>
       </AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)config/zh_cn.json" "$(TargetDir)zh_cn.json"
+xcopy /Y "$(ProjectDir)config/item_stack_count.json" "$(TargetDir)item_stack_count.json"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -158,6 +166,10 @@
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
     </Bscmake>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)config/zh_cn.json" "$(TargetDir)zh_cn.json"
+xcopy /Y "$(ProjectDir)config/item_stack_count.json" "$(TargetDir)item_stack_count.json"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -181,6 +193,10 @@
       <AdditionalOptions>
       </AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)config/zh_cn.json" "$(TargetDir)zh_cn.json"
+xcopy /Y "$(ProjectDir)config/item_stack_count.json" "$(TargetDir)item_stack_count.json"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="LitematicToMaterialList.cpp" />

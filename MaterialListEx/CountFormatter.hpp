@@ -356,6 +356,13 @@ do\
 			level.u64Item = u64Count % icCurrent.szSetItemCount;
 		}
 
+		//如果一组只有一个（不可堆叠物品），那么设置个数为组数，然后清零组数
+		if (icCurrent.szSetItemCount == 1)
+		{
+			level.u64Item = level.u64SetItem;
+			level.u64SetItem = 0;
+		}
+
 		return level;
 	}
 };

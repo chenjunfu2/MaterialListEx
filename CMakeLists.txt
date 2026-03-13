@@ -68,6 +68,19 @@ if(DEFINED ENV{GITHUB_ACTIONS})
     add_definitions(-DGITHUB_ACTIONS)
 endif()
 
+#拷贝函数
+function(copy_files_to_target TARGET_NAME SOURCE_FILES DEST_DIR)
+    foreach(FILE_PATH ${SOURCE_FILES})
+        get_filename_component(FILE_NAME ${FILE_PATH} NAME)
+        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${FILE_PATH}"
+                "${DEST_DIR}/${FILE_NAME}"
+            COMMENT "copy ${FILE_NAME} to ${DEST_DIR}"
+        )
+    endforeach()
+endfunction()
+
 #添加库
 add_subdirectory(MaterialListEx/xxhash)
 add_subdirectory(MaterialListEx/zlib)
