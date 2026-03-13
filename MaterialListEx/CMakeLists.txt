@@ -3,7 +3,7 @@ project(MaterialListEx LANGUAGES CXX)
 
 add_executable(MaterialListEx
     main.cpp
-    Converter.cpp
+    LitematicToMaterialList.cpp
     RegionProcess.cpp
 )
 

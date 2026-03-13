@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 	int iSucceed = 0;
 	for (int i = 1; i < argc; ++i)//注意argc从1开始作为索引访问argv，因为argv[0]是程序自身路径
 	{
-		printf("\nCurrent [%d] ", i);
+		printf("\n[%d] ", i);
 #ifdef _WIN32
 		if (!LitematicToMaterialList(ConvertUtf16ToUtf8<wchar_t, char>(argv[i]), lang, cfItemStackCount))
 #else
