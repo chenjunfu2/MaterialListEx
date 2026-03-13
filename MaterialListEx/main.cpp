@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 		printf("Warning: setlocale failed. Text might not display correctly.\n\n");
 	}
 
-	if (argc <= 1)
+	if (argc < 2)
 	{
 		printf("At least one input file is required\n");
 		return -1;
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		printf("Language file read fail\n");
+		printf("Language file read fail, ignore\n");//获取失败忽略错误
 	}
 
 	//获取物品堆叠文件
@@ -67,24 +67,27 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		printf("ItemStackCount file read fail\n");
+		printf("ItemStackCount file read fail, ignore\n");//获取失败忽略错误
 	}
 
-	int iTotal = argc - 1;
+	//初始化完成
+	printf("Initialization completed!\n\n");
 
-	printf("total [%d] file(s)\n", iTotal);
+	//打印文件计数
+	int iTotal = argc - 1;
+	printf("Total [%d] file(s)\n", iTotal);
 
 	int iSucceed = 0;
 	for (int i = 1; i < argc; ++i)//注意argc从1开始作为索引访问argv，因为argv[0]是程序自身路径
 	{
-		printf("\n[%d] ", i);
+		printf("\nCurrent [%d] ", i);
 #ifdef _WIN32
 		if (!LitematicToMaterialList(ConvertUtf16ToUtf8<wchar_t, char>(argv[i]), lang, cfItemStackCount))
 #else
 		if (!LitematicToMaterialList(argv[i], lang, cfItemStackCount))
 #endif
 		{
-			printf("Convert Error, Skip\n");
+			printf("LitematicToMaterialList fail, skip\n");
 		}
 		else
 		{
