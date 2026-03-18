@@ -299,6 +299,7 @@ xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)"</Command>
     <ClInclude Include="nlohmann\thirdparty\hedley\hedley_undef.hpp" />
     <ClInclude Include="PrintLog.hpp" />
     <ClInclude Include="RegionProcess.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="TileEntityProcess.hpp" />
     <ClInclude Include="Windows_ANSI.hpp" />
     <ClInclude Include="xxhash\xxh3.h" />
@@ -319,6 +320,12 @@ xcopy /Y "$(ProjectDir)config\item_stack_count.json" "$(TargetDir)"</Command>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
     <Text Include="TODO.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
