@@ -659,7 +659,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 			//竹子特殊转换
 			{MU8STR("minecraft:bamboo_sapling"),MU8STR("minecraft:bamboo")},
 			//垂滴叶特殊转换
-			{MU8STR(" minecraft:big_dripleaf_stem"),MU8STR("minecraft:big_dripleaf")},
+			{MU8STR("minecraft:big_dripleaf_stem"),MU8STR("minecraft:big_dripleaf")},
 			//海带
 			{MU8STR("minecraft:kelp"),MU8STR("minecraft:kelp")},//添加海带到自身的映射的目的是为了处理含水情况
 			{MU8STR("minecraft:kelp_plant"),MU8STR("minecraft:kelp")},
