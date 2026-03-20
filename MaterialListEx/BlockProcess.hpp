@@ -145,7 +145,7 @@ public:
 		两格植物处理，小型垂滴叶、高草、海草、大型撅、多格花、瓶子草植株\
 
 		作物处理：马铃薯、胡萝卜、甜菜根、小麦、西瓜南瓜的种子，和他们的作物形式转换，西瓜、南瓜茎有结果的形态和普通形态
-			额外：火把花作物转换到火把花种子，瓶子草作物（下半部分）转换到瓶子草荚果\
+			额外：火把花作物转换到火把花种子，瓶子草作物（下半部分）转换到瓶子草荚果\甜浆果丛转换到甜浆果
 
 		普通方块与含水方块处理（含水则转换为水桶）\
 		*/
@@ -737,6 +737,7 @@ stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll
 			{MU8STR("minecraft:carrots"),				MU8STR("minecraft:carrot")},
 			{MU8STR("minecraft:potatoes"),				MU8STR("minecraft:potato")},
 			{MU8STR("minecraft:torchflower_crop"),		MU8STR("minecraft:torchflower_seeds")},
+			{MU8STR("minecraft:sweet_berry_bush"),		MU8STR("minecraft:sweet_berries")},
 			{MU8STR("minecraft:pitcher_crop"),			MU8STR("minecraft:pitcher_pod")},//需要特判处理
 		};
 
