@@ -277,7 +277,7 @@ process_nbt_data:
 	timer.Start();
 	if (!NBT_Reader::ReadNBT(sNbtData, 0, nRoot, 512, PrintLog<true>{ GenerateUniqueFilename(GetFilenameWithoutExtension(pathFile), "_err.log"), "ReadNBT Error!\n\n" }))
 	{
-		NBT_Helper::Print(nRoot, PrintLog<false>{ GenerateUniqueFilename(GetFilenameWithoutExtension(pathFile), "_other_info.log"), "Data before the error was encountered:\n\n" });
+		NBT_Helper::Print(nRoot, 0, "   ", PrintLog<false>{ GenerateUniqueFilename(GetFilenameWithoutExtension(pathFile), "_other_info.log"), "Data before the error was encountered:\n\n" });
 		printf("Read NBT Error, Please check the log in the target folder.\n");
 		return false;
 	}

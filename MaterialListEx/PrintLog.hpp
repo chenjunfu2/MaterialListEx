@@ -39,13 +39,13 @@ public:
 	PrintLog(const PrintLog &) = default;
 
 	template<typename... Args>
-	void operator()(const std::FMT_STR<Args...> fmt, Args&&... args) noexcept
+	void operator()(const std::format_string<Args...> fmt, Args&&... args) noexcept
 	{
 		return operator()(NBT_Print_Level::Info, std::move(fmt), std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
-	void operator()(NBT_Print_Level lvl, const std::FMT_STR<Args...> fmt, Args&&... args) noexcept
+	void operator()(NBT_Print_Level lvl, const std::format_string<Args...> fmt, Args&&... args) noexcept
 	{
 		try
 		{
