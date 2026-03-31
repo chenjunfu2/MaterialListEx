@@ -6,7 +6,6 @@
 #include <stdint.h>//类型定义
 #include <stddef.h>//size_t
 #include <stdlib.h>//byte swap
-#include <string.h>//memcpy
 #include <utility>//std::move
 #include <type_traits>//类型约束
 #include <algorithm>//std::sort

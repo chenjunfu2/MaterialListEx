@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>//size_t
+#include <string.h>//memcpy
 #include <fstream>
 #include <vector>
 #include <filesystem>
