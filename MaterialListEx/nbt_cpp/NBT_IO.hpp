@@ -32,6 +32,287 @@ class NBT_IO
 	~NBT_IO(void) = delete;
 
 public:
+	/// @brief 默认输入流类，用于从标准库容器中读取数据
+	/// @tparam T 数据容器类型，必须满足以下要求：
+	/// - value_type的大小必须为1字节
+	/// - value_type必须是可平凡复制的类型
+	/// @note 这个类用于标准库的顺序容器，非标准库容器顺序请使用其它的自定义流对象，而非使用此对象，
+	/// 因为此对象对标准库容器的部分实现存在假设，其它非标准库容器极有可能不兼容导致未定义行为。
+	/// 可以注意到部分接口在类中并未使用，这是未来扩展时可能用到的，如果自定义流对象，则可以省略部分未使用的接口。
+	template <typename T = std::vector<uint8_t>>
+	class DefaultInputStream
+	{
+	private:
+		const T &tData = {};
+		size_t szIndex = 0;
+
+	public:
+		/// @brief 容器类型
+		using StreamType = T;
+		/// @brief 容器值类型
+		using ValueType = typename T::value_type;
+
+		//静态断言确保字节流与可平凡拷贝
+		static_assert(sizeof(ValueType) == 1, "Error ValueType Size");
+		static_assert(std::is_trivially_copyable_v<ValueType>, "ValueType Must Be Trivially Copyable");
+
+		/// @brief 禁止使用临时对象构造
+		DefaultInputStream(const T &&_tData, size_t szStartIdx = 0) = delete;
+
+		/// @brief 构造函数
+		/// @param _tData 输入数据容器的常量引用
+		/// @param szStartIdx 起始读取索引位置
+		/// @note 指定szStartIdx为0则从头开始读取，否则从指定索引位置开始读取
+		DefaultInputStream(const T &_tData, size_t szStartIdx = 0) :tData(_tData), szIndex(szStartIdx)
+		{}
+
+		/// @brief 默认析构函数
+		~DefaultInputStream(void) = default;
+		/// @brief 禁止拷贝构造
+		DefaultInputStream(const DefaultInputStream &) = delete;
+		/// @brief 禁止移动构造
+		DefaultInputStream(DefaultInputStream &&) = delete;
+		/// @brief 禁止拷贝赋值
+		DefaultInputStream &operator=(const DefaultInputStream &) = delete;
+		/// @brief 禁止移动赋值
+		DefaultInputStream &operator=(DefaultInputStream &&) = delete;
+
+		/// @brief 下标访问运算符
+		/// @param szIndex 索引位置
+		/// @return 对应位置的常量引用
+		/// @note 这个接口一般用于随机访问流中的数据，不改变当前读取位置，调用者保证访问范围合法
+		const ValueType &operator[](size_t szIndex) const noexcept
+		{
+			return tData[szIndex];
+		}
+
+		/// @brief 获取下一个字节并推进读取位置
+		/// @return 下一个字节的常量引用
+		/// @note 这个接口一般用于逐个从流中读取数据
+		const ValueType &GetNext() noexcept
+		{
+			return tData[szIndex++];
+		}
+
+		/// @brief 从流中读取一段数据
+		/// @param pDest 指向要读取数据的目标缓冲区的指针
+		/// @param szSize 要读取的数据大小（字节数）
+		/// @note 这个接口一般用于批量从流中读取数据
+		void GetRange(void *pDest, size_t szSize) noexcept
+		{
+			memcpy(pDest, &tData[szIndex], szSize);
+			szIndex += szSize;
+		}
+
+		/// @brief 回退一个字节的读取
+		/// @note 如果当前已在流的起始位置，则不会进行任何操作
+		void UnGet() noexcept
+		{
+			if (szIndex != 0)
+			{
+				--szIndex;
+			}
+		}
+
+		/// @brief 获取当前读取位置的指针
+		/// @return 指向当前读取位置数据的指针
+		/// @note 这个接口一般用于直接访问当前及后续的数据而不拷贝
+		const ValueType *CurData() const noexcept
+		{
+			return &(tData[szIndex]);
+		}
+
+		/// @brief 向后推进读取
+		/// @param szSize 要推进的字节数
+		/// @return 推进后的新读取位置
+		/// @note 这个接口一般与CurData合并使用，通过CurData读取一段数据后，调用此接口移动当前读取位置
+		size_t AddIndex(size_t szSize) noexcept
+		{
+			return szIndex += szSize;
+		}
+
+		/// @brief 向前撤销读取
+		/// @param szSize 要撤销的字节数
+		/// @return 撤销后的新读取位置
+		/// @note 这个接口一般用于在某些情况下撤销一部分的读取
+		size_t SubIndex(size_t szSize) noexcept
+		{
+			return szIndex -= szSize;
+		}
+
+		/// @brief 检查是否已到达流末尾
+		/// @return 如果已到达或超过流末尾则返回true，否则返回false
+		bool IsEnd() const noexcept
+		{
+			return szIndex >= tData.size();
+		}
+
+		/// @brief 获取流的总大小
+		/// @return 流的总大小，以字节数计
+		size_t Size() const noexcept
+		{
+			return tData.size();
+		}
+
+		/// @brief 检查是否还有足够的数据可供读取
+		/// @param szSize 需要读取的数据大小
+		/// @return 如果剩余数据足够则返回true，否则返回false
+		bool HasAvailData(size_t szSize) const noexcept
+		{
+			return (tData.size() - szIndex) >= szSize;
+		}
+
+		/// @brief 重置流读取位置到起始处
+		void Reset() noexcept
+		{
+			szIndex = 0;
+		}
+
+		/// @brief 获取底层数据的起始指针
+		/// @return 指向底层数据起始位置的常量指针
+		const ValueType *BaseData() const noexcept
+		{
+			return tData.data();
+		}
+
+		/// @brief 获取当前读取位置（只读）
+		/// @return 当前读取位置索引
+		size_t Index() const noexcept
+		{
+			return szIndex;
+		}
+
+		/// @brief 获取当前读取位置（可写）
+		/// @return 当前读取位置索引的引用
+		/// @note 这个接口允许直接修改读取位置，调用者保证修改后的索引范围合法
+		size_t &Index() noexcept
+		{
+			return szIndex;
+		}
+	};
+
+	/// @brief 默认输出流类，用于将数据写入到标准库容器中
+	/// @tparam T 数据容器类型，必须满足以下要求：
+	/// - value_type的大小必须为1字节
+	/// - value_type必须是可平凡复制的类型
+	/// @note 这个类用于标准库的顺序容器，非标准库容器顺序请使用其它的自定义流对象，而非使用此对象，
+	/// 因为此对象对标准库容器的部分实现存在假设，其它非标准库容器极有可能不兼容导致未定义行为。
+	/// 可以注意到部分接口在类中并未使用，这是未来扩展时可能用到的，如果自定义流对象，则可以省略部分未使用的接口。
+	template <typename T = std::vector<uint8_t>>
+	class DefaultOutputStream
+	{
+	private:
+		T &tData;
+
+	public:
+		/// @brief 容器类型
+		using StreamType = T;
+		/// @brief 容器值类型
+		using ValueType = typename T::value_type;
+
+		//静态断言确保字节流与可平凡拷贝
+		static_assert(sizeof(ValueType) == 1, "Error ValueType Size");
+		static_assert(std::is_trivially_copyable_v<ValueType>, "ValueType Must Be Trivially Copyable");
+
+		/// @brief 构造函数
+		/// @param _tData 输出数据容器的引用
+		/// @param szStartIdx 起始索引，容器会调整大小到此索引位置
+		/// @note 索引位置后的数据都会被删除，然后从索引当前位置开始写入
+		DefaultOutputStream(T &_tData, size_t szStartIdx = 0) :tData(_tData)//引用天生无法使用临时值构造，无需担心临时值构造导致的悬空引用
+		{
+			tData.resize(szStartIdx);
+		}
+
+		/// @brief 默认析构函数
+		~DefaultOutputStream(void) = default;
+		/// @brief 禁止拷贝构造
+		DefaultOutputStream(const DefaultOutputStream &) = delete;
+		/// @brief 禁止移动构造
+		DefaultOutputStream(DefaultOutputStream &&) = delete;
+		/// @brief 禁止拷贝赋值
+		DefaultOutputStream &operator=(const DefaultOutputStream &) = delete;
+		/// @brief 禁止移动赋值
+		DefaultOutputStream &operator=(DefaultOutputStream &&) = delete;
+
+		/// @brief 下标访问运算符
+		/// @param szIndex 索引位置
+		/// @return 对应位置的常量引用
+		/// @note 这个接口一般用于随机访问流中的数据，而不修改流，调用者保证访问范围合法
+		const ValueType &operator[](size_t szIndex) const noexcept
+		{
+			return tData[szIndex];
+		}
+
+		/// @brief 向流中写入写入单个值
+		/// @tparam V 元素类型，必须可构造为ValueType
+		/// @param c 要写入的元素
+		/// @note 这个接口一般用于逐个向流中写入数据
+		template<typename V>
+		requires(std::is_constructible_v<ValueType, V &&>)
+		void PutOnce(V &&c)
+		{
+			tData.push_back(std::forward<V>(c));
+		}
+
+		/// @brief 向流中写入一段数据
+		/// @param pData 指向要写入数据的缓冲区的指针
+		/// @param szSize 要写入的数据大小（字节数）
+		/// @note 这个接口一般用于批量向流中写入数据
+		void PutRange(const ValueType *pData, size_t szSize)
+		{
+			//tData.insert(tData.end(), &pData[0], &pData[szSize]);
+
+			//使用更高效的实现，而不是迭代器写入
+			size_t szCurSize = tData.size();
+			tData.resize(szCurSize + szSize);
+			memcpy(&tData.data()[szCurSize], &pData[0], szSize);
+		}
+
+		/// @brief 预分配额外容量
+		/// @param szAddSize 要额外分配的容量大小（字节数）
+		/// @note 这个接口一般是用于性能优化的，提前要求流预留空间以便后续的写入。
+		/// 请不要假设在所有写入操作之前都会进行此调用，这个接口只有部分情况会用到。
+		void AddReserve(size_t szAddSize)
+		{
+			tData.reserve(tData.size() + szAddSize);
+		}
+
+		/// @brief 删除（撤销）最后一个写入的字节
+		void UnPut(void) noexcept
+		{
+			tData.pop_back();
+		}
+
+		/// @brief 获取当前字节流中已有的数据大小
+		/// @return 数据大小，以字节数计
+		size_t Size(void) const noexcept
+		{
+			return tData.size();
+		}
+
+		/// @brief 重置流，清空所有数据
+		void Reset(void) noexcept
+		{
+			tData.clear();
+		}
+
+		/// @brief 获取底层数据的常量引用
+		/// @return 底层数据容器的常量引用
+		const T &Data(void) const noexcept
+		{
+			return tData;
+		}
+
+		/// @brief 获取底层数据的非常量引用
+		/// @return 底层数据容器的非常量引用
+		T &Data(void) noexcept
+		{
+			return tData;
+		}
+	};
+
+
+public:
 	/// @brief 从任意顺序容器写出字节流数据到指定文件名的文件中
 	/// @tparam T 任意顺序容器类型
 	/// @param strFileName 目标文件名
@@ -432,7 +713,7 @@ public:
 		}
 	}
 
-	/// @brief 压缩数据，但是不抛出异常，而是通过funcErrInfo打印异常信息并返回成功与否
+	/// @brief 解压数据，但是不抛出异常，而是通过funcErrInfo打印异常信息并返回成功与否
 	/// @tparam I 输入的顺序容器类型
 	/// @tparam O 输出的顺序容器类型
 	/// @tparam ErrInfoFunc 打印异常信息的仿函数类型
@@ -470,7 +751,7 @@ public:
 		}
 	}
 
-	/// @brief 解压数据，但是不抛出异常，而是通过funcErrInfo打印异常信息并返回成功与否
+	/// @brief 压缩数据，但是不抛出异常，而是通过funcErrInfo打印异常信息并返回成功与否
 	/// @tparam I 输入的顺序容器类型
 	/// @tparam O 输出的顺序容器类型
 	/// @tparam ErrInfoFunc 打印异常信息的仿函数类型

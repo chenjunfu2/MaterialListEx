@@ -26,9 +26,7 @@ class NBT_Print
 /// @details 在版本过低的时候切换为msvc内部实现。
 /// 其它编译器与版本使用标准库实现。
 #if defined(_MSC_VER) && _MSC_VER < 1935 //旧版本MSVC 1935-不支持
-#define FMT_STR _Fmt_string //使用MSVC库内部类型
-#else
-#define FMT_STR format_string //MSVC 19.35+、GCC、Clang 等使用标准库版本
+#define format_string _Fmt_string //使用MSVC库内部类型
 #endif
 
 private:
@@ -62,7 +60,7 @@ public:
 	/// 本实现中如果std::format出现任何二次异常，则放弃打印自定义信息，从c标准io的printf输出新抛出的异常信息，
 	/// 如果再次失败，则不做处理，因为异常可能已经致命，导致无法执行任何代码。
 	template<typename... Args>
-	void operator()(NBT_Print_Level lvl, const std::FMT_STR<Args...> fmt, Args&&... args) noexcept
+	void operator()(NBT_Print_Level lvl, const std::format_string<Args...> fmt, Args&&... args) noexcept
 	{
 		FILE *pfOutput = NULL;
 		switch (lvl)
@@ -109,7 +107,7 @@ public:
 	/// 本实现中如果std::format出现任何二次异常，则放弃打印自定义信息，从c标准io的printf输出新抛出的异常信息，
 	/// 如果再次失败，则不做处理，因为异常可能已经致命，导致无法执行任何代码。
 	template<typename... Args>
-	void operator()(const std::FMT_STR<Args...> fmt, Args&&... args) noexcept
+	void operator()(const std::format_string<Args...> fmt, Args&&... args) noexcept
 	{
 		return operator()(NBT_Print_Level::Info, std::move(fmt), std::forward<Args>(args)...);
 	}

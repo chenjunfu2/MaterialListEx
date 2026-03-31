@@ -235,12 +235,9 @@ public:
 	};
 
 	template <NBT_TAG Tag>
-	struct TagToType;
-
-	template <NBT_TAG Tag>
+	requires((NBT_TAG_RAW_TYPE)Tag < TypeListSize_V)
 	struct TagToType
 	{
-		static_assert((NBT_TAG_RAW_TYPE)Tag < TypeListSize_V, "Invalid NBT_TAG");
 		using type = typename TypeAt<(NBT_TAG_RAW_TYPE)Tag, TypeList>::type;
 	};
 	/// @endcond
@@ -328,10 +325,10 @@ public:
 
 	/// @cond
 	template<typename T>
+	requires(IsValidType_V<T> &&IsNumericType_V<T>)
 	struct BuiltinRawType
 	{
 		using Type = T;
-		static_assert(IsValidType_V<T> && IsNumericType_V<T>, "Not a legal type!");//抛出编译错误
 	};
 	/// @endcond
 
