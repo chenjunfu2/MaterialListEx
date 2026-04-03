@@ -7,6 +7,8 @@ add_executable(MaterialListEx
     RegionProcess.cpp
 )
 
+set_release_static_link(MaterialListEx)
+
 target_link_libraries(MaterialListEx
     PUBLIC
         ${COMMON_LIBS}

@@ -182,9 +182,9 @@ public:
 			//数量相等，比较数据的排序
 			const auto _lSort = this->KeySortIt();
 			const auto _rSort = _Right.KeySortIt();
-			size_t _Size = Compound::size();
+			typename Compound::size_type _Size = Compound::size();
 
-			for (size_t _i = 0; _i < _Size; ++_i)
+			for (typename Compound::size_type _i = 0; _i < _Size; ++_i)
 			{
 				const auto &_lIt = _lSort[_i];
 				const auto &_rIt = _rSort[_i];
@@ -402,7 +402,7 @@ public:
 
 	/// @brief 获取容器中元素的数量
 	/// @return 容器中键值对的数量
-	size_t Size(void) const noexcept
+	typename Compound::size_type Size(void) const noexcept
 	{
 		return Compound::size();
 	}

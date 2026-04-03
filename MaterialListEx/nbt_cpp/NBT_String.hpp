@@ -27,7 +27,7 @@ class NBT_StringView : public StringView
 	friend class NBT_Helper;
 
 private:
-	static constexpr size_t CalcStringViewSize(const typename StringView::value_type *ltrStr, size_t N)
+	static constexpr typename StringView::size_type CalcStringViewSize(const typename StringView::value_type *ltrStr, typename StringView::size_type N)
 	{
 		//c string - 0x00
 		if (N >= 1 && ltrStr[N - 1] == 0x00)
@@ -75,7 +75,7 @@ public:
 	/// 这里视图的裁切仅缩小视图内存储的字符串实际大小，而非修改原始对象进行修改，
 	/// 因为View仅构造为视图，不持有对象，如果引用的对象提前结束生命周期，会导致未定义行为，
 	/// 请保证被View引用的对象生存周期大于View，或在生存周期结束后不再使用由其初始化的View。
-	template<size_t N>//c风格字符串or数组
+	template<typename StringView::size_type N>//c风格字符串or数组
 	constexpr NBT_StringView(const typename StringView::value_type(&ltrStr)[N]) :StringView(ltrStr, CalcStringViewSize(ltrStr, N))
 	{}
 
@@ -116,10 +116,10 @@ class NBT_String :public String//暂时不考虑保护继承
 	friend class NBT_Writer;
 	friend class NBT_Helper;
 
-	static_assert(sizeof(typename std::string::value_type) == sizeof(typename String::value_type), "Size error");
+	static_assert(sizeof(char) == sizeof(typename String::value_type), "Size error");
 	
 private:
-	static constexpr size_t CalcStringSize(const typename String::value_type *ltrStr, size_t N)
+	static constexpr typename String::size_type CalcStringSize(const typename String::value_type *ltrStr, typename String::size_type N)
 	{
 		//c string - 0x00
 		if (N >= 1 && ltrStr[N - 1] == 0x00)
@@ -163,31 +163,93 @@ public:
 	NBT_String(String &&_Move) :String(std::move(_Move))
 	{}
 
+	/// @brief 用于重载匹配的标签类型，指示直接使用原始值而非自动转换
+	struct USE_RAW_DATA
+	{};
+
+
+
+	/// @brief 从char类型的UTF-8编码字符串直接构造NBT_String对象
+	/// @param u8CharTypeString char类型的UTF-8字符串
+	/// @note 直接使用原始字符串替换当前对象内容，不进行编码转换。
+	/// @warning 用户必须确保仅使用非代理对UTF8进行原始值初始化，否则字符串内容将不正确。
+	NBT_String(const std::basic_string<char> &u8CharTypeString, USE_RAW_DATA) :NBT_String(std::basic_string_view<char>(u8CharTypeString), USE_RAW_DATA{})
+	{}
+
+	/// @brief 从UTF-8编码字符串直接构造NBT_String对象
+	/// @param u8String char8_t类型的UTF-8字符串
+	/// @note 直接使用原始字符串替换当前对象内容，不进行编码转换。
+	/// @warning 用户必须确保仅使用非代理对UTF8进行原始值初始化，否则字符串内容将不正确。
+	NBT_String(const std::basic_string<char8_t> &u8String, USE_RAW_DATA) :NBT_String(std::basic_string_view<char8_t>(u8String), USE_RAW_DATA{})
+	{}
+
 	/// @brief 从char类型的UTF-8编码字符串构造NBT_String对象
-	/// @param u8CharTypeString char类型的UTF-8字符串视图
-	NBT_String(const std::basic_string_view<char> &u8CharTypeString) :String(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u8CharTypeString))
+	/// @param u8CharTypeString char类型的UTF-8字符串
+	NBT_String(const std::basic_string<char> &u8CharTypeString) : NBT_String(std::basic_string_view<char>(u8CharTypeString))
 	{}
 
 	/// @brief 从UTF-8编码字符串构造NBT_String对象
-	/// @param u8String char8_t类型的UTF-8字符串视图
-	NBT_String(const std::basic_string_view<char8_t> &u8String) :String(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U8ToMU8(u8String))
+	/// @param u8String char8_t类型的UTF-8字符串
+	NBT_String(const std::basic_string<char8_t> &u8String) : NBT_String(std::basic_string_view<char8_t>(u8String))
 	{}
 
 	/// @brief 从wchar_t类型的UTF-16编码字符串构造NBT_String对象
-	/// @param u16WCharTypeString wchar_t类型的UTF-16字符串视图
-	NBT_String(const std::basic_string_view<wchar_t> &u16WCharTypeString) :String(MUTF8_Tool<typename String::value_type, wchar_t, char8_t>::U8ToMU8(u16WCharTypeString))
+	/// @param u16WCharTypeString wchar_t类型的UTF-16字符串
+	template<typename = void>
+	requires(sizeof(wchar_t) == sizeof(char16_t))
+	NBT_String(const std::basic_string<wchar_t> &u16WCharTypeString) :NBT_String(std::basic_string_view<wchar_t>(u16WCharTypeString))
 	{}
 
 	/// @brief 从UTF-16编码字符串构造NBT_String对象
-	/// @param u16String char16_t类型的UTF-16字符串视图
-	NBT_String(const std::basic_string_view<char16_t> &u16String) :String(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u16String))
+	/// @param u16String char16_t类型的UTF-16字符串
+	NBT_String(const std::basic_string<char16_t> &u16String) :NBT_String(std::basic_string_view<char16_t>(u16String))
 	{}
+
+
+
+	/// @brief 从char类型的UTF-8编码字符串视图直接构造NBT_String对象
+	/// @param u8CharTypeString char类型的UTF-8字符串视图
+	/// @note 直接使用原始字符串替换当前对象内容，不进行编码转换。
+	/// @warning 用户必须确保仅使用非代理对UTF8进行原始值初始化，否则字符串内容将不正确。
+	NBT_String(std::basic_string_view<char> u8CharTypeString, USE_RAW_DATA) :String((typename String::value_type *)u8CharTypeString.data(), u8CharTypeString.size())
+	{}
+
+	/// @brief 从UTF-8编码字符串视图直接构造NBT_String对象
+	/// @param u8String char8_t类型的UTF-8字符串视图
+	/// @note 直接使用原始字符串替换当前对象内容，不进行编码转换。
+	/// @warning 用户必须确保仅使用非代理对UTF8进行原始值初始化，否则字符串内容将不正确。
+	NBT_String(std::basic_string_view<char8_t> u8String, USE_RAW_DATA) :String((typename String::value_type *)u8String.data(), u8String.size())
+	{}
+
+	/// @brief 从char类型的UTF-8编码字符串视图构造NBT_String对象
+	/// @param u8CharTypeString char类型的UTF-8字符串视图
+	NBT_String(std::basic_string_view<char> u8CharTypeString) :String(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u8CharTypeString))
+	{}
+
+	/// @brief 从UTF-8编码字符串视图构造NBT_String对象
+	/// @param u8String char8_t类型的UTF-8字符串视图
+	NBT_String(std::basic_string_view<char8_t> u8String) :String(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U8ToMU8(u8String))
+	{}
+
+	/// @brief 从wchar_t类型的UTF-16编码字符串视图构造NBT_String对象
+	/// @param u16WCharTypeString wchar_t类型的UTF-16字符串视图
+	template<typename = void>
+	requires(sizeof(wchar_t) == sizeof(char16_t))
+	NBT_String(std::basic_string_view<wchar_t> u16WCharTypeString) :String(MUTF8_Tool<typename String::value_type, wchar_t, char8_t>::U16ToMU8(u16WCharTypeString))
+	{}
+
+	/// @brief 从UTF-16编码字符串视图构造NBT_String对象
+	/// @param u16String char16_t类型的UTF-16字符串视图
+	NBT_String(std::basic_string_view<char16_t> u16String) :String(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U16ToMU8(u16String))
+	{}
+
+
 
 	/// @brief 通过c风格字符串或字符数组初始化
 	/// @param ltrStr 数组的引用
 	/// @note 如果字符串或字符数组以c风格字符串的\0或mutf8的0x80 0xc0结尾，则裁切多余结尾，因为string数据中不应包含字符串结束符，
 	/// 这里的裁切仅缩小拷贝字符串长度，而非修改原始对象进行修改。
-	template<size_t N>
+	template<typename String::size_type N>
 	NBT_String(const typename String::value_type(&ltrStr)[N]) :String(ltrStr, CalcStringSize(ltrStr, N))
 	{}
 
@@ -201,6 +263,8 @@ public:
 	NBT_String(const StringView &_View) :String(_View)
 	{}
 
+
+
 	/// @brief 直接从当前对象获取char类型的视图
 	/// @return char类型的视图View
 	/// @note 仅用于方便部分只支持char类型字符串的库使用，如果需要转换到其它字符编码，请调用本类的转换API。
@@ -209,6 +273,8 @@ public:
 	{
 		return std::basic_string_view<char>((const char *)String::data(), String::size());
 	}
+
+
 
 	/// @brief 转换到UTF-8字符编码，但是返回为char类型而非char8_t类型
 	/// @return 自动推导，应为char类型的std::basic_string
@@ -231,6 +297,8 @@ public:
 	/// @return 自动推导，应为wchar_t类型的std::basic_string
 	/// @note 返回为wchar_t类型仅用于方便部分只支持wchar_t类型的库使用，实际编码仍为UTF-16。
 	/// 转换后的字符串与当前字符串对象与当前字符串对象独立，互不影响。
+	template<typename = void>
+	requires(sizeof(wchar_t) == sizeof(char16_t))
 	auto ToWchartTypeUTF16(void) const
 	{
 		return MUTF8_Tool<typename String::value_type, wchar_t, char8_t>::MU8ToU16(*this);//char16_t改为wchar_t
@@ -244,26 +312,102 @@ public:
 		return MUTF8_Tool<typename String::value_type, char16_t, char8_t>::MU8ToU16(*this);
 	}
 
+
+
+	/// @brief 从char类型的UTF-8编码字符串替换当前对象内容
+	/// @param u8CharTypeString char类型的basic_string，实际编码应为UTF-8
+	/// @note 从字符串转换为Modified-UTF-8后替换当前对象。
+	void FromCharTypeUTF8(const std::basic_string<char> &u8CharTypeString)
+	{
+		FromCharTypeUTF8(std::basic_string_view<char>(u8CharTypeString));
+	}
+
+	/// @brief 从 char 类型的UTF-8编码字符串直接替换当前对象内容
+	/// @param u8CharTypeString char类型的basic_string，实际编码应为UTF-8
+	/// @note 直接使用原始字符串替换当前对象内容，不进行编码转换。
+	/// @warning 用户必须确保仅使用非代理对UTF8进行原始值初始化，否则字符串内容将不正确。
+	void FromCharTypeUTF8(const std::basic_string<char> &u8CharTypeString, USE_RAW_DATA)
+	{
+		FromCharTypeUTF8(std::basic_string_view<char>(u8CharTypeString), USE_RAW_DATA{});
+	}
+
+	/// @brief 从UTF-8编码字符串替换当前对象内容
+	/// @param u8String char8_t类型的basic_string
+	/// @note 从字符串转换为Modified-UTF-8后替换当前对象。
+	void FromUTF8(const std::basic_string<char8_t> &u8String)
+	{
+		FromUTF8(std::basic_string_view<char8_t>(u8String));
+	}
+
+	/// @brief 从UTF-8编码字符串直接替换当前对象内容
+	/// @param u8String char8_t类型的basic_string
+	/// @note 直接使用原始字符串替换当前对象内容，不进行编码转换。
+	/// @warning 用户必须确保仅使用非代理对UTF8进行原始值初始化，否则字符串内容将不正确。
+	void FromUTF8(const std::basic_string<char8_t> &u8String, USE_RAW_DATA)
+	{
+		FromUTF8(std::basic_string_view<char8_t>(u8String), USE_RAW_DATA{});
+	}
+
+	/// @brief 从wchar_t类型的UTF-16编码字符串替换当前对象内容
+	/// @param u16WCharTypeString wchar_t类型的basic_string，实际编码应为UTF-16
+	/// @note 从字符串转换为Modified-UTF-8后替换当前对象。
+	template<typename = void>
+	requires(sizeof(wchar_t) == sizeof(char16_t))
+	void FromWchartTypeUTF16(const std::basic_string<wchar_t> &u16WCharTypeString)
+	{
+		FromWchartTypeUTF16(std::basic_string_view<wchar_t>(u16WCharTypeString));
+	}
+
+	/// @brief 从UTF-16编码字符串替换当前对象内容
+	/// @param u16String char16_t类型的basic_string
+	/// @note 从字符串转换为Modified-UTF-8后替换当前对象。
+	void FromUTF16(const std::basic_string<char16_t> &u16String)
+	{
+		FromUTF16(std::basic_string_view<char16_t>(u16String));
+	}
+
+
+
 	/// @brief 从char类型的UTF-8编码字符串替换当前对象内容
 	/// @param u8CharTypeString char类型的视图view，实际编码应为UTF-8
 	/// @note 从视图中的字符串转换为Modified-UTF-8后替换当前对象。
-	void FromCharTypeUTF8(const std::basic_string_view<char> &u8CharTypeString)
+	void FromCharTypeUTF8(std::basic_string_view<char> u8CharTypeString)
 	{
 		String::operator=(MUTF8_Tool<typename String::value_type, char16_t, char>::U8ToMU8(u8CharTypeString));//char8_t改为char
+	}
+
+	/// @brief 从char类型的UTF-8编码字符串直接替换当前对象内容
+	/// @param u8CharTypeString char类型的视图view，实际编码应为UTF-8
+	/// @note 直接使用原始字符串替换当前对象内容，不进行编码转换。
+	/// @warning 用户必须确保仅使用非代理对UTF8进行原始值初始化，否则字符串内容将不正确。
+	void FromCharTypeUTF8(std::basic_string_view<char> u8CharTypeString, USE_RAW_DATA)
+	{
+		String::operator=((typename String::value_type *)u8CharTypeString.data(), u8CharTypeString.size());
 	}
 
 	/// @brief 从UTF-8编码字符串替换当前对象内容
 	/// @param u8String char8_t类型的视图view
 	/// @note 从视图中的字符串转换为Modified-UTF-8后替换当前对象。
-	void FromUTF8(const std::basic_string_view<char8_t> &u8String)
+	void FromUTF8(std::basic_string_view<char8_t> u8String)
 	{
 		String::operator=(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U8ToMU8(u8String));
+	}
+
+	/// @brief 从UTF-8编码字符串直接替换当前对象内容
+	/// @param u8String char8_t类型的视图view
+	/// @note 直接使用原始字符串替换当前对象内容，不进行编码转换。
+	/// @warning 用户必须确保仅使用非代理对UTF8进行原始值初始化，否则字符串内容将不正确。
+	void FromUTF8(std::basic_string_view<char8_t> u8String, USE_RAW_DATA)
+	{
+		String::operator=((typename String::value_type *)u8String.data(), u8String.size());
 	}
 
 	/// @brief 从wchar_t类型的UTF-16编码字符串替换当前对象内容
 	/// @param u16WCharTypeString wchar_t类型的视图view，实际编码应为UTF-16
 	/// @note 从视图中的字符串转换为Modified-UTF-8后替换当前对象。
-	void FromWchartTypeUTF16(const std::basic_string_view<wchar_t> &u16WCharTypeString)
+	template<typename = void>
+	requires(sizeof(wchar_t) == sizeof(char16_t))
+	void FromWchartTypeUTF16(std::basic_string_view<wchar_t> u16WCharTypeString)
 	{
 		String::operator=(MUTF8_Tool<typename String::value_type, wchar_t, char8_t>::U16ToMU8(u16WCharTypeString));//char16_t改为wchar_t
 	}
@@ -271,7 +415,7 @@ public:
 	/// @brief 从UTF-16编码字符串替换当前对象内容
 	/// @param u16String char16_t类型的视图view
 	/// @note 从视图中的字符串转换为Modified-UTF-8后替换当前对象。
-	void FromUTF16(const std::basic_string_view<char16_t> &u16String)
+	void FromUTF16(std::basic_string_view<char16_t> u16String)
 	{
 		String::operator=(MUTF8_Tool<typename String::value_type, char16_t, char8_t>::U16ToMU8(u16String));
 	}

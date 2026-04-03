@@ -2,25 +2,25 @@
 
 #include "NBT_Node.hpp"
 
+#include <stdint.h>
+
 //提示性实现类（鸭子类型），仅用于模板通过性验证与用户接口提示
 class NBT_Visitor
 {
 public:
-	enum class ResultControl
+	enum class ResultControl : uint8_t
 	{
 		Continue,	///< 继续处理（继续迭代）
 		Break,		///< 跳过剩余值（离开当前结构层级回到父层级）
 		Stop,		///< 停止处理（终止解析）
-		Error,		///< 出现错误（终止解析并进行错误处理）
 	};
 
-	enum class NestingControl
+	enum class NestingControl : uint8_t
 	{
 		Enter,	///< 进入当前值（递归进入嵌套结构或展开值）
 		Skip,	///< 跳过当前值（跳过递归进入嵌套结构或展开值）
 		Break,	///< 跳过剩余值（离开当前结构层级回到父层级）
 		Stop,	///< 停止处理（终止解析）
-		Error,	///< 出现错误（终止解析并进行错误处理）
 	};
 
 public:

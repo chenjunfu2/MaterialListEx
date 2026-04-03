@@ -198,7 +198,6 @@ public:
 
 	/// @name 修改接口
 	/// @brief 提供一组接口用于对list进行元素编辑
-	/// @todo 提供范围插入等功能
 	/// @{
 	
 	/// @brief 在指定位置的前面插入元素
@@ -208,7 +207,7 @@ public:
 	/// @return 刚才添加的元素的引用
 	/// @note 用户需要保证szPos范围合法，否则行为未定义
 	template <typename V>
-	typename List::value_type &Add(size_t szPos, V &&vTagVal)
+	typename List::value_type &Add(typename List::size_type szPos, V &&vTagVal)
 	{
 		return *List::emplace(List::begin() + szPos, std::forward<V>(vTagVal));//插入
 	}
@@ -240,14 +239,14 @@ public:
 	/// @return 刚才设置的元素的引用
 	/// @note 用户需要保证szPos范围合法，否则行为未定义
 	template <typename V>
-	typename List::value_type &Set(size_t szPos, V &&vTagVal)
+	typename List::value_type &Set(typename List::size_type szPos, V &&vTagVal)
 	{
 		return List::operator[](szPos) = std::forward<V>(vTagVal);
 	}
 
 	/// @brief 删除指定位置的元素
 	/// @param szPos 要删除的位置
-	void Remove(size_t szPos)
+	void Remove(typename List::size_type szPos)
 	{
 		List::erase(List::begin() + szPos);//这个没必要返回结果，直接丢弃
 	}
@@ -261,17 +260,17 @@ public:
 
 	/// @brief 调整容器大小，如果大小大于当前大小，那么使用默认值填充新增空间，否则删除多余元素
 	/// @param szNewSize 新的容器大小
-	void Resize(size_t szNewSize)
+	void Resize(typename List::size_type szNewSize)
 	{
 		return List::resize(szNewSize);
 	}
 
 	/// @brief 调整容器大小，如果大小大于当前大小，那么使用val填充新增空间，否则删除多余元素
 	/// @param szNewSize 新的容器大小
-	/// @param val （可能）需要重复的元素
-	void Resize(size_t szNewSize, const typename List::value_type &val)
+	/// @param value （可能）需要重复的元素
+	void Resize(typename List::size_type szNewSize, const typename List::value_type &value)
 	{
-		return List::resize(szNewSize, val);
+		return List::resize(szNewSize, value);
 	}
 
 	/// @brief 拷贝合并另一个NBT_List的内容
@@ -288,6 +287,54 @@ public:
 		List::insert(List::end(), std::make_move_iterator(_Move.begin()), std::make_move_iterator(_Move.end()));
 	}
 
+	/// @brief 在指定位置插入一个元素（拷贝构造）
+	/// @param itPos 插入位置的迭代器
+	/// @param value 需要插入的元素
+	/// @return 指向新插入元素的迭代器
+	typename List::iterator Insert(typename List::const_iterator itPos, const typename List::value_type &value)
+	{
+		return List::insert(itPos, value);
+	}
+
+	/// @brief 在指定位置插入一个元素（移动构造）
+	/// @param itPos 插入位置的迭代器
+	/// @param value 需要插入的元素
+	/// @return 指向新插入元素的迭代器
+	typename List::iterator Insert(typename List::const_iterator itPos, typename List::value_type &&value)
+	{
+		return List::insert(itPos, std::move(value));
+	}
+
+	/// @brief 在指定位置插入count个相同的元素
+	/// @param itPos 插入位置的迭代器
+	/// @param szCount 插入的元素个数
+	/// @param value 需要重复插入的元素
+	/// @return 指向第一个新插入元素的迭代器
+	typename List::iterator Insert(typename List::const_iterator itPos, typename List::size_type szCount, const typename List::value_type &value)
+	{
+		return List::insert(itPos, szCount, value);
+	}
+
+	/// @brief 在指定位置插入一个范围内的元素
+	/// @param itPos 插入位置的迭代器
+	/// @param itFirst 范围的起始迭代器
+	/// @param itLast 范围的结束迭代器
+	/// @return 指向第一个新插入元素的迭代器
+	template<typename InputIt>
+	typename List::iterator Insert(typename List::const_iterator itPos, InputIt itFirst, InputIt itLast)
+	{
+		return List::insert(itPos, itFirst, itLast);
+	}
+
+	/// @brief 在指定位置插入初始化列表中的元素
+	/// @param itPos 插入位置的迭代器
+	/// @param ilistValue 初始化列表
+	/// @return 指向第一个新插入元素的迭代器
+	typename List::iterator Insert(typename List::const_iterator itPos, std::initializer_list<typename List::value_type> ilistValue)
+	{
+		return List::insert(itPos, ilistValue);
+	}
+
 	///@}
 
 	/// @brief 检查容器是否为空
@@ -299,14 +346,14 @@ public:
 
 	/// @brief 获取容器中元素的数量
 	/// @return 容器中元素的数量
-	size_t Size(void) const noexcept
+	typename List::size_type Size(void) const noexcept
 	{
 		return List::size();
 	}
 
 	/// @brief 预留存储空间
 	/// @param szNewCap 新的容量大小
-	void Reserve(size_t szNewCap)
+	void Reserve(typename List::size_type szNewCap)
 	{
 		return List::reserve(szNewCap);
 	}
@@ -471,7 +518,7 @@ typename NBT_Type::type &Back##type(void)\
  @param vTagVal 要插入的 type 类型值
  @return 刚才插入的元素的引用
  */\
-typename List::value_type &Add##type(size_t szPos, const typename NBT_Type::type &vTagVal)\
+typename List::value_type &Add##type(typename List::size_type szPos, const typename NBT_Type::type &vTagVal)\
 {\
 	return Add(szPos, vTagVal);\
 }\
@@ -483,7 +530,7 @@ typename List::value_type &Add##type(size_t szPos, const typename NBT_Type::type
  @return 刚才插入的元素的引用
  @note 通用类型函数Add的代理，具体行为参考Add函数的说明
  */\
-typename List::value_type & Add##type(size_t szPos, typename NBT_Type::type &&vTagVal)\
+typename List::value_type & Add##type(typename List::size_type szPos, typename NBT_Type::type &&vTagVal)\
 {\
 	return Add(szPos, std::move(vTagVal));\
 }\
@@ -539,7 +586,7 @@ typename List::value_type &AddBack##type(typename NBT_Type::type &&vTagVal)\
  @return 刚才修改的元素的引用
  @note 通用类型函数Set的代理，具体行为参考Set函数的说明
  */\
-typename List::value_type &Set##type(size_t szPos, const typename NBT_Type::type &vTagVal)\
+typename List::value_type &Set##type(typename List::size_type szPos, const typename NBT_Type::type &vTagVal)\
 {\
 	return Set(szPos, vTagVal);\
 }\
@@ -551,7 +598,7 @@ typename List::value_type &Set##type(size_t szPos, const typename NBT_Type::type
  @return 刚才修改的元素的引用
  @note 通用类型函数Set的代理，具体行为参考Set函数的说明
  */\
-typename List::value_type &Set##type(size_t szPos, typename NBT_Type::type &&vTagVal)\
+typename List::value_type &Set##type(typename List::size_type szPos, typename NBT_Type::type &&vTagVal)\
 {\
 	return Set(szPos, std::move(vTagVal));\
 }

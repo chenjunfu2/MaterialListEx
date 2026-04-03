@@ -325,7 +325,7 @@ public:
 
 	/// @cond
 	template<typename T>
-	requires(IsValidType_V<T> &&IsNumericType_V<T>)
+	requires(IsValidType_V<T> && IsNumericType_V<T>)
 	struct BuiltinRawType
 	{
 		using Type = T;

@@ -68,6 +68,25 @@ if(DEFINED ENV{GITHUB_ACTIONS})
     add_definitions(-DGITHUB_ACTIONS)
 endif()
 
+#静态链接宏定义
+macro(set_release_static_link target)
+    if(MSVC)
+        set_property(TARGET ${target} PROPERTY
+            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DLLDebug>"
+        )
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_link_options(${target} PRIVATE
+            $<$<CONFIG:Release>:-static-libstdc++>
+            $<$<CONFIG:Release>:-static-libgcc>
+        )
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_link_options(${target} PRIVATE
+            $<$<CONFIG:Release>:-static-libstdc++>
+            $<$<CONFIG:Release>:-static-libgcc>
+        )
+    endif()
+endmacro()
+
 #拷贝函数
 function(copy_files_to_target TARGET_NAME SOURCE_FILES DEST_DIR)
     foreach(FILE_PATH ${SOURCE_FILES})

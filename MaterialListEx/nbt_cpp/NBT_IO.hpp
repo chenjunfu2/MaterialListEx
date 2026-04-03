@@ -316,17 +316,17 @@ public:
 public:
 	/// @brief 从任意顺序容器写出字节流数据到指定文件名的文件中
 	/// @tparam T 任意顺序容器类型
-	/// @param strFileName 目标文件名
+	/// @param pathFileName 目标文件名
 	/// @param tData 顺序容器的引用
 	/// @return 写出是否成功
 	/// @note 如果文件已存在则直接清空并覆盖，未存在则创建文件。
 	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
 	template<typename T = std::vector<uint8_t>>
 	requires (sizeof(typename T::value_type) == 1 && std::is_trivially_copyable_v<typename T::value_type>)
-	static bool WriteFile(const std::string &strFileName, const T &tData)
+	static bool WriteFile(const std::filesystem::path &pathFileName, const T &tData)
 	{
 		std::fstream fWrite;
-		fWrite.open(strFileName, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+		fWrite.open(pathFileName, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 		if (!fWrite)
 		{
 			return false;
@@ -347,17 +347,17 @@ public:
 
 	/// @brief 从指定文件名的文件中读取字节流数据到任意顺序容器中
 	/// @tparam T 任意顺序容器类型
-	/// @param strFileName 目标文件名
+	/// @param pathFileName 目标文件名
 	/// @param[out] tData 顺序容器的引用
 	/// @return 读取是否成功
 	/// @note 如果文件不存在，则失败。
 	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
 	template<typename T = std::vector<uint8_t>>
 	requires (sizeof(typename T::value_type) == 1 && std::is_trivially_copyable_v<typename T::value_type>)
-	static bool ReadFile(const std::string &strFileName, T &tData)
+	static bool ReadFile(const std::filesystem::path &pathFileName, T &tData)
 	{
 		std::fstream fRead;
-		fRead.open(strFileName, std::ios_base::binary | std::ios_base::in);
+		fRead.open(pathFileName, std::ios_base::binary | std::ios_base::in);
 		if (!fRead)
 		{
 			return false;
@@ -393,14 +393,14 @@ public:
 	}
 
 	/// @brief 判断指定文件名的文件是否存在
-	/// @param sFileName 目标文件名
+	/// @param pathFileName 目标文件名
 	/// @return 文件是否存在
 	/// @note 如果判断出现错误，也返回不存在。只有明确返回存在的文件存在，
 	/// 否则文件可能不存在，也可能存在但是因为其它原因无法获取。
-	static bool IsFileExist(const std::string &sFileName)
+	static bool IsFileExist(const std::filesystem::path &pathFileName)
 	{
 		std::error_code ec;//判断这东西是不是true确定有没有error
-		bool bExists = std::filesystem::exists(sFileName, ec);
+		bool bExists = std::filesystem::exists(pathFileName, ec);
 
 		return !ec && bExists;//没有错误并且存在
 	}

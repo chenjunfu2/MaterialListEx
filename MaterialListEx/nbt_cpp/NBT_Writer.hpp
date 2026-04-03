@@ -25,7 +25,8 @@ class NBT_Writer
 	/// @brief 禁止析构
 	~NBT_Writer(void) = delete;
 
-private:
+protected:
+/// @cond
 	enum ErrCode : uint8_t
 	{
 		AllOk = 0,//没有问题
@@ -128,9 +129,7 @@ private:
 		funcInfo(lvl, "\"\n\n");
 
 		//如果可以，预览szCurrent前n个字符，否则裁切到边界
-/// @cond
 #define VIEW_PRE (8 * 8 + 8)//向前
-/// @endcond
 		size_t rangeBeg = (tData.Size() > VIEW_PRE) ? (tData.Size() - VIEW_PRE) : (0);//上边界裁切
 		size_t rangeEnd = tData.Size();//下边界裁切
 #undef VIEW_PRE
@@ -183,7 +182,6 @@ private:
 		}
 	}
 
-///@cond
 #define _RP___FUNCTION__ __FUNCTION__//用于编译过程二次替换达到函数内部
 
 #define _RP___LINE__ _RP_STRLING(__LINE__)
@@ -223,7 +221,6 @@ catch(...)\
 	STACK_TRACEBACK("catch(...)");\
 	return eRet;\
 }
-///@endcond
 
 	template<typename OutputStream, typename InfoFunc>
 	static inline ErrCode CheckReserve(OutputStream &tData, size_t szAddSize, InfoFunc &funcInfo) noexcept
@@ -758,6 +755,7 @@ catch(...)\
 
 		return eRet;
 	}
+///@endcond
 
 public:
 	//输出到tData中，部分功能和原理参照ReadNBT处的注释，szDataStartIndex在此处可以对一个tData通过不同的tCompound和szStartIdx = tData.size()

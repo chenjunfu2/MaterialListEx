@@ -94,7 +94,8 @@ public:
 	}
 #endif
 
-private:
+protected:
+///@cond
 	template<typename PrintFunc>
 	static void PrintPadding(size_t szLevel, bool bSubLevel, bool bNewLine, const std::string &strLevelPadding, PrintFunc &funcPrint)//bSubLevel会让缩进多一层
 	{
@@ -183,8 +184,10 @@ private:
 			static_assert(false, "STR_T type unknown");
 		}
 	}
+///@endcond
 
-private:
+protected:
+///@cond
 	//首次调用默认为true，二次调用开始内部主动变为false
 	template<bool bRoot, bool bSortCompound, typename PrintFunc = NBT_Print>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
 	static void PrintSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, size_t szLevel, const std::string &strLevelPadding, PrintFunc &funcPrint)
@@ -791,5 +794,6 @@ private:
 		}
 	}
 #endif
+///@endcond
 
 };
