@@ -1,4 +1,7 @@
 # MaterialListEx
+[![GitHub Releases](https://shields.io/github/v/release/chenjunfu2/MaterialListEx)](https://github.com/chenjunfu2/MaterialListEx/releases)
+[![GitHub Releases downloads](https://shields.io/github/downloads/chenjunfu2/MaterialListEx/total)](https://github.com/chenjunfu2/MaterialListEx/releases)
+[![GitHub Repo stars](https://shields.io/github/stars/chenjunfu2/MaterialListEx)](https://github.com/chenjunfu2/MaterialListEx/)  
 投影材料列表扩展版，除了支持输出方块材料列表外，还额外支持输出实体材料列表、容器内物品材料列表等  
 
 ## 使用方法
