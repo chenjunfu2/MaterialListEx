@@ -254,72 +254,75 @@ public:
 	/// @{
 	
 	/// @brief 判断类型是否为NBT数值类型（包含所有整数和浮点数类型）
-	/// @tparam T 需要检查的类型
+	/// @tparam T 需要检查的类型（自动移除CV限定与引用）
 	/// @note 如果类型是Byte、Short、Int、Long、Float、Double中的一种，则返回true，否则返回false
 	template <typename T>
 	static constexpr bool IsNumericType_V =
-		std::is_same_v<T, Byte> ||
-		std::is_same_v<T, Short> ||
-		std::is_same_v<T, Int> ||
-		std::is_same_v<T, Long> ||
-		std::is_same_v<T, Float> ||
-		std::is_same_v<T, Double>;
+		std::is_same_v<std::remove_cvref_t<T>, Byte> ||
+		std::is_same_v<std::remove_cvref_t<T>, Short> ||
+		std::is_same_v<std::remove_cvref_t<T>, Int> ||
+		std::is_same_v<std::remove_cvref_t<T>, Long> ||
+		std::is_same_v<std::remove_cvref_t<T>, Float> ||
+		std::is_same_v<std::remove_cvref_t<T>, Double>;
 
 	/// @brief 判断类型是否为NBT整数类型（包含所有整数类型）
-	/// @tparam T 需要检查的类型
+	/// @tparam T 需要检查的类型（自动移除CV限定与引用）
 	/// @note 如果类型是Byte、Short、Int、Long中的一种，则返回true，否则返回false
 	template <typename T>
 	static constexpr bool IsIntegerType_V =
-		std::is_same_v<T, Byte> ||
-		std::is_same_v<T, Short> ||
-		std::is_same_v<T, Int> ||
-		std::is_same_v<T, Long>;
+		std::is_same_v<std::remove_cvref_t<T>, Byte> ||
+		std::is_same_v<std::remove_cvref_t<T>, Short> ||
+		std::is_same_v<std::remove_cvref_t<T>, Int> ||
+		std::is_same_v<std::remove_cvref_t<T>, Long>;
 
 	/// @brief 判断类型是否为NBT浮点数类型（包含所有浮点数类型）
-	/// @tparam T 需要检查的类型
+	/// @tparam T 需要检查的类型（自动移除CV限定与引用）
 	/// @note 如果类型是Float、Double中的一种，则返回true，否则返回false
 	template <typename T>
 	static constexpr bool IsFloatingType_V =
-		std::is_same_v<T, Float> ||
-		std::is_same_v<T, Double>;
+		std::is_same_v<std::remove_cvref_t<T>, Float> ||
+		std::is_same_v<std::remove_cvref_t<T>, Double>;
 
 	/// @brief 判断类型是否为NBT数组类型（包含所有数组类型）
-	/// @tparam T 需要检查的类型
+	/// @tparam T 需要检查的类型（自动移除CV限定与引用）
 	/// @note 如果类型是ByteArray、IntArray、LongArray中的一种，则返回true，否则返回false
 	template <typename T>
 	static constexpr bool IsArrayType_V =
-		std::is_same_v<T, ByteArray> ||
-		std::is_same_v<T, IntArray> ||
-		std::is_same_v<T, LongArray>;
+		std::is_same_v<std::remove_cvref_t<T>, ByteArray> ||
+		std::is_same_v<std::remove_cvref_t<T>, IntArray> ||
+		std::is_same_v<std::remove_cvref_t<T>, LongArray>;
 
 	/// @brief 判断类型是否为NBT容器类型（包含List、Compound和所有数组类型）
-	/// @tparam T 需要检查的类型
+	/// @tparam T 需要检查的类型（自动移除CV限定与引用）
 	/// @note 如果类型是ByteArray、IntArray、LongArray、List、Compound中的一种，则返回true，否则返回false
 	template <typename T>
 	static constexpr bool IsContainerType_V =
-		std::is_same_v<T, ByteArray> ||
-		std::is_same_v<T, IntArray> ||
-		std::is_same_v<T, LongArray> ||
-		std::is_same_v<T, List> ||
-		std::is_same_v<T, Compound>;
+		std::is_same_v<std::remove_cvref_t<T>, ByteArray> ||
+		std::is_same_v<std::remove_cvref_t<T>, IntArray> ||
+		std::is_same_v<std::remove_cvref_t<T>, LongArray> ||
+		std::is_same_v<std::remove_cvref_t<T>, List> ||
+		std::is_same_v<std::remove_cvref_t<T>, Compound>;
 
 	/// @brief 判断类型是否为NBT String类型
-	/// @tparam T 需要检查的类型
+	/// @tparam T 需要检查的类型（自动移除CV限定与引用）
 	/// @return 如果类型是String，则返回true，否则返回false
 	template <typename T>
-	static constexpr bool IsStringType_V = std::is_same_v<T, String>;
+	static constexpr bool IsStringType_V =
+		std::is_same_v<std::remove_cvref_t<T>, String>;
 
 	/// @brief 判断类型是否为NBT List类型
-	/// @tparam T 需要检查的类型
+	/// @tparam T 需要检查的类型（自动移除CV限定与引用）
 	/// @return 如果类型是List，则返回true，否则返回false
 	template <typename T>
-	static constexpr bool IsListType_V = std::is_same_v<T, List>;
+	static constexpr bool IsListType_V =
+		std::is_same_v<std::remove_cvref_t<T>, List>;
 
 	/// @brief 判断类型是否为NBT Compound类型
-	/// @tparam T 需要检查的类型
+	/// @tparam T 需要检查的类型（自动移除CV限定与引用）
 	/// @return 如果类型是Compound，则返回true，否则返回false
 	template <typename T>
-	static constexpr bool IsCompoundType_V = std::is_same_v<T, Compound>;
+	static constexpr bool IsCompoundType_V =
+		std::is_same_v<std::remove_cvref_t<T>, Compound>;
 
 	/// @}
 

@@ -86,7 +86,7 @@ constexpr bool operator!=(T l, NBT_TAG r)
 template<typename T>
 constexpr bool operator!=(NBT_TAG l, T r)
 {
-	return (NBT_TAG_RAW_TYPE)l == r;
+	return (NBT_TAG_RAW_TYPE)l != r;
 }
 
 /// @brief 比较两个NBT_TAG枚举值是否不相等

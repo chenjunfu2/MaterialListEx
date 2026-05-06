@@ -60,11 +60,9 @@ public:
 	/// @param args 用于构造类型T的参数列表
 	/// @note 要求类型必须是NBT_Type类型列表中的任意一个，且不是当前NBT_Node类型，同时参数列表必须要能构造目标类型
 	template <typename T, typename... Args>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>> && std::is_constructible_v<VariantData, std::in_place_type_t<T>, Args&&...>)
 	explicit NBT_Node(std::in_place_type_t<T>, Args&&... args) : data(std::in_place_type<T>, std::forward<Args>(args)...)
-	{
-		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
-	}
+	{}
 
 	/// @brief 显式类型列表构造函数（通过in_place_type_t指定目标类型）
 	/// @tparam T 要构造的数据类型
@@ -72,22 +70,18 @@ public:
 	/// @param init_list 用于构造类型T的初始化列表
 	/// @note 要求类型T必须是NBT_Type类型列表中的任意一个，且不是当前NBT_Node类型，同时初始化列表必须要能构造目标类型
 	template <typename T, typename U>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>> && std::is_constructible_v<VariantData, std::in_place_type_t<T>, std::initializer_list<U>>)
 	explicit NBT_Node(std::in_place_type_t<T>, std::initializer_list<U> init_list) : data(std::in_place_type<T>, init_list)
-	{
-		static_assert(std::is_constructible_v<VariantData, std::initializer_list<U>>, "Invalid constructor arguments for NBT_Node");
-	}
+	{}
 
 	/// @brief 通用类型构造函数，可以拷贝或移动元素到对象内
 	/// @tparam T 用于构造的数据类型
 	/// @param value 用于构造的数据值
 	/// @note 要求类型T必须是NBT_Type类型列表中的任意一个，且不是当前NBT_Node类型，同时参数必须要能构造目标类型
 	template <typename T>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>> && std::is_constructible_v<VariantData, T&&>)
 	NBT_Node(T &&value) noexcept : data(std::forward<T>(value))
-	{
-		static_assert(std::is_constructible_v<VariantData, decltype(value)>, "Invalid constructor arguments for NBT_Node");
-	}
+	{}
 
 	/// @brief 原位放置新对象并替换当前对象
 	/// @tparam T 要替换当前变体的数据类型
@@ -96,11 +90,9 @@ public:
 	/// @return 对新构造对象的引用
 	/// @note 要求类型T必须是NBT_Type类型列表中的任意一个，且不是当前NBT_Node类型，同时参数必须要能构造目标类型
 	template <typename T, typename... Args>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>>)
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V<std::decay_t<T>> && std::is_constructible_v<T, Args&&...>)
 	T &Set(Args&&... args)
 	{
-		static_assert(std::is_constructible_v<VariantData, Args&&...>, "Invalid constructor arguments for NBT_Node");
-
 		return data.emplace<T>(std::forward<Args>(args)...);
 	}
 
@@ -110,11 +102,9 @@ public:
 	/// @return 当前对象的引用
 	/// @note 要求类型T必须是NBT_Type类型列表中的任意一个，且不是当前NBT_Node类型，同时参数必须要能构造目标类型
 	template<typename T>
-	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V <std::decay_t<T>>)
+	requires(!std::is_same_v<std::decay_t<T>, NBT_Node> && NBT_Type::IsValidType_V <std::decay_t<T>> && std::is_constructible_v<VariantData, T&&>)
 	NBT_Node &operator=(T &&value) noexcept
 	{
-		static_assert(std::is_constructible_v<VariantData, decltype(value)>, "Invalid constructor arguments for NBT_Node");
-
 		data = std::forward<T>(value);
 		return *this;
 	}

@@ -469,7 +469,7 @@ friend std::conditional_t<bIsConst, const NBT_Type::type &, NBT_Type::type &> Ge
  @return 对 type 类型数据的引用（根据视图的const属性决定返回常量引用或非常量引用）
  @note 如果类型不存在或当前指向的不是 type 类型，则抛出异常，具体请参考std::get的说明
  */\
-friend std::conditional_t<bIsConst, const NBT_Type::type &, NBT_Type::type &> &Get##type(const NBT_Node_View & node)\
+friend std::conditional_t<bIsConst, const NBT_Type::type &, NBT_Type::type &> Get##type(const NBT_Node_View & node)\
 {\
 	return node.Get##type();\
 }\

@@ -110,7 +110,7 @@ public:
 
 	/// @brief 拷贝构造函数
 	/// @param _Copy 要拷贝的源对象
-	NBT_Compound(const NBT_Compound &_Copy) noexcept :Compound(_Copy)
+	NBT_Compound(const NBT_Compound &_Copy) :Compound(_Copy)
 	{}
 
 	/// @brief 移动赋值运算符

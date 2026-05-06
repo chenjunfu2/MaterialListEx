@@ -203,7 +203,10 @@ protected:
 					bFirst = false;
 					funcPrint("{}", it);
 				}
-				funcPrint(",{}", it);
+				else
+				{
+					funcPrint(",{}", it);
+				}
 			}
 			funcPrint("{}", strEnd);
 		};
