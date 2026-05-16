@@ -528,7 +528,12 @@ if (stBlocks.psBlockName->ends_with(target))
 	{
 #define EMPLACE_CLUSTER_ITEMS(name)\
 const auto &name = stBlocks.pcpdProperties->GetString(MU8STR(#name));\
-stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * std::stoll(name.ToCharTypeUTF8()));
+{\
+    auto sTmp = name.ToCharTypeUTF8();\
+    uint64_t u64Count = 1;\
+    std::from_chars(sTmp.data(), sTmp.data() + sTmp.size(), u64Count);\
+    stItemsList.emplace_back(*stBlocks.psBlockName, stBlocks.u64Counter * u64Count);\
+}
 
 		//先判断存不存在附加状态，下面所有代码路径都会使用，所以在开头排除
 		if (stBlocks.pcpdProperties == NULL)

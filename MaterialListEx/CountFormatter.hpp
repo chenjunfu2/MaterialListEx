@@ -252,20 +252,20 @@ do\
 
 						//查找物品列表
 						auto itItems = obj.find("Items");//必须有且类型正确
-						if (itItems == obj.end() && !itItems->is_array())
+						if (itItems == obj.end() || !itItems->is_array())
 						{
 							throw std::runtime_error("Object don't have array \"Items\"");
 						}
 
 						//空物品列表忽略
-						if (itItem->empty())
+						if (itItems->empty())
 						{
 							continue;
 						}
 
 						//查找堆叠数
 						auto itCount = obj.find("Count");//必须有且类型正确
-						if (itCount == obj.end() && !itCount->is_number_unsigned())
+						if (itCount == obj.end() || !itCount->is_number_unsigned())
 						{
 							throw std::runtime_error("Object don't have unsigned number \"Count\"");
 						}

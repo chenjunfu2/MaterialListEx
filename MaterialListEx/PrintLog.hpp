@@ -36,7 +36,10 @@ public:
 	}
 	~PrintLog(void) = default;
 	PrintLog(PrintLog &&) noexcept = default;
-	PrintLog(const PrintLog &) = default;
+	PrintLog(const PrintLog &) = delete;
+
+	PrintLog &operator=(PrintLog &&) noexcept = default;
+	PrintLog &operator=(const PrintLog &) = delete;
 
 	template<typename... Args>
 	void operator()(const std::format_string<Args...> fmt, Args&&... args) noexcept
