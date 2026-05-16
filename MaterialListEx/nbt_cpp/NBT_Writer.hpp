@@ -356,7 +356,7 @@ catch(...)\
 		return eRet;
 	}
 
-	template<bool bSortCompound, typename OutputStream, typename InfoFunc>
+	template<typename SortPolicy, typename OutputStream, typename InfoFunc>
 	static ErrCode PutCompoundEntry(OutputStream &tData, const NBT_Type::String &sName, const NBT_Node &nodeNbt, size_t szStackDepth, InfoFunc &funcInfo)//它不是noexcept的
 	{
 		ErrCode eRet = AllOk;
@@ -390,7 +390,7 @@ catch(...)\
 		}
 
 		//最后根据tag类型写出数据
-		eRet = PutSwitch<bSortCompound>(tData, nodeNbt, enCompoundEntryTag, szStackDepth - 1, funcInfo);
+		eRet = PutSwitch<SortPolicy>(tData, nodeNbt, enCompoundEntryTag, szStackDepth - 1, funcInfo);
 		if (eRet != AllOk)
 		{
 			STACK_TRACEBACK("PutSwitch Error, Name: \"{}\", Type: [NBT_Type::{}]",
@@ -418,24 +418,28 @@ catch(...)\
 	}
 
 	//如果是非根部，则会输出额外的Compound_End
-	template<bool bRoot, bool bSortCompound, typename OutputStream, typename InfoFunc>
+	template<bool bRoot, typename SortPolicy, typename OutputStream, typename InfoFunc>
 	static ErrCode PutCompoundType(OutputStream &tData, const NBT_Type::Compound &tCompound, size_t szStackDepth, InfoFunc &funcInfo) noexcept
 	{
 	MYTRY;
 		ErrCode eRet = AllOk;
 		CHECK_STACK_DEPTH(szStackDepth);
 		
-		using IterableRangeType = typename std::conditional_t<bSortCompound, std::vector<NBT_Type::Compound::const_iterator>, const NBT_Type::Compound &>;
+		using IterableRangeType = typename std::conditional_t<std::is_same_v<SortPolicy, NoSortCompound>, const NBT_Type::Compound &, std::vector<NBT_Type::Compound::const_iterator>>;
 
-		//通过模板bSortCompound指定是否执行排序输出（nbt中仅compound是无序结构）
+		//通过模板SortPolicy指定是否执行排序输出（nbt中仅compound是无序结构）
 		IterableRangeType tmpIterableRange =//注意此处如果内部抛出异常，返回空vector的情况下还有可能二次异常，所以外部还需另一个try catch
 		[&](void) noexcept -> IterableRangeType
 		{
-			if constexpr (bSortCompound)
+			if constexpr (std::is_same_v<SortPolicy, NoSortCompound>)
+			{
+				return tCompound;
+			}
+			else
 			{
 				try//筛掉标准库异常
 				{
-					return tCompound.KeySortIt();
+					return SortPolicy{}(tCompound);
 				}
 				catch (const std::bad_alloc &e)
 				{
@@ -456,14 +460,10 @@ catch(...)\
 					return {};
 				}
 			}
-			else
-			{
-				return tCompound;
-			}
 		}();
 
 		//判断错误码是否被设置
-		if constexpr (bSortCompound)
+		if constexpr (!std::is_same_v<SortPolicy, NoSortCompound>)//如果不是非排序提示（也就是要进行排序），则判断返回值
 		{
 			if (eRet != AllOk)
 			{
@@ -478,17 +478,17 @@ catch(...)\
 		{
 			const auto &[sName, nodeNbt] = [&](void) -> const auto &
 			{
-				if constexpr (bSortCompound)
+				if constexpr (std::is_same_v<SortPolicy, NoSortCompound>)
 				{
-					return *it;
+					return it;//非排序类型是引用，直接返回
 				}
 				else
 				{
-					return it;
+					return *it;//排序获得迭代器，解引用返回
 				}
-			}();
+			}();//立刻调用
 
-			eRet = PutCompoundEntry<bSortCompound>(tData, sName, nodeNbt, szStackDepth, funcInfo);
+			eRet = PutCompoundEntry<SortPolicy>(tData, sName, nodeNbt, szStackDepth, funcInfo);
 			if (eRet != AllOk)
 			{
 				STACK_TRACEBACK("PutCompoundEntry");
@@ -525,7 +525,7 @@ catch(...)\
 		return eRet;
 	}
 
-	template<bool bSortCompound, typename OutputStream, typename InfoFunc>
+	template<typename SortPolicy, typename OutputStream, typename InfoFunc>
 	static ErrCode PutListType(OutputStream &tData, const NBT_Type::List &tList, size_t szStackDepth, InfoFunc &funcInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -620,7 +620,7 @@ catch(...)\
 			if (!bNeedWarp)//不需要封装，直接写出
 			{
 				//列表无名字，无需重复tag，只需输出数据
-				eRet = PutSwitch<bSortCompound>(tData, tmpNode, enListElementTag, szStackDepth - 1, funcInfo);//同一元素类型List
+				eRet = PutSwitch<SortPolicy>(tData, tmpNode, enListElementTag, szStackDepth - 1, funcInfo);//同一元素类型List
 
 				if (eRet != AllOk)
 				{
@@ -637,14 +637,14 @@ catch(...)\
 					const auto &cpdNode = tmpNode.GetCompound();
 					if (cpdNode.Size() != 1 || !cpdNode.Contains(MU8STR("")))//直接写出为Compound
 					{
-						eRet = PutCompoundType<false, bSortCompound>(tData, cpdNode, szStackDepth - 1, funcInfo);
+						eRet = PutCompoundType<false, SortPolicy>(tData, cpdNode, szStackDepth - 1, funcInfo);
 						continue;
 					}
 				}
 				
 				//是Compound但是需要再套一层或者不是Compound
 				MYTRY;
-				eRet = PutCompoundEntry<bSortCompound>(tData, MU8STR(""), tmpNode, szStackDepth - 1, funcInfo);
+				eRet = PutCompoundEntry<SortPolicy>(tData, MU8STR(""), tmpNode, szStackDepth - 1, funcInfo);
 				MYCATCH;
 				if (eRet != AllOk)
 				{
@@ -664,7 +664,7 @@ catch(...)\
 		return eRet;
 	}
 
-	template<bool bSortCompound, typename OutputStream, typename InfoFunc>
+	template<typename SortPolicy, typename OutputStream, typename InfoFunc>
 	static ErrCode PutSwitch(OutputStream &tData, const NBT_Node &nodeNbt, NBT_TAG tagNbt, size_t szStackDepth, InfoFunc &funcInfo) noexcept
 	{
 		ErrCode eRet = AllOk;
@@ -722,13 +722,13 @@ catch(...)\
 		case NBT_TAG::List://可能递归，需要处理szStackDepth
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::List>;
-				eRet = PutListType<bSortCompound>(tData, nodeNbt.Get<CurType>(), szStackDepth, funcInfo);
+				eRet = PutListType<SortPolicy>(tData, nodeNbt.Get<CurType>(), szStackDepth, funcInfo);
 			}
 			break;
 		case NBT_TAG::Compound://可能递归，需要处理szStackDepth
 			{
 				using CurType = NBT_Type::TagToType_T<NBT_TAG::Compound>;
-				eRet = PutCompoundType<false, bSortCompound>(tData, nodeNbt.Get<CurType>(), szStackDepth, funcInfo);
+				eRet = PutCompoundType<false, SortPolicy>(tData, nodeNbt.Get<CurType>(), szStackDepth, funcInfo);
 			}
 			break;
 		case NBT_TAG::IntArray:
@@ -767,11 +767,32 @@ catch(...)\
 ///@endcond
 
 public:
+	/// @brief 提示性类型，表示在写出 Compound 时不对键值对进行任何排序。
+	/// @note 如果不使用排序，那么虽然输出是意义等价的，但不是数据值一致的。
+	struct NoSortCompound
+	{};
+
+	/// @brief 默认排序策略，提供按键的字符串字典序升序或降序排列。
+	/// @tparam bAscending 是否升序排序。true表示升序（默认），false表示降序。
+	template<bool bAscending = true>
+	struct DefaultCompoundSort
+	{
+		/// @brief 对给定的 Compound 对象进行排序，返回指向其元素的迭代器向量。
+		/// @param cpdSort 需要排序的 Compound 对象。
+		/// @return `std::vector<NBT_Type::Compound::Const_Iterator>`，其中迭代器按排序顺序排列。
+		/// @note 该函数通常由 `NBT_Writer` 内部调用，用户一般不直接使用。
+		std::vector<NBT_Type::Compound::Const_Iterator> operator()(const NBT_Type::Compound & cpdSort)
+		{
+			return cpdSort.KeySortIt<bAscending>();
+		}
+	};
+
+
 	//输出到tData中，部分功能和原理参照ReadNBT处的注释，szDataStartIndex在此处可以对一个tData通过不同的tCompound和szStartIdx = tData.size()
 	//来调用以达到把多个不同的nbt输出到同一个tData内的功能
 
 	/// @brief 将NBT_Type::Compound对象写入到输出流中
-	/// @tparam bSortCompound 是否对Compound对象内部的键进行排序，以获得一致性的输出结果
+	/// @tparam SortPolicy 用于进行Compound写出前排序的可调用类型，或不进行排序的提示标签类型
 	/// @tparam OutputStream 输出流类型，必须符合DefaultOutputStream类型的接口
 	/// @tparam InfoFunc 信息输出仿函数类型
 	/// @param[out] OptStream 输出流对象
@@ -780,14 +801,14 @@ public:
 	/// @param funcInfo 错误信息处理仿函数
 	/// @return 写入成功返回true，失败返回false
 	/// @note 错误与警告信息都输出到funcInfo，错误会导致函数结束剩下的写出任务，并进行栈回溯输出，最终返回false。警告则只会输出一次信息，然后继续执行，如果没有任何错误但是存在警告，函数仍将返回true。
-	template<bool bSortCompound = true, typename OutputStream, typename InfoFunc = NBT_Print>
-	static bool WriteNBT(OutputStream &OptStream, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, InfoFunc funcInfo = NBT_Print{}) noexcept
+	template<typename SortPolicy = DefaultCompoundSort<true>, typename OutputStream, typename InfoFunc = NBT_Print>
+	static bool WriteNBT(OutputStream &OptStream, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, InfoFunc funcInfo = InfoFunc{}) noexcept
 	{
-		return PutCompoundType<true, bSortCompound>(OptStream, tCompound, szStackDepth, funcInfo) == AllOk;
+		return PutCompoundType<true, SortPolicy>(OptStream, tCompound, szStackDepth, funcInfo) == AllOk;
 	}
 
 	/// @brief 将NBT_Type::Compound对象写入到数据容器中
-	/// @tparam bSortCompound 是否对Compound对象内部的键进行排序，以获得一致性的输出结果
+	/// @tparam SortPolicy 用于进行Compound写出前排序的可调用类型，或不进行排序的提示标签类型
 	/// @tparam DataType 数据容器类型
 	/// @tparam InfoFunc 信息输出仿函数类型
 	/// @param[out] tDataOutput 输出数据容器
@@ -799,11 +820,11 @@ public:
 	/// @note 函数可以通过设置szStartIdx = tDataOutput.size()，把多个Compound对象的数据流合并到同一个tDataOutput对象内。如果多个对象中有重复、同名的NBT键，
 	/// 虽然可以合并到流中，但是如果对这个流进行读取，读取例程为了保证在同一个Compound中的键的唯一性，会丢失部分信息，具体请参考ReadNBT接口的说明。
 	/// 此函数是WriteNBT的标准库容器版本，其它信息请参考WriteNBT(OutputStream)版本的详细说明。
-	template<bool bSortCompound = true, typename DataType = std::vector<uint8_t>, typename InfoFunc = NBT_Print>
-	static bool WriteNBT(DataType &tDataOutput, size_t szStartIdx, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, InfoFunc funcInfo = NBT_Print{}) noexcept
+	template<typename SortPolicy = DefaultCompoundSort<true>, typename DataType = std::vector<uint8_t>, typename InfoFunc = NBT_Print>
+	static bool WriteNBT(DataType &tDataOutput, size_t szStartIdx, const NBT_Type::Compound &tCompound, size_t szStackDepth = 512, InfoFunc funcInfo = InfoFunc{}) noexcept
 	{
 		NBT_IO::DefaultOutputStream<DataType> OptStream(tDataOutput, szStartIdx);
-		return PutCompoundType<true, bSortCompound>(OptStream, tCompound, szStackDepth, funcInfo) == AllOk;
+		return PutCompoundType<true, SortPolicy>(OptStream, tCompound, szStackDepth, funcInfo) == AllOk;
 	}
 
 

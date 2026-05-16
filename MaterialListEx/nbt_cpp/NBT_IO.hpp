@@ -689,7 +689,7 @@ public:
 				//这里不对szOut处理，因为会在开头与结尾计算
 			}
 			
-			//解压，如果剩余不为0则代表分块了，使用Z_NO_FLUSH，否则Z_FINISH
+			//压缩，如果剩余不为0则代表分块了，使用Z_NO_FLUSH，否则Z_FINISH
 			iRet = deflate(&zs, szRemainingSize != 0 ? Z_NO_FLUSH : Z_FINISH);
 
 			//计算本次压缩的大小

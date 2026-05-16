@@ -112,8 +112,8 @@ public:
 #endif
 	}
 
-	/// @brief 颠倒字节序32位特化版
-	/// @param data uint32_t类型的值
+	/// @brief 颠倒字节序64位特化版
+	/// @param data uint64_t类型的值
 	/// @return 字节序的颠倒形式
 	/// @note 如果平台支持内建指令，则使用平台内建指令，否则落到保守实现ByteSwapAny
 	static uint64_t ByteSwap64(uint64_t data) noexcept

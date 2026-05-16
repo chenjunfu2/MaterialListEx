@@ -27,6 +27,4 @@ public:
 	/// @brief 使用基类赋值
 	using Array::operator=;
 
-	/// @brief 使用基类下标
-	using Array::operator[];
 };

@@ -726,7 +726,7 @@ public:
 	/// 函数不会清除tCompound对象的数据，所以可以通过多次调用此函数，把多个NBT数据流合并到同一个tCompound对象内，
 	/// 但是如果多个流中有重复、同名的NBT键，则会产生冲突，为了保证键的唯一性，后来的值会替换原先的值，并通过funcInfo产生一个警告信息。
 	template<bool bUnwrapMixedList = true, typename InputStream, typename InfoFunc = NBT_Print>
-	static bool ReadNBT(InputStream &IptStream, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, InfoFunc funcInfo = NBT_Print{}) noexcept//从data中读取nbt
+	static bool ReadNBT(InputStream &IptStream, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, InfoFunc funcInfo = InfoFunc{}) noexcept//从data中读取nbt
 	{
 		return GetCompoundType<true, bUnwrapMixedList>(IptStream, tCompound, szStackDepth, funcInfo) == AllOk;//从data中获取nbt数据到nRoot中，只有此调用为根部调用（模板true），用于处理特殊情况
 	}
@@ -743,7 +743,7 @@ public:
 	/// @return 读取成功返回true，失败返回false
 	/// @note 此函数是ReadNBT的标准库容器版本，其它信息请参考ReadNBT(InputStream)版本的详细说明
 	template<bool bUnwrapMixedList = true, typename DataType = std::vector<uint8_t>, typename InfoFunc = NBT_Print>
-	static bool ReadNBT(const DataType &tDataInput, size_t szStartIdx, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, InfoFunc funcInfo = NBT_Print{}) noexcept//从data中读取nbt
+	static bool ReadNBT(const DataType &tDataInput, size_t szStartIdx, NBT_Type::Compound &tCompound, size_t szStackDepth = 512, InfoFunc funcInfo = InfoFunc{}) noexcept//从data中读取nbt
 	{
 		NBT_IO::DefaultInputStream<DataType> IptStream(tDataInput, szStartIdx);
 		return GetCompoundType<true, bUnwrapMixedList>(IptStream, tCompound, szStackDepth, funcInfo) == AllOk;

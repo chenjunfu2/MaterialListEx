@@ -559,7 +559,7 @@ catch(...)\
 			switch (ScanSwitch(tData, enListElementTag, tVisitor, szStackDepth - 1))
 			{
 			case Control::Continue:	/*继续（什么也不做）*/	break;
-			case Control::Break:	/*跳过（什么也不做）*/	break;//（从内部跳过之后传出的标签不具有传递性）
+			case Control::Break:	goto skip_any;			break;//跳过剩余所有
 			case Control::Stop:		return Control::Stop;	break;
 			case Control::Error:
 				STACK_TRACEBACK("ScanSwitch Error, Size: [{}] Index: [{}]", szListLength, i);
@@ -574,7 +574,7 @@ catch(...)\
 			switch (tVisitor.VisitListElementEnd(enListElementTag, i))
 			{
 			case NBT_Visitor::ResultControl::Continue:	/*继续（什么也不做）*/	break;
-			case NBT_Visitor::ResultControl::Break:		goto skip_any;			break;//跳过剩余
+			case NBT_Visitor::ResultControl::Break:		goto skip_any;			break;//跳过剩余所有
 			case NBT_Visitor::ResultControl::Stop:		return Control::Stop;	break;
 			default:
 				UNKNOWN_CONTROL_CODE(tVisitor.VisitListElementEnd, Control::Error);
@@ -822,7 +822,7 @@ catch(...)\
 			switch (ScanSwitch(tData, enCompoundEntryTag, tVisitor, szStackDepth - 1))
 			{
 			case Control::Continue:	/*继续（什么也不做）*/	break;
-			case Control::Break:	/*跳过（什么也不做）*/	break;//（从内部跳过之后传出的标签不具有传递性）
+			case Control::Break:	goto skip_any;			break;//跳过剩余所有
 			case Control::Stop:		return Control::Stop;	break;
 			case Control::Error:
 				STACK_TRACEBACK("ScanSwitch Error, Type: [NBT_Type::{}]", NBT_Type::GetTypeName(enCompoundEntryTag));

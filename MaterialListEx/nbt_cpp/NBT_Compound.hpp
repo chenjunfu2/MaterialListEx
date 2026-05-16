@@ -15,48 +15,6 @@ class NBT_Reader;
 class NBT_Writer;
 class NBT_Helper;
 
-/// @brief 用于存放NBT_Compound使用的，无法存在于类内的概念
-/// @note 用户不应直接使用此内容
-namespace NBT_Compound_Concept
-{
-	/// @brief 概念约束，检查类型T是否支持三路比较运算符（<=>）
-	template <typename T>
-	concept HasSpaceship = requires(const T & a, const T & b)
-	{
-		{
-			a <=> b
-		};
-	};
-
-	/// @brief 概念约束，检查类型T是否具有rbegin()成员函数
-	template <typename T>
-	concept HasRBegin = requires(T t)
-	{
-		t.rbegin();
-	};
-
-	/// @brief 概念约束，检查类型T是否具有crbegin()成员函数
-	template <typename T>
-	concept HasCRBegin = requires(T t)
-	{
-		t.crbegin();
-	};
-
-	/// @brief 概念约束，检查类型T是否具有rend()成员函数
-	template <typename T>
-	concept HasREnd = requires(T t)
-	{
-		t.rend();
-	};
-
-	/// @brief 概念约束，检查类型T是否具有crend()成员函数
-	template <typename T>
-	concept HasCREnd = requires(T t)
-	{
-		t.crend();
-	};
-}
-
 /// @brief 继承自标准库std::unordered_map的代理类，用于存储和管理NBT键值对
 /// @tparam Compound 继承的父类，也就是std::unordered_map
 /// @note 用户不应自行实例化此类，请使用NBT_Type::Compound来访问此类实例化类型
@@ -67,20 +25,33 @@ class NBT_Compound :protected Compound//Compound is Map
 	friend class NBT_Writer;
 	friend class NBT_Helper;
 
-private:
-	//总是允许插入nbt end，但是在写出文件时会忽略end类型
-	//template<typename V>
-	//bool TestType(V vTagVal)
-	//{
-	//	if constexpr (std::is_same_v<std::decay_t<V>, Compound::mapped_type>)
-	//	{
-	//		return vTagVal.GetTag() != NBT_TAG::End;
-	//	}
-	//	else
-	//	{
-	//		return NBT_Type::TypeTag_V<std::decay_t<V>> != NBT_TAG::End;
-	//	}
-	//}
+public:
+	/// @name 暴露父类定义的类型成员
+	/// @brief 使用using代理转发类型
+	/// @note 具体类型描述请参考标准库说明
+	/// @{
+
+	using Hasher =					typename Compound::hasher;
+	using Key_Type =				typename Compound::key_type;
+	using Mapped_Type =				typename Compound::mapped_type;
+	using Key_Equal =				typename Compound::key_equal;
+	using Value_Type =				typename Compound::value_type;
+	using Allocator_Type =			typename Compound::allocator_type;
+	using Size_Type =				typename Compound::size_type;
+	using Difference_Type =			typename Compound::difference_type;
+	using Pointer =					typename Compound::pointer;
+	using Const_Pointer =			typename Compound::const_pointer;
+	using Reference =				typename Compound::reference;
+	using Const_Reference =			typename Compound::const_reference;
+	using Iterator =				typename Compound::iterator;
+	using Const_Iterator =			typename Compound::const_iterator;
+	using Local_Iterator =			typename Compound::local_iterator;
+	using Const_Local_Iterator =	typename Compound::const_local_iterator;
+	using Node_Type =				typename Compound::node_type;
+	using Insert_Return_Type =		typename Compound::insert_return_type;
+
+	/// @}
+
 public:
 	//完美转发、初始化列表代理构造
 
@@ -159,7 +130,7 @@ public:
 	/// @brief 三路比较运算符
 	/// @param _Right 要比较的右操作数
 	/// @return 比较结果，通过std::partial_ordering返回
-	/// @note 如果底层容器支持三路比较则转发其实现，否则：
+	/// @note 比较规则如下：
 	/// - 首先比较容器大小，如果不相等，那么返回比较结果
 	/// - 接着使用容器Key进行排序比较
 	///   - 如果key不相等，则返回比较结果
@@ -168,51 +139,46 @@ public:
 	/// @warning 此比较方法开销较大，且可能存在递归情况
 	std::partial_ordering operator<=>(const NBT_Compound &_Right) const noexcept
 	{
-		if constexpr (NBT_Compound_Concept::HasSpaceship<Compound>)
+		if (auto _cmpSize = Compound::size() <=> _Right.size(); _cmpSize != 0)
 		{
-			return (const Compound &)*this <=> (const Compound &)_Right;
+			return _cmpSize;
 		}
-		else
+
+		//数量相等，比较数据的排序
+		const auto _lSort = this->KeySortIt();
+		const auto _rSort = _Right.KeySortIt();
+		typename Compound::size_type _Size = Compound::size();
+
+		for (typename Compound::size_type _i = 0; _i < _Size; ++_i)
 		{
-			if (auto _cmpSize = Compound::size() <=> _Right.size(); _cmpSize != 0)
+			const auto &_lIt = _lSort[_i];
+			const auto &_rIt = _rSort[_i];
+
+			//首先比较名称，如果不同则返回
+			if (auto _cmpKey = _lIt->first <=> _rIt->first; _cmpKey != 0)
 			{
-				return _cmpSize;
+				return _cmpKey;
 			}
 
-			//数量相等，比较数据的排序
-			const auto _lSort = this->KeySortIt();
-			const auto _rSort = _Right.KeySortIt();
-			typename Compound::size_type _Size = Compound::size();
-
-			for (typename Compound::size_type _i = 0; _i < _Size; ++_i)
+			//然后比较值，如果不同则返回
+			if (auto _cmpVal = _lIt->second <=> _rIt->second; _cmpVal != 0)
 			{
-				const auto &_lIt = _lSort[_i];
-				const auto &_rIt = _rSort[_i];
-
-				//首先比较名称，如果不同则返回
-				if (auto _cmpKey = _lIt->first <=> _rIt->first; _cmpKey != 0)
-				{
-					return _cmpKey;
-				}
-
-				//然后比较值，如果不同则返回
-				if (auto _cmpVal = _lIt->second <=> _rIt->second; _cmpVal != 0)
-				{
-					return _cmpVal;
-				}
+				return _cmpVal;
 			}
-
-			//前面都没有返回，那么所有元素都相等
-			return std::partial_ordering::equivalent;
 		}
+
+		//前面都没有返回，那么所有元素都相等
+		return std::partial_ordering::equivalent;
 	}
 
 	/// @brief 获取按键名排序的迭代器向量（非常量版本）
-	/// @return 包含所有元素迭代器的vector，这些迭代器按照键名升序排序
+	/// @tparam bAscending 是否升序排序，默认为true（升序）；若为false则按降序排序
+	/// @return 包含所有元素迭代器的vector，这些迭代器按照键名排序（升序或降序由模板参数决定）
 	/// @note 返回的迭代器可用于遍历元素，并允许修改元素的值
 	/// 排序仅影响返回的vector，不影响底层unordered_map的实际顺序
 	/// @warning 因为返回值中存储迭代器，在对当前容器进行修改后默认迭代器失效，
 	/// 请勿再次通过返回的std::vector中的迭代器访问容器成员
+	template<bool bAscending = true>
 	std::vector<typename Compound::iterator> KeySortIt(void)
 	{
 		std::vector<typename Compound::iterator> listSortIt;
@@ -225,7 +191,14 @@ public:
 		std::sort(listSortIt.begin(), listSortIt.end(),
 			[](const auto &l, const auto &r) -> bool
 			{
-				return l->first < r->first;
+				if constexpr (bAscending)
+				{
+					return l->first < r->first;
+				}
+				else
+				{
+					return l->first > r->first;
+				}
 			}
 		);
 
@@ -233,11 +206,13 @@ public:
 	}
 
 	/// @brief 获取按键名排序的常量迭代器向量（常量版本）
-	/// @return 包含所有元素常量迭代器的vector，这些迭代器按照键名升序排序
+	/// @tparam bAscending 是否升序排序，默认为true（升序）；若为false则按降序排序
+	/// @return 包含所有元素常量迭代器的vector，这些迭代器按照键名排序（升序或降序由模板参数决定）
 	/// @note 返回的迭代器可用于遍历元素，但不允许修改元素的值
 	/// 排序仅影响返回的std::vector，不影响底层unordered_map的实际顺序
 	/// @warning 因为返回值中存储迭代器，在对当前容器进行修改后默认迭代器失效，
 	/// 请勿再次通过返回的std::vector中的迭代器访问容器成员
+	template<bool bAscending = true>
 	std::vector<typename Compound::const_iterator> KeySortIt(void) const
 	{
 		std::vector<typename Compound::const_iterator> listSortIt;
@@ -250,7 +225,14 @@ public:
 		std::sort(listSortIt.begin(), listSortIt.end(),
 			[](const auto &l, const auto &r) -> bool
 			{
-				return l->first < r->first;
+				if constexpr (bAscending)
+				{
+					return l->first < r->first;
+				}
+				else
+				{
+					return l->first > r->first;
+				}
 			}
 		);
 
@@ -259,7 +241,6 @@ public:
 
 	/// @name 暴露父类迭代器接口
 	/// @brief 继承底层容器的迭代器和访问接口
-	/// @note 部分api如果父类不存在，则自动隐藏
 	/// @{
 
 	using Compound::begin;
@@ -267,24 +248,6 @@ public:
 	using Compound::cbegin;
 	using Compound::cend;
 	using Compound::operator[];
-
-	//因为父类不总是有下面内容，所以使用requires检查并暴露或舍弃
-	//using Compound::rbegin;
-	//using Compound::rend;
-	//using Compound::crbegin;
-	//using Compound::crend;
-	
-	//存在则映射
-	/// @cond
-	//-------------------- rbegin --------------------
-	auto rbegin() requires NBT_Compound_Concept::HasRBegin<Compound> {return Compound::rbegin();}
-	auto rbegin() const requires NBT_Compound_Concept::HasRBegin<Compound> {return Compound::rbegin();}
-	auto crbegin() const noexcept requires NBT_Compound_Concept::HasCRBegin<Compound> {return Compound::crbegin();}
-	//-------------------- rend --------------------
-	auto rend() requires NBT_Compound_Concept::HasREnd<Compound> {return Compound::rend();}
-	auto rend() const requires NBT_Compound_Concept::HasREnd<Compound> {return Compound::rend();}
-	auto crend() const noexcept requires NBT_Compound_Concept::HasCREnd<Compound> {return Compound::crend();}
-	/// @endcond
 
 	/// @}
 
@@ -348,12 +311,6 @@ public:
 	requires std::constructible_from<typename Compound::key_type, K &&> &&std::constructible_from<typename Compound::mapped_type, V &&>
 	std::pair<typename Compound::iterator, bool> Put(K &&sTagName, V &&vTagVal)
 	{
-		//总是允许插入nbt end，但是在写出文件时会忽略end类型
-		//if (!TestType(vTagVal))
-		//{
-		//	return std::pair{ Compound::end(),false };
-		//}
-
 		return Compound::insert_or_assign(std::forward<K>(sTagName), std::forward<V>(vTagVal));
 	}
 
@@ -369,12 +326,6 @@ public:
 	requires std::constructible_from<typename Compound::key_type, K &&> &&std::constructible_from<typename Compound::mapped_type, V &&>
 	std::pair<typename Compound::iterator, bool> TryPut(K &&sTagName, V &&vTagVal)
 	{
-		//总是允许插入nbt end，但是在写出文件时会忽略end类型
-		//if (!TestType(vTagVal))
-		//{
-		//	return std::pair{ Compound::end(),false };
-		//}
-
 		return Compound::try_emplace(std::forward<K>(sTagName), std::forward<V>(vTagVal));
 	}
 
