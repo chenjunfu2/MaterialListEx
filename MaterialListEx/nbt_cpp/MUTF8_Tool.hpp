@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <string>
+#include <cstring>
 #include <type_traits>
 #include <assert.h>
 #include <stdint.h>
@@ -54,12 +55,208 @@ namespace MUTF8_Tool_Internal
 	}
 }
 
+/// @brief 默认的M-UTF-8字符类型
+using MUTF8_Char_Type = uint8_t;
+
+/// @brief 一个用于符合标准库使用的，自定义的Char_Traits
+/// @tparam MU8T M-UTF-8对应的字符类型，简写为MU8
+/// @note 仅用于标准库使用，不做文档化
+template<typename MU8T = MUTF8_Char_Type>
+struct MUTF8_Char_Traits
+{
+/// @cond
+public:
+	using char_type = MU8T;
+	using int_type = int;
+	using off_type = std::streamoff;
+	using pos_type = std::streampos;
+	using state_type = std::mbstate_t;
+	using comparison_category = std::strong_ordering;
+
+	static_assert(sizeof(int_type) > sizeof(char_type));
+
+public:
+	static constexpr char_type *copy(char_type *pDst, const char_type *pSrc, std::size_t szCount) noexcept
+	{
+		if (std::is_constant_evaluated())
+		{
+			for (std::size_t i = 0; i < szCount; ++i)
+			{
+				pDst[i] = pSrc[i];
+			}
+			return pDst;
+		}
+		else
+		{
+			std::memcpy(pDst, pSrc, szCount * sizeof(char_type));
+			return pDst;
+		}
+	}
+
+	static constexpr char_type *move(char_type *pDst, const char_type *pSrc, std::size_t szCount) noexcept
+	{
+		if (std::is_constant_evaluated())
+		{
+			if (pDst == pSrc)
+			{
+				return pDst;
+			}
+
+			//判断是正向复制还是反向复制，有重叠部分就使用反向
+			bool bLoopForward = true;
+			for (const char_type *p = pSrc; p != pSrc + szCount; ++p)
+			{
+				if (pDst == p)
+				{
+					bLoopForward = false;
+					break;
+				}
+			}
+
+			if (bLoopForward)
+			{
+				for (std::size_t i = 0; i < szCount; ++i)
+				{
+					pDst[i] = pSrc[i];
+				}
+			}
+			else
+			{
+				for (std::size_t i = szCount; i > 0; --i)
+				{
+					pDst[i - 1] = pSrc[i - 1];
+				}
+			}
+
+			return pDst;
+		}
+		else
+		{
+			std::memmove(pDst, pSrc, szCount * sizeof(char_type));
+			return pDst;
+		}
+	}
+
+	static constexpr int compare(const char_type *pLeft, const char_type *pRight, std::size_t szCount) noexcept
+	{
+		for (; szCount > 0; --szCount, ++pLeft, ++pRight)
+		{
+			if (*pLeft != *pRight)//第一个不匹配的，返回比较值
+			{
+				return *pLeft < *pRight ? -1 : 1;
+			}
+		}
+
+		//全匹配，返回0
+		return 0;
+	}
+
+	static constexpr std::size_t length(const char_type *pStr) noexcept
+	{
+		std::size_t szlength = 0;
+		while (*pStr != char_type{})
+		{
+			++szlength;
+			++pStr;
+		}
+
+		return szlength;
+	}
+
+	static constexpr const char_type *find(const char_type *pStr, std::size_t szCount, const char_type &ch) noexcept
+	{
+		for (; szCount > 0; --szCount, ++pStr)
+		{
+			if (*pStr == ch)
+			{
+				return pStr;
+			}
+		}
+
+		return nullptr;
+	}
+
+	static constexpr char_type *assign(char_type *pDst, std::size_t szCount, char_type ch) noexcept
+	{
+		if (std::is_constant_evaluated())
+		{
+			for (char_type *p = pDst; szCount > 0; --szCount, ++p)
+			{
+				std::construct_at(p, ch);
+			}
+		}
+		else
+		{
+			for (char_type *p = pDst; szCount > 0; --szCount, ++p)
+			{
+				*p = ch;
+			}
+		}
+
+		return pDst;
+	}
+
+	static constexpr void assign(char_type &dst, const char_type &src) noexcept
+	{
+		if (std::is_constant_evaluated())
+		{
+			std::construct_at(std::addressof(dst), src);
+		}
+		else
+		{
+			dst = src;
+		}
+	}
+
+	static constexpr bool eq(const char_type &l, const char_type &r) noexcept
+	{
+		return l == r;
+	}
+
+	static constexpr bool lt(const char_type &l, const char_type &r) noexcept
+	{
+		return l < r;
+	}
+
+	static constexpr char_type to_char_type(const int_type &meta) noexcept
+	{
+		return static_cast<char_type>(meta);
+	}
+
+	static constexpr int_type to_int_type(const char_type &ch) noexcept
+	{
+		return static_cast<int_type>(ch);
+	}
+
+	static constexpr bool eq_int_type(const int_type &l, const int_type &r) noexcept
+	{
+		return l == r;
+	}
+
+	static constexpr int_type eof(void) noexcept
+	{
+		return static_cast<int_type>(EOF);
+	}
+
+	static constexpr int_type not_eof(const int_type &meta) noexcept
+	{
+		return meta != eof() ? meta : static_cast<int_type>(!eof());
+	}
+
+	/// @endcond
+};
+
+/// @brief 默认的M-UTF-8字符串对象类型
+using MUTF8_String = std::basic_string<MUTF8_Char_Type, MUTF8_Char_Traits<MUTF8_Char_Type>>;
+/// @brief 默认的M-UTF-8字符串对象视图类型
+using MUTF8_String_View = std::basic_string_view<MUTF8_Char_Type, MUTF8_Char_Traits<MUTF8_Char_Type>>;
+
 /// @brief 用于处理Java的Modified-UTF-8（以下简称M-UTF-8）字符串与UTF-8或UTF-16的静态或动态转换
 /// @tparam MU8T M-UTF-8对应的字符类型，简写为MU8
 /// @tparam U16T UTF-16对应的字符类型
 /// @tparam U8T UTF-8对应的字符类型
 /// @note 类仅提供M-UTF-8的静态生成方式，因为UTF-8或UTF-16可以由编译器支持，而M-UTF-8不存在支持
-template<typename MU8T = uint8_t, typename U16T = char16_t, typename U8T = char8_t>
+template<typename MU8T = MUTF8_Char_Type, typename U16T = char16_t, typename U8T = char8_t>
 class MUTF8_Tool
 {
 	static_assert(sizeof(MU8T) == 1, "MU8T size must be at 1 byte");
@@ -81,6 +278,11 @@ public:
 	using U16_T = U16T;
 	/// @brief 模板UTF-8字符类型的代理
 	using U8_T = U8T;
+
+	/// @brief 根据实际MU8T类型决定使用特化版的MUTF8字符串类型还是标准库字符串类型
+	using MU8_String = std::conditional_t<std::is_same_v<MU8T, MUTF8_Char_Type>, MUTF8_String, std::basic_string<MU8T>>;
+	/// @brief 根据实际MU8T类型决定使用特化版的MUTF8字符串视图类型还是标准库字符串视图类型
+	using MU8_String_View = std::conditional_t<std::is_same_v<MU8T, MUTF8_Char_Type>, MUTF8_String_View, std::basic_string_view<MU8T>>;
 
 private:
 	//来点魔法类，伪装成basic string，在插入的时候进行数据长度计数，忽略插入的数据，最后转换为size_t长度
@@ -371,7 +573,7 @@ private:
 
 ///@endcond
 
-	template<typename T = std::basic_string<MU8T>>
+	template<typename T>
 	static constexpr T U16ToMU8Impl(const U16T *u16String, size_t szStringLength, T mu8String = {})
 	{
 ///@cond
@@ -626,7 +828,7 @@ private:
 	而是使用自定义的双三字节（6字节代理对）格式。
 	*/
 
-	template<typename T = DynamicString<std::basic_string<MU8T>>>
+	template<typename T>
 	static constexpr T U8ToMU8Impl(const U8T *u8String, size_t szStringLength, T mu8String = {})
 	{
 ///@cond
@@ -888,9 +1090,9 @@ public:
 	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从U16ToMU8Length调用获得）
 	/// @return 转换后的字符串
 	/// @note 请注意：是长度而非字节数
-	static std::basic_string<MU8T> U16ToMU8(const std::basic_string_view<U16T> &u16String, size_t szReserve = 0)
+	static MU8_String U16ToMU8(const std::basic_string_view<U16T> &u16String, size_t szReserve = 0)
 	{
-		return U16ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u16String.data(), u16String.size(), { szReserve }).GetData();
+		return U16ToMU8Impl<DynamicString<MU8_String>>(u16String.data(), u16String.size(), { szReserve }).GetData();
 	}
 
 	/// @brief 获取UTF-16转换到M-UTF-8的字符串
@@ -899,9 +1101,9 @@ public:
 	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从U16ToMU8Length调用获得）
 	/// @return 转换后的字符串
 	/// @note 请注意：是长度而非字节数
-	static std::basic_string<MU8T> U16ToMU8(const U16T *u16String, size_t szStringLength, size_t szReserve = 0)
+	static MU8_String U16ToMU8(const U16T *u16String, size_t szStringLength, size_t szReserve = 0)
 	{
-		return U16ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u16String, szStringLength, { szReserve }).GetData();
+		return U16ToMU8Impl<DynamicString<MU8_String>>(u16String, szStringLength, { szReserve }).GetData();
 	}
 
 	/// @brief 通过UTF-16字符串字面量，直接获得编译期的M-UTF-8静态字符串
@@ -911,7 +1113,7 @@ public:
 	/// 以生成编译期常量（类似字符串字面量），这样就能只存储它的指针与大小，并在任何地方使用而不会导致生命周期提前结束
 	template<MUTF8_Tool_Internal::StringLiteral u16String>
 	requires std::is_same_v<typename decltype(u16String)::value_type, U16T>//限定类型
-	static consteval std::basic_string_view<MU8T> U16ToMU8(void)
+	static consteval MU8_String_View U16ToMU8(void)
 	{
 		constexpr size_t szStringLength = ContentLength(u16String);
 		constexpr size_t szNewLength = U16ToMU8Impl<FakeStringCounter<MU8T>>(u16String.data(), szStringLength).GetData();
@@ -919,7 +1121,7 @@ public:
 		return MUTF8_Tool_Internal::ToStringView
 		<
 			U16ToMU8Impl<StaticString<MU8T, szNewLength>>(u16String.data(), szStringLength).GetData(),
-			std::basic_string_view<MU8T>
+			MU8_String_View
 		>();
 	}
 
@@ -949,9 +1151,9 @@ public:
 	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从U8ToMU8Length调用获得）
 	/// @return 转换后的字符串
 	/// @note 请注意：是长度而非字节数
-	static std::basic_string<MU8T> U8ToMU8(const std::basic_string_view<U8T> &u8String, size_t szReserve = 0)
+	static MU8_String U8ToMU8(const std::basic_string_view<U8T> &u8String, size_t szReserve = 0)
 	{
-		return U8ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u8String.data(), u8String.size(), { szReserve }).GetData();
+		return U8ToMU8Impl<DynamicString<MU8_String>>(u8String.data(), u8String.size(), { szReserve }).GetData();
 	}
 
 	/// @brief 获取UTF-8转换到M-UTF-8的字符串
@@ -960,9 +1162,9 @@ public:
 	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从U8ToMU8Length调用获得）
 	/// @return 转换后的字符串
 	/// @note 请注意：是长度而非字节数
-	static std::basic_string<MU8T> U8ToMU8(const U8T *u8String, size_t szStringLength, size_t szReserve = 0)
+	static MU8_String U8ToMU8(const U8T *u8String, size_t szStringLength, size_t szReserve = 0)
 	{
-		return U8ToMU8Impl<DynamicString<std::basic_string<MU8T>>>(u8String, szStringLength, { szReserve }).GetData();
+		return U8ToMU8Impl<DynamicString<MU8_String>>(u8String, szStringLength, { szReserve }).GetData();
 	}
 
 	/// @brief 通过UTF-8字符串字面量，直接获得编译期的M-UTF-8静态字符串
@@ -972,7 +1174,7 @@ public:
 	/// 以生成编译期常量（类似字符串字面量），这样就能只存储它的指针与大小，并在任何地方使用而不会导致生命周期提前结束
 	template<MUTF8_Tool_Internal::StringLiteral u8String>
 	requires std::is_same_v<typename decltype(u8String)::value_type, U8T>//限定类型
-	static consteval std::basic_string_view<MU8T> U8ToMU8(void)
+	static consteval MU8_String_View U8ToMU8(void)
 	{
 		constexpr size_t szStringLength = ContentLength(u8String);
 		constexpr size_t szNewLength = U8ToMU8Impl<FakeStringCounter<MU8T>>(u8String.data(), szStringLength).GetData();
@@ -980,7 +1182,7 @@ public:
 		return MUTF8_Tool_Internal::ToStringView<U8ToMU8Impl
 		<
 			StaticString<MU8T, szNewLength>>(u8String.data(), szStringLength).GetData(),
-			std::basic_string_view<MU8T>
+			MU8_String_View
 		>();
 	}
 
@@ -991,7 +1193,7 @@ public:
 	/// @param mu8String M-UTF-8字符串的视图
 	/// @return 计算的长度
 	/// @note 请注意：是长度而非字节数
-	static constexpr size_t MU8ToU16Length(const std::basic_string_view<MU8T> &mu8String)
+	static constexpr size_t MU8ToU16Length(const MU8_String_View &mu8String)
 	{
 		return MU8ToU16Impl<FakeStringCounter<U16T>>(mu8String.data(), mu8String.size()).GetData();
 	}
@@ -1011,7 +1213,7 @@ public:
 	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从MU8ToU16Length调用获得）
 	/// @return 转换后的字符串
 	/// @note 请注意：是长度而非字节数
-	static std::basic_string<U16T> MU8ToU16(const std::basic_string_view<MU8T> &mu8String, size_t szReserve = 0)
+	static std::basic_string<U16T> MU8ToU16(const MU8_String_View &mu8String, size_t szReserve = 0)
 	{
 		return MU8ToU16Impl<DynamicString<std::basic_string<U16T>>>(mu8String.data(), mu8String.size(), { szReserve }).GetData();
 	}
@@ -1033,7 +1235,7 @@ public:
 	/// @param mu8String M-UTF-8字符串的视图
 	/// @return 计算的长度
 	/// @note 请注意：是长度而非字节数
-	static constexpr size_t MU8ToU8Length(const std::basic_string_view<MU8T> &mu8String)
+	static constexpr size_t MU8ToU8Length(const MU8_String_View &mu8String)
 	{
 		return MU8ToU8Impl<FakeStringCounter<U8T>>(mu8String.data(), mu8String.size()).GetData();
 	}
@@ -1053,7 +1255,7 @@ public:
 	/// @param szReserve 转换后的字符串长度（此项用于一定程度避免动态扩容开销，值可以从MU8ToU8Length调用获得）
 	/// @return 转换后的字符串
 	/// @note 请注意：是长度而非字节数
-	static std::basic_string<U8T> MU8ToU8(const std::basic_string_view<MU8T> &mu8String, size_t szReserve = 0)
+	static std::basic_string<U8T> MU8ToU8(const MU8_String_View &mu8String, size_t szReserve = 0)
 	{
 		return MU8ToU8Impl<DynamicString<std::basic_string<U8T>>>(mu8String.data(), mu8String.size(), { szReserve }).GetData();
 	}

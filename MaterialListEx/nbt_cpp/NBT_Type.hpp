@@ -9,6 +9,7 @@
 #include <type_traits>
 
 #include "NBT_TAG.hpp"
+#include "MUTF8_Tool.hpp"
 
 /// @file
 /// @brief NBT所有类型定义与类型处理工具集
@@ -61,7 +62,7 @@ public:
 	using LongArray		= NBT_Array<std::vector<Long>>;	///< 存储64位有符号整数的数组类型
 
 	//字符串类型
-	using String		= NBT_String<std::basic_string<uint8_t>, std::basic_string_view<uint8_t>>;	///< 字符串类型，存储Java M-UTF-8字符串
+	using String		= NBT_String<MUTF8_String, MUTF8_String_View>;	///< 字符串类型，存储Java M-UTF-8字符串
 
 	//列表类型
 	//存储一系列同类型标签的有效负载（无标签 ID 或名称），原先为list，因为mc内list也通过下标访问，所以改为vector模拟
