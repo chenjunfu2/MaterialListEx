@@ -35,6 +35,10 @@ private:
 	FILE *pfOutputErr = NULL;
 
 public:
+	using Level = NBT_Print_Level;	///< 信息等级，直接映射NBT_Print_Level
+
+public:
+
 	/// @brief 通过c文件对象构造
 	/// @param _pfOutputInfo 普通信息输出的C文件对象（通常为stdout，可以为NULL）
 	/// @param _pfOutputWarn 警告信息输出的C文件对象（通常为stderr，可以为NULL）
@@ -60,18 +64,18 @@ public:
 	/// 本实现中如果std::format出现任何二次异常，则放弃打印自定义信息，从c标准io的printf输出新抛出的异常信息，
 	/// 如果再次失败，则不做处理，因为异常可能已经致命，导致无法执行任何代码。
 	template<typename... Args>
-	void operator()(NBT_Print_Level lvl, const std::format_string<Args...> fmt, Args&&... args) noexcept
+	void operator()(Level lvl, const std::format_string<Args...> fmt, Args&&... args) noexcept
 	{
 		FILE *pfOutput = NULL;
 		switch (lvl)
 		{
-		case NBT_Print_Level::Info:
+		case Level::Info:
 			pfOutput = pfOutputInfo;
 			break;
-		case NBT_Print_Level::Warn:
+		case Level::Warn:
 			pfOutput = pfOutputWarn;
 			break;
-		case NBT_Print_Level::Err:
+		case Level::Err:
 			pfOutput = pfOutputErr;
 			break;
 		default:
@@ -109,6 +113,44 @@ public:
 	template<typename... Args>
 	void operator()(const std::format_string<Args...> fmt, Args&&... args) noexcept
 	{
-		return operator()(NBT_Print_Level::Info, std::move(fmt), std::forward<Args>(args)...);
+		return operator()(Level::Info, std::move(fmt), std::forward<Args>(args)...);
+	}
+};
+
+/// @brief 忽略所有输出的打印工具类，与 NBT_Print 拥有完全相同的仿函数接口。
+/// 可用于替换 NBT_Print 以禁用所有信息输出。
+class NBT_NoPrint
+{
+public:
+	using Level = NBT_Print_Level;	///< 信息等级，直接映射NBT_Print_Level
+
+public:
+	/// @brief 默认构造函数
+	NBT_NoPrint(void) noexcept
+	{}
+
+	/// @brief 默认析构函数
+	~NBT_NoPrint(void) noexcept
+	{}
+
+	/// @brief 仿函数调用，接受打印等级和格式化字符串，忽略所有参数。
+	/// @tparam Args 可变模板参数
+	/// @param lvl 打印等级（忽略）
+	/// @param fmt 格式化字符串（忽略）
+	/// @param ...args 格式化参数（忽略）
+	template<typename... Args>
+	void operator()(Level lvl, const std::format_string<Args...> fmt, Args&&... args) const noexcept
+	{
+		return;
+	}
+
+	/// @brief 仿函数调用，默认 Info 等级，忽略所有参数。
+	/// @tparam Args 可变模板参数
+	/// @param fmt 格式化字符串（忽略）
+	/// @param ...args 格式化参数（忽略）
+	template<typename... Args>
+	void operator()(const std::format_string<Args...> fmt, Args&&... args) const noexcept
+	{
+		return;
 	}
 };

@@ -106,37 +106,26 @@ public:
 		}
 
 		/// @brief 回退一个字节的读取
-		/// @note 如果当前已在流的起始位置，则不会进行任何操作
+		/// @note 调用者保证不会导致范围溢出
 		void UnGet() noexcept
 		{
-			if (szIndex != 0)
-			{
-				--szIndex;
-			}
+			--szIndex;
 		}
 
-		/// @brief 获取当前读取位置的指针
-		/// @return 指向当前读取位置数据的指针
-		/// @note 这个接口一般用于直接访问当前及后续的数据而不拷贝
-		const ValueType *CurData() const noexcept
-		{
-			return &(tData[szIndex]);
-		}
-
-		/// @brief 向后推进读取
-		/// @param szSize 要推进的字节数
-		/// @return 推进后的新读取位置
-		/// @note 这个接口一般与CurData合并使用，通过CurData读取一段数据后，调用此接口移动当前读取位置
-		size_t AddIndex(size_t szSize) noexcept
+		/// @brief 跳过一段数据
+		/// @param szSize 要跳过的字节数
+		/// @return 跳过后的新读取位置
+		/// @note 调用者保证不会导致范围溢出
+		size_t SkipData(size_t szSize) noexcept
 		{
 			return szIndex += szSize;
 		}
 
-		/// @brief 向前撤销读取
-		/// @param szSize 要撤销的字节数
-		/// @return 撤销后的新读取位置
-		/// @note 这个接口一般用于在某些情况下撤销一部分的读取
-		size_t SubIndex(size_t szSize) noexcept
+		/// @brief 回退一段数据
+		/// @param szSize 要回退的字节数
+		/// @return 回退后的新读取位置
+		/// @note 调用者保证不会导致范围溢出
+		size_t RewindData(size_t szSize) noexcept
 		{
 			return szIndex -= szSize;
 		}
@@ -169,16 +158,9 @@ public:
 			szIndex = 0;
 		}
 
-		/// @brief 获取底层数据的起始指针
-		/// @return 指向底层数据起始位置的常量指针
-		const ValueType *BaseData() const noexcept
-		{
-			return tData.data();
-		}
-
 		/// @brief 获取当前读取位置（只读）
 		/// @return 当前读取位置索引
-		size_t Index() const noexcept
+		const size_t &Index() const noexcept
 		{
 			return szIndex;
 		}
@@ -279,9 +261,20 @@ public:
 		}
 
 		/// @brief 删除（撤销）最后一个写入的字节
+		/// @note 调用者保证不会导致范围溢出
 		void UnPut(void) noexcept
 		{
 			tData.pop_back();
+		}
+
+		/// @brief 删除（撤销）最后szSize个写入的字节
+		/// @param szSize 要删除的字节数
+		/// @return 删除后的新大小
+		/// @note 调用者保证不会导致范围溢出
+		size_t RemoveData(size_t szSize) noexcept
+		{
+			tData.resize(tData.size() - szSize);
+			return tData.size();
 		}
 
 		/// @brief 获取当前字节流中已有的数据大小
@@ -296,100 +289,180 @@ public:
 		{
 			tData.clear();
 		}
-
-		/// @brief 获取底层数据的常量引用
-		/// @return 底层数据容器的常量引用
-		const T &Data(void) const noexcept
-		{
-			return tData;
-		}
-
-		/// @brief 获取底层数据的非常量引用
-		/// @return 底层数据容器的非常量引用
-		T &Data(void) noexcept
-		{
-			return tData;
-		}
 	};
 
 
 public:
 	/// @brief 从任意顺序容器写出字节流数据到指定文件名的文件中
 	/// @tparam T 任意顺序容器类型
+	/// @tparam InfoFunc 打印异常信息的仿函数类型
 	/// @param pathFileName 目标文件名
 	/// @param tData 顺序容器的引用
+	/// @param funcInfo 打印异常信息的仿函数
 	/// @return 写出是否成功
-	/// @note 如果文件已存在则直接清空并覆盖，未存在则创建文件。
+	/// @note 文件必须是常规文件。如果文件已存在则直接清空并覆盖，未存在则创建文件。
 	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
-	template<typename T = std::vector<uint8_t>>
+	template<typename T = std::vector<uint8_t>, typename InfoFunc = NBT_Print>
 	requires (sizeof(typename T::value_type) == 1 && std::is_trivially_copyable_v<typename T::value_type>)
-	static bool WriteFile(const std::filesystem::path &pathFileName, const T &tData)
+	static bool WriteFile(const std::filesystem::path &pathFileName, const T &tData, InfoFunc funcInfo = InfoFunc{}) noexcept
 	{
-		std::fstream fWrite;
-		fWrite.open(pathFileName, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-		if (!fWrite)
+		try
 		{
+			std::error_code ec;
+
+			//存在性检查
+			bool bExists = std::filesystem::exists(pathFileName, ec);
+			if (ec || bExists)
+			{
+				if (ec)
+				{
+					funcInfo(NBT_Print_Level::Err, "Error: Failed to check existence of [{}]: {}\n", pathFileName.string(), ec.message());
+					return false;
+				}
+				else
+				{
+					//已存在，必须为普通文件
+					bool bRegularFile = std::filesystem::is_regular_file(pathFileName, ec);
+					if (ec)
+					{
+						funcInfo(NBT_Print_Level::Err, "Error: Failed to check file type of [{}]: {}\n", pathFileName.string(), ec.message());
+						return false;
+					}
+
+					//不是普通文件，出错
+					if (!bRegularFile)
+					{
+						funcInfo(NBT_Print_Level::Err, "Error: [{}] exists but is not a regular file.\n", pathFileName.string());
+						return false;
+					}
+				}
+			}
+
+			//检查通过，继续写入
+			std::fstream fWrite;
+			fWrite.open(pathFileName, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+			if (!fWrite)
+			{
+				funcInfo(NBT_Print_Level::Err, "Error: Cannot open file [{}] for writing.\n", pathFileName.string());
+				return false;
+			}
+
+			//获取文件大小并写出
+			uint64_t qwFileSize = tData.size();
+			if (!fWrite.write((const char *)tData.data(), sizeof(tData[0]) * qwFileSize))
+			{
+				funcInfo(NBT_Print_Level::Err, "Error: Failed to write data to file [{}].\n", pathFileName.string());
+				return false;
+			}
+
+			//完成，关闭文件
+			fWrite.close();
+
+			return true;
+		}
+		catch (const std::bad_alloc &e)
+		{
+			funcInfo(NBT_Print_Level::Err, "std::bad_alloc:[{}]\n", e.what());
 			return false;
 		}
-
-		//获取文件大小并写出
-		uint64_t qwFileSize = tData.size();
-		if (!fWrite.write((const char *)tData.data(), sizeof(tData[0]) * qwFileSize))
+		catch (const std::exception &e)
 		{
+			funcInfo(NBT_Print_Level::Err, "std::exception:[{}]\n", e.what());
 			return false;
 		}
-
-		//完成，关闭文件
-		fWrite.close();
-
-		return true;
+		catch (...)
+		{
+			funcInfo(NBT_Print_Level::Err, "Unknown Error\n");
+			return false;
+		}
 	}
 
 	/// @brief 从指定文件名的文件中读取字节流数据到任意顺序容器中
 	/// @tparam T 任意顺序容器类型
+	/// @tparam InfoFunc 打印异常信息的仿函数类型
 	/// @param pathFileName 目标文件名
 	/// @param[out] tData 顺序容器的引用
+	/// @param funcInfo 打印异常信息的仿函数
 	/// @return 读取是否成功
-	/// @note 如果文件不存在，则失败。
+	/// @note 文件必须是常规文件。如果文件不存在，则失败。
 	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
-	template<typename T = std::vector<uint8_t>>
+	template<typename T = std::vector<uint8_t>, typename InfoFunc = NBT_Print>
 	requires (sizeof(typename T::value_type) == 1 && std::is_trivially_copyable_v<typename T::value_type>)
-	static bool ReadFile(const std::filesystem::path &pathFileName, T &tData)
+	static bool ReadFile(const std::filesystem::path &pathFileName, T &tData, InfoFunc funcInfo = InfoFunc{}) noexcept
 	{
-		std::fstream fRead;
-		fRead.open(pathFileName, std::ios_base::binary | std::ios_base::in);
-		if (!fRead)
+		try
 		{
+			std::error_code ec;
+
+			bool bRegularFile = std::filesystem::is_regular_file(pathFileName, ec);
+			if (ec || !bRegularFile)//必须是普通文件
+			{
+				if (ec)
+				{
+					funcInfo(NBT_Print_Level::Err, "Error: Failed to check file type of [{}]: {}.\n", pathFileName.string(), ec.message());
+				}
+				else
+				{
+					funcInfo(NBT_Print_Level::Err, "Error: [{}] is not a regular file.\n", pathFileName.string());
+				}
+				return false;
+			}
+
+			//获取文件大小
+			uintmax_t umFileSize = std::filesystem::file_size(pathFileName, ec);
+			if (ec || umFileSize > (uintmax_t)std::numeric_limits<size_t>::max())//大小超过size_t范围，无法读取
+			{
+				if (ec)
+				{
+					funcInfo(NBT_Print_Level::Err, "Error: Cannot get file size of [{}]: {}\n", pathFileName.string(), ec.message());
+				}
+				else
+				{
+					funcInfo(NBT_Print_Level::Err, "Error: File [{}](size: [{}] bytes) is too large to fit into memory(max: [{}] bytes).\n", pathFileName.string(), umFileSize, std::numeric_limits<size_t>::max());
+				}
+				return false;
+			}
+
+			//转换为size_t
+			size_t szFileSize = (size_t)umFileSize;
+
+			//打开文件
+			std::fstream fRead;
+			fRead.open(pathFileName, std::ios_base::binary | std::ios_base::in);
+			if (!fRead)
+			{
+				funcInfo(NBT_Print_Level::Err, "Error: Cannot open file [{}] for reading.\n", pathFileName.string());
+				return false;
+			}
+
+			//直接给数据塞string里
+			tData.resize(szFileSize);//设置长度 c++23用resize_and_overwrite
+			if (!fRead.read((char *)tData.data(), sizeof(tData[0]) * szFileSize))//直接读入data
+			{
+				funcInfo(NBT_Print_Level::Err, "Error: Failed to read data from file [{}].\n", pathFileName.string());
+				return false;
+			}
+
+			//完成，关闭文件
+			fRead.close();
+
+			return true;
+		}
+		catch (const std::bad_alloc &e)
+		{
+			funcInfo(NBT_Print_Level::Err, "std::bad_alloc:[{}]\n", e.what());
 			return false;
 		}
-
-		//获取文件大小
-		// 移动到文件末尾
-		if (!fRead.seekg(0, std::ios::end))
+		catch (const std::exception &e)
 		{
+			funcInfo(NBT_Print_Level::Err, "std::exception:[{}]\n", e.what());
 			return false;
 		}
-
-		// 获取文件大小
-		size_t szFileSize = fRead.tellg();
-
-		//回到文件开头
-		if (!fRead.seekg(0, std::ios::beg))
+		catch (...)
 		{
+			funcInfo(NBT_Print_Level::Err, "Unknown Error\n");
 			return false;
 		}
-
-		//直接给数据塞string里
-		tData.resize(szFileSize);//设置长度 c++23用resize_and_overwrite
-		if (!fRead.read((char *)tData.data(), sizeof(tData[0]) * szFileSize))//直接读入data
-		{
-			return false;
-		}
-
-		//完成，关闭文件
-		fRead.close();
-
-		return true;
 	}
 
 	/// @brief 判断指定文件名的文件是否存在
@@ -714,21 +787,21 @@ public:
 		}
 	}
 
-	/// @brief 解压数据，但是不抛出异常，而是通过funcErrInfo打印异常信息并返回成功与否
+	/// @brief 解压数据，但是不抛出异常，而是通过funcInfo打印异常信息并返回成功与否
 	/// @tparam I 输入的顺序容器类型
 	/// @tparam O 输出的顺序容器类型
-	/// @tparam ErrInfoFunc 打印异常信息的仿函数类型
+	/// @tparam InfoFunc 打印异常信息的仿函数类型
 	/// @param[out] oData 输入的顺序容器引用
 	/// @param iData 输出的顺序容器引用
-	/// @param funcErrInfo 打印异常信息的仿函数
+	/// @param funcInfo 打印异常信息的仿函数
 	/// @return 操作是否成功
-	/// @note funcErrInfo默认实现为NBT_Print并输出到标准异常stderr，用户可以自定义。
+	/// @note funcInfo默认实现为NBT_Print并输出到标准异常stderr，用户可以自定义。
 	/// 类似于NBT_Print的仿函数类型并替换输出例程，具体情况请参照NBT_Print类的说明。
 	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
-	template<typename I, typename O, typename ErrInfoFunc = NBT_Print>
+	template<typename I, typename O, typename InfoFunc = NBT_Print>
 	requires (sizeof(typename I::value_type) == 1 && std::is_trivially_copyable_v<typename I::value_type> &&
 			  sizeof(typename O::value_type) == 1 && std::is_trivially_copyable_v<typename O::value_type>)
-	static bool DecompressDataNoThrow(O &oData, const I &iData, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept
+	static bool DecompressDataNoThrow(O &oData, const I &iData, InfoFunc funcInfo = InfoFunc{}) noexcept
 	{
 		try
 		{
@@ -737,37 +810,37 @@ public:
 		}
 		catch (const std::bad_alloc &e)
 		{
-			funcErrInfo("std::bad_alloc:[{}]\n", e.what());
+			funcInfo(NBT_Print_Level::Err, "std::bad_alloc:[{}]\n", e.what());
 			return false;
 		}
 		catch (const std::exception &e)
 		{
-			funcErrInfo("std::exception:[{}]\n", e.what());
+			funcInfo(NBT_Print_Level::Err, "std::exception:[{}]\n", e.what());
 			return false;
 		}
 		catch (...)
 		{
-			funcErrInfo("Unknown Error\n");
+			funcInfo(NBT_Print_Level::Err, "Unknown Error\n");
 			return false;
 		}
 	}
 
-	/// @brief 压缩数据，但是不抛出异常，而是通过funcErrInfo打印异常信息并返回成功与否
+	/// @brief 压缩数据，但是不抛出异常，而是通过funcInfo打印异常信息并返回成功与否
 	/// @tparam I 输入的顺序容器类型
 	/// @tparam O 输出的顺序容器类型
-	/// @tparam ErrInfoFunc 打印异常信息的仿函数类型
+	/// @tparam InfoFunc 打印异常信息的仿函数类型
 	/// @param[out] oData 输入的顺序容器引用
 	/// @param iData 输出的顺序容器引用
 	/// @param iLevel 压缩等级
-	/// @param funcErrInfo 打印异常信息的仿函数
+	/// @param funcInfo 打印异常信息的仿函数
 	/// @return 操作是否成功
-	/// @note funcErrInfo默认实现为NBT_Print并输出到标准异常stderr，用户可以自定义。
+	/// @note funcInfo默认实现为NBT_Print并输出到标准异常stderr，用户可以自定义。
 	/// 类似于NBT_Print的仿函数类型并替换输出例程，具体情况请参照NBT_Print类的说明。
 	/// 顺序容器必须存储字节流，内部的值类型大小必须为1，且必须可平凡拷贝。
-	template<typename I, typename O, typename ErrInfoFunc = NBT_Print>
+	template<typename I, typename O, typename InfoFunc = NBT_Print>
 	requires (sizeof(typename I::value_type) == 1 && std::is_trivially_copyable_v<typename I::value_type> &&
 			  sizeof(typename O::value_type) == 1 && std::is_trivially_copyable_v<typename O::value_type>)
-	static bool CompressDataNoThrow(O &oData, const I &iData, int iLevel = Z_DEFAULT_COMPRESSION, ErrInfoFunc funcErrInfo = NBT_Print{ stderr }) noexcept
+	static bool CompressDataNoThrow(O &oData, const I &iData, int iLevel = Z_DEFAULT_COMPRESSION, InfoFunc funcInfo = InfoFunc{}) noexcept
 	{
 		try
 		{
@@ -776,20 +849,20 @@ public:
 		}
 		catch (const std::bad_alloc &e)
 		{
-			funcErrInfo("std::bad_alloc:[{}]\n", e.what());
+			funcInfo(NBT_Print_Level::Err, "std::bad_alloc:[{}]\n", e.what());
 			return false;
 		}
 		catch (const std::exception &e)
 		{
-			funcErrInfo("std::exception:[{}]\n", e.what());
+			funcInfo(NBT_Print_Level::Err, "std::exception:[{}]\n", e.what());
 			return false;
 		}
 		catch (...)
 		{
-			funcErrInfo("Unknown Error\n");
+			funcInfo(NBT_Print_Level::Err, "Unknown Error\n");
 			return false;
 		}
 	}
-
 #endif
+
 };

@@ -9,28 +9,33 @@
 /// @file
 /// @brief NBT类型二进制流访问器（作为扫描工具的回调）
 
+
+/// @brief 控制流返回码（用于普通回调）
+enum class NBT_Visitor_ResultControl : uint8_t
+{
+	Continue,	///< 继续处理（继续迭代）
+	Break,		///< 跳过剩余值（离开当前结构层级回到父层级）
+	Stop,		///< 停止处理（终止解析）
+};
+
+/// @brief 控制流返回码（用于嵌套结构回调）
+enum class NBT_Visitor_NestingControl : uint8_t
+{
+	Enter,	///< 进入当前值（递归进入嵌套结构或展开值）
+	Skip,	///< 跳过当前值（跳过递归进入嵌套结构或展开值）
+	Break,	///< 跳过剩余值（离开当前结构层级回到父层级）
+	Stop,	///< 停止处理（终止解析）
+};
+
+
 /// @brief 提示性实现类（鸭子类型），仅用于模板通过性验证与用户接口提示
 /// @note 用户自定义的访问器类需要实现与此类相同的成员函数（不必继承），
 /// 并满足 IsLookLike_NBT_Visitor 概念。
 class NBT_Visitor
 {
 public:
-	/// @brief 控制流返回码（用于普通回调）
-	enum class ResultControl : uint8_t
-	{
-		Continue,	///< 继续处理（继续迭代）
-		Break,		///< 跳过剩余值（离开当前结构层级回到父层级）
-		Stop,		///< 停止处理（终止解析）
-	};
-
-	/// @brief 控制流返回码（用于嵌套结构回调）
-	enum class NestingControl : uint8_t
-	{
-		Enter,	///< 进入当前值（递归进入嵌套结构或展开值）
-		Skip,	///< 跳过当前值（跳过递归进入嵌套结构或展开值）
-		Break,	///< 跳过剩余值（离开当前结构层级回到父层级）
-		Stop,	///< 停止处理（终止解析）
-	};
+	using ResultControl = NBT_Visitor_ResultControl;	///< 控制流返回码（普通回调），直接映射 NBT_Visitor_ResultControl
+	using NestingControl = NBT_Visitor_NestingControl;	///< 控制流返回码（嵌套结构入口回调），直接映射 NBT_Visitor_NestingControl
 
 public:
 	/// @brief 处理数值类型节点
@@ -443,8 +448,8 @@ public:
 	NBT_Visitor_Collector &operator=(NBT_Visitor_Collector &&) = default;
 
 public:
-	using ResultControl = NBT_Visitor::ResultControl; ///< 控制流返回码（普通回调），直接映射 NBT_Visitor::ResultControl
-	using NestingControl = NBT_Visitor::NestingControl;	///< 控制流返回码（嵌套结构入口回调），直接映射 NBT_Visitor::NestingControl
+	using ResultControl = NBT_Visitor_ResultControl;	///< 控制流返回码（普通回调），直接映射 NBT_Visitor_ResultControl
+	using NestingControl = NBT_Visitor_NestingControl;	///< 控制流返回码（嵌套结构入口回调），直接映射 NBT_Visitor_NestingControl
 
 	/// @brief 获取根节点的常量引用
 	/// @return 根 Compound 对象的常量引用

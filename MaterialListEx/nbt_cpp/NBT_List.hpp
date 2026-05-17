@@ -31,18 +31,18 @@ public:
 	/// @note 具体类型描述请参考标准库说明
 	/// @{
 	
-	using Value_Type =				typename List::value_type;
-	using Allocator_Type =			typename List::allocator_type;
-	using Size_Type =				typename List::size_type;
-	using Difference_Type =			typename List::difference_type;
-	using Reference =				typename List::reference;
-	using Const_Reference =			typename List::const_reference;
-	using Pointer =					typename List::pointer;
-	using Const_Pointer =			typename List::const_pointer;
-	using Iterator =				typename List::iterator;
-	using Const_Iterator =			typename List::const_iterator;
-	using Reverse_Iterator =		typename List::reverse_iterator;
-	using Const_Reverse_Iterator =	typename List::const_reverse_iterator;
+	using Value_Type =				typename List::value_type;				///< 标准库容器公开类型映射
+	using Allocator_Type =			typename List::allocator_type;			///< 标准库容器公开类型映射
+	using Size_Type =				typename List::size_type;				///< 标准库容器公开类型映射
+	using Difference_Type =			typename List::difference_type;			///< 标准库容器公开类型映射
+	using Reference =				typename List::reference;				///< 标准库容器公开类型映射
+	using Const_Reference =			typename List::const_reference;			///< 标准库容器公开类型映射
+	using Pointer =					typename List::pointer;					///< 标准库容器公开类型映射
+	using Const_Pointer =			typename List::const_pointer;			///< 标准库容器公开类型映射
+	using Iterator =				typename List::iterator;				///< 标准库容器公开类型映射
+	using Const_Iterator =			typename List::const_iterator;			///< 标准库容器公开类型映射
+	using Reverse_Iterator =		typename List::reverse_iterator;		///< 标准库容器公开类型映射
+	using Const_Reverse_Iterator =	typename List::const_reverse_iterator;	///< 标准库容器公开类型映射
 
 	/// @}
 

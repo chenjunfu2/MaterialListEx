@@ -31,13 +31,13 @@ protected:
 		Error,		///< 出现错误（终止解析）
 	};
 
-	static Control ResultControlToControl(NBT_Visitor::ResultControl enResultControl)
+	static Control ResultControlToControl(NBT_Visitor_ResultControl enResultControl)
 	{
 		switch (enResultControl)
 		{
-		case NBT_Visitor::ResultControl::Continue:	return Control::Continue;	break;
-		case NBT_Visitor::ResultControl::Break:		return Control::Break;		break;
-		case NBT_Visitor::ResultControl::Stop:		return Control::Stop;		break;
+		case NBT_Visitor_ResultControl::Continue:	return Control::Continue;	break;
+		case NBT_Visitor_ResultControl::Break:		return Control::Break;		break;
+		case NBT_Visitor_ResultControl::Stop:		return Control::Stop;		break;
 		default:									return Control::Error;		break;
 		}
 	}
@@ -225,7 +225,7 @@ catch(...)\
 		}
 
 		T BigEndianVal{};
-		tData.GetRange((uint8_t *)&BigEndianVal, sizeof(BigEndianVal));
+		tData.GetRange((void *)&BigEndianVal, sizeof(BigEndianVal));
 		tVal = NBT_Endian::BigToNativeAny(BigEndianVal);
 
 		if constexpr (!bNoCheck)
@@ -259,11 +259,9 @@ catch(...)\
 			return false;
 		}
 
-		//解析数据
-		tName.reserve(szStringLength);//提前分配
-		tName.assign((const ValueType *)tData.CurData(), szStringLength);//构造string（如果长度为0则构造0长字符串，合法行为）
-		
-		tData.AddIndex(szStringSize);//移动下标
+		//解析出名称
+		tName.resize(szStringLength);//设置大小
+		tData.GetRange((void *)tName.data(), szStringSize);//构造string（如果长度为0则构造0长字符串，合法行为）
 
 		return true;
 	MYCATCH(false);
@@ -292,7 +290,7 @@ catch(...)\
 		}
 
 		//跳过数据
-		tData.AddIndex(szSkipSize);
+		tData.SkipData(szSkipSize);
 		return true;
 	}
 
@@ -342,7 +340,7 @@ catch(...)\
 		}
 
 		//跳过数据
-		tData.AddIndex(szSkipSize);
+		tData.SkipData(szSkipSize);
 		return true;
 	}
 
@@ -425,7 +423,7 @@ catch(...)\
 			return false;
 		}
 
-		tData.AddIndex(szSkipSize);//直接递增索引跳过
+		tData.SkipData(szSkipSize);//直接递增索引跳过
 		return true;
 	}
 
@@ -523,9 +521,9 @@ catch(...)\
 		//访问器开始回调
 		switch (tVisitor.VisitListBegin(enListElementTag, szListLength))
 		{
-		case NBT_Visitor::ResultControl::Continue:	/*继续（什么也不做）*/	break;
-		case NBT_Visitor::ResultControl::Break:		goto skip_any;			break;//这时候索引从0开始，跳过所有
-		case NBT_Visitor::ResultControl::Stop:		return Control::Stop;	break;
+		case NBT_Visitor_ResultControl::Continue:	/*继续（什么也不做）*/	break;
+		case NBT_Visitor_ResultControl::Break:		goto skip_any;			break;//这时候索引从0开始，跳过所有
+		case NBT_Visitor_ResultControl::Stop:		return Control::Stop;	break;
 		default:
 			UNKNOWN_CONTROL_CODE(tVisitor.VisitListBegin, Control::Error);
 			break;
@@ -537,8 +535,8 @@ catch(...)\
 			//访问器元素回调
 			switch (tVisitor.VisitListElementBegin(enListElementTag, i))
 			{
-			case NBT_Visitor::NestingControl::Enter:	/*进入值（什么也不做）*/	break;
-			case NBT_Visitor::NestingControl::Skip:		//跳过当前元素
+			case NBT_Visitor_NestingControl::Enter:	/*进入值（什么也不做）*/	break;
+			case NBT_Visitor_NestingControl::Skip:		//跳过当前元素
 				{
 					if (!SkipSwitch(tData, enListElementTag, tVisitor, szStackDepth - 1))
 					{
@@ -548,8 +546,8 @@ catch(...)\
 					continue;//跳过当前并继续
 				}
 				break;
-			case NBT_Visitor::NestingControl::Break:	goto skip_any;			break;//跳过剩余所有列表元素，注意当前元素还未读取，所以下面依旧从i开始跳
-			case NBT_Visitor::NestingControl::Stop:		return Control::Stop;	break;
+			case NBT_Visitor_NestingControl::Break:	goto skip_any;			break;//跳过剩余所有列表元素，注意当前元素还未读取，所以下面依旧从i开始跳
+			case NBT_Visitor_NestingControl::Stop:		return Control::Stop;	break;
 			default:
 				UNKNOWN_CONTROL_CODE(tVisitor.VisitListElementBegin, Control::Error);
 				break;
@@ -573,9 +571,9 @@ catch(...)\
 			//元素结束回调
 			switch (tVisitor.VisitListElementEnd(enListElementTag, i))
 			{
-			case NBT_Visitor::ResultControl::Continue:	/*继续（什么也不做）*/	break;
-			case NBT_Visitor::ResultControl::Break:		goto skip_any;			break;//跳过剩余所有
-			case NBT_Visitor::ResultControl::Stop:		return Control::Stop;	break;
+			case NBT_Visitor_ResultControl::Continue:	/*继续（什么也不做）*/	break;
+			case NBT_Visitor_ResultControl::Break:		goto skip_any;			break;//跳过剩余所有
+			case NBT_Visitor_ResultControl::Stop:		return Control::Stop;	break;
 			default:
 				UNKNOWN_CONTROL_CODE(tVisitor.VisitListElementEnd, Control::Error);
 				break;
@@ -674,9 +672,9 @@ catch(...)\
 		{
 			switch (tVisitor.VisitCompoundBegin())
 			{
-			case NBT_Visitor::ResultControl::Continue:	/*继续（什么也不做）*/	break;
-			case NBT_Visitor::ResultControl::Break:		goto skip_any;			break;//跳过所有
-			case NBT_Visitor::ResultControl::Stop:		return Control::Stop;	break;
+			case NBT_Visitor_ResultControl::Continue:	/*继续（什么也不做）*/	break;
+			case NBT_Visitor_ResultControl::Break:		goto skip_any;			break;//跳过所有
+			case NBT_Visitor_ResultControl::Stop:		return Control::Stop;	break;
 			default:
 				UNKNOWN_CONTROL_CODE(tVisitor.VisitCompoundBegin, Control::Error);
 				break;
@@ -728,8 +726,8 @@ catch(...)\
 			//访问器条目回调（仅类型）
 			switch (tVisitor.VisitCompoundNextEntryType(enCompoundEntryTag))
 			{
-			case NBT_Visitor::NestingControl::Enter:	/*进入（什么也不做）*/	break;
-			case NBT_Visitor::NestingControl::Skip:		//跳过一个
+			case NBT_Visitor_NestingControl::Enter:	/*进入（什么也不做）*/	break;
+			case NBT_Visitor_NestingControl::Skip:		//跳过一个
 				{
 					//类型已被读取
 					//跳过名称
@@ -747,7 +745,7 @@ catch(...)\
 					}
 				}
 				break;
-			case NBT_Visitor::NestingControl::Break:	//跳过所有（离开）
+			case NBT_Visitor_NestingControl::Break:	//跳过所有（离开）
 				{
 					//类型已被读取
 					//跳过名称
@@ -768,7 +766,7 @@ catch(...)\
 					goto skip_any;
 				}
 				break;
-			case NBT_Visitor::NestingControl::Stop:	return Control::Stop;	break;
+			case NBT_Visitor_NestingControl::Stop:	return Control::Stop;	break;
 			default:
 				UNKNOWN_CONTROL_CODE(tVisitor.VisitCompoundNextEntryType, Control::Error);
 				break;
@@ -785,8 +783,8 @@ catch(...)\
 			//调用访问器（类型名称）
 			switch (tVisitor.VisitCompoundEntryBegin(enCompoundEntryTag, std::move(sName)))
 			{
-			case NBT_Visitor::NestingControl::Enter:	/*进入（什么也不做）*/	break;
-			case NBT_Visitor::NestingControl::Skip:		//跳过一个
+			case NBT_Visitor_NestingControl::Enter:	/*进入（什么也不做）*/	break;
+			case NBT_Visitor_NestingControl::Skip:		//跳过一个
 				{
 					//类型、名称已被读取
 					//跳过数据
@@ -798,7 +796,7 @@ catch(...)\
 					continue;//继续上面的循环
 				}
 				break;
-			case NBT_Visitor::NestingControl::Break://跳过剩余
+			case NBT_Visitor_NestingControl::Break://跳过剩余
 				{
 					//类型、名称已被读取
 					//跳过数据
@@ -812,7 +810,7 @@ catch(...)\
 					goto skip_any;
 				}
 				break;
-			case NBT_Visitor::NestingControl::Stop:	return Control::Stop;	break;
+			case NBT_Visitor_NestingControl::Stop:	return Control::Stop;	break;
 			default:
 				UNKNOWN_CONTROL_CODE(tVisitor.VisitCompoundEntryBegin, Control::Error);
 				break;
@@ -836,9 +834,9 @@ catch(...)\
 			//元素访问结束回调
 			switch (tVisitor.VisitCompoundEntryEnd(enCompoundEntryTag, std::move(sName)))
 			{
-			case NBT_Visitor::ResultControl::Continue:	/*继续（什么也不做）*/	break;
-			case NBT_Visitor::ResultControl::Break:		goto skip_any;			break;//跳过剩余所有
-			case NBT_Visitor::ResultControl::Stop:		return Control::Stop;	break;
+			case NBT_Visitor_ResultControl::Continue:	/*继续（什么也不做）*/	break;
+			case NBT_Visitor_ResultControl::Break:		goto skip_any;			break;//跳过剩余所有
+			case NBT_Visitor_ResultControl::Stop:		return Control::Stop;	break;
 			default:
 				UNKNOWN_CONTROL_CODE(tVisitor.VisitCompoundEntryEnd, Control::Error);
 				break;
@@ -1188,6 +1186,53 @@ public:
 		NBT_IO::DefaultInputStream<DataType> IptStream(tDataInput, szStartIdx);
 		return ScanCompoundType<true>(IptStream, tVisitor, szStackDepth) != Control::Error;
 	}
+
+#ifdef CJF2_NBT_CPP_USE_ZLIB
+
+	/// @brief 从可能被压缩的文件中扫描 NBT 数据，并通过访问器回调处理每个节点
+	/// @tparam Visitor 访问器类型，必须符合 IsLookLike_NBT_Visitor 概念
+	/// @tparam InfoFunc 错误信息输出仿函数类型
+	/// @param pathFileName 源文件路径
+	/// @param tVisitor 访问器对象，用于处理扫描过程中遇到的 NBT 数据节点
+	/// @param funcInfo 错误信息处理仿函数
+	/// @return 扫描成功返回 true，失败返回 false
+	/// @note 本函数会读取整个文件内容，先尝试使用 Zlib 解压。若解压失败，则假定文件未压缩，直接使用原始数据。
+	/// 然后调用 ScanNBT 扫描数据。如果文件不存在，则会失败。
+	template <typename Visitor, typename InfoFunc = NBT_Print>
+	requires(IsLookLike_NBT_Visitor<Visitor>)
+	static bool SimpleScanNbtFile(const std::filesystem::path &pathFileName, Visitor &tVisitor, InfoFunc funcInfo = InfoFunc{}) noexcept
+	{
+		// 读取文件
+		std::vector<uint8_t> vFileData;
+		if (!NBT_IO::ReadFile(pathFileName, vFileData, funcInfo))
+		{
+			funcInfo(NBT_Print_Level::Err, "Error: Cannot read file [{}].\n", pathFileName.string());
+			return false;
+		}
+
+		// 尝试解压，失败则视作未压缩数据
+		std::vector<uint8_t> vNbtData;
+		if (!NBT_IO::DecompressDataNoThrow(vNbtData, vFileData, funcInfo))
+		{
+			funcInfo(NBT_Print_Level::Warn, "Warning: Decompression failed, assuming uncompressed data.\n");
+			vNbtData = std::move(vFileData);
+		}
+
+		// 清理数据
+		vFileData.clear();
+		vFileData.shrink_to_fit();
+
+		// 扫描
+		if (!ScanNBT(vNbtData, 0, tVisitor, 512))
+		{
+			funcInfo(NBT_Print_Level::Err, "Error: ScanNBT failed.\n");
+			return false;
+		}
+
+		return true;
+	}
+
+#endif // CJF2_NBT_CPP_USE_ZLIB
 
 #undef MYTRY
 #undef MYCATCH

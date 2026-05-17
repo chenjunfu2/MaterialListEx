@@ -29,31 +29,51 @@ class NBT_Helper
 	~NBT_Helper(void) = delete;
 
 public:
+	/// @brief 提示性类型，表示在写出 Compound 时不对键值对进行任何排序。
+	/// @note 如果不使用排序，那么虽然输出是意义等价的，但不是数据值一致的。
+	struct NoSortCompound
+	{};
+
+	/// @brief 默认排序策略，提供按键的字符串字典序升序或降序排列。
+	/// @tparam bAscending 是否升序排序。true表示升序（默认），false表示降序。
+	template<bool bAscending = true>
+	struct DefaultCompoundSort
+	{
+		/// @brief 对给定的 Compound 对象进行排序，返回指向其元素的迭代器向量。
+		/// @param cpdSort 需要排序的 Compound 对象。
+		/// @return `std::vector<NBT_Type::Compound::Const_Iterator>`，其中迭代器按排序顺序排列。
+		/// @note 该函数通常由 `NBT_Writer` 内部调用，用户一般不直接使用。
+		std::vector<NBT_Type::Compound::Const_Iterator> operator()(const NBT_Type::Compound &cpdSort)
+		{
+			return cpdSort.KeySortIt<bAscending>();
+		}
+	};
+
 	/// @brief 格式化对齐打印NBT对象
-	/// @tparam bSortCompound 是否对Compound进行排序
+	/// @tparam SortPolicy 用于进行Compound写出前排序的可调用类型，或不进行排序的提示标签类型
 	/// @tparam PrintFunc 用于输出的仿函数类型，具体格式请参考NBT_Print说明
 	/// @param nRoot 任意NBT_Type中的类型，仅初始化为视图
 	/// @param szPaddingStartLevel 从指定缩进等级开始打印，值为(size_t)-1则不打印缩进
 	/// @param strLevelPadding 用于打印一级的空白内容
 	/// @param funcPrint 用于输出的仿函数
-	template<bool bSortCompound = true, typename PrintFunc = NBT_Print>
+	template<typename SortPolicy = DefaultCompoundSort<true>, typename PrintFunc = NBT_Print>
 	static void Print(const NBT_Node_View<true> nRoot, size_t szPaddingStartLevel = 0, const std::string & strLevelPadding = "    ", PrintFunc funcPrint = NBT_Print{})
 	{
-		PrintSwitch<true, bSortCompound>(nRoot, szPaddingStartLevel, strLevelPadding, funcPrint);
+		PrintSwitch<true, SortPolicy>(nRoot, szPaddingStartLevel, strLevelPadding, funcPrint);
 	}
 
 	/// @brief 直接序列化，按照一定规则输出为String并返回
-	/// @tparam bSortCompound 是否对Compound进行排序
+	/// @tparam SortPolicy 用于进行Compound写出前排序的可调用类型，或不进行排序的提示标签类型
 	/// @tparam bHexNumType 是否使用十六进制无损输出值
 	/// @tparam bSnbtType 是否对输出为SNBT格式（SNBT下强制为十进制值，忽略bHexNumType参数）
 	/// @param nRoot 任意NBT_Type中的类型，仅初始化为视图
 	/// @return 返回序列化的结果
 	/// @note 注意并非序列化为snbt，一般用于小NBT对象的附加信息输出
-	template<bool bSortCompound = true, bool bHexNumType = true, bool bSnbtType = false>
+	template<typename SortPolicy = DefaultCompoundSort<true>, bool bHexNumType = true, bool bSnbtType = false>
 	static std::conditional_t<bSnbtType, NBT_Type::String, std::string> Serialize(const NBT_Node_View<true> nRoot)
 	{
 		std::conditional_t<bSnbtType, NBT_Type::String, std::string> sRet{};
-		SerializeSwitch<true, bSortCompound, bHexNumType, bSnbtType>(nRoot, sRet);
+		SerializeSwitch<true, SortPolicy, bHexNumType, bSnbtType>(nRoot, sRet);
 		return sRet;
 	}
 
@@ -70,7 +90,7 @@ public:
 	using DefaultFuncType = std::decay_t<decltype(DefaultFunc)>;
 
 	/// @brief 对NBT对象进行递归计算哈希
-	/// @tparam bSortCompound 是否对Compound进行排序，以获得一致性哈希结果
+	/// @tparam SortPolicy 用于进行Compound写出前排序的可调用类型，或不进行排序的提示标签类型，请最好使用排序以获得一致性哈希结果
 	/// @tparam TB 开始NBT哈希之前调用的仿函数类型
 	/// @tparam TA 结束NBT哈希之后调用的仿函数类型
 	/// @param nRoot 任意NBT_Type中的类型，仅初始化为视图
@@ -79,11 +99,11 @@ public:
 	/// @param funAfter 结束NBT哈希之后调用的仿函数
 	/// @return 计算的哈希值，可以用于哈希表或比较NBT对象等
 	/// @note 注意，递归层数在此函数内没有限制，请注意不要将过深的NBT对象传入导致栈溢出！
-	template<bool bSortCompound = true, typename TB = DefaultFuncType, typename TA = DefaultFuncType>//两个函数，分别在前后调用，可以用于插入哈希数据
+	template<typename SortPolicy = DefaultCompoundSort<true>, typename TB = DefaultFuncType, typename TA = DefaultFuncType>//两个函数，分别在前后调用，可以用于插入哈希数据
 	static NBT_Hash::HASH_T Hash(const NBT_Node_View<true> nRoot, NBT_Hash nbtHash, TB funBefore = DefaultFunc, TA funAfter = DefaultFunc)
 	{
 		funBefore(nbtHash);
-		HashSwitch<true, bSortCompound>(nRoot, nbtHash);
+		HashSwitch<true, SortPolicy>(nRoot, nbtHash);
 		funAfter(nbtHash);
 
 		return nbtHash.Digest();
@@ -189,7 +209,7 @@ protected:
 protected:
 ///@cond
 	//首次调用默认为true，二次调用开始内部主动变为false
-	template<bool bRoot, bool bSortCompound, typename PrintFunc = NBT_Print>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+	template<bool bRoot, typename SortPolicy, typename PrintFunc = NBT_Print>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
 	static void PrintSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, size_t szLevel, const std::string &strLevelPadding, PrintFunc &funcPrint)
 	{
 		static auto PrintArray = [](const std::string strBeg, const auto &vArr, const std::string strEnd, PrintFunc &funcPrint) -> void
@@ -292,7 +312,7 @@ protected:
 					}
 
 					PrintPadding(szLevel, true, it.GetTag() != NBT_TAG::Compound && it.GetTag() != NBT_TAG::List, strLevelPadding, funcPrint);
-					PrintSwitch<false, bSortCompound, PrintFunc>(it, szLevel + 1, strLevelPadding, funcPrint);
+					PrintSwitch<false, SortPolicy, PrintFunc>(it, szLevel + 1, strLevelPadding, funcPrint);
 				}
 
 				if (list.Size() != 0)//空列表无需换行以及对齐
@@ -309,7 +329,7 @@ protected:
 				PrintPadding(szLevel, false, !bRoot, strLevelPadding, funcPrint);//不是根部则打印开头换行
 				funcPrint("{{");//大括号转义
 
-				if constexpr (!bSortCompound)
+				if constexpr (std::is_same_v<SortPolicy, NoSortCompound>)
 				{
 					bool bFirst = true;
 					for (const auto &it : cpd)
@@ -325,12 +345,12 @@ protected:
 
 						PrintPadding(szLevel, true, true, strLevelPadding, funcPrint);
 						funcPrint("\"{}\":", it.first.ToCharTypeUTF8());
-						PrintSwitch<false, bSortCompound, PrintFunc>(it.second, szLevel + 1, strLevelPadding, funcPrint);
+						PrintSwitch<false, SortPolicy, PrintFunc>(it.second, szLevel + 1, strLevelPadding, funcPrint);
 					}
 				}
 				else
 				{
-					auto vSort = cpd.KeySortIt();
+					std::vector<NBT_Type::Compound::Const_Iterator> vSort = SortPolicy{}(cpd);
 
 					bool bFirst = true;
 					for (const auto &it : vSort)
@@ -346,7 +366,7 @@ protected:
 
 						PrintPadding(szLevel, true, true, strLevelPadding, funcPrint);
 						funcPrint("\"{}\":", it->first.ToCharTypeUTF8());
-						PrintSwitch<false, bSortCompound, PrintFunc>(it->second, szLevel + 1, strLevelPadding, funcPrint);
+						PrintSwitch<false, SortPolicy, PrintFunc>(it->second, szLevel + 1, strLevelPadding, funcPrint);
 					}
 				}
 
@@ -367,7 +387,7 @@ protected:
 	}
 
 	//首次调用默认为true，二次调用开始内部主动变为false
-	template<bool bRoot, bool bSortCompound, bool bHexNumType, bool bSnbtType>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+	template<bool bRoot, typename SortPolicy, bool bHexNumType, bool bSnbtType>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
 	static void SerializeSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, std::conditional_t<bSnbtType, NBT_Type::String, std::string> &sRet)
 	{
 		auto tag = nRoot.GetTag();
@@ -582,7 +602,7 @@ protected:
 				sRet += '[';
 				for (const auto &it : list)
 				{
-					SerializeSwitch<false, bSortCompound, bHexNumType, bSnbtType>(it, sRet);
+					SerializeSwitch<false, SortPolicy, bHexNumType, bSnbtType>(it, sRet);
 					sRet += ',';
 				}
 	
@@ -598,7 +618,7 @@ protected:
 				const auto &cpd = nRoot.template Get<NBT_Type::Compound>();
 				sRet += '{';
 	
-				if constexpr (!bSortCompound)
+				if constexpr (std::is_same_v<SortPolicy, NoSortCompound>)
 				{
 					for (const auto &it : cpd)
 					{
@@ -613,13 +633,13 @@ protected:
 							sRet += it.first.ToCharTypeUTF8();
 							sRet += "\":";
 						}
-						SerializeSwitch<false, bSortCompound, bHexNumType, bSnbtType>(it.second, sRet);
+						SerializeSwitch<false, SortPolicy, bHexNumType, bSnbtType>(it.second, sRet);
 						sRet += ',';
 					}
 				}
 				else
 				{
-					auto vSort = cpd.KeySortIt();
+					std::vector<NBT_Type::Compound::Const_Iterator> vSort = SortPolicy{}(cpd);
 
 					for (const auto &it : vSort)
 					{
@@ -634,7 +654,7 @@ protected:
 							sRet += it->first.ToCharTypeUTF8();
 							sRet += "\":";
 						}
-						SerializeSwitch<false, bSortCompound, bHexNumType, bSnbtType>(it->second, sRet);
+						SerializeSwitch<false, SortPolicy, bHexNumType, bSnbtType>(it->second, sRet);
 						sRet += ',';
 					}
 				}
@@ -664,7 +684,7 @@ protected:
 	}
 
 #ifdef CJF2_NBT_CPP_USE_XXHASH
-	template<bool bRoot, bool bSortCompound>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
+	template<bool bRoot, typename SortPolicy>//首次使用NBT_Node_View解包，后续直接使用NBT_Node引用免除额外初始化开销
 	static void HashSwitch(std::conditional_t<bRoot, const NBT_Node_View<true> &, const NBT_Node &>nRoot, NBT_Hash &nbtHash)
 	{
 		auto tag = nRoot.GetTag();
@@ -760,7 +780,7 @@ protected:
 				const auto &list = nRoot.template Get<NBT_Type::List>();
 				for (const auto &it : list)
 				{
-					HashSwitch<false, bSortCompound>(it, nbtHash);
+					HashSwitch<false, SortPolicy>(it, nbtHash);
 				}
 			}
 			break;
@@ -768,25 +788,25 @@ protected:
 			{
 				const auto &cpd = nRoot.template Get<NBT_Type::Compound>();
 
-				if constexpr (!bSortCompound)
+				if constexpr (std::is_same_v<SortPolicy, NoSortCompound>)
 				{
 					for (const auto &it : cpd)
 					{
 						const auto &tmp = it.first;
 						nbtHash.Update(tmp.data(), tmp.size());
-						HashSwitch<false, bSortCompound>(it.second, nbtHash);
+						HashSwitch<false, SortPolicy>(it.second, nbtHash);
 					}
 				}
 				else//对compound迭代器进行排序，以使得hash获得一致性结果
 				{
-					auto vSort = cpd.KeySortIt();
+					std::vector<NBT_Type::Compound::Const_Iterator> vSort = SortPolicy{}(cpd);
 
 					//遍历有序结构
 					for (const auto &it : vSort)
 					{
 						const auto &tmp = it->first;
 						nbtHash.Update(tmp.data(), tmp.size());
-						HashSwitch<false, bSortCompound>(it->second, nbtHash);
+						HashSwitch<false, SortPolicy>(it->second, nbtHash);
 					}
 				}
 			}

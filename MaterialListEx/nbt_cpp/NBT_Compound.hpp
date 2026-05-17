@@ -31,24 +31,24 @@ public:
 	/// @note 具体类型描述请参考标准库说明
 	/// @{
 
-	using Hasher =					typename Compound::hasher;
-	using Key_Type =				typename Compound::key_type;
-	using Mapped_Type =				typename Compound::mapped_type;
-	using Key_Equal =				typename Compound::key_equal;
-	using Value_Type =				typename Compound::value_type;
-	using Allocator_Type =			typename Compound::allocator_type;
-	using Size_Type =				typename Compound::size_type;
-	using Difference_Type =			typename Compound::difference_type;
-	using Pointer =					typename Compound::pointer;
-	using Const_Pointer =			typename Compound::const_pointer;
-	using Reference =				typename Compound::reference;
-	using Const_Reference =			typename Compound::const_reference;
-	using Iterator =				typename Compound::iterator;
-	using Const_Iterator =			typename Compound::const_iterator;
-	using Local_Iterator =			typename Compound::local_iterator;
-	using Const_Local_Iterator =	typename Compound::const_local_iterator;
-	using Node_Type =				typename Compound::node_type;
-	using Insert_Return_Type =		typename Compound::insert_return_type;
+	using Hasher =					typename Compound::hasher;					///< 标准库容器公开类型映射
+	using Key_Type =				typename Compound::key_type;				///< 标准库容器公开类型映射
+	using Mapped_Type =				typename Compound::mapped_type;				///< 标准库容器公开类型映射
+	using Key_Equal =				typename Compound::key_equal;				///< 标准库容器公开类型映射
+	using Value_Type =				typename Compound::value_type;				///< 标准库容器公开类型映射
+	using Allocator_Type =			typename Compound::allocator_type;			///< 标准库容器公开类型映射
+	using Size_Type =				typename Compound::size_type;				///< 标准库容器公开类型映射
+	using Difference_Type =			typename Compound::difference_type;			///< 标准库容器公开类型映射
+	using Pointer =					typename Compound::pointer;					///< 标准库容器公开类型映射
+	using Const_Pointer =			typename Compound::const_pointer;			///< 标准库容器公开类型映射
+	using Reference =				typename Compound::reference;				///< 标准库容器公开类型映射
+	using Const_Reference =			typename Compound::const_reference;			///< 标准库容器公开类型映射
+	using Iterator =				typename Compound::iterator;				///< 标准库容器公开类型映射
+	using Const_Iterator =			typename Compound::const_iterator;			///< 标准库容器公开类型映射
+	using Local_Iterator =			typename Compound::local_iterator;			///< 标准库容器公开类型映射
+	using Const_Local_Iterator =	typename Compound::const_local_iterator;	///< 标准库容器公开类型映射
+	using Node_Type =				typename Compound::node_type;				///< 标准库容器公开类型映射
+	using Insert_Return_Type =		typename Compound::insert_return_type;		///< 标准库容器公开类型映射
 
 	/// @}
 
