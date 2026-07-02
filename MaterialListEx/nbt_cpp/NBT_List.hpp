@@ -26,6 +26,9 @@ class NBT_List :protected List
 	friend class NBT_Helper;
 	
 public:
+	/// @brief 父类类型
+	using Super = List;
+
 	/// @name 暴露父类定义的类型成员
 	/// @brief 使用using代理转发类型
 	/// @note 具体类型描述请参考标准库说明
@@ -76,6 +79,20 @@ public:
 	NBT_List(const NBT_List &_Copy) :List(_Copy)
 	{}
 
+	/// @brief 获取底层容器数据的常量引用
+	/// @return 底层容器数据的常量引用
+	const List &GetData(void) const noexcept
+	{
+		return *this;
+	}
+
+	/// @brief 获取底层容器数据的引用
+	/// @return 底层容器数据的引用
+	List &GetData(void) noexcept
+	{
+		return *this;
+	}
+
 	/// @brief 移动赋值运算符
 	/// @param _Move 要移动的源对象
 	/// @return 当前对象的引用
@@ -91,13 +108,6 @@ public:
 	NBT_List &operator=(const NBT_List &_Copy)
 	{
 		List::operator=(_Copy);
-		return *this;
-	}
-
-	/// @brief 获取底层容器数据的常量引用
-	/// @return 底层容器数据的常量引用
-	const List &GetData(void) const noexcept
-	{
 		return *this;
 	}
 
@@ -165,22 +175,22 @@ public:
 
 	/// @brief 根据位置查找值
 	/// @param szPos 要查找的位置
-	/// @return 位置对应的值的指针，如果值不存在则为NULL
+	/// @return 位置对应的值的指针，如果值不存在则为nullptr
 	typename List::value_type *Has(const typename List::size_type &szPos) noexcept
 	{
 		return szPos < List::size()
 			? &List::operator[](szPos)
-			: NULL;
+			: nullptr;
 	}
 
 	/// @brief 根据位置查找值（常量版本）
 	/// @param szPos 要查找的位置
-	/// @return 位置对应的值的指针，如果值不存在则为NULL
+	/// @return 位置对应的值的指针，如果值不存在则为nullptr
 	const typename List::value_type *Has(const typename List::size_type &szPos) const noexcept
 	{
 		return szPos < List::size()
 			? &List::operator[](szPos)
-			: NULL;
+			: nullptr;
 	}
 
 	/// @brief 获取列表开头的元素
@@ -436,54 +446,75 @@ typename NBT_Type::type &Get##type(const typename List::size_type &szPos)\
 /**
  @brief 获取指定位置的 type 类型数据（常量版本）
  @param szPos 位置索引
- @return type 类型数据的指针，如果位置不存在或类型不对则返回NULL
+ @return type 类型数据的指针，如果位置不存在或类型不对则返回nullptr
  */\
 const typename NBT_Type::type *Has##type(const typename List::size_type &szPos) const noexcept\
 {\
 	auto *p = Has(szPos);\
-	return p != NULL && p->Is##type()\
-		? &p->Get##type()\
-		: NULL;\
+	return p != nullptr\
+		? p->GetIf##type()\
+		: nullptr;\
 }\
 \
 /**
  @brief 获取指定位置的 type 类型数据
  @param szPos 位置索引
- @return type 类型数据的指针，如果位置不存在或类型不对则返回NULL
+ @return type 类型数据的指针，如果位置不存在或类型不对则返回nullptr
  */\
 typename NBT_Type::type *Has##type(const typename List::size_type &szPos) noexcept\
 {\
 	auto *p = Has(szPos);\
-	return p != NULL && p->Is##type()\
-		? &p->Get##type()\
-		: NULL;\
+	return p != nullptr\
+		? p->GetIf##type()\
+		: nullptr;\
 }\
 \
 /**
  @brief 获取列表第一个 type 类型数据（常量版本）
  @return type 类型数据的常量引用
- @note 如果列表为空或类型不匹配则抛出异常，
+ @note 如果列表为空则行为未定义，类型不匹配则抛出异常，
  具体请参考std::vector关于front的说明与std::get的说明
  */\
 const typename NBT_Type::type &Front##type(void) const\
 {\
-	return List::front().Get##type(); \
+	return List::front().Get##type();\
 }\
 \
 /**
  @brief 获取列表第一个 type 类型数据
  @return type 类型数据的引用
- @note 如果列表为空或类型不匹配则抛出异常，
+ @note 如果列表为空则行为未定义，类型不匹配则抛出异常，
  具体请参考std::vector关于front的说明与std::get的说明
  */\
 typename NBT_Type::type &Front##type(void)\
- {\
-	return List::front().Get##type(); \
- }\
+{\
+	return List::front().Get##type();\
+}\
+\
+/**
+ @brief 获取列表第一个 type 类型数据的指针（常量版本）
+ @return type 类型数据的常量指针
+ @note 如果类型不匹配则返回nullptr，如果列表为空则行为未定义
+ */\
+const typename NBT_Type::type *FrontIf##type(void) const\
+{\
+	return List::front().GetIf##type();\
+}\
+\
+/**
+ @brief 获取列表第一个 type 类型数据的指针
+ @return type 类型数据的指针
+ @note 如果类型不匹配则返回nullptr，如果列表为空则行为未定义
+ */\
+typename NBT_Type::type *FrontIf##type(void)\
+{\
+	return List::front().GetIf##type();\
+}\
+\
 /**
  @brief 获取列表最后一个 type 类型数据（常量版本）
  @return type 类型数据的常量引用
- @note 如果列表为空或类型不匹配则抛出异常，
+ @note 如果列表为空则行为未定义，类型不匹配则抛出异常，
  具体请参考std::vector关于back的说明与std::get的说明
  */\
 const typename NBT_Type::type &Back##type(void) const\
@@ -494,12 +525,32 @@ const typename NBT_Type::type &Back##type(void) const\
 /**
  @brief 获取列表最后一个 type 类型数据
  @return type 类型数据的引用
- @note 如果列表为空或类型不匹配则抛出异常，
+ @note 如果列表为空则行为未定义，类型不匹配则抛出异常，
  具体请参考std::vector关于back的说明与std::get的说明
  */\
 typename NBT_Type::type &Back##type(void)\
 {\
 	return List::back().Get##type();\
+}\
+\
+/**
+ @brief 获取列表最后一个 type 类型数据的指针（常量版本）
+ @return type 类型数据的常量指针
+ @note 如果类型不匹配则返回nullptr，如果列表为空则行为未定义
+ */\
+const typename NBT_Type::type *BackIf##type(void) const\
+{\
+	return List::back().GetIf##type();\
+}\
+\
+/**
+ @brief 获取列表最后一个 type 类型数据的指针
+ @return type 类型数据的指针
+ @note 如果类型不匹配则返回nullptr，如果列表为空则行为未定义
+ */\
+typename NBT_Type::type *BackIf##type(void)\
+{\
+	return List::back().GetIf##type();\
 }
 
  /// @name 针对每种类型提供一个方便使用的函数，由宏批量生成

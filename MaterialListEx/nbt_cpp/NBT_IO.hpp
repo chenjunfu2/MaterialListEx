@@ -634,7 +634,7 @@ public:
 		//错误处理
 		if (iRet != Z_STREAM_END)
 		{
-			if (zs.msg != NULL)//错误消息不为null则抛出带消息异常
+			if (zs.msg != nullptr)//错误消息不为null则抛出带消息异常
 			{
 				throw std::runtime_error(std::string("Zlib decompression failed with error message: ") + std::string(zs.msg));
 			}
@@ -776,7 +776,7 @@ public:
 		//错误处理
 		if (iRet != Z_STREAM_END)
 		{
-			if (zs.msg != NULL)
+			if (zs.msg != nullptr)
 			{
 				throw std::runtime_error(std::string("Zlib compression failed with error message: ") + std::string(zs.msg));
 			}

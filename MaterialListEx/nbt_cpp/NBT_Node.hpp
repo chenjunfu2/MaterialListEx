@@ -38,8 +38,9 @@ class NBT_Node
 	template <bool bIsConst>
 	friend class NBT_Node_View;//视图类作为友元，互相访问数据
 
-private:
+public:
 	//类型列表展开，声明std::variant
+	/// @cond
 	template <typename T>
 	struct TypeListToVariant;
 
@@ -48,11 +49,15 @@ private:
 	{
 		using type = std::variant<Ts...>;
 	};
+	/// @endcond
 
+	/// @brief 用于存储NBT数据的具体变体类型
 	using VariantData = TypeListToVariant<NBT_Type::TypeList>::type;
 
-	//数据对象（要求必须持有数据）
+protected:
+	/// @brief 数据对象（要求必须持有数据）
 	VariantData data;
+
 public:
 	/// @brief 显式类型构造函数（通过in_place_type_t指定目标类型）
 	/// @tparam T 要构造的数据类型
@@ -125,6 +130,20 @@ public:
 	/// @param _NBT_Node 要移动的源对象
 	NBT_Node(NBT_Node &&_NBT_Node) noexcept : data(std::move(_NBT_Node.data))
 	{}
+
+	/// @brief 获取底层容器数据的常量引用
+	/// @return 底层容器数据的常量引用
+	const VariantData &GetData(void) const noexcept
+	{
+		return data;
+	}
+
+	/// @brief 获取底层容器数据的引用
+	/// @return 底层容器数据的引用
+	VariantData &GetData(void) noexcept
+	{
+		return data;
+	}
 
 	/// @brief 拷贝赋值运算符
 	/// @param _NBT_Node 要拷贝的源对象
@@ -202,6 +221,24 @@ public:
 		return std::get<T>(data);
 	}
 
+	/// @brief 通过指定类型获取当前存储的数据对象指针
+	/// @tparam T 要访问的数据类型
+	/// @return 如果当前存储的是指定类型，返回指向该对象的常量指针；否则返回 nullptr
+	template<typename T>
+	const T *GetIf() const noexcept
+	{
+		return std::get_if<T>(&data);
+	}
+
+	/// @brief 通过指定类型获取当前存储的数据对象指针
+	/// @tparam T 要访问的数据类型
+	/// @return 如果当前存储的是指定类型，返回指向该对象的指针；否则返回 nullptr
+	template<typename T>
+	T *GetIf() noexcept
+	{
+		return std::get_if<T>(&data);
+	}
+
 	/// @brief 类型判断
 	/// @tparam T 要判断的数据类型
 	/// @return 当前是否存储指定类型的数据
@@ -220,7 +257,7 @@ public:
 #define TYPE_GET_FUNC(type)\
 /**
  @brief 获取当前对象中存储的 type 类型的数据
- @return 对指定类型数据的常量引用
+ @return type 类型数据的常量引用
  @note 如果类型不存在或当前存储的不是 type 类型，则抛出异常，具体请参考std::get的说明
  */\
 const NBT_Type::type &Get##type() const\
@@ -230,12 +267,32 @@ const NBT_Type::type &Get##type() const\
 \
 /**
  @brief 获取当前对象中存储的 type 类型的数据
- @return 对指定类型数据的引用
+ @return type 类型数据的引用
  @note 如果类型不存在或当前存储的不是 type 类型，则抛出异常，具体请参考std::get的说明
  */\
 NBT_Type::type &Get##type()\
 {\
 	return std::get<NBT_Type::type>(data);\
+}\
+\
+/**
+ @brief 获取当前对象中存储的 type 类型数据的常量指针
+ @return type 类型数据的常量指针
+ @note 如果类型不存在或当前存储的不是 type 类型，则返回nullptr
+ */\
+const NBT_Type::type *GetIf##type() const noexcept\
+{\
+	return std::get_if<NBT_Type::type>(&data);\
+}\
+\
+/**
+ @brief 获取当前对象中存储的 type 类型数据的指针
+ @return type 类型数据的指针
+ @note 如果类型不存在或当前存储的不是 type 类型，则返回nullptr
+ */\
+NBT_Type::type *GetIf##type() noexcept\
+{\
+	return std::get_if<NBT_Type::type>(&data);\
 }\
 \
 /**
@@ -270,10 +327,32 @@ friend const NBT_Type::type &Get##type(const NBT_Node & node)\
 }\
 \
 /**
+ @brief 友元函数：从NBT_Node对象中获取 type 类型数据的指针
+ @param node 要从中获取类型指针的NBT_Node对象
+ @return type 类型数据的指针
+ @note 如果类型不存在或当前存储的不是 type 类型，则返回nullptr
+ */\
+friend NBT_Type::type *GetIf##type(NBT_Node & node) noexcept\
+{\
+	return node.GetIf##type();\
+}\
+\
+/**
+ @brief 友元函数：从NBT_Node对象中获取 type 类型数据的常量指针
+ @param node 要从中获取类型指针的NBT_Node对象
+ @return type 类型数据的常量指针
+ @note 如果类型不存在或当前存储的不是 type 类型，则返回nullptr
+ */\
+friend const NBT_Type::type *GetIf##type(const NBT_Node & node) noexcept\
+{\
+	return node.GetIf##type();\
+}\
+\
+/**
  @brief 友元函数：检查目标对象中是否存储 type 类型的数据
  @param node 要检查的对象
  @return 对象中是否存储 type 类型
-*/\
+ */\
 friend bool Is##type(const NBT_Node &node)\
 {\
 	return node.Is##type();\

@@ -49,6 +49,9 @@ private:
 	}
 
 public:
+	/// @brief 父类类型
+	using Super = StringView;
+
 	/// @brief 使用基类构造
 	using StringView::StringView;
 
@@ -99,6 +102,20 @@ public:
 	{
 		return std::basic_string_view<char>((const char *)StringView::data(), StringView::size());
 	}
+
+	/// @brief 获取底层容器数据的常量引用
+	/// @return 底层容器数据的常量引用
+	const StringView &GetData(void) const noexcept
+	{
+		return *this;
+	}
+
+	/// @brief 获取底层容器数据的引用
+	/// @return 底层容器数据的引用
+	StringView &GetData(void) noexcept
+	{
+		return *this;
+	}
 };
 
 
@@ -138,6 +155,9 @@ private:
 	}
 
 public:
+	/// @brief 父类类型
+	using Super = String;
+
 	/// @brief 当前String对应的视图View类型
 	using View = NBT_StringView<String, StringView>;
 
@@ -268,6 +288,20 @@ public:
 		return std::basic_string_view<char>((const char *)String::data(), String::size());
 	}
 
+
+	/// @brief 获取底层容器数据的常量引用
+	/// @return 底层容器数据的常量引用
+	const String &GetData(void) const noexcept
+	{
+		return *this;
+	}
+
+	/// @brief 获取底层容器数据的引用
+	/// @return 底层容器数据的引用
+	String &GetData(void) noexcept
+	{
+		return *this;
+	}
 
 
 	/// @brief 转换到UTF-8字符编码，但是返回为char类型而非char8_t类型

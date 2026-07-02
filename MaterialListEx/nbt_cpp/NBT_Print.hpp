@@ -30,9 +30,9 @@ class NBT_Print
 #endif
 
 private:
-	FILE *pfOutputInfo = NULL;
-	FILE *pfOutputWarn = NULL;
-	FILE *pfOutputErr = NULL;
+	FILE *pfOutputInfo = nullptr;
+	FILE *pfOutputWarn = nullptr;
+	FILE *pfOutputErr = nullptr;
 
 public:
 	using Level = NBT_Print_Level;	///< 信息等级，直接映射NBT_Print_Level
@@ -40,12 +40,12 @@ public:
 public:
 
 	/// @brief 通过c文件对象构造
-	/// @param _pfOutputInfo 普通信息输出的C文件对象（通常为stdout，可以为NULL）
-	/// @param _pfOutputWarn 警告信息输出的C文件对象（通常为stderr，可以为NULL）
-	/// @param _pfOutputErr 错误信息输出的C文件对象（通常为stderr，可以为NULL）
+	/// @param _pfOutputInfo 普通信息输出的C文件对象（通常为stdout，可以为nullptr）
+	/// @param _pfOutputWarn 警告信息输出的C文件对象（通常为stderr，可以为nullptr）
+	/// @param _pfOutputErr 错误信息输出的C文件对象（通常为stderr，可以为nullptr）
 	/// @note 类只引用文件对象，而非持有，类不会释放文件对象，
 	/// 且文件对象的生命周期必须大于此类，否则行为未定义
-	/// @note 如果任意构造参数为NULL，则与其对应等级的输出会被取消
+	/// @note 如果任意构造参数为nullptr，则与其对应等级的输出会被取消
 	NBT_Print(FILE *_pfOutputInfo = stdout, FILE *_pfOutputWarn = stderr, FILE *_pfOutputErr = stderr)
 		: pfOutputInfo(_pfOutputInfo)
 		, pfOutputWarn(_pfOutputWarn)
@@ -66,7 +66,7 @@ public:
 	template<typename... Args>
 	void operator()(Level lvl, const std::format_string<Args...> fmt, Args&&... args) noexcept
 	{
-		FILE *pfOutput = NULL;
+		FILE *pfOutput = nullptr;
 		switch (lvl)
 		{
 		case Level::Info:
@@ -79,11 +79,11 @@ public:
 			pfOutput = pfOutputErr;
 			break;
 		default:
-			//错误的等级不进行赋值，保持pfOutput为NULL，在后续跳过输出
+			//错误的等级不进行赋值，保持pfOutput为nullptr，在后续跳过输出
 			break;
 		}
 
-		if (pfOutput == NULL)//为NULL跳过
+		if (pfOutput == nullptr)//为nullptr跳过
 		{
 			return;
 		}

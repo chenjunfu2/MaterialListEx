@@ -359,14 +359,14 @@ protected:
 			return false;
 		}
 
-		void *pNewElement = NULL;
+		void *pNewElement = nullptr;
 
 		Frame &stTopFrame = vStack.back();
 		switch (stTopFrame.enType)
 		{
 		case Frame::Type::Compound:
 			{
-				if (stTopFrame.pCompound == NULL)
+				if (stTopFrame.pCompound == nullptr)
 				{
 					return false;
 				}
@@ -378,7 +378,7 @@ protected:
 			break;
 		case Frame::Type::List:
 			{
-				if (stTopFrame.pList == NULL)
+				if (stTopFrame.pList == nullptr)
 				{
 					return false;
 				}

@@ -37,34 +37,32 @@ private:
 
 		//尝试处理特殊方块
 		//用于映射特殊的方块实体容器里物品的名字
-		const static std::unordered_map<NBT_Type::String, NBT_Type::String> mapContainerTagName =
+		const static std::vector<NBT_Type::String> listContainerTagName =
 		{
-			{MU8STR("minecraft:jukebox"),MU8STR("RecordItem")},
-			{MU8STR("minecraft:lectern"),MU8STR("Book")},
-			{MU8STR("minecraft:brushable_block"),MU8STR("item")},
+			MU8STR("item"),
+			MU8STR("RecordItem"),
+			MU8STR("Book"),
 		};
 
-		if (teStats.psTileEntityName == NULL)//如果名称为空，则跳过
+		//遍历所有可能的容器物品栏名称
+		const NBT_Node *pContainerTag = NULL;
+		for (auto &strTagName : listContainerTagName)
 		{
-			return false;
+			//通过遍历每个可能的名称查找对应物品存储位置
+			pContainerTag = teCompound.Has(strTagName);
+			if (pContainerTag != NULL)//查找成功
+			{
+				break;
+			}
 		}
 
-		//查找方块实体id是否在map中
-		const auto findIt = mapContainerTagName.find(*teStats.psTileEntityName);
-		if (findIt == mapContainerTagName.end())//不在，不是可以存放物品的容器，跳过
+		if (pContainerTag == NULL)
 		{
-			return false;//跳过此方块实体
-		}
-
-		//通过映射名查找对应物品存储位置
-		const auto pSearch = teCompound.Has(findIt->second);
-		if (pSearch == NULL)//查找失败
-		{
-			return false;//跳过此方块实体
+			return false;//查找失败，不存在
 		}
 
 		//放入结构内
-		teStats.pItems = pSearch;
+		teStats.pItems = pContainerTag;
 		return true;
 	}
 

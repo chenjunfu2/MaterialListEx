@@ -571,7 +571,7 @@ catch(...)\
 					}
 
 					auto *pFind = cpdNode.Has(MU8STR(""));
-					if (pFind == NULL)
+					if (pFind == nullptr)
 					{
 						break;//没找到，说明是普通Compound
 					}

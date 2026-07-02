@@ -21,10 +21,27 @@ class NBT_Array :public Array//暂时不考虑保护继承
 	friend class NBT_Helper;
 
 public:
+	/// @brief 父类类型
+	using Super = Array;
+
 	/// @brief 使用基类构造
 	using Array::Array;
 
 	/// @brief 使用基类赋值
 	using Array::operator=;
+
+	/// @brief 获取底层容器数据的常量引用
+	/// @return 底层容器数据的常量引用
+	const Array &GetData(void) const noexcept
+	{
+		return *this;
+	}
+
+	/// @brief 获取底层容器数据的引用
+	/// @return 底层容器数据的引用
+	Array &GetData(void) noexcept
+	{
+		return *this;
+	}
 
 };

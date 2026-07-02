@@ -26,6 +26,9 @@ class NBT_Compound :protected Compound//Compound is Map
 	friend class NBT_Helper;
 
 public:
+	/// @brief 父类类型
+	using Super = Compound;
+
 	/// @name 暴露父类定义的类型成员
 	/// @brief 使用using代理转发类型
 	/// @note 具体类型描述请参考标准库说明
@@ -84,6 +87,20 @@ public:
 	NBT_Compound(const NBT_Compound &_Copy) :Compound(_Copy)
 	{}
 
+	/// @brief 获取底层容器数据的常量引用
+	/// @return 底层容器数据的常量引用
+	const Compound &GetData(void) const noexcept
+	{
+		return *this;
+	}
+
+	/// @brief 获取底层容器数据的引用
+	/// @return 底层容器数据的引用
+	Compound &GetData(void) noexcept
+	{
+		return *this;
+	}
+
 	/// @brief 移动赋值运算符
 	/// @param _Move 要移动的源对象
 	/// @return 当前对象的引用
@@ -99,13 +116,6 @@ public:
 	NBT_Compound &operator=(const NBT_Compound &_Copy)
 	{
 		Compound::operator=(_Copy);
-		return *this;
-	}
-
-	/// @brief 获取底层容器数据的常量引用
-	/// @return 底层容器数据的常量引用
-	const Compound &GetData(void) const noexcept
-	{
 		return *this;
 	}
 
@@ -274,25 +284,25 @@ public:
 
 	/// @brief 搜索标签是否存在
 	/// @param sTagName 要搜索的标签名
-	/// @return 如果找到，则返回指向标签名对应的值的指针，否则返回NULL指针
+	/// @return 如果找到，则返回指向标签名对应的值的指针，否则返回nullptr指针
 	/// @note 标签不存在时不会抛出异常，适用于检查性访问
 	typename Compound::mapped_type *Has(const typename Compound::key_type &sTagName) noexcept
 	{
 		auto find = Compound::find(sTagName);
 		return find == Compound::end()
-			? NULL
+			? nullptr
 			: &(find->second);
 	}
 
 	/// @brief 搜索标签是否存在（常量版本）
 	/// @param sTagName 要搜索的标签名
-	/// @return 如果找到，则返回指向标签名对应的值的常量指针，否则返回NULL指针
+	/// @return 如果找到，则返回指向标签名对应的值的常量指针，否则返回nullptr指针
 	/// @note 标签不存在时不会抛出异常，适用于检查性访问
 	const typename Compound::mapped_type *Has(const typename Compound::key_type &sTagName) const noexcept
 	{
 		auto find = Compound::find(sTagName);
 		return find == Compound::end()
-			? NULL
+			? nullptr
 			: &(find->second);
 	}
 
@@ -412,7 +422,7 @@ public:
 bool Contains##type(const typename Compound::key_type &sTagName) const\
 {\
 	auto *p = Has(sTagName);\
-	return p != NULL && p->GetTag() == NBT_TAG::type;\
+	return p != nullptr && p->Is##type();\
 }\
 \
 /**
@@ -442,35 +452,35 @@ typename NBT_Type::type &Get##type(const typename Compound::key_type & sTagName)
 /**
  @brief 安全检查并获取指定标签名的 type 类型数据（常量版本）
  @param sTagName 标签名
- @return 如果存在且对应值的类型为 type 则返回指向数据的常量指针，否则返回NULL
+ @return 如果存在且对应值的类型为 type 则返回指向数据的常量指针，否则返回nullptr
  @note 标签不存在或类型不为 type 时不会抛出异常，适用于检查性访问
  */\
 const typename NBT_Type::type *Has##type(const typename Compound::key_type & sTagName) const noexcept\
 {\
 	auto *p = Has(sTagName);\
-	return p != NULL && p->Is##type()\
-		? &(p->Get##type())\
-		: NULL;\
+	return p != nullptr\
+		? p->GetIf##type()\
+		: nullptr;\
 }\
 \
 /**
  @brief 安全检查并获取指定标签名的 type 类型数据
  @param sTagName 标签名
- @return 如果存在且对应值的类型为 type 则返回指向数据的指针，否则返回NULL
+ @return 如果存在且对应值的类型为 type 则返回指向数据的指针，否则返回nullptr
  @note 标签不存在或类型不为 type 时不会抛出异常，适用于检查性访问
  */\
 typename NBT_Type::type *Has##type(const typename Compound::key_type & sTagName) noexcept\
 {\
 	auto *p = Has(sTagName);\
-	return p != NULL && p->Is##type()\
-		? &(p->Get##type())\
-		: NULL;\
+	return p != nullptr\
+		? p->GetIf##type()\
+		: nullptr;\
 }
 
 	/// @name 针对每种类型提供一个方便使用的函数，由宏批量生成
 	/// @brief 具体作用说明：
 	/// - Get开头+类型名的函数：直接获取指定标签名且对应类型的引用，异常由std::unordered_map的at与std::get具体实现决定
-	/// - Has开头 + 类型名的函数：判断指定标签名是否存在，且标签名对应的类型是否是指定类型，都符合则返回对应指针，否则返回NULL指针
+	/// - Has开头 + 类型名的函数：判断指定标签名是否存在，且标签名对应的类型是否是指定类型，都符合则返回对应指针，否则返回nullptr指针
 	/// @{
 
 	TYPE_GET_FUNC(End);

@@ -25,7 +25,8 @@ class NBT_Node_View
 	template <bool _bIsConst>
 	friend class NBT_Node_View;//需要设置自己为友元，这样不同模板的类实例之间才能相互访问
 
-private:
+public:
+	/// @cond
 	//类型列表展开，声明std::variant
 	template <typename T>
 	struct AddConstIf
@@ -44,16 +45,18 @@ private:
 	{
 		using type = std::variant<PtrType<Ts>...>;//展开成指针类型
 	};
+	/// @endcond
 
+	/// @brief 用于存储指向NBT数据的指针的具体变体类型
 	using VariantData = TypeListPointerToVariant<NBT_Type::TypeList>::type;
 
-	//数据对象（仅持有数据的指针）
+protected:
+	/// @brief 数据对象（仅持有数据的指针）
 	VariantData data;
+
 public:
 	/// @brief 静态常量，表示当前视图指向的数据是否只读
 	static inline constexpr bool is_const = bIsConst;
-
-
 
 	/// @brief 通用构造函数（仅适用于非const）
 	/// @tparam T 要指向的数据类型
@@ -287,6 +290,20 @@ public:
 	NBT_Node_View(NBT_Node_View &&_Move) noexcept : data(std::move(_Move.data))
 	{}
 
+	/// @brief 获取底层容器数据的常量引用
+	/// @return 底层容器数据的常量引用
+	const VariantData &GetData(void) const noexcept
+	{
+		return data;
+	}
+
+	/// @brief 获取底层容器数据的引用
+	/// @return 底层容器数据的引用
+	VariantData &GetData(void) noexcept
+	{
+		return data;
+	}
+
 	/// @brief 拷贝赋值运算符
 	/// @param _Copy 要拷贝的源视图对象
 	/// @return 当前视图对象指向的数据的引用
@@ -373,23 +390,44 @@ public:
 
 	/// @brief 通过指定类型获取当前视图指向的数据对象
 	/// @tparam T 要访问的数据类型
-	/// @return 对指向数据的常量引用
+	/// @return 对指向数据的引用（根据视图的const属性决定返回常量引用或非常量引用）
 	/// @note 如果类型不存在或当前存储的不是指定类型的指针，则抛出异常，具体请参考std::get的说明
 	template<typename T>
-	const T &Get() const
+	std::conditional_t<bIsConst, const T &, T &> Get() const
 	{
 		return *std::get<PtrType<T>>(data);
 	}
 
-	/// @brief 通过指定类型获取当前视图指向的数据对象（仅适用于非const视图）
+	/// @brief 通过指定类型获取当前视图指向的数据对象
 	/// @tparam T 要访问的数据类型
-	/// @return 对指向数据的引用
+	/// @return 对指向数据的引用（根据视图的const属性决定返回常量引用或非常量引用）
 	/// @note 如果类型不存在或当前存储的不是指定类型的指针，则抛出异常，具体请参考std::get的说明
 	template<typename T>
-	requires(!bIsConst)//仅在非const的情况下可用
-	T &Get()
+	std::conditional_t<bIsConst, const T &, T &> Get()
 	{
 		return *std::get<PtrType<T>>(data);
+	}
+
+	/// @brief 通过指定类型获取当前视图指向的数据对象的指针（根据视图的const属性决定返回常量指针或非常量指针）
+	/// @tparam T 要访问的数据类型
+	/// @return 对指向数据的指针（根据视图的const属性决定返回常量指针或非常量指针）
+	/// @note 如果类型不存在或当前指向的不是 type 类型，则返回nullptr
+	template<typename T>
+	std::conditional_t<bIsConst, const T *, T *>GetIf() const noexcept
+	{
+		auto p = std::get_if<PtrType<T>>(&data);//二维指针
+		return p != nullptr ? *p : nullptr;
+	}
+
+	/// @brief 通过指定类型获取当前视图指向的数据对象的指针（根据视图的const属性决定返回常量指针或非常量指针）
+	/// @tparam T 要访问的数据类型
+	/// @return 对指向数据的指针（根据视图的const属性决定返回常量指针或非常量指针）
+	/// @note 如果类型不存在或当前指向的不是 type 类型，则返回nullptr
+	template<typename T>
+	std::conditional_t<bIsConst, const T *, T *>GetIf() noexcept
+	{
+		auto p = std::get_if<PtrType<T>>(&data);//二维指针
+		return p != nullptr ? *p : nullptr;
 	}
 
 	/// @brief 类型判断
@@ -424,24 +462,44 @@ public:
 #define TYPE_GET_FUNC(type)\
 /**
  @brief 获取当前视图指向的 type 类型的数据
- @return 对指定类型数据的常量引用
+ @return 对指定类型数据的引用（根据视图的const属性决定返回常量引用或非常量引用）
  @note 如果类型不存在或当前指向的不是 type 类型，则抛出异常，具体请参考std::get的说明
  */\
-const NBT_Type::type &Get##type() const\
+std::conditional_t<bIsConst, const NBT_Type::type &, NBT_Type::type &> Get##type() const\
 {\
 	return *std::get<PtrType<NBT_Type::type>>(data);\
 }\
 \
 /**
- @brief 获取当前视图指向的 type 类型的数据（仅适用于非const视图）
- @return 对指定类型数据的引用
+ @brief 获取当前视图指向的 type 类型的数据
+ @return 对指定类型数据的引用（根据视图的const属性决定返回常量引用或非常量引用）
  @note 如果类型不存在或当前指向的不是 type 类型，则抛出异常，具体请参考std::get的说明
  */\
-template <typename = void>\
-requires(!bIsConst)\
-NBT_Type::type &Get##type()\
+std::conditional_t<bIsConst, const NBT_Type::type &, NBT_Type::type &> Get##type()\
 {\
 	return *std::get<PtrType<NBT_Type::type>>(data);\
+}\
+\
+/**
+ @brief 获取当前视图指向的 type 类型数据的指针
+ @return 对指定类型数据的指针（根据视图的const属性决定返回常量指针或非常量指针）
+ @note 如果类型不存在或当前指向的不是 type 类型，则返回nullptr
+ */\
+std::conditional_t<bIsConst, const NBT_Type::type *, NBT_Type::type *> GetIf##type() const noexcept\
+{\
+	auto p = std::get_if<PtrType<NBT_Type::type>>(&data);\
+	return p != nullptr ? *p : nullptr;\
+}\
+\
+/**
+ @brief 获取当前视图指向的 type 类型的数据的指针
+ @return 对指定类型数据的指针（根据视图的const属性决定返回常量指针或非常量指针）
+ @note 如果类型不存在或当前指向的不是 type 类型，则返回nullptr
+ */\
+std::conditional_t<bIsConst, const NBT_Type::type *, NBT_Type::type *> GetIf##type() noexcept\
+{\
+	auto p = std::get_if<PtrType<NBT_Type::type>>(&data); \
+	return p != nullptr ? *p : nullptr; \
 }\
 \
 /**
@@ -472,6 +530,28 @@ friend std::conditional_t<bIsConst, const NBT_Type::type &, NBT_Type::type &> Ge
 friend std::conditional_t<bIsConst, const NBT_Type::type &, NBT_Type::type &> Get##type(const NBT_Node_View & node)\
 {\
 	return node.Get##type();\
+}\
+\
+/**
+ @brief 友元函数：从NBT_Node_View对象中获取 type 类型数据的指针
+ @param node 要从中获取类型指针的NBT_Node_View对象
+ @return 对 type 类型数据的指针（根据视图的const属性决定返回常量指针或非常量指针）
+ @note 如果类型不存在或当前指向的不是 type 类型，则返回 nullptr
+ */\
+friend std::conditional_t<bIsConst, const NBT_Type::type *, NBT_Type::type *> GetIf##type(NBT_Node_View & node) noexcept\
+{\
+	return node.GetIf##type();\
+}\
+\
+/**
+ @brief 友元函数：从NBT_Node_View对象中获取 type 类型数据的指针
+ @param node 要从中获取类型指针的NBT_Node_View对象
+ @return 对 type 类型数据的指针（根据视图的const属性决定返回常量指针或非常量指针）
+ @note 如果类型不存在或当前指向的不是 type 类型，则返回 nullptr
+ */\
+friend std::conditional_t<bIsConst, const NBT_Type::type *, NBT_Type::type *> GetIf##type(const NBT_Node_View & node) noexcept\
+{\
+	return node.GetIf##type();\
 }\
 \
 /**
